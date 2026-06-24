@@ -1163,7 +1163,9 @@ export default function App() {
     try {
       const { fetchAndExtractText } = await import('./utils/WebScraper');
       const urls = activeBook.sourceUrls.split('\n').map(u => u.trim()).filter(Boolean);
-      const text = await fetchAndExtractText(urls);
+      const isGroq = selectedModel.startsWith('groq-') || selectedModel.includes('llama');
+      const maxChars = isGroq ? 5000 : 25000;
+      const text = await fetchAndExtractText(urls, maxChars);
       setBooks(prev => prev.map(b => {
         if (b.id === activeBookId) {
           return { ...b, extractedSourceText: text };
@@ -1690,7 +1692,9 @@ export default function App() {
           setPlanningProgress({ percent: 10, message: 'Websites werden eingelesen...' });
           const { fetchAndExtractText } = await import('./utils/WebScraper');
           const urls = currentActiveBook.sourceUrls.split('\n').map(u => u.trim()).filter(Boolean);
-          const text = await fetchAndExtractText(urls);
+          const isGroq = selectedModel.startsWith('groq-') || selectedModel.includes('llama');
+          const maxChars = isGroq ? 5000 : 25000;
+          const text = await fetchAndExtractText(urls, maxChars);
           
           setBooks(prev => prev.map(b => {
             if (b.id === activeBookId) {

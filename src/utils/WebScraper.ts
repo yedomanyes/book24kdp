@@ -1,4 +1,4 @@
-export const fetchAndExtractText = async (urls: string[]): Promise<string> => {
+export const fetchAndExtractText = async (urls: string[], maxCharsPerUrl: number = 25000): Promise<string> => {
   let combinedText = '';
   
   for (const rawUrl of urls) {
@@ -36,9 +36,9 @@ export const fetchAndExtractText = async (urls: string[]): Promise<string> => {
       let text = article.innerText || article.textContent || '';
       text = text.replace(/\s+/g, ' ').trim();
       
-      // Limit text per URL to roughly 50,000 chars
-      if (text.length > 50000) {
-        text = text.substring(0, 50000) + '... (Inhalt gekürzt)';
+      // Limit text per URL to avoid exceeding API token limits
+      if (text.length > maxCharsPerUrl) {
+        text = text.substring(0, maxCharsPerUrl) + '... (Inhalt aus Sicherheits- und Kapazitätsgründen gekürzt)';
       }
       
       combinedText += `\n\n--- QUELLE: ${url} ---\n${text}`;
