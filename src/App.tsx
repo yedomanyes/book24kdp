@@ -1733,7 +1733,18 @@ export default function App() {
             pagesTextBackup: originalPagesText,
             pagesStatusBackup: originalPagesStatus,
             pagesErrorBackup: originalPagesError,
-            outline: null,
+            outline: {
+              title: currentActiveBook.title,
+              subtitle: currentActiveBook.subtitle,
+              language: currentActiveBook.language,
+              target_pages: currentActiveBook.targetPages,
+              pages: Array.from({ length: currentActiveBook.targetPages }).map((_, i) => ({
+                page_number: i + 1,
+                chapter_title: 'Wird geplant...',
+                focus: 'Bitte warten...',
+                key_points: []
+              }))
+            },
             pagesText: {},
             pagesStatus: {},
             pagesError: {}
@@ -1741,6 +1752,9 @@ export default function App() {
         }
         return b;
       }));
+
+      setIsExplorerCollapsed(false);
+      setExplorerTab('settings');
 
       try {
         const service = getServiceInstance();
@@ -1751,7 +1765,19 @@ export default function App() {
           currentActiveBook.language,
           currentActiveBook.targetPages,
           getEffectiveGuidelines(currentActiveBook),
-          (percent, msg) => setPlanningProgress({ percent, message: msg })
+          (percent, msg) => setPlanningProgress({ percent, message: msg }),
+          (partialPages) => {
+            setBooks(prev => prev.map(b => {
+              if (b.id !== activeBookId) return b;
+              const newPages = [...(b.outline?.pages || [])];
+              partialPages.forEach(p => {
+                if (p.page_number - 1 < newPages.length) {
+                  newPages[p.page_number - 1] = p;
+                }
+              });
+              return { ...b, outline: { ...b.outline!, pages: newPages } };
+            }));
+          }
         );
 
         const initialStatus: { [key: number]: 'idle' } = {};

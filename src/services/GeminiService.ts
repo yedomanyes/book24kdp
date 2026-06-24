@@ -139,7 +139,8 @@ export class GeminiService {
     language: string,
     targetPages: number,
     customGuidelines: string = '',
-    onProgress?: (progress: number, message: string) => void
+    onProgress?: (progress: number, message: string) => void,
+    onChunkComplete?: (partialPages: BookOutlinePage[]) => void
   ): Promise<BookOutline> {
     const isGroq = this.getProvider() === 'groq';
     let safeIdea = idea || '';
@@ -155,7 +156,7 @@ export class GeminiService {
 Buchtitel: "${title}"
 Untertitel: "${subtitle}"
 ${safeIdea && safeIdea.trim() ? `Hauptidee/Beschreibung: "${safeIdea}"` : `Hinweis: Es wurde keine Hauptidee eingegeben. Leite das Thema, das Genre und die Gliederung des Buches eigenständig und kreativ aus dem Titel und Untertitel ab. Strebe dabei das bestmögliche, professionellste und spannendste Ergebnis an.`}
-Sprache des Buches: "${language === 'de' ? 'Deutsch' : 'Englisch'}"
+Sprache des Buches: "${language === 'de' ? 'Deutsch' : 'ENGLISH (CRITICAL: All generated output MUST be completely in English, including chapter titles and key points!)'}"
 Ziel-Seitenzahl: ${targetPages} (Das generierte JSON MUSS exakt ${targetPages} Seiten in der Liste haben, durchnummeriert von 1 bis ${targetPages}).`;
 
     if (safeGuidelines && safeGuidelines.trim()) {
@@ -216,7 +217,7 @@ Stelle sicher, dass die "pages"-Liste EXAKT ${targetPages} Einträge enthält!`;
 Buchtitel: "${title}"
 Untertitel: "${subtitle}"
 Hauptidee/Beschreibung: "${safeIdea}"
-Sprache des Buches: "${language === 'de' ? 'Deutsch' : 'Englisch'}"
+Sprache des Buches: "${language === 'de' ? 'Deutsch' : 'ENGLISH (CRITICAL: All generated output MUST be completely in English, including chapter titles and key points!)'}"
 Das Buch hat insgesamt ${targetPages} Seiten. Du planst jetzt NUR die Seiten ${start} bis ${end} (${chunkSize} Seiten).
 ${safeGuidelines && safeGuidelines.trim() ? `\nAutoren-Richtlinien: "${safeGuidelines}"\n` : ''}
 
@@ -279,6 +280,10 @@ Die "pages"-Liste muss EXAKT ${chunkSize} Einträge enthalten, mit page_number v
           throw new Error(`Outline-Chunk ${start}-${end} enthält keine Seiten.`);
         }
         allPages.push(...chunkPages);
+        if (onChunkComplete) {
+          onChunkComplete([...allPages]);
+        }
+
 
         // Small delay between chunks to avoid rate limiting
         if (end < targetPages) {
@@ -348,7 +353,7 @@ Die "pages"-Liste muss EXAKT ${chunkSize} Einträge enthalten, mit page_number v
 Buchtitel: "${title}"
 Untertitel: "${subtitle || ''}"
 Hauptidee: "${idea}"
-Sprache: "${language === 'de' ? 'Deutsch' : 'Englisch'}"
+Sprache: "${language === 'de' ? 'Deutsch' : 'ENGLISH (CRITICAL: All generated output MUST be completely in English!)'}"
 Das Buch hat insgesamt ${totalPages} Seiten. Die Seiten 1 bis ${startPage - 1} wurden bereits geplant.
 
 Die letzten bereits geplanten Seiten waren:
@@ -578,7 +583,7 @@ Schreibe jetzt den Eröffnungsabsatz mit der Technik "${style.name}":`;
     fontSize: number = 11,
     customGuidelines: string = ''
   ): Promise<string> {
-    const lang = outline.language === 'de' ? 'Deutsch (korrekte Rechtschreibung und Grammatik)' : 'Englisch';
+    const lang = outline.language === 'de' ? 'Deutsch (korrekte Rechtschreibung und Grammatik)' : 'ENGLISH (CRITICAL: YOU MUST WRITE THE ENTIRE TEXT IN ENGLISH ONLY!)';
 
     // Word budget: subtract opening length from page target
     let minWords = 160;
@@ -686,7 +691,7 @@ Setze den Text absolut nahtlos fort. Der allererste Satz dieser neuen Seite ${pa
     }
 
     const systemPrompt = `Du bist ein professioneller Buchautor. Du schreibst im folgenden Stil: "${writingStyle}".
-Deine Sprache ist exakt: ${outline.language === 'de' ? 'Deutsch (korrekte Rechtschreibung und Grammatik)' : 'Englisch'}.
+Deine Sprache ist exakt: ${outline.language === 'de' ? 'Deutsch (korrekte Rechtschreibung und Grammatik)' : 'ENGLISH (CRITICAL: YOU MUST WRITE THE ENTIRE TEXT IN ENGLISH ONLY!)'}.
 Achte peinlich genau auf folgende Regeln:
 1. Verwende KEINE urheberrechtlich geschützten Inhalte oder geschützten Charaktere. Historische Zitate oder Zitate bekannter Persönlichkeiten sind zulässig, sofern sie gemeinfrei/legal sind. Setze Zitate sehr sparsam ein (maximal ein Zitat pro Kapitel). Jedes Zitat MUSS in einer eigenen Zeile stehen, eingeleitet mit "> ", und MUSS am Ende immer eine Autorenangabe enthalten (Format: — Vorname Nachname). Beispiele:
 > "Wissen ist Macht." — Francis Bacon
@@ -845,7 +850,7 @@ Stelle sicher, dass die Fortsetzung nahtlos bleibt.`;
     }
 
     const systemPrompt = `Du bist ein professioneller Buchautor. Du schreibst im folgenden Stil: "${writingStyle}".
-Deine Sprache ist exakt: ${outline.language === 'de' ? 'Deutsch (korrekte Rechtschreibung und Grammatik)' : 'Englisch'}.
+Deine Sprache ist exakt: ${outline.language === 'de' ? 'Deutsch (korrekte Rechtschreibung und Grammatik)' : 'ENGLISH (CRITICAL: YOU MUST WRITE THE ENTIRE TEXT IN ENGLISH ONLY!)'}.
 Deine Aufgabe ist es, den übergebenen Text einer Buchseite inhaltlich zu verlängern und detaillierter auszuformulieren, ohne die Kernaussage oder das Thema zu verändern.
 Schreibe ausführlicher, schmücke Sätze aus, bringe tiefergehende Erklärungen oder Beschreibungen ein, damit der Text länger wird und die Seite voll ausfüllt.
 
@@ -1272,14 +1277,14 @@ Entwirf jetzt drei unterschiedliche Struktur-Varianten (version_1, version_2, ve
 
   async generateAmazonDescription(title: string, subtitle: string, idea: string, language: string): Promise<string> {
     const systemPrompt = `Du bist ein professioneller Buch-Marketing-Experte für Amazon KDP. Konvertiere die Buchidee in eine ansprechende, verkaufsstarke Buchbeschreibung für die Amazon-Produktseite.
-Verwende ausschließlich valides Amazon-HTML (erlaubte Tags sind: <b>, <i>, <u>, <p>, <br>, <ul>, <li>, <h1>, <h2>, <h3>). Verwende keine anderen HTML-Tags. Stelle sicher, dass die Beschreibung Absätze, fette Überschriften (mit <h2> oder <b>) und Bullet-Points (mit <ul> und <li>) enthält, um die Lesbarkeit zu maximieren. Schreibe auf ${language === 'de' ? 'Deutsch' : 'Englisch'}.
+Verwende ausschließlich valides Amazon-HTML (erlaubte Tags sind: <b>, <i>, <u>, <p>, <br>, <ul>, <li>, <h1>, <h2>, <h3>). Verwende keine anderen HTML-Tags. Stelle sicher, dass die Beschreibung Absätze, fette Überschriften (mit <h2> oder <b>) und Bullet-Points (mit <ul> und <li>) enthält, um die Lesbarkeit zu maximieren. Schreibe auf ${language === 'de' ? 'Deutsch' : 'ENGLISH (CRITICAL: ENTIRE OUTPUT MUST BE ENGLISH)'}.
 Falls keine Buchbeschreibung/Idee vorliegt, leite eine passende, verkaufsstarke Beschreibung komplett kreativ aus dem Titel und Untertitel ab.`;
     const userPrompt = `Titel: "${title}"\nUntertitel: "${subtitle}"\nBeschreibung/Idee: "${idea || '(Keine Idee angegeben, bitte komplett aus Titel/Untertitel herleiten)'}"`;
     return (await this.askAI(systemPrompt, userPrompt, false)).trim();
   }
 
   async generateKdpKeywords(title: string, subtitle: string, idea: string, language: string): Promise<string[]> {
-    const systemPrompt = `Du bist ein Amazon SEO Experte. Analysiere das folgende Buchprojekt und generiere genau 7 hochrelevante, spezifische Suchbegriffe (Keywords) auf ${language === 'de' ? 'Deutsch' : 'Englisch'} für den KDP-Algorithmus, um die Auffindbarkeit zu maximieren. Jedes Keyword kann ein einzelnes Wort oder eine kurze Phrase sein.
+    const systemPrompt = `Du bist ein Amazon SEO Experte. Analysiere das folgende Buchprojekt und generiere genau 7 hochrelevante, spezifische Suchbegriffe (Keywords) auf ${language === 'de' ? 'Deutsch' : 'ENGLISH (MUST BE ENGLISH KEYWORDS ONLY)'} für den KDP-Algorithmus, um die Auffindbarkeit zu maximieren. Jedes Keyword kann ein einzelnes Wort oder eine kurze Phrase sein.
 Falls keine Beschreibung/Idee vorliegt, leite die Keywords kreativ aus dem Titel und Untertitel ab.
 Antworte ausschließlich im JSON-Format mit folgender Struktur: { "keywords": ["keyword 1", "keyword 2", ...] }.`;
     const userPrompt = `Titel: "${title}"\nUntertitel: "${subtitle}"\nBeschreibung/Idee: "${idea || '(Keine Idee angegeben, bitte komplett aus Titel/Untertitel herleiten)'}"`;
@@ -1298,7 +1303,7 @@ Antworte ausschließlich im JSON-Format mit folgender Struktur: { "keywords": ["
   }
 
   async generateKdpCategories(title: string, subtitle: string, idea: string, language: string): Promise<string[]> {
-    const systemPrompt = `Du bist ein KDP-Verlagsassistent. Analysiere das folgende Buchprojekt und schlage 3 bis 5 passende Buchkategorien auf ${language === 'de' ? 'Deutsch' : 'Englisch'} (Klassifikationen wie Belletristik, Sachbuch, Ratgeber, etc., im KDP-Kategoriebaum-Stil) vor.
+    const systemPrompt = `Du bist ein KDP-Verlagsassistent. Analysiere das folgende Buchprojekt und schlage 3 bis 5 passende Buchkategorien auf ${language === 'de' ? 'Deutsch' : 'ENGLISH (MUST BE ENGLISH CATEGORIES ONLY)'} (Klassifikationen wie Belletristik, Sachbuch, Ratgeber, etc., im KDP-Kategoriebaum-Stil) vor.
 Falls keine Beschreibung/Idee vorliegt, leite die Kategorien kreativ aus dem Titel und Untertitel ab.
 Antworte ausschließlich im JSON-Format mit folgender Struktur: { "categories": ["kategorie 1", "kategorie 2", ...] }.`;
     const userPrompt = `Titel: "${title}"\nUntertitel: "${subtitle}"\nBeschreibung/Idee: "${idea || '(Keine Idee angegeben, bitte komplett aus Titel/Untertitel herleiten)'}"`;
@@ -1357,7 +1362,7 @@ Die 3 Varianten müssen sich klar unterscheiden im Ton:
 - Variante B: Emotional-versprechend (Transformation/Ergebnis im Fokus)
 - Variante C: Direkt-dringlich (Problem/Lösung zugespitzt)
 
-Die Sprache der Ausgabe muss ${language === 'de' ? 'Deutsch' : 'Englisch'} sein.
+Die Sprache der Ausgabe muss ${language === 'de' ? 'Deutsch' : 'ENGLISH (MUST BE ENGLISH)'} sein.
 
 Antworte AUSSCHLIESSLICH als JSON-Array:
 [
@@ -1400,7 +1405,7 @@ Antworte AUSSCHLIESSLICH als JSON-Array:
     // Target: roughly 1/3 of the original chapters, between 3 and 12
     const targetChapters = Math.max(3, Math.min(12, Math.round(numOriginal / 3)));
 
-    const lang = language === 'de' ? 'Deutsch' : 'English';
+    const lang = language === 'de' ? 'Deutsch' : 'ENGLISH (CRITICAL: ALL TITLES MUST BE IN ENGLISH)';
 
     const systemPrompt = `Du bist ein professioneller Bucheditor. Das Buch heißt "${title}" (${subtitle}), Thema: "${idea}".
 Du bekommst eine nummerierte Liste der aktuellen Kapitel. Fasse diese in ca. ${targetChapters} breitere Oberkapitel zusammen.
