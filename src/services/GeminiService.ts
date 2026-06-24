@@ -1341,6 +1341,11 @@ Antworte ausschließlich im JSON-Format mit folgender Struktur: { "categories": 
     return (await this.askAI(systemPrompt, text, false)).trim();
   }
 
+  async humanizeText(text: string): Promise<string> {
+    const systemPrompt = `Du bist ein extrem fähiger Autor, der exakt wie ein Mensch schreibt. Deine Aufgabe ist es, diesen Text umzuschreiben, um JEDE KI-Erkennung (ZeroGPT etc.) zu umgehen. Verwende abwechslungsreichen Satzbau, streue subtil natürliche Ungenauigkeiten ein, benutze dynamische Rhythmen (kurze Sätze abwechselnd mit langen). VERMEIDE TYPISCHE KI-MUSTER WIE: 'Zusammenfassend lässt sich sagen', 'Es ist wichtig zu betonen', 'Tauchen wir ein'. Mach den Text locker, professionell und 100% menschlich. Behalte Absätze und Markdown-Tags (wie **bold** oder :::box) intakt. Antworte ausschließlich mit dem überarbeiteten Text, ohne Einleitung, Kommentar oder Anführungszeichen.`;
+    return (await this.askAI(systemPrompt, text, false)).trim();
+  }
+
   async generateTitlePageOptions(
     title: string,
     plot: string,

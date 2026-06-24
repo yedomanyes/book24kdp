@@ -21,7 +21,8 @@ import {
   Eye,
   EyeOff,
   Scissors,
-  Copy
+  Copy,
+  User
 } from 'lucide-react';
 import { GeminiService } from './services/GeminiService';
 import type { BookOutline, BookOutlinePage } from './services/GeminiService';
@@ -2799,7 +2800,7 @@ export default function App() {
 
   const [isInlineAILoading, setIsInlineAILoading] = useState<boolean>(false);
 
-  const handleEditorAIAction = async (action: 'rephrase' | 'emotional' | 'shorten' | 'spellcheck') => {
+  const handleEditorAIAction = async (action: 'rephrase' | 'emotional' | 'shorten' | 'spellcheck' | 'humanize') => {
     if (selectedPage === null || typeof selectedPage !== 'number') return;
     if (!hasKeysForModel(selectedModel)) {
       const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
@@ -2841,6 +2842,8 @@ export default function App() {
         result = await service.shortenText(textToProcess);
       } else if (action === 'spellcheck') {
         result = await service.spellcheckText(textToProcess);
+      } else if (action === 'humanize') {
+        result = await service.humanizeText(textToProcess);
       }
 
       let updatedText = '';
@@ -6892,6 +6895,32 @@ max="250"
                         Kürzen
                       </button>
 
+                      <div style={{ width: '1px', height: '10px', backgroundColor: 'var(--border-color)', margin: '0 4px' }}></div>
+                      
+                      <button
+                        onClick={() => handleEditorAIAction('humanize')}
+                        className="btn"
+                        style={{ 
+                          padding: '2px 8px', 
+                          fontSize: '9px', 
+                          height: '20px', 
+                          borderRadius: '4px',
+                          border: '1px solid var(--primary)', 
+                          backgroundColor: 'var(--primary-light)',
+                          color: 'var(--primary)',
+                          cursor: 'pointer',
+                          fontWeight: 600,
+                          transition: 'all 0.15s ease'
+                        }}
+                        disabled={isInlineAILoading || isGenerating || isPlanning}
+                        onMouseOver={(e) => { if (!isInlineAILoading && !isGenerating && !isPlanning) { e.currentTarget.style.backgroundColor = 'var(--primary)'; e.currentTarget.style.color = '#fff'; } }}
+                        onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'var(--primary-light)'; e.currentTarget.style.color = 'var(--primary)'; }}
+                        title="Bypass AI-Detection: Schreibt den Text so um, dass er wie von einem Menschen geschrieben wirkt."
+                      >
+                        <User size={10} style={{ marginRight: '4px', display: 'inline-block', verticalAlign: 'middle' }} />
+                        Vermenschlichen
+                      </button>
+
                       {isInlineAILoading && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '6px', fontSize: '9px', color: 'var(--primary)' }}>
                           <Loader2 className="spinner" style={{ width: '9px', height: '9px' }} />
@@ -6910,12 +6939,71 @@ max="250"
                         <span>Book24 schreibt Seite {selectedPage}...</span>
                       </div>
                     ) : (
-                      <textarea
-                        value={editorText}
-                        onChange={handleEditorChange}
-                        placeholder="Inhalt wird geladen/generiert. Du kannst auch direkt losschreiben..."
-                        className="editor-textarea"
-                      />
+                      <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                        <div style={{ 
+                          display: 'flex', 
+                          gap: '6px', 
+                          padding: '6px 12px', 
+                          borderBottom: '1px solid var(--border-color)',
+                          backgroundColor: '#f8fafc',
+                          alignItems: 'center'
+                        }}>
+                          <button onClick={() => {
+                            const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement;
+                            if(!textarea) return;
+                            const start = textarea.selectionStart;
+                            const end = textarea.selectionEnd;
+                            const text = textarea.value;
+                            const newText = text.substring(0, start) + '**' + text.substring(start, end) + '**' + text.substring(end);
+                            handleEditorChange({ target: { value: newText } } as React.ChangeEvent<HTMLTextAreaElement>);
+                            setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + 2, end + 2); }, 0);
+                          }} className="btn" style={{ padding: '4px 8px', fontSize: '12px', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 'bold' }} title="Fett (Strg+B)">B</button>
+                          
+                          <button onClick={() => {
+                            const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement;
+                            if(!textarea) return;
+                            const start = textarea.selectionStart;
+                            const end = textarea.selectionEnd;
+                            const text = textarea.value;
+                            const newText = text.substring(0, start) + '*' + text.substring(start, end) + '*' + text.substring(end);
+                            handleEditorChange({ target: { value: newText } } as React.ChangeEvent<HTMLTextAreaElement>);
+                            setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + 1, end + 1); }, 0);
+                          }} className="btn" style={{ padding: '4px 8px', fontSize: '12px', background: 'transparent', border: 'none', cursor: 'pointer', fontStyle: 'italic' }} title="Kursiv (Strg+I)">I</button>
+                          
+                          <div style={{ width: '1px', height: '14px', backgroundColor: 'var(--border-color)', margin: '0 4px' }}></div>
+                          
+                          <button onClick={() => {
+                            const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement;
+                            if(!textarea) return;
+                            const start = textarea.selectionStart;
+                            const end = textarea.selectionEnd;
+                            const text = textarea.value;
+                            const newText = text.substring(0, start) + '\n- ' + text.substring(start, end) + text.substring(end);
+                            handleEditorChange({ target: { value: newText } } as React.ChangeEvent<HTMLTextAreaElement>);
+                            setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + 3, end + 3); }, 0);
+                          }} className="btn" style={{ padding: '4px 8px', fontSize: '11px', background: 'transparent', border: 'none', cursor: 'pointer' }} title="Aufzählungsliste">• Liste</button>
+                          
+                          <button onClick={() => {
+                            const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement;
+                            if(!textarea) return;
+                            const start = textarea.selectionStart;
+                            const end = textarea.selectionEnd;
+                            const text = textarea.value;
+                            const newText = text.substring(0, start) + '\n\n:::box Tipp\n' + (text.substring(start, end) || 'Dein Text hier...') + '\n:::\n\n' + text.substring(end);
+                            handleEditorChange({ target: { value: newText } } as React.ChangeEvent<HTMLTextAreaElement>);
+                            setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + 13, end + 13); }, 0);
+                          }} className="btn" style={{ padding: '4px 8px', fontSize: '11px', background: 'transparent', border: 'none', cursor: 'pointer' }} title="Info-Box einfügen">
+                            [Box]
+                          </button>
+                        </div>
+                        <textarea
+                          value={editorText}
+                          onChange={handleEditorChange}
+                          placeholder="Inhalt wird geladen/generiert. Du kannst auch direkt losschreiben..."
+                          className="editor-textarea"
+                          style={{ flex: 1, borderTop: 'none', minHeight: '300px' }}
+                        />
+                      </div>
                     )}
                   </div>
                 ) : (
