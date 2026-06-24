@@ -138,7 +138,8 @@ export class GeminiService {
     idea: string,
     language: string,
     targetPages: number,
-    customGuidelines: string = ''
+    customGuidelines: string = '',
+    onProgress?: (progress: number, message: string) => void
   ): Promise<BookOutline> {
     let prompt = `Du bist ein professioneller Buch-Redakteur. Erstelle ein detailliertes Inhaltsverzeichnis und eine Seiten-Planung für ein neues Buch.
 Buchtitel: "${title}"
@@ -195,6 +196,11 @@ Stelle sicher, dass die "pages"-Liste EXAKT ${targetPages} Einträge enthält!`;
       for (let start = 1; start <= targetPages; start += CHUNK_SIZE) {
         const end = Math.min(start + CHUNK_SIZE - 1, targetPages);
         const chunkSize = end - start + 1;
+
+        if (onProgress) {
+          const progressPercent = Math.round(((start - 1) / targetPages) * 100);
+          onProgress(progressPercent, `Generiere Seiten ${start} bis ${end} von ${targetPages}...`);
+        }
 
         const chunkPrompt = `Du bist ein professioneller Buch-Redakteur. Erstelle die Seiten-Planung für folgendes Buch.
 Buchtitel: "${title}"
@@ -280,6 +286,7 @@ Die "pages"-Liste muss EXAKT ${chunkSize} Einträge enthalten, mit page_number v
 
     } else {
       // Gemini
+      if (onProgress) onProgress(50, 'Generiere komplette Buchstruktur (Google Gemini)...');
       data = await this.executeWithKeyRotation('gemini', (key) =>
         fetch(`https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${key}`, {
           method: 'POST',

@@ -1155,6 +1155,7 @@ export default function App() {
   const [isHoveringEmblem, setIsHoveringEmblem] = useState<boolean>(false);
   const [ideaTab, setIdeaTab] = useState<'text' | 'sources'>('text');
   const [isFetchingSources, setIsFetchingSources] = useState<boolean>(false);
+  const [planningProgress, setPlanningProgress] = useState<{percent: number, message: string} | null>(null);
 
   const handleFetchSources = async () => {
     if (!activeBookId || !activeBook?.sourceUrls) return;
@@ -1677,6 +1678,7 @@ export default function App() {
 
     const executePlanBook = async () => {
       setIsPlanning(true);
+      setPlanningProgress({ percent: 0, message: 'Initialisiere Planung...' });
       setSelectedPage('title');
 
       let currentActiveBook = activeBook;
@@ -1685,6 +1687,7 @@ export default function App() {
       if (currentActiveBook.sourceUrls && currentActiveBook.sourceUrls.trim()) {
         try {
           setIsFetchingSources(true);
+          setPlanningProgress({ percent: 10, message: 'Websites werden eingelesen...' });
           const { fetchAndExtractText } = await import('./utils/WebScraper');
           const urls = currentActiveBook.sourceUrls.split('\n').map(u => u.trim()).filter(Boolean);
           const text = await fetchAndExtractText(urls);
@@ -1735,7 +1738,8 @@ export default function App() {
           currentActiveBook.idea,
           currentActiveBook.language,
           currentActiveBook.targetPages,
-          getEffectiveGuidelines(currentActiveBook)
+          getEffectiveGuidelines(currentActiveBook),
+          (percent, msg) => setPlanningProgress({ percent, message: msg })
         );
 
         const initialStatus: { [key: number]: 'idle' } = {};
@@ -1784,6 +1788,7 @@ export default function App() {
         });
       } finally {
         setIsPlanning(false);
+        setPlanningProgress(null);
       }
     };
 
@@ -5166,6 +5171,21 @@ export default function App() {
                           </button>
                         )}
                         
+                        {isPlanning && planningProgress && (
+                          <div style={{ marginTop: '6px', marginBottom: '6px', width: '100%', backgroundColor: 'var(--bg-card)', padding: '8px', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <Loader2 className="spinner" style={{ width: '10px', height: '10px' }} />
+                                {planningProgress.message}
+                              </span>
+                              <span>{planningProgress.percent}%</span>
+                            </div>
+                            <div style={{ width: '100%', height: '4px', backgroundColor: 'var(--bg-main)', borderRadius: '2px', overflow: 'hidden' }}>
+                              <div style={{ width: `${planningProgress.percent}%`, height: '100%', backgroundColor: 'var(--accent-color)', transition: 'width 0.3s ease' }} />
+                            </div>
+                          </div>
+                        )}
+
                         <button 
                           onClick={handlePlanBook}
                           disabled={isPlanning || isGenerating || !activeBook.title || !activeBook.title.trim()}
@@ -5247,8 +5267,23 @@ export default function App() {
                         )}
                       </div>
                     ) : (
-                      <button 
-                        onClick={handlePlanBook}
+                      <>
+                        {isPlanning && planningProgress && (
+                          <div style={{ marginTop: '6px', marginBottom: '6px', width: '100%', backgroundColor: 'var(--bg-card)', padding: '8px', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <Loader2 className="spinner" style={{ width: '10px', height: '10px' }} />
+                                {planningProgress.message}
+                              </span>
+                              <span>{planningProgress.percent}%</span>
+                            </div>
+                            <div style={{ width: '100%', height: '4px', backgroundColor: 'var(--bg-main)', borderRadius: '2px', overflow: 'hidden' }}>
+                              <div style={{ width: `${planningProgress.percent}%`, height: '100%', backgroundColor: 'var(--accent-color)', transition: 'width 0.3s ease' }} />
+                            </div>
+                          </div>
+                        )}
+                        <button 
+                          onClick={handlePlanBook}
                         disabled={isPlanning || isGenerating || !activeBook.title || !activeBook.title.trim()}
                         className="btn btn-primary"
                         style={{ width: '100%', marginTop: '6px' }}
@@ -5270,6 +5305,7 @@ export default function App() {
                           </>
                         )}
                       </button>
+                      </>
                     )}
                   </div>
                 ) : (
