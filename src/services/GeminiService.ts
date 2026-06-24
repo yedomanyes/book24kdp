@@ -686,7 +686,8 @@ EIN ZITAT OHNE — AUTORENANGABE AM ENDE IST VERBOTEN.
      :::box Performance Prompts
      1. Erste Frage: ...
      :::
-   - Für tabellarische Übersichten oder Raster nutze die Markdown-Tabellen-Syntax (z. B. "| Spalte 1 | Spalte 2 |" gefolgt von der Trennlinie "| :--- | :--- |").`;
+   - Für tabellarische Übersichten oder Raster nutze die Markdown-Tabellen-Syntax (z. B. "| Spalte 1 | Spalte 2 |" gefolgt von der Trennlinie "| :--- | :--- |").
+   - Wenn eine Grafik, Zeichnung oder Illustration den Inhalt veranschaulichen soll, füge an dieser Stelle auf einer eigenen Zeile ein Bild-Tag ein. Format: "[grafik: Detaillierte Beschreibung der Grafik, z. B. Ein alter Messingkompass auf Seekarte]". Nutze dies sehr sparsam (maximal eine Grafik pro Kapitel).`;
 
     let finalSystemPrompt = systemPrompt;
     if (customGuidelines && customGuidelines.trim()) {
@@ -840,7 +841,8 @@ Achte peinlich genau auf folgende Regeln:
    - Für leere Kontrollkästchen/Checklisten schreibe am Zeilenanfang "[ ] ".
    - Für gepunktete Schreiblinien zum Ausfüllen schreibe eine Zeile mit nur Punkten (z. B. "........................................................").
    - Für graue Boxen/Infokästen/Performance Prompts umschließe den Inhalt mit ":::box [Titel]" am Anfang und ":::" am Ende auf jeweils einer eigenen Zeile.
-   - Für tabellarische Übersichten oder Raster nutze die Markdown-Tabellen-Syntax (z. B. "| Spalte 1 | Spalte 2 |" gefolgt von der Trennlinie "| :--- | :--- |").`;
+   - Für tabellarische Übersichten oder Raster nutze die Markdown-Tabellen-Syntax (z. B. "| Spalte 1 | Spalte 2 |" gefolgt von der Trennlinie "| :--- | :--- |").
+   - Wenn eine Grafik, Zeichnung oder Illustration den Inhalt veranschaulichen soll, füge an dieser Stelle auf einer eigenen Zeile ein Bild-Tag ein. Format: "[grafik: Detaillierte Beschreibung der Grafik]".`;
 
     let finalSystemPrompt = systemPrompt;
     if (customGuidelines && customGuidelines.trim()) {

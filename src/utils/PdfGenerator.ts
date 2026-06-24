@@ -55,6 +55,10 @@ export interface PdfConfig {
   titlePagePublisherFont?: string;
   titlePagePublisherX?: number;
   titlePagePublisherY?: number;
+  
+  chapterTopPadding?: number;
+  autoChapterDropCaps?: boolean;
+  autoChapterRecto?: boolean;
 }
 
 export function generateBookPdf(
@@ -284,22 +288,14 @@ export function generateBookPdf(
     return text.split(/\r?\n\s*-{3,}\s*(?:\r?\n|$)/);
   };
 
-  // 1. Pass 1: Compute Arabic page numbers of chapter starts (independent of blank pages)
-  let currentContentPageNumber = 1;
-  const chapterToPageMap: { [title: string]: number } = {};
-  const pagePartsCountMap: { [pageNum: number]: number } = {};
-  
+  // 1. Collect all chapter start pages
+  const chapterStarts: { [title: string]: number } = {};
   for (let i = 1; i <= outline.pages.length; i++) {
     const pageInfo = outline.pages.find(p => p.page_number === i);
     const isFirstPageOfChapter = pageInfo ? outline.pages.find(p => p.chapter_title === pageInfo.chapter_title)?.page_number === i : false;
-    
     if (isFirstPageOfChapter && pageInfo) {
-      chapterToPageMap[pageInfo.chapter_title] = currentContentPageNumber;
+      chapterStarts[pageInfo.chapter_title] = i;
     }
-    const pageText = pagesText[i] || '';
-    const parts = splitPageText(pageText);
-    pagePartsCountMap[i] = parts.length;
-    currentContentPageNumber += parts.length;
   }
 
   // 2. Calculate number of pages the TOC will occupy
@@ -308,7 +304,7 @@ export function generateBookPdf(
     tocPagesCount = 1;
     let simY = topMargin + 36;
     const tocSpacing = config.tocLineSpacing || 18;
-    Object.keys(chapterToPageMap).forEach(() => {
+    Object.keys(chapterStarts).forEach(() => {
       if (simY + tocSpacing > pageHeight - bottomMargin) {
         tocPagesCount++;
         simY = topMargin + 36;
@@ -317,29 +313,33 @@ export function generateBookPdf(
     });
   }
 
-  // 3. Pass 2: Calculate physical pages and assign actual page numbers
+  // 3. Map pages to physical pages and printed page numbers
   const firstContentPhysicalPage = config.generateTOC === false ? 2 : (2 + tocPagesCount);
   let currentPhysicalPage = firstContentPhysicalPage;
-  currentContentPageNumber = 1;
-  
+
   const pagePhysicalMap: { [pageNum: number]: number } = {};
   const pageContentNumberMap: { [pageNum: number]: number } = {};
+  const chapterToPageMap: { [title: string]: number } = {};
 
   for (let i = 1; i <= outline.pages.length; i++) {
     const pageInfo = outline.pages.find(p => p.page_number === i);
     const isFirstPageOfChapter = pageInfo ? outline.pages.find(p => p.chapter_title === pageInfo.chapter_title)?.page_number === i : false;
     
     if (isFirstPageOfChapter && pageInfo) {
-      if (currentPhysicalPage % 2 === 0) {
+      if (config.autoChapterRecto && currentPhysicalPage % 2 === 0) {
         currentPhysicalPage++;
       }
+      // Printed page number relative to content start
+      const printedPageNum = currentPhysicalPage - (firstContentPhysicalPage - 1);
+      chapterToPageMap[pageInfo.chapter_title] = printedPageNum;
     }
     
     pagePhysicalMap[i] = currentPhysicalPage;
-    pageContentNumberMap[i] = currentContentPageNumber;
-    const partsCount = pagePartsCountMap[i] || 1;
+    pageContentNumberMap[i] = currentPhysicalPage - (firstContentPhysicalPage - 1);
+    
+    const pageText = pagesText[i] || '';
+    const partsCount = splitPageText(pageText).length;
     currentPhysicalPage += partsCount;
-    currentContentPageNumber += partsCount;
   }
 
   // --- 2. TABLE OF CONTENTS (Render only if enabled) ---
@@ -483,6 +483,9 @@ export function generateBookPdf(
       const chapterGlobalOff = config.showChapterTitles === false;
       const chapterPageOff = (config.pagesHideChapter || []).includes(i);
       if (isFirstPageOfChapter && isFirstPartOfPage && pageInfo && !chapterGlobalOff && !chapterPageOff) {
+        const padding = config.chapterTopPadding !== undefined ? config.chapterTopPadding : 60;
+        contentY += padding;
+
         doc.setFont(fontFamily, fontStyleBold);
         doc.setFontSize(14);
         const capLines = doc.splitTextToSize(pageInfo.chapter_title, writableWidth);
@@ -512,7 +515,8 @@ export function generateBookPdf(
         | { kind: 'ornament' }
         | { kind: 'heading'; text: string }
         | { kind: 'quote'; text: string }
-        | { kind: 'bullet'; text: string };
+        | { kind: 'bullet'; text: string }
+        | { kind: 'image'; text: string };
 
       function parseBookLines(rawLines: string[]): PdfBlock[] {
         const blks: PdfBlock[] = [];
@@ -521,6 +525,14 @@ export function generateBookPdf(
           const raw = rawLines[bi];
           const tr = raw.trim().replace(/ {2,}/g, ' ');
           if (!tr) { bi++; continue; }
+
+          // [grafik: ...] or [image: ...]
+          if (/^\[(grafik|image):\s*(.*)\]$/i.test(tr)) {
+            const m = tr.match(/^\[(grafik|image):\s*(.*)\]$/i);
+            const prompt = m ? m[2].trim() : '';
+            blks.push({ kind: 'image', text: prompt });
+            bi++; continue;
+          }
 
           // :::box
           if (/^:::box/i.test(tr)) {
@@ -632,6 +644,9 @@ export function generateBookPdf(
             doc.setFont(fontFamily, fontStyleRegular);
             doc.setFontSize(fontSize);
             return doc.splitTextToSize(block.text.replace(/\*\*/g, ''), drawWidth).length * lh;
+          }
+          case 'image': {
+            return 135;
           }
           case 'table': {
             const colW = drawWidth / Math.max(block.headers.length, 1);
@@ -954,6 +969,50 @@ export function generateBookPdf(
             return;
           }
 
+          case 'image': {
+            const boxW = drawWidth * 0.85;
+            const boxH = 95;
+            const boxX = blockX + (drawWidth - boxW) / 2;
+            const boxY = contentY + 5;
+            
+            // Draw grey dashed background box
+            doc.setFillColor(250, 250, 250);
+            doc.setDrawColor(180);
+            doc.setLineWidth(0.6);
+            doc.setLineDashPattern([2, 2], 0);
+            doc.rect(boxX, boxY, boxW, boxH, 'FD');
+            doc.setLineDashPattern([], 0); // reset
+            
+            // Draw visual indicator / icon placeholder
+            doc.setFont(fontFamily, fontStyleBold);
+            doc.setFontSize(fontSize * 0.8);
+            doc.setTextColor(140);
+            doc.text('[ KI-ILLUSTRATION PLATZHALTER ]', boxX + boxW / 2, boxY + boxH / 2 - 2, { align: 'center' });
+            
+            doc.setFont(fontFamily, fontStyleRegular);
+            doc.setFontSize(fontSize * 0.65);
+            doc.setTextColor(160);
+            doc.text('(Bild wird in Phase 3 hier generiert)', boxX + boxW / 2, boxY + boxH / 2 + 10, { align: 'center' });
+            
+            // Draw Caption beneath
+            contentY += boxH + 12;
+            doc.setFont(fontFamily, fontStyleItalic);
+            doc.setFontSize(fontSize * 0.75);
+            doc.setTextColor(100);
+            const captionText = `Abb.: ${block.text}`;
+            const capLines = doc.splitTextToSize(captionText, drawWidth * 0.9);
+            capLines.forEach((line: string) => {
+              doc.text(line, blockX + drawWidth / 2, contentY, { align: 'center' });
+              contentY += fontSize * 0.9;
+            });
+            contentY += 12; // gap below
+            
+            doc.setFont(fontFamily, fontStyleRegular);
+            doc.setFontSize(fontSize);
+            doc.setTextColor(0);
+            return;
+          }
+
           default:
             return;
         }
@@ -964,8 +1023,8 @@ export function generateBookPdf(
       doc.setFontSize(fontSize);
 
       const pageStyle = config.pagesParagraphStyle?.[i] || config.paragraphStyle || 'indent';
-      const showInitialOnPage = (config.pagesInitial || []).includes(i);
-      const isDropCapPage = showInitialOnPage && partIndex === 0;
+      const showInitialOnPage = (config.pagesInitial || []).includes(i) || (config.autoChapterDropCaps === true && isFirstPageOfChapter);
+      const isDropCapPage = Boolean(showInitialOnPage && partIndex === 0);
       const dropCapDone = { v: false };
 
       const rawParas = partText.split('\n');

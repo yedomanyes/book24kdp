@@ -164,6 +164,9 @@ interface Book {
   titlePagePublisherFont?: string;
   titlePagePublisherX?: number;
   titlePagePublisherY?: number;
+  autoChapterDropCaps?: boolean;
+  autoChapterRecto?: boolean;
+  chapterTopPadding?: number;
   // Mediathek ratings & dashboard
   marketScore?: number;                // 1-100
   earningsPotential?: 'low' | 'medium' | 'high' | 'very_high';
@@ -221,7 +224,8 @@ export type WorkbookBlock =
   | { type: 'ornament' }
   | { type: 'heading'; text: string }
   | { type: 'quote'; text: string }
-  | { type: 'bullet'; text: string };
+  | { type: 'bullet'; text: string }
+  | { type: 'image'; prompt: string };
 
 export const parsePageLines = (rawLines: string[]): WorkbookBlock[] => {
   const blocks: WorkbookBlock[] = [];
@@ -315,6 +319,15 @@ export const parsePageLines = (rawLines: string[]): WorkbookBlock[] => {
     if (trimmed.startsWith('- ') || trimmed.startsWith('* ') || trimmed.startsWith('\u2022 ')) {
       const text = trimmed.startsWith('\u2022 ') ? trimmed.slice(2) : trimmed.slice(2);
       blocks.push({ type: 'bullet', text });
+      i++;
+      continue;
+    }
+
+    // Image placeholder
+    if (/^\[grafik:\s*(.*?)\]$/i.test(trimmed)) {
+      const match = trimmed.match(/^\[grafik:\s*(.*?)\]$/i);
+      const prompt = match ? match[1].trim() : '';
+      blocks.push({ type: 'image', prompt });
       i++;
       continue;
     }
@@ -835,6 +848,33 @@ export default function App() {
             p.innerHTML = renderInlineHtml(block.text);
           }
           return p;
+        }
+
+        case 'image': {
+          const div = document.createElement('div');
+          div.style.backgroundColor = '#f1f5f9';
+          div.style.border = '2px dashed #94a3b8';
+          div.style.borderRadius = '4px';
+          div.style.padding = '20px';
+          div.style.margin = '16px 0';
+          div.style.textAlign = 'center';
+          div.style.color = '#64748b';
+          div.style.display = 'flex';
+          div.style.flexDirection = 'column';
+          div.style.alignItems = 'center';
+          div.style.gap = '8px';
+          
+          const iconSpan = document.createElement('span');
+          iconSpan.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+          div.appendChild(iconSpan);
+          
+          const promptSpan = document.createElement('span');
+          promptSpan.style.fontSize = '0.85em';
+          promptSpan.style.fontStyle = 'italic';
+          promptSpan.textContent = `Grafik-Platzhalter: ${block.prompt}`;
+          div.appendChild(promptSpan);
+          
+          return div;
         }
 
         default:
@@ -1448,7 +1488,10 @@ export default function App() {
       pagesText: {},
       pagesStatus: {},
       pagesError: {},
-      showRunningHeader: true
+      showRunningHeader: true,
+      autoChapterDropCaps: true,
+      autoChapterRecto: false,
+      chapterTopPadding: 0
     };
     setBooks(prev => [...prev, newBook]);
     setActiveBookId(newBook.id);
@@ -6701,6 +6744,39 @@ max="250"
                       <option value="spacing">Absatz: Leerzeile</option>
                       <option value="block">Absatz: Block</option>
                     </select>
+
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '9px', color: 'var(--text-main)', cursor: 'pointer' }} title="Große Initiale am Kapitelanfang">
+                      <input 
+                        type="checkbox" 
+                        checked={activeBook.autoChapterDropCaps !== false}
+                        onChange={e => updateActiveBookConfig('autoChapterDropCaps', e.target.checked)}
+                        style={{ margin: 0 }}
+                      />
+                      Initiale
+                    </label>
+
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '9px', color: 'var(--text-main)', cursor: 'pointer' }} title="Kapitel starten immer auf der rechten (Recto) Seite">
+                      <input 
+                        type="checkbox" 
+                        checked={activeBook.autoChapterRecto === true}
+                        onChange={e => updateActiveBookConfig('autoChapterRecto', e.target.checked)}
+                        style={{ margin: 0 }}
+                      />
+                      Recto
+                    </label>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ fontSize: '9px', color: 'var(--text-main)' }}>Abstand:</span>
+                      <input 
+                        type="number" 
+                        value={activeBook.chapterTopPadding || 0}
+                        onChange={e => updateActiveBookConfig('chapterTopPadding', Number(e.target.value))}
+                        style={{ fontSize: '9px', padding: '1px 4px', height: '18px', width: '45px', border: '1px solid var(--border-color)', borderRadius: '2px', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}
+                        min={0}
+                        max={300}
+                        title="Zusätzlicher Abstand nach oben am Kapitelanfang"
+                      />
+                    </div>
                   </div>
                 )}
               </div>
