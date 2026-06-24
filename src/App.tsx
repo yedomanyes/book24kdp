@@ -1770,6 +1770,7 @@ export default function App() {
           return b;
         }));
 
+        setSelectedPage(1);
         triggerPageWriting(generatedOutline, activeBook.id);
       } catch (err: any) {
         console.error(err);

@@ -215,10 +215,10 @@ Stelle sicher, dass die "pages"-Liste EXAKT ${targetPages} Einträge enthält!`;
         const chunkPrompt = `Du bist ein professioneller Buch-Redakteur. Erstelle die Seiten-Planung für folgendes Buch.
 Buchtitel: "${title}"
 Untertitel: "${subtitle}"
-Hauptidee/Beschreibung: "${idea}"
+Hauptidee/Beschreibung: "${safeIdea}"
 Sprache des Buches: "${language === 'de' ? 'Deutsch' : 'Englisch'}"
 Das Buch hat insgesamt ${targetPages} Seiten. Du planst jetzt NUR die Seiten ${start} bis ${end} (${chunkSize} Seiten).
-${customGuidelines && customGuidelines.trim() ? `\nAutoren-Richtlinien: "${customGuidelines}"\n` : ''}
+${safeGuidelines && safeGuidelines.trim() ? `\nAutoren-Richtlinien: "${safeGuidelines}"\n` : ''}
 
 STRIKTE REGEL FÜR DIE KAPITELTITEL (chapter_title):
 - Keine zwei Kapitelüberschriften dürfen dieselbe Satzstruktur verwenden.
