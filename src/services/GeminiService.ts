@@ -46,6 +46,28 @@ export class GeminiService {
     return 'groq';
   }
 
+  private normalizeOutlinePages(pages: BookOutlinePage[], expectedCount: number, startPageNum: number = 1): BookOutlinePage[] {
+    const normalized = [...pages];
+    normalized.forEach((p, idx) => {
+      p.page_number = startPageNum + idx;
+    });
+
+    while (normalized.length < expectedCount) {
+      normalized.push({
+        page_number: startPageNum + normalized.length,
+        chapter_title: "Fortführung des Themas",
+        focus: "Nahtlose inhaltliche Fortsetzung und detaillierte Vertiefung.",
+        key_points: ["Weitere Aspekte", "Zusammenhänge", "Vertiefende Details"]
+      });
+    }
+
+    if (normalized.length > expectedCount) {
+      normalized.splice(expectedCount);
+    }
+
+    return normalized;
+  }
+
   private async executeWithKeyRotation(
     provider: 'groq' | 'gemini',
     requestFn: (key: string) => Promise<Response>
@@ -169,12 +191,12 @@ STRIKTE REGEL FÜR DIE KAPITELTITEL (chapter_title):
 - Keine zwei Kapitelüberschriften dürfen dieselbe Satzstruktur verwenden.
 - Es ist streng verboten, mehr als 2x im gesamten Buch mit Phrasen wie "Die Rolle von...", "Die Bedeutung von..." oder "Die Bedeutung von... bei..." zu beginnen.
 - Du MUSS eine große sprachliche Vielfalt anwenden und bewusst zwischen folgenden Titel-Typen variieren (jeder Typ muss mindestens einmal vorkommen, aber kein Typ mehr als 3x):
-  * Direkte Aussage (z. B. "Warum Glücksspiel das Gehirn umprogrammiert")
-  * Frage (z. B. "Was passiert, wenn der Kick verschwindet?")
-  * Prozess/Schritt (z. B. "Der erste Tag ohne Wette")
+  * Direkte Aussage (z. B. "Warum dieses Phänomen unser Leben beeinflusst")
+  * Frage (z. B. "Was passiert, wenn der Auslöser verschwindet?")
+  * Prozess/Schritt (z. B. "Der erste Tag der Umstellung")
   * Kontrast (z. B. "Kontrolle vs. Kontrollverlust")
-  * Praktisch/Anleitung (z. B. "Drei Wege aus der Spirale")
-  * Persönlich/Fallbezogen (z. B. "Wenn die Familie es zuerst merkt")
+  * Praktisch/Anleitung (z. B. "Drei Wege aus der Krise")
+  * Persönlich/Fallbezogen (z. B. "Wenn das Umfeld es zuerst merkt")
 Prüfe vor dem Generieren: Gibt es zwei Titel, die mit denselben ersten 3 Wörtern beginnen oder dieselbe Struktur "X bei der Y" wiederholen? Falls ja, formuliere sie um.
 
 Antworte ausschließlich im JSON-Format mit folgender Struktur:
@@ -225,12 +247,12 @@ STRIKTE REGEL FÜR DIE KAPITELTITEL (chapter_title):
 - Keine zwei Kapitelüberschriften dürfen dieselbe Satzstruktur verwenden.
 - Es ist streng verboten, mehr als 2x im gesamten Buch mit Phrasen wie "Die Rolle von...", "Die Bedeutung von..." oder "Die Bedeutung von... bei..." zu beginnen.
 - Du MUSS eine große sprachliche Vielfalt anwenden und bewusst zwischen folgenden Titel-Typen variieren (jeder Typ muss mindestens einmal vorkommen, aber kein Typ mehr als 3x):
-  * Direkte Aussage (z. B. "Warum Glücksspiel das Gehirn umprogrammiert")
-  * Frage (z. B. "Was passiert, wenn der Kick verschwindet?")
-  * Prozess/Schritt (z. B. "Der erste Tag ohne Wette")
+  * Direkte Aussage (z. B. "Warum dieses Phänomen unser Leben beeinflusst")
+  * Frage (z. B. "Was passiert, wenn der Auslöser verschwindet?")
+  * Prozess/Schritt (z. B. "Der erste Tag der Umstellung")
   * Kontrast (z. B. "Kontrolle vs. Kontrollverlust")
-  * Praktisch/Anleitung (z. B. "Drei Wege aus der Spirale")
-  * Persönlich/Fallbezogen (z. B. "Wenn die Familie es zuerst merkt")
+  * Praktisch/Anleitung (z. B. "Drei Wege aus der Krise")
+  * Persönlich/Fallbezogen (z. B. "Wenn das Umfeld es zuerst merkt")
 Prüfe vor dem Generieren: Gibt es zwei Titel, die mit denselben ersten 3 Wörtern beginnen oder dieselbe Struktur "X bei der Y" wiederholen? Falls ja, formuliere sie um.
 
 Antworte ausschließlich im JSON-Format:
@@ -275,15 +297,16 @@ Die "pages"-Liste muss EXAKT ${chunkSize} Einträge enthalten, mit page_number v
           throw new Error(`Outline-Chunk ${start}-${end} konnte nicht als JSON geparst werden.`);
         }
 
-        const chunkPages: BookOutlinePage[] = chunkJson.pages || [];
+        let chunkPages: BookOutlinePage[] = chunkJson.pages || [];
         if (chunkPages.length === 0) {
           throw new Error(`Outline-Chunk ${start}-${end} enthält keine Seiten.`);
         }
+        
+        chunkPages = this.normalizeOutlinePages(chunkPages, chunkSize, start);
         allPages.push(...chunkPages);
         if (onChunkComplete) {
           onChunkComplete([...allPages]);
         }
-
 
         // Small delay between chunks to avoid rate limiting
         if (end < targetPages) {
@@ -332,7 +355,9 @@ Die "pages"-Liste muss EXAKT ${chunkSize} Einträge enthalten, mit page_number v
       if (jsonText.startsWith('```')) {
         jsonText = jsonText.replace(/^```json/, '').replace(/^```/, '').replace(/```$/, '').trim();
       }
-      return JSON.parse(jsonText) as BookOutline;
+      const parsed = JSON.parse(jsonText) as BookOutline;
+      parsed.pages = this.normalizeOutlinePages(parsed.pages, targetPages, 1);
+      return parsed;
     }
   }
 
@@ -353,7 +378,7 @@ Die "pages"-Liste muss EXAKT ${chunkSize} Einträge enthalten, mit page_number v
 Buchtitel: "${title}"
 Untertitel: "${subtitle || ''}"
 Hauptidee: "${idea}"
-Sprache: "${language === 'de' ? 'Deutsch' : 'ENGLISH (CRITICAL: All generated output MUST be completely in English!)'}"
+Sprache: "${language === 'de' ? 'Deutsch' : 'ENGLISH (CRITICAL: ALL generated output MUST be completely in English!)'}"
 Das Buch hat insgesamt ${totalPages} Seiten. Die Seiten 1 bis ${startPage - 1} wurden bereits geplant.
 
 Die letzten bereits geplanten Seiten waren:
@@ -367,12 +392,12 @@ STRIKTE REGEL FÜR DIE KAPITELTITEL (chapter_title):
 - Keine zwei Kapitelüberschriften dürfen dieselbe Satzstruktur verwenden.
 - Es ist streng verboten, mehr als 2x im gesamten Buch mit Phrasen wie "Die Rolle von...", "Die Bedeutung von..." oder "Die Bedeutung von... bei..." zu beginnen.
 - Du MUSS eine große sprachliche Vielfalt anwenden und bewusst zwischen folgenden Titel-Typen variieren (jeder Typ muss mindestens einmal vorkommen, aber kein Typ mehr als 3x):
-  * Direkte Aussage (z. B. "Warum Glücksspiel das Gehirn umprogrammiert")
-  * Frage (z. B. "Was passiert, wenn der Kick verschwindet?")
-  * Prozess/Schritt (z. B. "Der erste Tag ohne Wette")
+  * Direkte Aussage (z. B. "Warum dieses Phänomen unser Leben beeinflusst")
+  * Frage (z. B. "Was passiert, wenn der Auslöser verschwindet?")
+  * Prozess/Schritt (z. B. "Der erste Tag der Umstellung")
   * Kontrast (z. B. "Kontrolle vs. Kontrollverlust")
-  * Praktisch/Anleitung (z. B. "Drei Wege aus der Spirale")
-  * Persönlich/Fallbezogen (z. B. "Wenn die Familie es zuerst merkt")
+  * Praktisch/Anleitung (z. B. "Drei Wege aus der Krise")
+  * Persönlich/Fallbezogen (z. B. "Wenn das Umfeld es zuerst merkt")
 Prüfe vor dem Generieren: Gibt es zwei Titel, die mit denselben ersten 3 Wörtern beginnen oder dieselbe Struktur "X bei der Y" wiederholen? Falls ja, formuliere sie um.
 
 Antworte ausschließlich im JSON-Format:
@@ -408,7 +433,7 @@ Die "pages"-Liste muss EXAKT ${chunkSize} Einträge enthalten, mit page_number v
         })
       );
       const parsed = JSON.parse(data.choices[0].message.content);
-      return parsed.pages || [];
+      return this.normalizeOutlinePages(parsed.pages || [], chunkSize, startPage);
     } else {
       const data = await this.executeWithKeyRotation('gemini', (key) =>
         fetch(`https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${key}`, {
@@ -424,7 +449,7 @@ Die "pages"-Liste muss EXAKT ${chunkSize} Einträge enthalten, mit page_number v
       let jsonText = data.candidates[0].content.parts[0].text.trim();
       if (jsonText.startsWith('```')) jsonText = jsonText.replace(/^```json/, '').replace(/^```/, '').replace(/```$/, '').trim();
       const parsed = JSON.parse(jsonText);
-      return parsed.pages || [];
+      return this.normalizeOutlinePages(parsed.pages || [], chunkSize, startPage);
     }
   }
 
@@ -701,7 +726,7 @@ EIN ZITAT OHNE — AUTORENANGABE AM ENDE IST VERBOTEN.
 2. Vermeide jegliche Wiederholungen von Fakten, Ausdrücken oder Ideen, die bereits auf den vorherigen Seiten stehen.
 3. Formatiere den Text lesbar. Verwende Absätze. Verwende KEINE Markdown-Überschriften (wie # oder ##) oder Sternchen (wie **fett**). Einzige Ausnahme sind Zitate, die mit "> " beginnen. Überschriften werden vom Layout-System automatisch eingefügt.
 4. Generiere exakt die Länge für eine Buchseite (ca. ${minWords} bis ${maxWords} Wörter). Es ist EXTREM WICHTIG, dass du die Seite visuell fast vollständig mit Text ausfüllst. Schreibe lieber etwas mehr als zu wenig, aber bleibe knapp unter dem Limit, um Überläufe im KDP-Buchdruck zu vermeiden. Beende den Text nicht mitten im Satz, sondern führe den Gedanken auf dieser Seite zu Ende.
-6. Vermeide typische KI-Floskeln und künstliche Übergänge wie 'Zusammenfassend lässt sich sagen...', 'Es ist wichtig zu betonen...', 'Abschließend...', 'Nicht nur..., sondern auch...', 'Ein weiterer wichtiger Aspekt...', 'Dies zeigt/verdeutlicht...', 'Es bleibt abzuwarten...'. Schreibe stattdessen literarisch elegant, abwechslungsreich und organisch fließend.
+6. Vermeide typische KI-Floskeln und künstliche Übergänge wie 'Zusammenfassend...', 'Es ist wichtig zu betonen...', 'Abschließend...', 'Nicht nur..., sondern auch...'. Schreibe stattdessen literarisch elegant, abwechslungsreich und organisch fließend.
 7. Falls die Seite Arbeitsbuch-, Übungs- oder Journal-Elemente enthalten soll (z. B. Checklisten, Schreiblinien, Boxen oder Tabellen):
    - Für leere Kontrollkästchen/Checklisten schreibe am Zeilenanfang "[ ] ". Beispiel: "[ ] Erste Aufgabe"
    - Für gepunktete Schreiblinien zum Ausfüllen schreibe eine Zeile mit nur Punkten (z. B. "........................................................").
@@ -1285,7 +1310,7 @@ Entwirf jetzt drei unterschiedliche Struktur-Varianten (version_1, version_2, ve
     const systemPrompt = `Du bist ein professioneller Buch-Marketing-Experte für Amazon KDP. Konvertiere die Buchidee in eine ansprechende, verkaufsstarke Buchbeschreibung für die Amazon-Produktseite.
 Verwende ausschließlich valides Amazon-HTML (erlaubte Tags sind: <b>, <i>, <u>, <p>, <br>, <ul>, <li>, <h1>, <h2>, <h3>). Verwende keine anderen HTML-Tags. Stelle sicher, dass die Beschreibung Absätze, fette Überschriften (mit <h2> oder <b>) und Bullet-Points (mit <ul> und <li>) enthält, um die Lesbarkeit zu maximieren. Schreibe auf ${language === 'de' ? 'Deutsch' : 'ENGLISH (CRITICAL: ENTIRE OUTPUT MUST BE ENGLISH)'}.
 Falls keine Buchbeschreibung/Idee vorliegt, leite eine passende, verkaufsstarke Beschreibung komplett kreativ aus dem Titel und Untertitel ab.`;
-    const userPrompt = `Titel: "${title}"\nUntertitel: "${subtitle}"\nBeschreibung/Idee: "${idea || '(Keine Idee angegeben, bitte komplett aus Titel/Untertitel herleiten)'}"`;
+    const userPrompt = `Titel: "${title}"\nUntertitel: "${subtitle}"\nBeschreibung/Idee: "${idea || '(Keine Idee angegeben, bitte komplett aus Titel/Unter-titel herleiten)'}"`;
     return (await this.askAI(systemPrompt, userPrompt, false)).trim();
   }
 
@@ -1293,7 +1318,7 @@ Falls keine Buchbeschreibung/Idee vorliegt, leite eine passende, verkaufsstarke 
     const systemPrompt = `Du bist ein Amazon SEO Experte. Analysiere das folgende Buchprojekt und generiere genau 7 hochrelevante, spezifische Suchbegriffe (Keywords) auf ${language === 'de' ? 'Deutsch' : 'ENGLISH (MUST BE ENGLISH KEYWORDS ONLY)'} für den KDP-Algorithmus, um die Auffindbarkeit zu maximieren. Jedes Keyword kann ein einzelnes Wort oder eine kurze Phrase sein.
 Falls keine Beschreibung/Idee vorliegt, leite die Keywords kreativ aus dem Titel und Untertitel ab.
 Antworte ausschließlich im JSON-Format mit folgender Struktur: { "keywords": ["keyword 1", "keyword 2", ...] }.`;
-    const userPrompt = `Titel: "${title}"\nUntertitel: "${subtitle}"\nBeschreibung/Idee: "${idea || '(Keine Idee angegeben, bitte komplett aus Titel/Untertitel herleiten)'}"`;
+    const userPrompt = `Titel: "${title}"\nUntertitel: "${subtitle}"\nBeschreibung/Idee: "${idea || '(Keine Idee angegeben, bitte komplett aus Titel/Unter-titel herleiten)'}"`;
     const responseText = await this.askAI(systemPrompt, userPrompt, true);
     try {
       let jsonText = responseText.trim();
@@ -1312,7 +1337,7 @@ Antworte ausschließlich im JSON-Format mit folgender Struktur: { "keywords": ["
     const systemPrompt = `Du bist ein KDP-Verlagsassistent. Analysiere das folgende Buchprojekt und schlage 3 bis 5 passende Buchkategorien auf ${language === 'de' ? 'Deutsch' : 'ENGLISH (MUST BE ENGLISH CATEGORIES ONLY)'} (Klassifikationen wie Belletristik, Sachbuch, Ratgeber, etc., im KDP-Kategoriebaum-Stil) vor.
 Falls keine Beschreibung/Idee vorliegt, leite die Kategorien kreativ aus dem Titel und Untertitel ab.
 Antworte ausschließlich im JSON-Format mit folgender Struktur: { "categories": ["kategorie 1", "kategorie 2", ...] }.`;
-    const userPrompt = `Titel: "${title}"\nUntertitel: "${subtitle}"\nBeschreibung/Idee: "${idea || '(Keine Idee angegeben, bitte komplett aus Titel/Untertitel herleiten)'}"`;
+    const userPrompt = `Titel: "${title}"\nUntertitel: "${subtitle}"\nBeschreibung/Idee: "${idea || '(Keine Idee angegeben, bitte komplett aus Titel/Unter-titel herleiten)'}"`;
     const responseText = await this.askAI(systemPrompt, userPrompt, true);
     try {
       let jsonText = responseText.trim();
