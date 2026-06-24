@@ -3087,7 +3087,7 @@ export default function App() {
 
   const getChapterPageNumbers = () => {
     if (!outline || !activeBook) return [];
-    const chapters: { title: string; pageNumber: number }[] = [];
+    const chapters: { title: string; pageNumber: number; outlinePage: number }[] = [];
     const splitPageText = (text: string): string[] => {
       if (!text) return [''];
       return text.split(/\r?\n\s*-{3,}\s*(?:\r?\n|$)/);
@@ -3098,7 +3098,7 @@ export default function App() {
       const isFirstPageOfChapter = pageInfo ? outline.pages.find(p => p.chapter_title === pageInfo.chapter_title)?.page_number === i : false;
       if (isFirstPageOfChapter && pageInfo) {
         if (!chapters.some(c => c.title === pageInfo.chapter_title)) {
-          chapters.push({ title: pageInfo.chapter_title, pageNumber: contentPageNumber });
+          chapters.push({ title: pageInfo.chapter_title, pageNumber: contentPageNumber, outlinePage: i });
         }
       }
       const pageText = (activeBook.pagesText || {})[i] || '';
@@ -3243,15 +3243,23 @@ export default function App() {
             const fontSizePx = getTOCEntryFontSize(ch.title);
             const relativeFontSize = activeBook?.tocFontSize || 10;
             return (
-              <div key={idx} style={{ 
-                display: 'flex', 
-                alignItems: 'flex-end', 
-                justifyContent: 'space-between', 
-                width: '100%',
-                height: `${tocLineSpacing * previewScaleY}px`,
-                boxSizing: 'border-box',
-                lineHeight: 1
-              }}>
+              <div 
+                key={idx} 
+                onClick={() => setSelectedPage(ch.outlinePage)}
+                title="Klicken, um zu diesem Kapitel zu springen"
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'flex-end', 
+                  justifyContent: 'space-between', 
+                  width: '100%',
+                  height: `${tocLineSpacing * previewScaleY}px`,
+                  boxSizing: 'border-box',
+                  lineHeight: 1,
+                  cursor: 'pointer'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)'}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
                 <span style={{ 
                   fontWeight: 'bold', 
                   whiteSpace: 'nowrap', 
@@ -3367,14 +3375,20 @@ export default function App() {
     const shiftYPx = shiftY * previewScaleY;
 
     return (
-      <div style={{
-        width: '100%',
-        height: '100%',
-        color: '#000000',
-        backgroundColor: '#ffffff',
-        position: 'relative',
-        boxSizing: 'border-box',
-        overflow: 'hidden'
+      <div 
+        onClick={() => {
+          const ta = document.querySelector('.editor-textarea') as HTMLTextAreaElement;
+          if (ta) ta.focus();
+        }}
+        style={{
+          width: '100%',
+          height: '100%',
+          color: '#000000',
+          backgroundColor: '#ffffff',
+          position: 'relative',
+          boxSizing: 'border-box',
+          overflow: 'hidden',
+          cursor: 'text'
       }}>
         {/* Decorative double border */}
         {activeBook.titlePageShowBorders !== false && (
@@ -6985,7 +6999,8 @@ max="250"
                           gap: '6px', 
                           padding: '6px 12px', 
                           borderBottom: '1px solid var(--border-color)',
-                          backgroundColor: '#f8fafc',
+                          backgroundColor: '#334155',
+                          color: '#ffffff',
                           alignItems: 'center'
                         }}>
                           <button onMouseDown={(e) => e.preventDefault()} onClick={() => {
@@ -6997,7 +7012,7 @@ max="250"
                             const newText = text.substring(0, start) + '**' + text.substring(start, end) + '**' + text.substring(end);
                             handleEditorChange({ target: { value: newText } } as React.ChangeEvent<HTMLTextAreaElement>);
                             setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + 2, end + 2); }, 0);
-                          }} className="btn" style={{ padding: '4px 8px', fontSize: '12px', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 'bold' }} title="Fett (Strg+B)">B</button>
+                          }} className="btn" style={{ padding: '4px 8px', fontSize: '12px', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 'bold', color: '#ffffff' }} title="Fett (Strg+B)">B</button>
                           
                           <button onMouseDown={(e) => e.preventDefault()} onClick={() => {
                             const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement;
@@ -7008,9 +7023,9 @@ max="250"
                             const newText = text.substring(0, start) + '*' + text.substring(start, end) + '*' + text.substring(end);
                             handleEditorChange({ target: { value: newText } } as React.ChangeEvent<HTMLTextAreaElement>);
                             setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + 1, end + 1); }, 0);
-                          }} className="btn" style={{ padding: '4px 8px', fontSize: '12px', background: 'transparent', border: 'none', cursor: 'pointer', fontStyle: 'italic' }} title="Kursiv (Strg+I)">I</button>
+                          }} className="btn" style={{ padding: '4px 8px', fontSize: '12px', background: 'transparent', border: 'none', cursor: 'pointer', fontStyle: 'italic', color: '#ffffff' }} title="Kursiv (Strg+I)">I</button>
                           
-                          <div style={{ width: '1px', height: '14px', backgroundColor: 'var(--border-color)', margin: '0 4px' }}></div>
+                          <div style={{ width: '1px', height: '14px', backgroundColor: 'rgba(255,255,255,0.3)', margin: '0 4px' }}></div>
                           
                           <button onMouseDown={(e) => e.preventDefault()} onClick={() => {
                             const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement;
@@ -7021,7 +7036,7 @@ max="250"
                             const newText = text.substring(0, start) + '\n- ' + text.substring(start, end) + text.substring(end);
                             handleEditorChange({ target: { value: newText } } as React.ChangeEvent<HTMLTextAreaElement>);
                             setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + 3, end + 3); }, 0);
-                          }} className="btn" style={{ padding: '4px 8px', fontSize: '11px', background: 'transparent', border: 'none', cursor: 'pointer' }} title="Aufzählungsliste">• Liste</button>
+                          }} className="btn" style={{ padding: '4px 8px', fontSize: '11px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#ffffff' }} title="Aufzählungsliste">• Liste</button>
                           
                           <button onMouseDown={(e) => e.preventDefault()} onClick={() => {
                             const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement;
@@ -7032,8 +7047,21 @@ max="250"
                             const newText = text.substring(0, start) + '\n\n:::box Tipp\n' + (text.substring(start, end) || 'Dein Text hier...') + '\n:::\n\n' + text.substring(end);
                             handleEditorChange({ target: { value: newText } } as React.ChangeEvent<HTMLTextAreaElement>);
                             setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + 13, end + 13); }, 0);
-                          }} className="btn" style={{ padding: '4px 8px', fontSize: '11px', background: 'transparent', border: 'none', cursor: 'pointer' }} title="Info-Box einfügen">
+                          }} className="btn" style={{ padding: '4px 8px', fontSize: '11px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#ffffff' }} title="Info-Box einfügen">
                             [Box]
+                          </button>
+
+                          <button onMouseDown={(e) => e.preventDefault()} onClick={() => {
+                            const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement;
+                            if(!textarea) return;
+                            const start = textarea.selectionStart;
+                            const end = textarea.selectionEnd;
+                            const text = textarea.value;
+                            const newText = text.substring(0, start) + '\n> ' + (text.substring(start, end) || 'Dein Zitat hier...') + '\n' + text.substring(end);
+                            handleEditorChange({ target: { value: newText } } as React.ChangeEvent<HTMLTextAreaElement>);
+                            setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + 3, end + 3); }, 0);
+                          }} className="btn" style={{ padding: '4px 8px', fontSize: '11px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#ffffff' }} title="Zitat einfügen">
+                            "Zitat"
                           </button>
                         </div>
                         <textarea
@@ -7041,7 +7069,7 @@ max="250"
                           onChange={handleEditorChange}
                           placeholder="Inhalt wird geladen/generiert. Du kannst auch direkt losschreiben..."
                           className="editor-textarea"
-                          style={{ flex: 1, borderTop: 'none', minHeight: '300px' }}
+                          style={{ borderTop: 'none', height: '400px' }}
                         />
                       </div>
                     )}
@@ -7100,52 +7128,56 @@ max="250"
                       <option value="spacing">Absatz: Leerzeile</option>
                       <option value="block">Absatz: Block</option>
                     </select>
-
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '9px', color: 'var(--text-main)', cursor: 'pointer' }} title="Große Initiale am Kapitelanfang">
-                      <input 
-                        type="checkbox" 
-                        checked={activeBook.autoChapterDropCaps !== false}
-                        onChange={e => updateActiveBookConfig('autoChapterDropCaps', e.target.checked)}
-                        style={{ margin: 0 }}
-                      />
-                      Initiale
-                    </label>
-
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '9px', color: 'var(--text-main)', cursor: 'pointer' }} title="KI generiert selbstständig Platzhalter für passende Buch-Grafiken">
-                      <input 
-                        type="checkbox" 
-                        checked={activeBook.autoChapterGraphics === true}
-                        onChange={e => updateActiveBookConfig('autoChapterGraphics', e.target.checked)}
-                        style={{ margin: 0 }}
-                      />
-                      Auto-Grafiken
-                    </label>
-
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '9px', color: 'var(--text-main)', cursor: 'pointer' }} title="Kapitel starten immer auf der rechten (Recto) Seite">
-                      <input 
-                        type="checkbox" 
-                        checked={activeBook.autoChapterRecto === true}
-                        onChange={e => updateActiveBookConfig('autoChapterRecto', e.target.checked)}
-                        style={{ margin: 0 }}
-                      />
-                      Recto
-                    </label>
-                    
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ fontSize: '9px', color: 'var(--text-main)' }}>Abstand:</span>
-                      <input 
-                        type="number" 
-                        value={activeBook.chapterTopPadding || 0}
-                        onChange={e => updateActiveBookConfig('chapterTopPadding', Number(e.target.value))}
-                        style={{ fontSize: '9px', padding: '1px 4px', height: '18px', width: '45px', border: '1px solid var(--border-color)', borderRadius: '2px', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}
-                        min={0}
-                        max={300}
-                        title="Zusätzlicher Abstand nach oben am Kapitelanfang"
-                      />
-                    </div>
                   </div>
                 )}
               </div>
+
+              {activeBook && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px', padding: '6px 12px', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '9px', color: 'var(--text-main)', cursor: 'pointer' }} title="Große Initiale am Kapitelanfang">
+                    <input 
+                      type="checkbox" 
+                      checked={activeBook.autoChapterDropCaps !== false}
+                      onChange={e => updateActiveBookConfig('autoChapterDropCaps', e.target.checked)}
+                      style={{ margin: 0 }}
+                    />
+                    Initiale
+                  </label>
+
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '9px', color: 'var(--text-main)', cursor: 'pointer' }} title="KI generiert selbstständig Platzhalter für passende Buch-Grafiken">
+                    <input 
+                      type="checkbox" 
+                      checked={activeBook.autoChapterGraphics === true}
+                      onChange={e => updateActiveBookConfig('autoChapterGraphics', e.target.checked)}
+                      style={{ margin: 0 }}
+                    />
+                    Auto-Grafiken
+                  </label>
+
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '9px', color: 'var(--text-main)', cursor: 'pointer' }} title="Kapitel starten immer auf der rechten (Recto) Seite">
+                    <input 
+                      type="checkbox" 
+                      checked={activeBook.autoChapterRecto === true}
+                      onChange={e => updateActiveBookConfig('autoChapterRecto', e.target.checked)}
+                      style={{ margin: 0 }}
+                    />
+                    Recto
+                  </label>
+                  
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ fontSize: '9px', color: 'var(--text-main)' }}>Abstand:</span>
+                    <input 
+                      type="number" 
+                      value={activeBook.chapterTopPadding || 0}
+                      onChange={e => updateActiveBookConfig('chapterTopPadding', Number(e.target.value))}
+                      style={{ fontSize: '9px', padding: '1px 4px', height: '18px', width: '45px', border: '1px solid var(--border-color)', borderRadius: '2px', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}
+                      min={0}
+                      max={300}
+                      title="Zusätzlicher Abstand nach oben am Kapitelanfang"
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="pane-content" style={{ justifyContent: 'space-between' }}>
                 {activeBook && selectedPage !== null ? (
@@ -7526,6 +7558,10 @@ max="250"
                               <div 
                                 ref={partIndex === 0 ? previewContentRef : null}
                                 className={`preview-content${typeof selectedPage === 'number' && (activeBook?.pagesInitial || []).includes(selectedPage) && partIndex === 0 ? ' has-initial' : ''}`}
+                                onClick={() => {
+                                  const ta = document.querySelector('.editor-textarea') as HTMLTextAreaElement;
+                                  if (ta) ta.focus();
+                                }}
                                 style={{ 
                                   fontSize: `${previewFontSize}px`,
                                   color: '#1e293b',
@@ -7537,7 +7573,8 @@ max="250"
                                   hyphens: 'auto',
                                   overflowY: 'hidden',
                                   paddingRight: '1px',
-                                  flex: 1
+                                  flex: 1,
+                                  cursor: 'text'
                                 }}
                               >
                                 {content}
