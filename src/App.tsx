@@ -375,21 +375,57 @@ export default function App() {
           setAccounts(cloudAccs);
         }
 
-        // Load books from Firestore (always — never fall back to localStorage on login)
+        // Load books
+        const activeAcc = localStorage.getItem(KEYS.activeAccount) || 'default';
+        const localBooksStr = localStorage.getItem(KEYS.library(activeAcc));
+        let localBooks = null;
+        try {
+          if (localBooksStr) localBooks = JSON.parse(localBooksStr);
+        } catch (e) {}
+
         const cloudBooks = await loadBooksFromCloud(user.uid);
-        if (cloudBooks && cloudBooks.length > 0) {
+        
+        let finalBooks = cloudBooks;
+
+        // If localBooks exist and have content, we prefer localBooks to prevent data loss on refresh 
+        // (because cloud saves are debounced and might have been killed during F5).
+        // We do a simple merge: if localBook has more pages or outline, we keep it.
+        if (localBooks && localBooks.length > 0) {
+          if (!cloudBooks || cloudBooks.length === 0) {
+            finalBooks = localBooks;
+          } else {
+            finalBooks = localBooks.map((localBook: any) => {
+              const cloudBook = cloudBooks.find((cb: any) => cb.id === localBook.id);
+              if (!cloudBook) return localBook;
+              
+              // If local has more outline pages or more text pages, it's newer.
+              const localPageCount = Object.keys(localBook.pagesText || {}).length;
+              const cloudPageCount = Object.keys(cloudBook.pagesText || {}).length;
+              if (localPageCount >= cloudPageCount) {
+                return localBook;
+              }
+              return cloudBook;
+            });
+            // Add any cloud books that aren't in local
+            cloudBooks.forEach((cb: any) => {
+              if (!finalBooks.find((fb: any) => fb.id === cb.id)) {
+                finalBooks.push(cb);
+              }
+            });
+          }
+        }
+
+        if (finalBooks && finalBooks.length > 0) {
           // Reset any 'generating' status stuck from previous session
-          const cleanBooks = cloudBooks.map((b: any) => ({
+          const cleanBooks = finalBooks.map((b: any) => ({
             ...b,
             pagesStatus: Object.fromEntries(
               Object.entries(b.pagesStatus || {}).map(([k, v]) => [k, v === 'generating' ? 'idle' : v])
             )
           }));
           setBooksState(cleanBooks);
-          const activeAcc = localStorage.getItem(KEYS.activeAccount) || 'default';
           localStorage.setItem(KEYS.library(activeAcc), JSON.stringify(cleanBooks));
         } else {
-          // New user — start with empty library
           setBooksState([]);
         }
       } else {
