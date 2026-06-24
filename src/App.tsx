@@ -1633,7 +1633,15 @@ export default function App() {
       g = g ? `${g}\n${noQuoteRule}` : noQuoteRule;
     }
     if (book.extractedSourceText) {
-      const sourceRule = `[WEBSITE QUELLENMATERIAL]\nDas Folgende ist direktes Text-Quellenmaterial aus referenzierten Websites, welches du strikt als primäre Fakten- und Wissensgrundlage für das Buch nutzen musst. Ignoriere irrelevante Website-Navigation oder Werbung, die mitkopiert wurde:\n\n${book.extractedSourceText}`;
+      let safeSourceText = book.extractedSourceText;
+      const isGroq = selectedModel.startsWith('groq-') || selectedModel.includes('llama');
+      // Groq has a 6000 TPM limit (llama-3.1-8b-instant). 6000 chars is ~1500 tokens, very safe.
+      const TOTAL_MAX_CHARS = isGroq ? 6000 : 80000;
+      if (safeSourceText.length > TOTAL_MAX_CHARS) {
+        safeSourceText = safeSourceText.substring(0, TOTAL_MAX_CHARS) + '\n\n... (Restliches Quellenmaterial aus Kapazitätsgründen (Token-Limit) gekürzt um System-Abstürze zu verhindern)';
+      }
+
+      const sourceRule = `[WEBSITE QUELLENMATERIAL]\nDas Folgende ist direktes Text-Quellenmaterial aus referenzierten Websites, welches du strikt als primäre Fakten- und Wissensgrundlage für das Buch nutzen musst. Ignoriere irrelevante Website-Navigation oder Werbung, die mitkopiert wurde:\n\n${safeSourceText}`;
       g = g ? `${g}\n\n${sourceRule}` : sourceRule;
     }
     return g;
