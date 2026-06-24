@@ -1679,10 +1679,35 @@ export default function App() {
       setIsPlanning(true);
       setSelectedPage('title');
 
-      const originalOutline = activeBook.outline;
-      const originalPagesText = activeBook.pagesText;
-      const originalPagesStatus = activeBook.pagesStatus;
-      const originalPagesError = activeBook.pagesError;
+      let currentActiveBook = activeBook;
+
+      // Auto-fetch sources if URLs exist
+      if (currentActiveBook.sourceUrls && currentActiveBook.sourceUrls.trim()) {
+        try {
+          setIsFetchingSources(true);
+          const { fetchAndExtractText } = await import('./utils/WebScraper');
+          const urls = currentActiveBook.sourceUrls.split('\n').map(u => u.trim()).filter(Boolean);
+          const text = await fetchAndExtractText(urls);
+          
+          setBooks(prev => prev.map(b => {
+            if (b.id === activeBookId) {
+              return { ...b, extractedSourceText: text };
+            }
+            return b;
+          }));
+          
+          currentActiveBook = { ...currentActiveBook, extractedSourceText: text };
+        } catch (err) {
+          console.error("Auto-fetch error", err);
+        } finally {
+          setIsFetchingSources(false);
+        }
+      }
+
+      const originalOutline = currentActiveBook.outline;
+      const originalPagesText = currentActiveBook.pagesText;
+      const originalPagesStatus = currentActiveBook.pagesStatus;
+      const originalPagesError = currentActiveBook.pagesError;
 
       setBooks(prev => prev.map(b => {
         if (b.id === activeBookId) {
@@ -1705,12 +1730,12 @@ export default function App() {
       try {
         const service = getServiceInstance();
         const generatedOutline = await service.generateOutline(
-          activeBook.title,
-          activeBook.subtitle,
-          activeBook.idea,
-          activeBook.language,
-          activeBook.targetPages,
-          getEffectiveGuidelines(activeBook)
+          currentActiveBook.title,
+          currentActiveBook.subtitle,
+          currentActiveBook.idea,
+          currentActiveBook.language,
+          currentActiveBook.targetPages,
+          getEffectiveGuidelines(currentActiveBook)
         );
 
         const initialStatus: { [key: number]: 'idle' } = {};
