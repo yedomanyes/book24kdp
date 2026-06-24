@@ -378,7 +378,17 @@ export default function App() {
           setBooksState([]);
         }
       } else {
+        // User logged out — immediately clear everything
         setCurrentUser(null);
+        setBooksState([]);
+        // Wipe all cached data so next user starts fresh
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && k.startsWith('b24studio_v1')) keysToRemove.push(k);
+        }
+        keysToRemove.forEach(k => localStorage.removeItem(k));
+        localStorage.removeItem('b24studio_last_uid');
       }
       setAuthLoading(false);
     });
