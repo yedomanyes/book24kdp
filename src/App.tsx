@@ -6837,6 +6837,7 @@ max="250"
                       width: '100%'
                     }}>
                       <button
+                        onMouseDown={(e) => e.preventDefault()}
                         onClick={() => handleEditorAIAction('spellcheck')}
                         className="btn"
                         style={{ 
@@ -6861,6 +6862,7 @@ max="250"
                       <div style={{ width: '1px', height: '10px', backgroundColor: 'var(--border-color)' }}></div>
                       
                       <button
+                        onMouseDown={(e) => e.preventDefault()}
                         onClick={() => handleEditorAIAction('rephrase')}
                         className="btn"
                         style={{ 
@@ -6885,6 +6887,7 @@ max="250"
                       <div style={{ width: '1px', height: '10px', backgroundColor: 'var(--border-color)' }}></div>
                       
                       <button
+                        onMouseDown={(e) => e.preventDefault()}
                         onClick={() => handleEditorAIAction('emotional')}
                         className="btn"
                         style={{ 
@@ -6909,6 +6912,7 @@ max="250"
                       <div style={{ width: '1px', height: '10px', backgroundColor: 'var(--border-color)' }}></div>
                       
                       <button
+                        onMouseDown={(e) => e.preventDefault()}
                         onClick={() => handleEditorAIAction('shorten')}
                         className="btn"
                         style={{ 
@@ -6933,6 +6937,7 @@ max="250"
                       <div style={{ width: '1px', height: '10px', backgroundColor: 'var(--border-color)', margin: '0 4px' }}></div>
                       
                       <button
+                        onMouseDown={(e) => e.preventDefault()}
                         onClick={() => handleEditorAIAction('humanize')}
                         className="btn"
                         style={{ 
@@ -6983,7 +6988,7 @@ max="250"
                           backgroundColor: '#f8fafc',
                           alignItems: 'center'
                         }}>
-                          <button onClick={() => {
+                          <button onMouseDown={(e) => e.preventDefault()} onClick={() => {
                             const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement;
                             if(!textarea) return;
                             const start = textarea.selectionStart;
@@ -6994,7 +6999,7 @@ max="250"
                             setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + 2, end + 2); }, 0);
                           }} className="btn" style={{ padding: '4px 8px', fontSize: '12px', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 'bold' }} title="Fett (Strg+B)">B</button>
                           
-                          <button onClick={() => {
+                          <button onMouseDown={(e) => e.preventDefault()} onClick={() => {
                             const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement;
                             if(!textarea) return;
                             const start = textarea.selectionStart;
@@ -7007,7 +7012,7 @@ max="250"
                           
                           <div style={{ width: '1px', height: '14px', backgroundColor: 'var(--border-color)', margin: '0 4px' }}></div>
                           
-                          <button onClick={() => {
+                          <button onMouseDown={(e) => e.preventDefault()} onClick={() => {
                             const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement;
                             if(!textarea) return;
                             const start = textarea.selectionStart;
@@ -7018,7 +7023,7 @@ max="250"
                             setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + 3, end + 3); }, 0);
                           }} className="btn" style={{ padding: '4px 8px', fontSize: '11px', background: 'transparent', border: 'none', cursor: 'pointer' }} title="Aufzählungsliste">• Liste</button>
                           
-                          <button onClick={() => {
+                          <button onMouseDown={(e) => e.preventDefault()} onClick={() => {
                             const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement;
                             if(!textarea) return;
                             const start = textarea.selectionStart;

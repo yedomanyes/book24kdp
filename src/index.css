@@ -442,8 +442,8 @@ input:focus, select:focus, textarea:focus {
 /* ── Editor Textarea ── */
 .editor-textarea {
   width: 100%;
-  height: 120px;
-  flex: none;
+  min-height: 250px;
+  flex: 1;
   padding: 14px;
   border-radius: 4px;
   background-color: var(--input-bg);
