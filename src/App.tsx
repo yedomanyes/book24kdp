@@ -22,7 +22,8 @@ import {
   EyeOff,
   Scissors,
   Copy,
-  User
+  User,
+  Undo
 } from 'lucide-react';
 import { GeminiService } from './services/GeminiService';
 import type { BookOutline, BookOutlinePage } from './services/GeminiService';
@@ -1098,6 +1099,8 @@ export default function App() {
   }, [currentUser]);
 
   const [activeBookId, setActiveBookId] = useState<string | null>(() => {
+    const savedId = localStorage.getItem('b24studio_activeBookId');
+    if (savedId) return savedId;
     const activeAcc = localStorage.getItem(KEYS.activeAccount) || 'default';
     const saved = localStorage.getItem(KEYS.library(activeAcc));
     if (saved) {
@@ -1109,7 +1112,9 @@ export default function App() {
   const activeBook = books.find(b => b.id === activeBookId) || null;
 
   // Layout Tab Manager
-  const [activeTab, setActiveTab] = useState<'projects' | 'studio' | 'dashboard'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'studio' | 'dashboard'>(() => {
+    return (localStorage.getItem('b24studio_activeTab') as any) || 'projects';
+  });
 
   // Resizable Panes States
   const [leftWidth, setLeftWidth] = useState<number>(() => {
@@ -1165,7 +1170,29 @@ export default function App() {
   const [isPlanning, setIsPlanning] = useState<boolean>(false);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const cancelGenerationRef = useRef<boolean>(false);
-  const [selectedPage, setSelectedPage] = useState<number | string | null>(null);
+  const [selectedPage, setSelectedPage] = useState<number | string | null>(() => {
+    const saved = localStorage.getItem('b24studio_selectedPage');
+    if (!saved) return null;
+    try {
+      return JSON.parse(saved);
+    } catch {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('b24studio_activeTab', activeTab);
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeBookId) localStorage.setItem('b24studio_activeBookId', activeBookId);
+    else localStorage.removeItem('b24studio_activeBookId');
+  }, [activeBookId]);
+
+  useEffect(() => {
+    if (selectedPage !== null) localStorage.setItem('b24studio_selectedPage', JSON.stringify(selectedPage));
+    else localStorage.removeItem('b24studio_selectedPage');
+  }, [selectedPage]);
   const [editorText, setEditorText] = useState<string>('');
   const [styleOptions, setStyleOptions] = useState<{ 
     version_1: string; style_1_name: string;
@@ -7062,6 +7089,15 @@ max="250"
                             setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + 3, end + 3); }, 0);
                           }} className="btn" style={{ padding: '4px 8px', fontSize: '11px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#ffffff' }} title="Zitat einfügen">
                             "Zitat"
+                          </button>
+
+                          <button onMouseDown={(e) => e.preventDefault()} onClick={() => {
+                            const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement;
+                            if(!textarea) return;
+                            textarea.focus();
+                            document.execCommand('undo');
+                          }} className="btn" style={{ padding: '4px 8px', fontSize: '11px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '4px' }} title="Rückgängig (CMD/CTRL + Z)">
+                            <Undo style={{ width: '12px', height: '12px' }} />
                           </button>
                         </div>
                         <textarea
