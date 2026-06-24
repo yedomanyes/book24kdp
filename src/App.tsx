@@ -166,6 +166,7 @@ interface Book {
   titlePagePublisherX?: number;
   titlePagePublisherY?: number;
   autoChapterDropCaps?: boolean;
+  autoChapterGraphics?: boolean;
   autoChapterRecto?: boolean;
   chapterTopPadding?: number;
   sourceUrls?: string;
@@ -1556,6 +1557,7 @@ export default function App() {
       pagesError: {},
       showRunningHeader: true,
       autoChapterDropCaps: true,
+      autoChapterGraphics: false,
       autoChapterRecto: false,
       chapterTopPadding: 0,
       sourceUrls: '',
@@ -2363,7 +2365,8 @@ export default function App() {
           currentBook.pageSize,
           currentBook.fontSize,
           false,
-          getEffectiveGuidelines(currentBook)
+          getEffectiveGuidelines(currentBook),
+          currentBook.autoChapterGraphics || false
         );
         let text = cleanPageText(rawText);
 
@@ -2380,7 +2383,8 @@ export default function App() {
               currentBook.pageSize,
               currentBook.fontSize,
               true, // shorterRetry = true
-              getEffectiveGuidelines(currentBook)
+              getEffectiveGuidelines(currentBook),
+              currentBook.autoChapterGraphics || false
             );
             const retryText = cleanPageText(retryRawText);
             if (checkTextOverflow(retryText, currentBook, pageNum)) {
@@ -2479,7 +2483,8 @@ export default function App() {
         currentBook.pageSize,
         currentBook.fontSize,
         false,
-        getEffectiveGuidelines(currentBook)
+        getEffectiveGuidelines(currentBook),
+        currentBook.autoChapterGraphics || false
       );
       let text = cleanPageText(rawText);
 
@@ -2496,7 +2501,8 @@ export default function App() {
             currentBook.pageSize,
             currentBook.fontSize,
             true, // shorterRetry = true
-            getEffectiveGuidelines(currentBook)
+            getEffectiveGuidelines(currentBook),
+            currentBook.autoChapterGraphics || false
           );
           const retryText = cleanPageText(retryRawText);
           if (checkTextOverflow(retryText, currentBook, pageNum)) {
@@ -4024,6 +4030,35 @@ export default function App() {
               {block.title && <span className="workbook-box-title">{block.title}</span>}
               <div className="workbook-box-content">
                 {block.children.map((child, ci) => renderWbBlock(child, ci))}
+              </div>
+            </div>
+          );
+
+        case 'image':
+          return (
+            <div key={key} style={{
+              margin: '16px 0',
+              padding: '24px',
+              backgroundColor: 'rgba(241, 245, 249, 0.4)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid rgba(148, 163, 184, 0.3)',
+              borderRadius: '8px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '12px',
+              color: '#64748b',
+              textAlign: 'center',
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)'
+            }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <polyline points="21 15 16 10 5 21" />
+              </svg>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span style={{ fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#475569' }}>K.I. Grafik-Platzhalter</span>
+                <span style={{ fontSize: '9px', fontStyle: 'italic', maxWidth: '200px', lineHeight: '1.4' }}>"{block.prompt}"</span>
               </div>
             </div>
           );
@@ -7069,6 +7104,16 @@ max="250"
                         style={{ margin: 0 }}
                       />
                       Initiale
+                    </label>
+
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '9px', color: 'var(--text-main)', cursor: 'pointer' }} title="KI generiert selbstständig Platzhalter für passende Buch-Grafiken">
+                      <input 
+                        type="checkbox" 
+                        checked={activeBook.autoChapterGraphics === true}
+                        onChange={e => updateActiveBookConfig('autoChapterGraphics', e.target.checked)}
+                        style={{ margin: 0 }}
+                      />
+                      Auto-Grafiken
                     </label>
 
                     <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '9px', color: 'var(--text-main)', cursor: 'pointer' }} title="Kapitel starten immer auf der rechten (Recto) Seite">

@@ -646,7 +646,8 @@ Schreibe jetzt den Fortsetzungstext (${continuationMin}–${continuationMax} Wö
     pageSize: string = '6x9',
     fontSize: number = 11,
     shorterRetry: boolean = false,
-    customGuidelines: string = ''
+    customGuidelines: string = '',
+    autoChapterGraphics: boolean = false
   ): Promise<string> {
     const currentPageInfo = outline.pages.find(p => p.page_number === pageNumber);
     if (!currentPageInfo) throw new Error(`Seite ${pageNumber} nicht in der Outline gefunden.`);
@@ -690,7 +691,7 @@ Setze den Text absolut nahtlos fort. Der allererste Satz dieser neuen Seite ${pa
       maxWords = fontSize >= 12 ? 210 : 260;
     }
 
-    const systemPrompt = `Du bist ein professioneller Buchautor. Du schreibst im folgenden Stil: "${writingStyle}".
+    let systemPrompt = `Du bist ein professioneller Buchautor. Du schreibst im folgenden Stil: "${writingStyle}".
 Deine Sprache ist exakt: ${outline.language === 'de' ? 'Deutsch (korrekte Rechtschreibung und Grammatik)' : 'ENGLISH (CRITICAL: YOU MUST WRITE THE ENTIRE TEXT IN ENGLISH ONLY!)'}.
 Achte peinlich genau auf folgende Regeln:
 1. Verwende KEINE urheberrechtlich geschützten Inhalte oder geschützten Charaktere. Historische Zitate oder Zitate bekannter Persönlichkeiten sind zulässig, sofern sie gemeinfrei/legal sind. Setze Zitate sehr sparsam ein (maximal ein Zitat pro Kapitel). Jedes Zitat MUSS in einer eigenen Zeile stehen, eingeleitet mit "> ", und MUSS am Ende immer eine Autorenangabe enthalten (Format: — Vorname Nachname). Beispiele:
@@ -708,8 +709,13 @@ EIN ZITAT OHNE — AUTORENANGABE AM ENDE IST VERBOTEN.
      :::box Performance Prompts
      1. Erste Frage: ...
      :::
-   - Für tabellarische Übersichten oder Raster nutze die Markdown-Tabellen-Syntax (z. B. "| Spalte 1 | Spalte 2 |" gefolgt von der Trennlinie "| :--- | :--- |").
-   - Wenn eine Grafik, Zeichnung oder Illustration den Inhalt veranschaulichen soll, füge an dieser Stelle auf einer eigenen Zeile ein Bild-Tag ein. Format: "[grafik: Detaillierte Beschreibung der Grafik, z. B. Ein alter Messingkompass auf Seekarte]". Nutze dies sehr sparsam (maximal eine Grafik pro Kapitel).`;
+   - Für tabellarische Übersichten oder Raster nutze die Markdown-Tabellen-Syntax (z. B. "| Spalte 1 | Spalte 2 |" gefolgt von der Trennlinie "| :--- | :--- |").\n\n`;
+
+    if (autoChapterGraphics) {
+      systemPrompt += `8. Du darfst optional EINE thematisch extrem gut passende Grafik/Illustration einfügen, falls sie das Verständnis perfekt bereichert. Setze dazu den Platzhalter: [grafik: dein Bild-Prompt auf Englisch]. Füge maximal EIN Bild pro Seite ein und nur dann, wenn es massiven Mehrwert bietet. Wenn du dir unsicher bist, füge keine Grafik ein.\n\n`;
+    } else {
+      systemPrompt += `8. STRIKTE REGEL: Es ist dir STRENG VERBOTEN, Bilder, Grafiken oder [grafik: ...]-Tags in den Text einzubauen! Ignoriere jegliche Anweisungen zu Grafiken.\n\n`;
+    }
 
     let finalSystemPrompt = systemPrompt;
     if (customGuidelines && customGuidelines.trim()) {
