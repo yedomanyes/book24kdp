@@ -1,0 +1,96 @@
+================================================================================
+  KDP STUDIO - PROJEKTSTATUS
+  Zuletzt aktualisiert: 2026-06-24 02:22 Uhr
+================================================================================
+
+PROJEKT-PFAD: /Users/yedo/Desktop/KDP
+TECH-STACK:   React + TypeScript + Vite, jsPDF, Firebase, Groq/Gemini API
+
+--------------------------------------------------------------------------------
+WAS IST DAS PROJEKT?
+--------------------------------------------------------------------------------
+KDP Studio ist eine Desktop-Web-App zur Erstellung und Verwaltung von KDP
+(Kindle Direct Publishing) Buchprojekten. Der User kann Bücher komplett
+KI-gestützt schreiben lassen, live als Buchseiten-Preview sehen und als
+druckfertiges PDF exportieren.
+
+--------------------------------------------------------------------------------
+AKTUELLER STAND (was fertig ist)
+--------------------------------------------------------------------------------
+
+[x] Buchprojekt erstellen (Titel, Untertitel, Idee, Sprache, Format etc.)
+[x] KI-Schreiben Seite für Seite (Groq API mit Key-Rotation)
+[x] Live-Preview jeder Seite als Buchseite
+[x] PDF Export (jsPDF) - komplett formatiert
+[x] Multi-Seiten-Auswahl mit Shift+Click
+[x] Kapitelüberschriften global AN/AUS (alle Seiten)
+[x] Kapitelüberschrift pro Seite AN/AUS
+[x] Seitenzahlen AN/AUS (PDF-Export) - Button "Seitenz. AN/AUS"
+[x] Kopfzeile (Running Header) AN/AUS
+[x] Zitate erlauben/verbieten Toggle
+[x] Notfall-Button (Emergency-Stop für laufende Generierung)
+[x] Seite neu generieren Button
+[x] Mediathek (Buchbibliothek) View mit Projektübersicht
+[x] Mediathek: Markt-Score (1-100) pro Buch mit Slider
+[x] Mediathek: Verdienst-Potenzial (Gering/Mittel/Hoch/Sehr Hoch) Dropdown
+[x] Mediathek: Nischen-Beschreibung (Textfeld) pro Buch
+[x] Initiale (Drop Cap) pro Seite AN/AUS — einzeln + Mehrfachauswahl
+[x] Firebase Auth (Login/Accounts)
+[x] Mehrere Accounts/Profile verwalten
+[x] Paragraphenstil pro Seite (Einzug / Abstand / Block)
+[x] Schriftart-Auswahl, Schriftgröße, Ausrichtung
+[x] Kapitel-Ornament (Trennzeichen zwischen Absätzen)
+
+--------------------------------------------------------------------------------
+BEKANNTE PROBLEME / LIMITIERUNGEN
+--------------------------------------------------------------------------------
+
+- Groq API 429 Fehler: Passiert bei zu vielen Anfragen hintereinander (z.B.
+  Seite 31+ bei langer Generierung). Rate-Limit der kostenlosen Keys. Lösung:
+  Mehr API-Keys in .env eintragen oder bezahlten Plan nutzen.
+
+- PDF showChapterTitles/pagesHideChapter wird aktuell im PdfGenerator noch
+  nicht vollständig für alle Chapter-Seiten ausgewertet (TODO: in
+  generateBookPdf die Logik analog zur Live-Preview implementieren).
+
+--------------------------------------------------------------------------------
+NÄCHSTE GEPLANTE SCHRITTE (TODO)
+--------------------------------------------------------------------------------
+
+1. [ ] PDF-Export: showChapterTitles + pagesHideChapter vollständig in
+       PdfGenerator.ts implementieren (Kapitelüberschriften im PDF auch
+       ausblenden, wenn per Toggle deaktiviert).
+
+2. [ ] Mediathek-Ratings persistieren: marketScore, earningsPotential,
+       marketNiche werden beim Speichern in localStorage / Firebase gesichert
+       (prüfen ob updateActiveBookConfig das korrekt macht oder ob
+       setBooks-direkt-Änderungen verloren gehen).
+
+3. [ ] Seiten-Übersicht verbessern: Thumbnail-Vorschau der Buchseiten in der
+       Seitenleiste (kleines Bild statt nur Nummer).
+
+4. [ ] Bulk-Generierung verbessern: Pause/Resume, Queue-Management, bessere
+       Fehleranzeige wenn Key ausgelastet.
+
+5. [ ] Amazon KDP Metadaten-Export: Beschreibung, Keywords, Kategorien als
+       fertige Textdatei exportieren.
+
+6. [ ] Coverdesign-Tool: Einfacher Cover-Generator direkt in der App.
+
+--------------------------------------------------------------------------------
+WICHTIGE DATEIEN
+--------------------------------------------------------------------------------
+
+src/App.tsx               - Haupt-App, alle States, UI, Business-Logic
+src/utils/PdfGenerator.ts - PDF-Generierung (jsPDF)
+src/services/GeminiService.ts - KI API calls (Groq/Gemini), Key-Rotation
+src/index.css             - Alle Styles / Design-System
+.env                      - API Keys (VITE_GROQ_KEY_1, _2, etc.)
+
+--------------------------------------------------------------------------------
+WIE NEUES GESPRÄCH STARTEN:
+--------------------------------------------------------------------------------
+
+"Lies /Users/yedo/Desktop/KDP/STATUS.txt und mache dann weiter"
+
+================================================================================
