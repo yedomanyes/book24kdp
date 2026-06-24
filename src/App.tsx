@@ -33,9 +33,7 @@ import {
   saveBookToCloud,
   deleteBookFromCloud,
   loadBooksFromCloud,
-  saveAccountsToCloud,
   loadAccountsFromCloud,
-  syncLocalLibraryToCloud
 } from './services/StorageService';
 import { auth } from './firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
@@ -365,10 +363,16 @@ export default function App() {
         // Load books from Firestore (always — never fall back to localStorage on login)
         const cloudBooks = await loadBooksFromCloud(user.uid);
         if (cloudBooks && cloudBooks.length > 0) {
-          setBooksState(cloudBooks);
-          // Cache for this user only
+          // Reset any 'generating' status stuck from previous session
+          const cleanBooks = cloudBooks.map((b: any) => ({
+            ...b,
+            pagesStatus: Object.fromEntries(
+              Object.entries(b.pagesStatus || {}).map(([k, v]) => [k, v === 'generating' ? 'idle' : v])
+            )
+          }));
+          setBooksState(cleanBooks);
           const activeAcc = localStorage.getItem(KEYS.activeAccount) || 'default';
-          localStorage.setItem(KEYS.library(activeAcc), JSON.stringify(cloudBooks));
+          localStorage.setItem(KEYS.library(activeAcc), JSON.stringify(cleanBooks));
         } else {
           // New user — start with empty library
           setBooksState([]);
@@ -904,19 +908,7 @@ export default function App() {
   };
 
   // Books List & Active Selection
-  const [books, setBooksState] = useState<Book[]>(() => {
-    const activeAcc = localStorage.getItem(KEYS.activeAccount) || 'default';
-    const saved = localStorage.getItem(KEYS.library(activeAcc));
-    if (!saved) return [];
-    const parsed = JSON.parse(saved) as Book[];
-    // Reset any 'generating' status from previous session so pages don't get stuck after refresh
-    return parsed.map(b => ({
-      ...b,
-      pagesStatus: Object.fromEntries(
-        Object.entries(b.pagesStatus || {}).map(([k, v]) => [k, v === 'generating' ? 'idle' : v])
-      )
-    }));
-  });
+  const [books, setBooksState] = useState<Book[]>([]);
   const booksRef = React.useRef<Book[]>(books);
 
   useEffect(() => {
