@@ -167,6 +167,8 @@ interface Book {
   autoChapterDropCaps?: boolean;
   autoChapterRecto?: boolean;
   chapterTopPadding?: number;
+  sourceUrls?: string;
+  extractedSourceText?: string;
   // Mediathek ratings & dashboard
   marketScore?: number;                // 1-100
   earningsPotential?: 'low' | 'medium' | 'high' | 'very_high';
@@ -1151,6 +1153,30 @@ export default function App() {
   const [bulkChapterTitle, setBulkChapterTitle] = useState<string>('');
   const [dragStart, setDragStart] = useState<{ x: number; y: number; shiftX: number; shiftY: number }>({ x: 0, y: 0, shiftX: 0, shiftY: 0 });
   const [isHoveringEmblem, setIsHoveringEmblem] = useState<boolean>(false);
+  const [ideaTab, setIdeaTab] = useState<'text' | 'sources'>('text');
+  const [isFetchingSources, setIsFetchingSources] = useState<boolean>(false);
+
+  const handleFetchSources = async () => {
+    if (!activeBookId || !activeBook?.sourceUrls) return;
+    setIsFetchingSources(true);
+    try {
+      const { fetchAndExtractText } = await import('./utils/WebScraper');
+      const urls = activeBook.sourceUrls.split('\n').map(u => u.trim()).filter(Boolean);
+      const text = await fetchAndExtractText(urls);
+      setBooks(prev => prev.map(b => {
+        if (b.id === activeBookId) {
+          return { ...b, extractedSourceText: text };
+        }
+        return b;
+      }));
+      alert(`Erfolgreich ausgelesen! ${text.length} Zeichen Text aus ${urls.length} Quellen extrahiert.`);
+    } catch (err: any) {
+      console.error(err);
+      alert('Fehler beim Auslesen: ' + (err.message || err));
+    } finally {
+      setIsFetchingSources(false);
+    }
+  };
 
   // Title Page dragging / editing states
   const [draggingItem, setDraggingItem] = useState<'emblem' | 'title' | 'subtitle' | 'author' | 'publisher' | null>(null);
@@ -1491,7 +1517,9 @@ export default function App() {
       showRunningHeader: true,
       autoChapterDropCaps: true,
       autoChapterRecto: false,
-      chapterTopPadding: 0
+      chapterTopPadding: 0,
+      sourceUrls: '',
+      extractedSourceText: ''
     };
     setBooks(prev => [...prev, newBook]);
     setActiveBookId(newBook.id);
@@ -1600,6 +1628,10 @@ export default function App() {
     if (book.noQuotes) {
       const noQuoteRule = 'ABSOLUTE REGEL: Verwende KEINE urheberrechtlich geschützten Inhalte oder geschützten Charaktere. Historische Zitate oder Zitate bekannter Persönlichkeiten sind zulässig, sofern sie gemeinfrei/legal sind. Setze Zitate sehr sparsam ein (maximal ein Zitat pro Kapitel). Jedes Zitat MUSS zwingend folgendes Format haben – auf einer eigenen Zeile, eingeleitet mit "> ", dann das Zitat in Anführungszeichen, dann IMMER ein Gedankenstrich und der echte Autor-Name, OHNE AUSNAHME. Beispiele:\n> "Wissen ist Macht." — Francis Bacon\n> "Das Leben ist kurz, die Kunst ist lang." — Hippokrates\nEIN ZITAT OHNE AUTORENANGABE IST VERBOTEN. Format: > "[Zitat]" — [Vorname Nachname]';
       g = g ? `${g}\n${noQuoteRule}` : noQuoteRule;
+    }
+    if (book.extractedSourceText) {
+      const sourceRule = `[WEBSITE QUELLENMATERIAL]\nDas Folgende ist direktes Text-Quellenmaterial aus referenzierten Websites, welches du strikt als primäre Fakten- und Wissensgrundlage für das Buch nutzen musst. Ignoriere irrelevante Website-Navigation oder Werbung, die mitkopiert wurde:\n\n${book.extractedSourceText}`;
+      g = g ? `${g}\n\n${sourceRule}` : sourceRule;
     }
     return g;
   };
@@ -4748,14 +4780,74 @@ export default function App() {
                       />
                     </div>
 
-                    <div className="form-group">
-                      <label className="form-label">Plot / Idee</label>
-                      <textarea 
-                        rows={4}
-                        value={activeBook.idea}
-                        onChange={e => updateActiveBookConfig('idea', e.target.value)}
-                        disabled={isPlanning || isGenerating}
-                      />
+                    <div className="form-group" style={{ marginBottom: '16px' }}>
+                      <div style={{ display: 'flex', gap: '4px', marginBottom: '8px' }}>
+                        <button
+                          type="button"
+                          onClick={() => setIdeaTab('text')}
+                          style={{
+                            flex: 1, padding: '4px', fontSize: '10px', fontWeight: 600,
+                            borderRadius: '4px', cursor: 'pointer',
+                            backgroundColor: ideaTab === 'text' ? 'var(--primary)' : 'transparent',
+                            color: ideaTab === 'text' ? '#fff' : 'var(--text-muted)',
+                            border: ideaTab === 'text' ? '1px solid var(--primary)' : '1px solid var(--border-color)'
+                          }}
+                        >
+                          Plot / Idee
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIdeaTab('sources')}
+                          style={{
+                            flex: 1, padding: '4px', fontSize: '10px', fontWeight: 600,
+                            borderRadius: '4px', cursor: 'pointer',
+                            backgroundColor: ideaTab === 'sources' ? 'var(--primary)' : 'transparent',
+                            color: ideaTab === 'sources' ? '#fff' : 'var(--text-muted)',
+                            border: ideaTab === 'sources' ? '1px solid var(--primary)' : '1px solid var(--border-color)'
+                          }}
+                        >
+                          KI Futter (Websites)
+                        </button>
+                      </div>
+
+                      {ideaTab === 'text' ? (
+                        <textarea 
+                          rows={6}
+                          value={activeBook.idea}
+                          onChange={e => updateActiveBookConfig('idea', e.target.value)}
+                          disabled={isPlanning || isGenerating}
+                          placeholder="Fasse hier die Hauptidee deines Buches zusammen..."
+                        />
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <textarea 
+                            rows={4}
+                            value={activeBook.sourceUrls || ''}
+                            onChange={e => updateActiveBookConfig('sourceUrls', e.target.value)}
+                            disabled={isPlanning || isGenerating || isFetchingSources}
+                            placeholder="Füge hier Website-URLs ein (eine pro Zeile)..."
+                            style={{ fontFamily: 'monospace', fontSize: '10px' }}
+                          />
+                          <button
+                            type="button"
+                            onClick={handleFetchSources}
+                            disabled={isFetchingSources || isPlanning || isGenerating || !(activeBook.sourceUrls || '').trim()}
+                            className="btn btn-primary"
+                            style={{ padding: '6px', fontSize: '11px', display: 'flex', justifyContent: 'center', gap: '6px' }}
+                          >
+                            {isFetchingSources ? (
+                              <><Loader2 className="animate-spin" style={{ width: '12px', height: '12px' }}/> Lade Websites...</>
+                            ) : (
+                              <><CheckCircle2 style={{ width: '12px', height: '12px' }}/> Websites jetzt einlesen</>
+                            )}
+                          </button>
+                          {activeBook.extractedSourceText && (
+                            <div style={{ fontSize: '9px', color: 'var(--success)', marginTop: '2px', padding: '4px', backgroundColor: 'rgba(34, 197, 94, 0.1)', borderRadius: '4px', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
+                              ✓ Quellen eingelesen: {activeBook.extractedSourceText.length} Zeichen Text gespeichert.
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <div className="grid-2">
