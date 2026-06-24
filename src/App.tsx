@@ -342,44 +342,36 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setCurrentUser(user);
-        
-        // Load accounts from Firestore
+
+        // Clear any cached data from a previous (different) user to prevent data leakage
+        const lastUid = localStorage.getItem('b24studio_last_uid');
+        if (lastUid && lastUid !== user.uid) {
+          // Different user logged in — wipe all local caches
+          const keysToRemove: string[] = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith('b24studio_v1')) keysToRemove.push(k);
+          }
+          keysToRemove.forEach(k => localStorage.removeItem(k));
+        }
+        localStorage.setItem('b24studio_last_uid', user.uid);
+
+        // Load accounts from Firestore (source of truth — never use localStorage of another user)
         const cloudAccs = await loadAccountsFromCloud(user.uid);
         if (cloudAccs && cloudAccs.length > 0) {
           setAccounts(cloudAccs);
-        } else {
-          // Sync existing local accounts to cloud
-          const savedAccs = localStorage.getItem(KEYS.accounts);
-          if (savedAccs) {
-            try {
-              await saveAccountsToCloud(user.uid, JSON.parse(savedAccs));
-            } catch (e) {
-              console.error(e);
-            }
-          }
         }
 
-        // Load books from Firestore
+        // Load books from Firestore (always — never fall back to localStorage on login)
         const cloudBooks = await loadBooksFromCloud(user.uid);
         if (cloudBooks && cloudBooks.length > 0) {
           setBooksState(cloudBooks);
-          // Sync back to local storage cache
+          // Cache for this user only
           const activeAcc = localStorage.getItem(KEYS.activeAccount) || 'default';
           localStorage.setItem(KEYS.library(activeAcc), JSON.stringify(cloudBooks));
         } else {
-          // Sync existing local books to cloud on first login
-          const activeAcc = localStorage.getItem(KEYS.activeAccount) || 'default';
-          const localBooksStr = localStorage.getItem(KEYS.library(activeAcc));
-          if (localBooksStr) {
-            try {
-              const localBooks = JSON.parse(localBooksStr);
-              if (localBooks.length > 0) {
-                await syncLocalLibraryToCloud(user.uid, localBooks);
-              }
-            } catch (e) {
-              console.error(e);
-            }
-          }
+          // New user — start with empty library
+          setBooksState([]);
         }
       } else {
         setCurrentUser(null);
