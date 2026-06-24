@@ -2276,7 +2276,7 @@ export default function App() {
 
       if (hasGeneratedAny) {
         const isGroq = !selectedModel.startsWith('gemini-');
-        const delayMs = isGroq ? 2500 : 4500;
+        const delayMs = isGroq ? 8500 : 4500;
         await new Promise(resolve => setTimeout(resolve, delayMs));
       }
       hasGeneratedAny = true;
