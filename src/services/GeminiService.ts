@@ -141,15 +141,25 @@ export class GeminiService {
     customGuidelines: string = '',
     onProgress?: (progress: number, message: string) => void
   ): Promise<BookOutline> {
+    const isGroq = this.getProvider() === 'groq';
+    let safeIdea = idea || '';
+    let safeGuidelines = customGuidelines || '';
+    
+    // Hard-cap user inputs for Groq's small 6000 TPM limit to prevent crashes
+    if (isGroq) {
+      if (safeIdea.length > 3000) safeIdea = safeIdea.substring(0, 3000) + '... (Gekürzt aus Kapazitätsgründen)';
+      if (safeGuidelines.length > 4500) safeGuidelines = safeGuidelines.substring(0, 4500) + '... (Gekürzt aus Kapazitätsgründen)';
+    }
+
     let prompt = `Du bist ein professioneller Buch-Redakteur. Erstelle ein detailliertes Inhaltsverzeichnis und eine Seiten-Planung für ein neues Buch.
 Buchtitel: "${title}"
 Untertitel: "${subtitle}"
-${idea && idea.trim() ? `Hauptidee/Beschreibung: "${idea}"` : `Hinweis: Es wurde keine Hauptidee eingegeben. Leite das Thema, das Genre und die Gliederung des Buches eigenständig und kreativ aus dem Titel und Untertitel ab. Strebe dabei das bestmögliche, professionellste und spannendste Ergebnis an.`}
+${safeIdea && safeIdea.trim() ? `Hauptidee/Beschreibung: "${safeIdea}"` : `Hinweis: Es wurde keine Hauptidee eingegeben. Leite das Thema, das Genre und die Gliederung des Buches eigenständig und kreativ aus dem Titel und Untertitel ab. Strebe dabei das bestmögliche, professionellste und spannendste Ergebnis an.`}
 Sprache des Buches: "${language === 'de' ? 'Deutsch' : 'Englisch'}"
 Ziel-Seitenzahl: ${targetPages} (Das generierte JSON MUSS exakt ${targetPages} Seiten in der Liste haben, durchnummeriert von 1 bis ${targetPages}).`;
 
-    if (customGuidelines && customGuidelines.trim()) {
-      prompt += `\n\nFolgende Autoren-Richtlinien und Stil-Vorgaben müssen beim Entwurf der Gliederung und der einzelnen Seiten-Fokuspunkte strikt berücksichtigt werden:\n"${customGuidelines}"`;
+    if (safeGuidelines && safeGuidelines.trim()) {
+      prompt += `\n\nFolgende Autoren-Richtlinien und Stil-Vorgaben müssen beim Entwurf der Gliederung und der einzelnen Seiten-Fokuspunkte strikt berücksichtigt werden:\n"${safeGuidelines}"`;
     }
 
     prompt += `\n\nFür jede einzelne Seite des Buches (von Seite 1 bis Seite ${targetPages}) musst du festlegen, worum es auf dieser Seite geht. Jede Seite sollte einen klaren Fokus haben, damit es keine Dopplungen gibt und das Buch logisch aufgebaut ist. Um einen tiefgehenden Inhalt zu garantieren, plane pro Seite detaillierte stichpunktartige Key Points (in "key_points"), die genau beschreiben, welche Argumente oder Szenen ausgeführt werden sollen.
@@ -251,7 +261,7 @@ Die "pages"-Liste muss EXAKT ${chunkSize} Einträge enthalten, mit page_number v
               ],
               response_format: { type: 'json_object' },
               temperature: 0.3,
-              max_tokens: 4096
+              max_tokens: 2048
             })
           })
         );
@@ -387,8 +397,8 @@ Die "pages"-Liste muss EXAKT ${chunkSize} Einträge enthalten, mit page_number v
               { role: 'user', content: chunkPrompt }
             ],
             response_format: { type: 'json_object' },
-            temperature: 0.3,
-            max_tokens: 4096
+            temperature: 0.7,
+            max_tokens: 2048
           })
         })
       );
@@ -748,7 +758,8 @@ Schreibe jetzt den vollständigen Fließtext für Seite ${pageNumber}. Verwende 
               { role: 'system', content: finalSystemPrompt },
               { role: 'user', content: userPrompt }
             ],
-            temperature: 0.65
+            temperature: 0.75,
+            max_tokens: 1500
           })
         })
       );
@@ -887,7 +898,8 @@ Schreibe jetzt den vollständigen, verlängerten Fließtext für Seite ${pageNum
               { role: 'system', content: finalSystemPrompt },
               { role: 'user', content: userPrompt }
             ],
-            temperature: 0.65
+            temperature: 0.65,
+            max_tokens: 1500
           })
         })
       );
@@ -1029,7 +1041,8 @@ Entwirf jetzt drei unterschiedliche Stil-Versionen (version_1, version_2, versio
               { role: 'user', content: userPrompt }
             ],
             response_format: { type: 'json_object' },
-            temperature: 0.8
+            temperature: 0.8,
+            max_tokens: 2000
           })
         })
       );
@@ -1161,7 +1174,8 @@ Entwirf jetzt drei unterschiedliche Struktur-Varianten (version_1, version_2, ve
               { role: 'user', content: userPrompt }
             ],
             response_format: { type: 'json_object' },
-            temperature: 0.75
+            temperature: 0.75,
+            max_tokens: 1500
           })
         })
       );
