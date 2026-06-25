@@ -170,6 +170,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-height: 0;
 }
 
 /* ── Draggable Panel Resizer ── */
@@ -193,7 +194,23 @@ body {
   flex-direction: column;
   gap: 12px;
   overflow-y: auto;
+  overflow-x: hidden;
   flex: 1;
+  min-height: 0; /* fix: allows scroll inside flex parent */
+}
+
+.pane-content::-webkit-scrollbar {
+  width: 4px;
+}
+.pane-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+.pane-content::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 2px;
+}
+.pane-content::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
 }
 
 /* Panel Header — minimal toolbar style */
@@ -390,39 +407,87 @@ input:focus, select:focus, textarea:focus {
 /* ── Page Grid ── */
 .pages-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
-  gap: 5px;
-  max-height: 320px;
+  grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+  gap: 4px;
+  max-height: 340px;
   overflow-y: auto;
-  padding-right: 2px;
+  padding: 2px 0;
+  scrollbar-width: none;
 }
+.pages-grid::-webkit-scrollbar { display: none; }
 
 .page-btn {
-  height: 36px;
-  border-radius: 4px;
-  border: 1px solid var(--border-color);
-  background-color: var(--input-bg);
+  position: relative;
+  height: 44px;
+  border-radius: 8px;
+  border: 1.5px solid transparent;
+  background-color: var(--bg-card);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   color: var(--text-muted);
-  font-size: 13px;
+  gap: 0;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.page-btn:hover { background-color: var(--bg-card-hover); border-color: var(--text-muted); color: var(--text-main); }
+.page-btn::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--border-color);
+  border-radius: 0 0 6px 6px;
+  transition: all 0.15s ease;
+}
+
+.page-btn:hover {
+  border-color: var(--primary);
+  background-color: var(--bg-card-hover);
+  color: var(--text-main);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
 
 .page-btn.active {
-  border-color: var(--primary) !important;
-  background-color: var(--primary) !important;
+  border-color: var(--accent) !important;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%) !important;
   color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(124,58,237,0.35) !important;
+  transform: translateY(-1px);
 }
+.page-btn.active::after { background: rgba(255,255,255,0.4) !important; }
 
-.page-btn.generating { border-color: var(--primary); animation: pulse 1.5s infinite; }
-.page-btn.completed { border-color: rgba(19, 115, 51, 0.5); background-color: rgba(19, 115, 51, 0.06); }
-.page-btn.failed { border-color: rgba(197, 34, 31, 0.4); background-color: rgba(197, 34, 31, 0.06); }
-.page-btn.overflow-warning { border-color: var(--error) !important; background-color: rgba(197, 34, 31, 0.1) !important; }
+.page-btn.generating {
+  border-color: var(--primary);
+  animation: pulse 1.5s infinite;
+}
+.page-btn.generating::after { background: var(--primary); }
+
+.page-btn.completed {
+  border-color: rgba(22,163,74,0.35);
+  background-color: rgba(22,163,74,0.06);
+}
+.page-btn.completed::after { background: #16a34a; }
+
+.page-btn.completed.active::after { background: rgba(255,255,255,0.5) !important; }
+
+.page-btn.failed {
+  border-color: rgba(220,38,38,0.35);
+  background-color: rgba(220,38,38,0.06);
+}
+.page-btn.failed::after { background: #dc2626; }
+
+.page-btn.overflow-warning {
+  border-color: rgba(234,88,12,0.5) !important;
+  background-color: rgba(234,88,12,0.07) !important;
+}
+.page-btn.overflow-warning::after { background: #ea580c !important; }
 
 /* ── Progress ── */
 .progress-track {
@@ -463,7 +528,36 @@ input:focus, select:focus, textarea:focus {
   padding: 16px;
   background-color: var(--preview-bg);
   flex: 1;
-  overflow: auto;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  max-width: 100%;
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important;  /* IE and Edge */
+}
+
+.preview-area::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.preview-area::-webkit-scrollbar:horizontal,
+.pane-content::-webkit-scrollbar:horizontal,
+.layout-preview-pane-content::-webkit-scrollbar:horizontal {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.layout-preview-pane-content {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  overflow: hidden !important;
+}
+.layout-preview-pane-content::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 .book-page-preview {
@@ -479,14 +573,25 @@ input:focus, select:focus, textarea:focus {
 
 /* Custom drop cap letter rendered via React */
 .drop-cap-letter {
-  font-size: 2.8em;
   float: left;
-  line-height: 0.85;
-  padding-top: 2px;
-  padding-right: 6px; /* slightly increased for a cleaner margin */
-  font-family: inherit; /* inherits the parent paragraph's font family */
+  font-size: 3.15em;
+  line-height: 0.75;
+  margin-top: 0.08em;
+  margin-right: 5px;
+  margin-bottom: 0;
+  padding: 0;
+  font-family: inherit;
   font-weight: 700;
   color: #000000;
+  display: block;
+  shape-outside: margin-box;
+}
+
+/* Ensure the paragraph containing the initial clears float correctly */
+.preview-content.has-initial .literary-paragraph:first-child::after {
+  content: '';
+  display: table;
+  clear: both;
 }
 
 
@@ -692,3 +797,205 @@ input:focus, select:focus, textarea:focus {
   color: #334155;
 }
 
+/* ── Google-Style Compact Document Outline Sidebar ── */
+.outline-sidebar {
+  width: 240px;
+  border-right: 1px solid var(--border-color);
+  background-color: var(--bg-dashboard);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.outline-section {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.outline-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.outline-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.15s ease;
+  font-size: 11px;
+  user-select: none;
+}
+
+.outline-row:hover {
+  background-color: var(--bg-card-hover);
+  color: var(--text-main);
+}
+
+.outline-row.active {
+  background-color: var(--primary-glow);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.outline-chapter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  user-select: none;
+}
+
+.outline-chapter-header:hover {
+  background-color: var(--bg-card-hover);
+}
+
+.outline-chapter-title-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.outline-chapter-title {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.outline-chapter-badge {
+  font-size: 8px;
+  font-weight: bold;
+  background-color: var(--bg-main);
+  color: var(--text-muted);
+  padding: 1px 4px;
+  border-radius: 3px;
+  border: 1px solid var(--border-color);
+}
+
+.outline-pages-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 2px;
+  padding-left: 12px;
+}
+
+.outline-page-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  user-select: none;
+  min-height: 24px;
+  color: var(--text-muted);
+}
+
+.outline-page-item:hover {
+  background-color: var(--bg-card-hover);
+  color: var(--text-main);
+}
+
+.outline-page-item.active {
+  background-color: var(--primary-glow);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.outline-page-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.outline-page-label {
+  font-size: 10.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.outline-page-checkbox {
+  width: 12px;
+  height: 12px;
+  cursor: pointer;
+  margin: 0;
+}
+
+.outline-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.outline-status-dot.idle {
+  background-color: #94a3b8;
+}
+
+.outline-status-dot.generating {
+  background-color: var(--primary);
+  animation: pulse 1.5s infinite;
+}
+
+.outline-status-dot.completed {
+  background-color: var(--success);
+}
+
+.outline-status-dot.failed {
+  background-color: var(--error);
+}
+
+.outline-status-dot.overflow {
+  background-color: var(--warning);
+}
+
+/* Premium Editable elements hover effects in preview */
+[contenteditable="true"] {
+  transition: background-color 0.2s, box-shadow 0.2s, border-radius 0.2s;
+  border-radius: 3px;
+  position: relative;
+}
+[contenteditable="true"]:hover {
+  background-color: rgba(99, 102, 241, 0.08); /* subtle indigo tint */
+  outline: 1px dashed rgba(99, 102, 241, 0.4);
+}
+[contenteditable="true"]:focus {
+  background-color: rgba(99, 102, 241, 0.05);
+  outline: 2px solid var(--primary);
+}
+
+/* Hover effect for workbook boxes to edit styles */
+.workbook-box {
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.workbook-box:hover {
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+.workbook-box:hover .box-edit-hover-btn {
+  opacity: 1 !important;
+}

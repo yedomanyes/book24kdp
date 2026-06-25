@@ -1614,15 +1614,17 @@ Erstelle daraus das optimierte Inhaltsverzeichnis. Jedes Kapitel MUSS mindestens
     }
   }
 
-  async translateToEnglish(text: string): Promise<string> {
-    const systemPrompt = `You are a professional book translator. Translate the following text from German to English. Ensure the tone is natural, professional, and captures the original meaning. Retain any styling elements (like markdown bolding, lists, headings) exactly as they are. Antworte ausschließlich mit der Übersetzung, ohne Einleitung, Meta-Kommentar oder zusätzliche Formatierung.`;
+  async translateText(text: string, targetLang: 'de' | 'en'): Promise<string> {
+    const src = targetLang === 'de' ? 'English' : 'German';
+    const tgt = targetLang === 'de' ? 'German' : 'English';
+    const systemPrompt = `You are a professional book translator. Translate the following text from ${src} to ${tgt}. Ensure the tone is natural, professional, and captures the original meaning. Retain any styling elements (like markdown bolding, lists, headings, html tags) exactly as they are. Antworte ausschließlich mit der Übersetzung, ohne Einleitung, Meta-Kommentar oder zusätzliche Formatierung.`;
     return (await this.askAI(systemPrompt, text, false)).trim();
   }
 
-  async translateOutlinePages(
-    pages: BookOutlinePage[]
-  ): Promise<BookOutlinePage[]> {
-    const systemPrompt = `Du bist ein professioneller Buchübersetzer. Übersetze alle Textinhalte der folgenden Buchgliederung von Deutsch ins Englische.
+  async translateOutline(pages: BookOutlinePage[], targetLang: 'de' | 'en'): Promise<BookOutlinePage[]> {
+    const src = targetLang === 'de' ? 'English' : 'German';
+    const tgt = targetLang === 'de' ? 'German' : 'English';
+    const systemPrompt = `Du bist ein professioneller Buchübersetzer. Übersetze alle Textinhalte der folgenden Buchgliederung von ${src} ins ${tgt}e.
 Übersetze ausschließlich die Werte für "chapter_title", "focus" und "key_points". Lass "page_number" und alle JSON-Schlüssel unverändert.
 Antworte AUSSCHLIESSLICH mit dem übersetzten JSON-Array. Verwende keine zusätzlichen Erklärungen, Markdown-Tags oder Kommentare.`;
 
@@ -1640,16 +1642,14 @@ Antworte AUSSCHLIESSLICH mit dem übersetzten JSON-Array. Verwende keine zusätz
       throw new Error("Antwort ist kein JSON-Array");
     } catch (err) {
       console.warn("Batch outline translation failed, falling back to page-by-page translation:", err);
-      // Fallback: translate page-by-page manually with delay
       const result: BookOutlinePage[] = [];
       const delayMs = this.getProvider() === 'groq' ? 2500 : 4500;
       for (const page of pages) {
-        // Wait to prevent rate limit
         await new Promise(r => setTimeout(r, delayMs));
-        const translatedTitle = await this.translateToEnglish(page.chapter_title);
-        const translatedFocus = await this.translateToEnglish(page.focus);
+        const translatedTitle = await this.translateText(page.chapter_title, targetLang);
+        const translatedFocus = await this.translateText(page.focus, targetLang);
         const translatedPoints = await Promise.all(
-          page.key_points.map(pt => this.translateToEnglish(pt))
+          page.key_points.map(pt => this.translateText(pt, targetLang))
         );
         result.push({
           page_number: page.page_number,
@@ -1660,6 +1660,16 @@ Antworte AUSSCHLIESSLICH mit dem übersetzten JSON-Array. Verwende keine zusätz
       }
       return result;
     }
+  }
+
+  async translateToEnglish(text: string): Promise<string> {
+    return this.translateText(text, 'en');
+  }
+
+  async translateOutlinePages(
+    pages: BookOutlinePage[]
+  ): Promise<BookOutlinePage[]> {
+    return this.translateOutline(pages, 'en');
   }
 }
 

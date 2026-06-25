@@ -23,7 +23,8 @@ import {
   Scissors,
   Copy,
   User,
-  Undo
+  Undo,
+  Image as ImageIcon
 } from 'lucide-react';
 import { GeminiService } from './services/GeminiService';
 import type { BookOutline, BookOutlinePage } from './services/GeminiService';
@@ -92,6 +93,46 @@ const getCssFontFamily = (fontKey: string | undefined, defaultFont: string) => {
   return "sans-serif";
 };
 
+export interface BoxDesign {
+  backgroundColor?: string;
+  borderColor?: string;
+  textColor?: string;
+  borderThickness?: number;
+  borderRadius?: number;
+  borderStyle?: 'solid' | 'dashed' | 'dotted' | 'none';
+  fontStyle?: 'normal' | 'italic';
+}
+
+export const DEFAULT_BOX1_DESIGN: BoxDesign = {
+  backgroundColor: '#f8fafc',
+  borderColor: '#cbd5e1',
+  textColor: '#0f172a',
+  borderThickness: 1,
+  borderRadius: 6,
+  borderStyle: 'solid',
+  fontStyle: 'normal'
+};
+
+export const DEFAULT_BOX2_DESIGN: BoxDesign = {
+  backgroundColor: '#f0fdf4',
+  borderColor: '#bbf7d0',
+  textColor: '#166534',
+  borderThickness: 1,
+  borderRadius: 6,
+  borderStyle: 'solid',
+  fontStyle: 'normal'
+};
+
+export const DEFAULT_BOX3_DESIGN: BoxDesign = {
+  backgroundColor: '#fef2f2',
+  borderColor: '#fecaca',
+  textColor: '#991b1b',
+  borderThickness: 1,
+  borderRadius: 6,
+  borderStyle: 'solid',
+  fontStyle: 'normal'
+};
+
 interface Account {
   id: string;
   username: string;
@@ -101,6 +142,10 @@ interface Book {
   id: string;
   title: string;
   subtitle: string;
+  box1Design?: BoxDesign;
+  box2Design?: BoxDesign;
+  box3Design?: BoxDesign;
+  images?: { [key: string]: string };
   idea: string;
   language: string;
   targetPages: number;
@@ -224,13 +269,14 @@ export type WorkbookBlock =
   | { type: 'checkbox'; text: string; checked: boolean }
   | { type: 'dotted_line' }
   | { type: 'table'; headers: string[]; rows: string[][] }
-  | { type: 'box'; title: string; children: WorkbookBlock[] }
+  | { type: 'box'; title: string; children: WorkbookBlock[]; styleNum?: number }
   | { type: 'pagebreak' }
   | { type: 'ornament' }
   | { type: 'heading'; text: string }
   | { type: 'quote'; text: string }
   | { type: 'bullet'; text: string }
-  | { type: 'image'; prompt: string };
+  | { type: 'image'; prompt: string; width?: number; float?: 'none' | 'left' | 'right' }
+  | { type: 'custom_image'; id: string; width?: number; float?: 'none' | 'left' | 'right' };
 
 export const parsePageLines = (rawLines: string[]): WorkbookBlock[] => {
   const blocks: WorkbookBlock[] = [];
@@ -242,8 +288,9 @@ export const parsePageLines = (rawLines: string[]): WorkbookBlock[] => {
 
     // :::box ... :::
     if (/^:::box/i.test(trimmed)) {
-      const titleMatch = trimmed.match(/^:::box\s*(.*)/i);
-      const boxTitle = titleMatch ? titleMatch[1].trim() : '';
+      const match = trimmed.match(/^:::box\s*(\d+)?\s*(.*)/i);
+      const styleNum = match && match[1] ? parseInt(match[1]) : 1;
+      const boxTitle = match && match[2] ? match[2].trim() : '';
       i++;
       const innerLines: string[] = [];
       while (i < rawLines.length && rawLines[i].trim() !== ':::') {
@@ -251,7 +298,7 @@ export const parsePageLines = (rawLines: string[]): WorkbookBlock[] => {
         i++;
       }
       i++; // skip closing :::
-      blocks.push({ type: 'box', title: boxTitle, children: parsePageLines(innerLines) });
+      blocks.push({ type: 'box', title: boxTitle, children: parsePageLines(innerLines), styleNum });
       continue;
     }
 
@@ -328,7 +375,45 @@ export const parsePageLines = (rawLines: string[]): WorkbookBlock[] => {
       continue;
     }
 
-    // Image placeholder
+    // Image placeholder new format: :::image PROMPT float:left width:50
+    if (/^:::image\s+/i.test(trimmed)) {
+      const lineText = trimmed.replace(/^:::image\s+/i, '');
+      const widthMatch = lineText.match(/width:(\d+)/i);
+      const floatMatch = lineText.match(/float:(none|left|right)/i);
+      
+      const width = widthMatch ? parseInt(widthMatch[1]) : 85;
+      const float = floatMatch ? (floatMatch[1] as any) : 'none';
+      
+      const prompt = lineText
+        .replace(/width:\d+/i, '')
+        .replace(/float:(none|left|right)/i, '')
+        .trim();
+        
+      blocks.push({ type: 'image', prompt, width, float });
+      i++;
+      continue;
+    }
+
+    // Custom image new format: :::custom_image ID float:left width:50
+    if (/^:::custom_image\s+/i.test(trimmed)) {
+      const lineText = trimmed.replace(/^:::custom_image\s+/i, '');
+      const widthMatch = lineText.match(/width:(\d+)/i);
+      const floatMatch = lineText.match(/float:(none|left|right)/i);
+      
+      const width = widthMatch ? parseInt(widthMatch[1]) : 85;
+      const float = floatMatch ? (floatMatch[1] as any) : 'none';
+      
+      const id = lineText
+        .replace(/width:\d+/i, '')
+        .replace(/float:(none|left|right)/i, '')
+        .trim();
+        
+      blocks.push({ type: 'custom_image', id, width, float });
+      i++;
+      continue;
+    }
+
+    // Legacy Image placeholder [grafik: prompt]
     if (/^\[grafik:\s*(.*?)\]$/i.test(trimmed)) {
       const match = trimmed.match(/^\[grafik:\s*(.*?)\]$/i);
       const prompt = match ? match[1].trim() : '';
@@ -342,6 +427,68 @@ export const parsePageLines = (rawLines: string[]): WorkbookBlock[] => {
     i++;
   }
   return blocks;
+};
+
+export const serializeBlocksToMarkdown = (blocks: WorkbookBlock[]): string => {
+  const lines: string[] = [];
+  
+  const serializeBlock = (b: WorkbookBlock) => {
+    switch (b.type) {
+      case 'paragraph':
+        lines.push(b.text);
+        break;
+      case 'heading':
+        lines.push(`### ${b.text}`);
+        break;
+      case 'quote':
+        lines.push(`> ${b.text}`);
+        break;
+      case 'bullet':
+        lines.push(`- ${b.text}`);
+        break;
+      case 'checkbox':
+        lines.push(`[${b.checked ? 'x' : ' '}] ${b.text}`);
+        break;
+      case 'dotted_line':
+        lines.push('......');
+        break;
+      case 'ornament':
+        lines.push('***');
+        break;
+      case 'pagebreak':
+        lines.push('---');
+        break;
+      case 'table':
+        lines.push('| ' + b.headers.join(' | ') + ' |');
+        lines.push('| ' + b.headers.map(() => '---').join(' | ') + ' |');
+        b.rows.forEach(row => {
+          lines.push('| ' + row.join(' | ') + ' |');
+        });
+        break;
+      case 'box':
+        lines.push(`:::box${b.styleNum ? ' ' + b.styleNum : ''}${b.title ? ' ' + b.title : ''}`);
+        b.children.forEach(child => serializeBlock(child));
+        lines.push(':::');
+        break;
+      case 'image': {
+        let imgOptions = '';
+        if (b.float && b.float !== 'none') imgOptions += ` float:${b.float}`;
+        if (b.width && b.width !== 85) imgOptions += ` width:${b.width}`;
+        lines.push(`:::image ${b.prompt}${imgOptions}`.trim());
+        break;
+      }
+      case 'custom_image': {
+        let customImgOptions = '';
+        if (b.float && b.float !== 'none') customImgOptions += ` float:${b.float}`;
+        if (b.width && b.width !== 85) customImgOptions += ` width:${b.width}`;
+        lines.push(`:::custom_image ${b.id}${customImgOptions}`.trim());
+        break;
+      }
+    }
+  };
+
+  blocks.forEach(b => serializeBlock(b));
+  return lines.join('\n');
 };
 
 export default function App() {
@@ -1255,6 +1402,8 @@ export default function App() {
   const [isTranslating, setIsTranslating] = useState<boolean>(false);
   const [translationProgress, setTranslationProgress] = useState<string>('');
   const [showTranslationWarning, setShowTranslationWarning] = useState<boolean>(false);
+  const [activeStyleEditNum, setActiveStyleEditNum] = useState<number | null>(null);
+  const [showImageInsertModal, setShowImageInsertModal] = useState<boolean>(false);
 
 
   // Multi-selection states for pages grid
@@ -3963,6 +4112,75 @@ export default function App() {
       );
     }
 
+    const blocks = parsePageLines(partText.split('\n'));
+
+    const updatePagePartBlocks = (blocksList: WorkbookBlock[]) => {
+      if (typeof selectedPage !== 'number') return;
+      const pageText = (activeBook.pagesText || {})[selectedPage] || '';
+      const parts = pageText.split(/\r?\n\s*-{3,}\s*(?:\r?\n|$)/);
+      parts[partIndex] = serializeBlocksToMarkdown(blocksList);
+      const newPageText = parts.join('\n---\n');
+      updateActiveBookConfig('pagesText', {
+        ...(activeBook.pagesText || {}),
+        [selectedPage]: newPageText
+      });
+    };
+
+    const handleBlockTextChange = (path: number[], newText: string) => {
+      const updatedBlocks = JSON.parse(JSON.stringify(blocks));
+      let current = updatedBlocks;
+      for (let i = 0; i < path.length - 1; i++) {
+        current = current[path[i]].children;
+      }
+      const targetBlock = current[path[path.length - 1]];
+      if (!targetBlock) return;
+      if (targetBlock.type === 'paragraph' || targetBlock.type === 'heading' || targetBlock.type === 'quote' || targetBlock.type === 'bullet' || targetBlock.type === 'checkbox') {
+        targetBlock.text = newText;
+      } else if (targetBlock.type === 'box') {
+        targetBlock.title = newText;
+      }
+      updatePagePartBlocks(updatedBlocks);
+    };
+
+    const handleMoveImage = (sourcePath: number[], targetPath: number[], floatVal: 'none' | 'left' | 'right', insertBefore: boolean) => {
+      const updatedBlocks = JSON.parse(JSON.stringify(blocks));
+      
+      // Get source parent and block
+      let sourceParent = updatedBlocks;
+      for (let i = 0; i < sourcePath.length - 1; i++) {
+        sourceParent = sourceParent[sourcePath[i]].children;
+      }
+      const imageIndex = sourcePath[sourcePath.length - 1];
+      const imageBlock = sourceParent[imageIndex];
+      if (!imageBlock || (imageBlock.type !== 'image' && imageBlock.type !== 'custom_image')) return;
+      
+      // Update float
+      imageBlock.float = floatVal;
+      
+      // Remove from source
+      sourceParent.splice(imageIndex, 1);
+      
+      // Get target parent
+      let targetParent = updatedBlocks;
+      for (let i = 0; i < targetPath.length - 1; i++) {
+        targetParent = targetParent[targetPath[i]].children;
+      }
+      
+      let targetIndex = targetPath[targetPath.length - 1];
+      const sameParent = sourcePath.slice(0, -1).join(',') === targetPath.slice(0, -1).join(',');
+      if (sameParent && imageIndex < targetIndex) {
+        targetIndex--;
+      }
+      
+      if (insertBefore) {
+        targetParent.splice(targetIndex, 0, imageBlock);
+      } else {
+        targetParent.splice(targetIndex, 0, imageBlock);
+      }
+      
+      updatePagePartBlocks(updatedBlocks);
+    };
+
     const pageParagraphStyle = (typeof selectedPage === 'number' && activeBook.pagesParagraphStyle?.[selectedPage])
       || activeBook.paragraphStyle
       || 'indent';
@@ -3984,7 +4202,83 @@ export default function App() {
       return parts.length > 0 ? <>{parts}</> : <>{str}</>;
     };
 
-    const renderWbBlock = (block: WorkbookBlock, key: number): React.ReactNode => {
+    const getDragDropProps = (path: number[]) => ({
+      onDragOver: (e: React.DragEvent) => {
+        e.preventDefault();
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const ratio = x / rect.width;
+        if (ratio < 0.35) {
+          (e.currentTarget as any).style.borderLeft = '3px dashed var(--primary)';
+          (e.currentTarget as any).style.borderRight = 'none';
+          (e.currentTarget as any).style.borderTop = 'none';
+        } else if (ratio > 0.65) {
+          (e.currentTarget as any).style.borderRight = '3px dashed var(--primary)';
+          (e.currentTarget as any).style.borderLeft = 'none';
+          (e.currentTarget as any).style.borderTop = 'none';
+        } else {
+          (e.currentTarget as any).style.borderTop = '3px dashed var(--primary)';
+          (e.currentTarget as any).style.borderLeft = 'none';
+          (e.currentTarget as any).style.borderRight = 'none';
+        }
+      },
+      onDragLeave: (e: React.DragEvent) => {
+        (e.currentTarget as any).style.borderLeft = 'none';
+        (e.currentTarget as any).style.borderRight = 'none';
+        (e.currentTarget as any).style.borderTop = 'none';
+      },
+      onDrop: (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        (e.currentTarget as any).style.borderLeft = 'none';
+        (e.currentTarget as any).style.borderRight = 'none';
+        (e.currentTarget as any).style.borderTop = 'none';
+        
+        const rawData = e.dataTransfer.getData('text/plain');
+        if (!rawData) return;
+        try {
+          const { sourcePath } = JSON.parse(rawData);
+          if (!sourcePath) return;
+          
+          const rect = e.currentTarget.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const ratio = x / rect.width;
+          let finalFloat: 'none' | 'left' | 'right' = 'none';
+          let insertBefore = false;
+          
+          if (ratio < 0.35) {
+            finalFloat = 'left';
+          } else if (ratio > 0.65) {
+            finalFloat = 'right';
+          } else {
+            finalFloat = 'none';
+            insertBefore = true;
+          }
+          
+          handleMoveImage(sourcePath, path, finalFloat, insertBefore);
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    });
+
+    const makeEditable = (path: number[]) => ({
+      contentEditable: true,
+      suppressContentEditableWarning: true,
+      onBlur: (e: React.FocusEvent<any>) => {
+        const text = e.currentTarget.innerText || '';
+        handleBlockTextChange(path, text);
+      },
+      onKeyDown: (e: React.KeyboardEvent<any>) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          e.currentTarget.blur();
+        }
+      }
+    });
+
+    const renderWbBlock = (block: WorkbookBlock, path: number[]): React.ReactNode => {
+      const key = path.join('-');
       switch (block.type) {
         case 'pagebreak':
           return (
@@ -4004,8 +4298,14 @@ export default function App() {
 
         case 'heading':
           return (
-            <p key={key} className="literary-paragraph" style={{ fontWeight: 'bold', marginTop: key > 0 ? '0.4em' : '0', margin: '0', padding: '0', lineHeight: '1.5' }}>
-              <strong>{renderInline(block.text)}</strong>
+            <p 
+              key={key} 
+              className="literary-paragraph" 
+              style={{ fontWeight: 'bold', marginTop: path[path.length - 1] > 0 ? '0.4em' : '0', margin: '0', padding: '0', lineHeight: '1.5', outline: 'none' }}
+              {...getDragDropProps(path)}
+              {...makeEditable(path)}
+            >
+              <strong>{block.text}</strong>
             </p>
           );
 
@@ -4014,29 +4314,66 @@ export default function App() {
           if (typeof selectedPage === 'number' && (activeBook.pagesHideQuotes || []).includes(selectedPage)) return null;
           if (isInfobox) {
             return (
-              <div key={key} style={{ backgroundColor: '#f8fafc', borderLeft: '2px solid #64748b', padding: '6px 8px', borderRadius: '2px', margin: '6px 0', fontStyle: 'italic', color: '#334155' }}>
-                {renderInline(block.text)}
+              <div 
+                key={key} 
+                style={{ backgroundColor: '#f8fafc', borderLeft: '2px solid #64748b', padding: '6px 8px', borderRadius: '2px', margin: '6px 0', fontStyle: 'italic', color: '#334155', outline: 'none' }}
+                {...getDragDropProps(path)}
+                {...makeEditable(path)}
+              >
+                {block.text}
               </div>
             );
           }
-          return <blockquote key={key}>{renderInline(block.text)}</blockquote>;
+          return (
+            <blockquote 
+              key={key} 
+              style={{ outline: 'none' }}
+              {...getDragDropProps(path)}
+              {...makeEditable(path)}
+            >
+              {block.text}
+            </blockquote>
+          );
         }
 
         case 'bullet':
           return (
-            <p key={key} className="literary-paragraph" style={{ margin: '0', padding: '0', lineHeight: '1.5', textAlign: 'left' }}>
+            <p 
+              key={key} 
+              className="literary-paragraph" 
+              style={{ margin: '0', padding: '0', lineHeight: '1.5', textAlign: 'left', outline: 'none' }}
+              {...getDragDropProps(path)}
+            >
               <span style={{ display: 'flex', gap: '6px', paddingLeft: '8px' }}>
                 <span>•</span>
-                <span>{renderInline(block.text)}</span>
+                <span {...makeEditable(path)} style={{ flex: 1, outline: 'none' }}>{block.text}</span>
               </span>
             </p>
           );
 
         case 'checkbox':
           return (
-            <div key={key} className="workbook-checkbox-container">
-              <span className={'workbook-checkbox-box' + (block.checked ? ' checked' : '')} />
-              <span>{renderInline(block.text)}</span>
+            <div 
+              key={key} 
+              className="workbook-checkbox-container" 
+              style={{ outline: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
+              {...getDragDropProps(path)}
+            >
+              <span 
+                className={'workbook-checkbox-box' + (block.checked ? ' checked' : '')} 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const updatedBlocks = JSON.parse(JSON.stringify(blocks));
+                  let current = updatedBlocks;
+                  for (let i = 0; i < path.length - 1; i++) {
+                    current = current[path[i]].children;
+                  }
+                  current[path[path.length - 1]].checked = !block.checked;
+                  updatePagePartBlocks(updatedBlocks);
+                }}
+                style={{ cursor: 'pointer', flexShrink: 0 }}
+              />
+              <span {...makeEditable(path)} style={{ flex: 1, outline: 'none' }}>{block.text}</span>
             </div>
           );
 
@@ -4065,44 +4402,193 @@ export default function App() {
             </table>
           );
 
-        case 'box':
+        case 'box': {
+          const styleNum = block.styleNum || 1;
+          const design = styleNum === 1 
+            ? (activeBook.box1Design || DEFAULT_BOX1_DESIGN)
+            : styleNum === 2 
+              ? (activeBook.box2Design || DEFAULT_BOX2_DESIGN)
+              : (activeBook.box3Design || DEFAULT_BOX3_DESIGN);
+          
           return (
-            <div key={key} className="workbook-box">
-              {block.title && <span className="workbook-box-title">{block.title}</span>}
-              <div className="workbook-box-content">
-                {block.children.map((child, ci) => renderWbBlock(child, ci))}
+            <div 
+              key={key} 
+              className="workbook-box" 
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveStyleEditNum(styleNum);
+              }}
+              style={{
+                position: 'relative',
+                backgroundColor: design.backgroundColor,
+                borderColor: design.borderColor,
+                borderWidth: `${design.borderThickness}px`,
+                borderStyle: design.borderStyle,
+                borderRadius: `${design.borderRadius}px`,
+                color: design.textColor,
+                fontStyle: design.fontStyle,
+                padding: '12px 14px',
+                margin: '14px 0',
+                boxSizing: 'border-box',
+                cursor: 'pointer'
+              }}
+              title="Klicke auf den Box-Rand, um den Stil zu bearbeiten"
+            >
+              {block.title && (
+                <span 
+                  className="workbook-box-title" 
+                  onClick={(e) => e.stopPropagation()}
+                  {...makeEditable(path)}
+                  style={{ 
+                    color: design.textColor,
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    marginBottom: '6px',
+                    display: 'block',
+                    outline: 'none',
+                    cursor: 'text'
+                  }}
+                >
+                  {block.title}
+                </span>
+              )}
+              
+              {/* Float Hover Edit Button */}
+              <button
+                className="box-edit-hover-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveStyleEditNum(styleNum);
+                }}
+                style={{
+                  position: 'absolute',
+                  top: '4px',
+                  right: '4px',
+                  padding: '2px 6px',
+                  fontSize: '8.5px',
+                  fontWeight: 600,
+                  backgroundColor: 'var(--primary)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  opacity: 0,
+                  transition: 'opacity 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '2px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  zIndex: 10
+                }}
+              >
+                🎨 Stil bearbeiten
+              </button>
+ 
+              <div 
+                className="workbook-box-content" 
+                onClick={(e) => e.stopPropagation()}
+                style={{ fontSize: 'inherit', color: 'inherit', fontStyle: 'inherit', cursor: 'default' }}
+              >
+                {block.children.map((child, ci) => renderWbBlock(child, [...path, ci]))}
               </div>
             </div>
           );
+        }
 
-        case 'image':
+        case 'image': {
+          const widthVal = block.width !== undefined ? block.width : 85;
+          const floatVal = block.float !== undefined ? block.float : 'none';
+          const isFloated = floatVal === 'left' || floatVal === 'right';
+
           return (
-            <div key={key} style={{
-              margin: '16px 0',
-              padding: '24px',
-              backgroundColor: 'rgba(241, 245, 249, 0.4)',
-              backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(148, 163, 184, 0.3)',
-              borderRadius: '8px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '12px',
-              color: '#64748b',
-              textAlign: 'center',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)'
-            }}>
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <div 
+              key={key} 
+              draggable={true}
+              onDragStart={(e) => {
+                e.dataTransfer.setData('text/plain', JSON.stringify({ sourcePath: path }));
+              }}
+              style={{
+                margin: isFloated ? '4px 10px' : '16px auto',
+                padding: '16px',
+                backgroundColor: 'rgba(241, 245, 249, 0.4)',
+                border: '1px dashed rgba(148, 163, 184, 0.5)',
+                borderRadius: '6px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '8px',
+                color: '#64748b',
+                textAlign: 'center',
+                width: `${widthVal}%`,
+                float: isFloated ? floatVal : undefined,
+                clear: isFloated ? undefined : 'both',
+                boxSizing: 'border-box',
+                cursor: 'grab'
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                 <circle cx="8.5" cy="8.5" r="1.5" />
                 <polyline points="21 15 16 10 5 21" />
               </svg>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <span style={{ fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#475569' }}>K.I. Grafik-Platzhalter</span>
-                <span style={{ fontSize: '9px', fontStyle: 'italic', maxWidth: '200px', lineHeight: '1.4' }}>"{block.prompt}"</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <span style={{ fontSize: '9px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#475569' }}>K.I. Grafik-Platzhalter</span>
+                <span style={{ fontSize: '8px', fontStyle: 'italic', maxWidth: '100%', lineHeight: '1.3' }}>"{block.prompt}"</span>
               </div>
             </div>
           );
+        }
+
+        case 'custom_image': {
+          const widthVal = block.width !== undefined ? block.width : 85;
+          const floatVal = block.float !== undefined ? block.float : 'none';
+          const isFloated = floatVal === 'left' || floatVal === 'right';
+          const imgSrc = activeBook.images?.[block.id] || '';
+
+          return (
+            <div 
+              key={key} 
+              draggable={true}
+              onDragStart={(e) => {
+                e.dataTransfer.setData('text/plain', JSON.stringify({ sourcePath: path }));
+              }}
+              style={{
+                margin: isFloated ? '4px 10px' : '16px auto',
+                width: `${widthVal}%`,
+                float: isFloated ? floatVal : undefined,
+                clear: isFloated ? undefined : 'both',
+                boxSizing: 'border-box',
+                textAlign: 'center',
+                cursor: 'grab'
+              }}
+            >
+              {imgSrc ? (
+                <img 
+                  src={imgSrc} 
+                  alt="Benutzergrafik" 
+                  style={{
+                    width: '100%',
+                    height: 'auto',
+                    borderRadius: '4px',
+                    border: '1px solid var(--border-color)',
+                    display: 'block'
+                  }} 
+                />
+              ) : (
+                <div style={{
+                  padding: '16px',
+                  backgroundColor: '#fef2f2',
+                  border: '1px solid #fee2e2',
+                  borderRadius: '4px',
+                  color: 'var(--error)',
+                  fontSize: '9px'
+                }}>
+                  [Bild fehlt: {block.id}]
+                </div>
+              )}
+            </div>
+          );
+        }
 
         case 'paragraph': {
           const isDropCapCandidate = showInitialOnPage && partIndex === 0 && !dropCapUsed && block.text.length > 1;
@@ -4111,9 +4597,15 @@ export default function App() {
             const dropChar = block.text[0];
             const restText = block.text.slice(1);
             return (
-              <p key={key} className="literary-paragraph" style={{ margin: '0', padding: '0', lineHeight: '1.5', textAlign: activeBook.alignment === 'left' ? 'left' : 'justify' }}>
+              <p 
+                key={key} 
+                className="literary-paragraph" 
+                style={{ margin: '0', padding: '0', lineHeight: '1.5', textAlign: activeBook.alignment === 'left' ? 'left' : 'justify', outline: 'none' }}
+                {...getDragDropProps(path)}
+                {...makeEditable(path)}
+              >
                 <span className="drop-cap-letter">{dropChar}</span>
-                {renderInline(restText)}
+                {restText}
               </p>
             );
           }
@@ -4129,7 +4621,11 @@ export default function App() {
                 padding: '0',
                 lineHeight: '1.5',
                 textAlign: activeBook.alignment === 'left' ? 'left' : 'justify',
+                outline: 'none',
+                cursor: 'text'
               }}
+              {...getDragDropProps(path)}
+              {...makeEditable(path)}
             >
               {renderInline(block.text)}
             </p>
@@ -4141,8 +4637,7 @@ export default function App() {
       }
     };
 
-    const blocks = parsePageLines(partText.split('\n'));
-    return blocks.map((block, idx) => renderWbBlock(block, idx)).filter(Boolean);
+    return blocks.map((block, idx) => renderWbBlock(block, [idx])).filter(Boolean);
   };
 
   const renderPreviewContent = () => {
@@ -7091,6 +7586,27 @@ max="250"
                             "Zitat"
                           </button>
 
+                          <button 
+                            onMouseDown={(e) => e.preventDefault()} 
+                            onClick={() => setShowImageInsertModal(true)} 
+                            className="btn" 
+                            style={{ 
+                              padding: '4px 8px', 
+                              fontSize: '11px', 
+                              background: 'transparent', 
+                              border: 'none', 
+                              cursor: 'pointer', 
+                              color: '#ffffff',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }} 
+                            title="Bild / Grafik einfügen"
+                          >
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                            Bild
+                          </button>
+
                           <button onMouseDown={(e) => e.preventDefault()} onClick={() => {
                             const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement;
                             if(!textarea) return;
@@ -7169,47 +7685,73 @@ max="250"
               </div>
 
               {activeBook && (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px', padding: '6px 12px', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '9px', color: 'var(--text-main)', cursor: 'pointer' }} title="Große Initiale am Kapitelanfang">
-                    <input 
-                      type="checkbox" 
-                      checked={activeBook.autoChapterDropCaps !== false}
-                      onChange={e => updateActiveBookConfig('autoChapterDropCaps', e.target.checked)}
-                      style={{ margin: 0 }}
-                    />
-                    Initiale
-                  </label>
-
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '9px', color: 'var(--text-main)', cursor: 'pointer' }} title="KI generiert selbstständig Platzhalter für passende Buch-Grafiken">
-                    <input 
-                      type="checkbox" 
-                      checked={activeBook.autoChapterGraphics === true}
-                      onChange={e => updateActiveBookConfig('autoChapterGraphics', e.target.checked)}
-                      style={{ margin: 0 }}
-                    />
-                    Auto-Grafiken
-                  </label>
-
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '9px', color: 'var(--text-main)', cursor: 'pointer' }} title="Kapitel starten immer auf der rechten (Recto) Seite">
-                    <input 
-                      type="checkbox" 
-                      checked={activeBook.autoChapterRecto === true}
-                      onChange={e => updateActiveBookConfig('autoChapterRecto', e.target.checked)}
-                      style={{ margin: 0 }}
-                    />
-                    Recto
-                  </label>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', padding: '6px 12px', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', flexWrap: 'wrap' }}>
                   
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span style={{ fontSize: '9px', color: 'var(--text-main)' }}>Abstand:</span>
+                  {/* Initiale Toggle */}
+                  <button
+                    onClick={() => updateActiveBookConfig('autoChapterDropCaps', activeBook.autoChapterDropCaps === false)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '5px',
+                      padding: '4px 10px', borderRadius: '8px', fontSize: '10px', fontWeight: 600,
+                      border: '1px solid var(--border-color)', cursor: 'pointer',
+                      backgroundColor: activeBook.autoChapterDropCaps !== false ? 'var(--primary)' : 'var(--bg-card)',
+                      color: activeBook.autoChapterDropCaps !== false ? '#ffffff' : 'var(--text-muted)',
+                      transition: 'all 0.2s',
+                    }}
+                    title="Große Initiale am Kapitelanfang"
+                  >
+                    <span style={{ fontSize: '12px', fontWeight: 800, fontFamily: 'Georgia, serif', lineHeight: 1 }}>I</span>
+                    Initiale {activeBook.autoChapterDropCaps !== false ? 'AN' : 'AUS'}
+                  </button>
+
+                  {/* Auto-Grafiken Toggle */}
+                  <button
+                    onClick={() => updateActiveBookConfig('autoChapterGraphics', !activeBook.autoChapterGraphics)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '5px',
+                      padding: '4px 10px', borderRadius: '8px', fontSize: '10px', fontWeight: 600,
+                      border: '1px solid var(--border-color)', cursor: 'pointer',
+                      backgroundColor: activeBook.autoChapterGraphics ? 'var(--primary)' : 'var(--bg-card)',
+                      color: activeBook.autoChapterGraphics ? '#ffffff' : 'var(--text-muted)',
+                      transition: 'all 0.2s',
+                    }}
+                    title="KI generiert selbstständig Platzhalter für passende Buch-Grafiken"
+                  >
+                    <ImageIcon style={{ width: '11px', height: '11px' }} />
+                    Auto-Grafiken {activeBook.autoChapterGraphics ? 'AN' : 'AUS'}
+                  </button>
+
+                  {/* Recto Toggle */}
+                  <button
+                    onClick={() => updateActiveBookConfig('autoChapterRecto', !activeBook.autoChapterRecto)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '5px',
+                      padding: '4px 10px', borderRadius: '8px', fontSize: '10px', fontWeight: 600,
+                      border: '1px solid var(--border-color)', cursor: 'pointer',
+                      backgroundColor: activeBook.autoChapterRecto ? 'var(--primary)' : 'var(--bg-card)',
+                      color: activeBook.autoChapterRecto ? '#ffffff' : 'var(--text-muted)',
+                      transition: 'all 0.2s',
+                    }}
+                    title="Kapitel starten immer auf der rechten (Recto) Seite"
+                  >
+                    <BookOpen style={{ width: '11px', height: '11px' }} />
+                    Recto {activeBook.autoChapterRecto ? 'AN' : 'AUS'}
+                  </button>
+
+                  {/* Abstand Input */}
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: '5px',
+                    padding: '2px 10px', borderRadius: '8px', fontSize: '10px', fontWeight: 600,
+                    border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', color: 'var(--text-muted)'
+                  }} title="Zusätzlicher Abstand nach oben am Kapitelanfang">
+                    <span>Abstand:</span>
                     <input 
                       type="number" 
                       value={activeBook.chapterTopPadding || 0}
                       onChange={e => updateActiveBookConfig('chapterTopPadding', Number(e.target.value))}
-                      style={{ fontSize: '9px', padding: '1px 4px', height: '18px', width: '45px', border: '1px solid var(--border-color)', borderRadius: '2px', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)' }}
+                      style={{ fontSize: '10px', fontWeight: 600, padding: '0', height: '18px', width: '30px', border: 'none', backgroundColor: 'transparent', color: 'var(--text-main)', outline: 'none', textAlign: 'center' }}
                       min={0}
                       max={300}
-                      title="Zusätzlicher Abstand nach oben am Kapitelanfang"
                     />
                   </div>
                 </div>
@@ -7402,6 +7944,24 @@ max="250"
                           </button>
                         </>
                       )}
+                      {typeof selectedPage === 'number' && (
+                        <button
+                          onClick={() => setShowImageInsertModal(true)}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: '5px',
+                            padding: '4px 10px', borderRadius: '8px', fontSize: '10px', fontWeight: 600,
+                            border: '1px solid var(--primary)', cursor: 'pointer',
+                            backgroundColor: 'transparent',
+                            color: 'var(--primary)',
+                            transition: 'all 0.2s',
+                            marginLeft: 'auto'
+                          }}
+                          title="Bild / Grafik in diese Seite einfügen"
+                        >
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                          Bild einfügen
+                        </button>
+                      )}
                     </div>
 
                     {selectedPage === 'title' && activeCoverEditField && (
@@ -7578,7 +8138,33 @@ max="250"
                                   )}
                                   {showTitle && (
                                     <>
-                                      <h4 style={{ fontSize: '8px', fontWeight: 'bold', textAlign: 'center', marginBottom: '4px', borderBottom: '0.5px solid #cbd5e1', paddingBottom: '1px', color: '#000000' }}>
+                                      <h4 
+                                        contentEditable={true}
+                                        suppressContentEditableWarning={true}
+                                        onBlur={(e) => {
+                                          const text = e.currentTarget.innerText || '';
+                                          handleSaveChapterTitle(selectedPage, text);
+                                        }}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            e.currentTarget.blur();
+                                          }
+                                        }}
+                                        style={{ 
+                                          fontSize: '8px', 
+                                          fontWeight: 'bold', 
+                                          textAlign: 'center', 
+                                          marginBottom: '4px', 
+                                          borderBottom: '0.5px solid #cbd5e1', 
+                                          paddingBottom: '1px', 
+                                          color: '#000000',
+                                          outline: 'none',
+                                          cursor: 'text'
+                                        }}
+                                        className="preview-editable-header"
+                                        title="Klicke zum Bearbeiten des Kapitelnamens"
+                                      >
                                         {outline?.pages[selectedPage - 1]?.chapter_title}
                                       </h4>
                                       {activeBook.chapterOrnament && (
@@ -8093,6 +8679,188 @@ max="250"
           </div>
         </div>
       )}
+      {/* Box Design Edit Modal */}
+      {activeBook && activeStyleEditNum !== null && (() => {
+        const key = (activeStyleEditNum === 1 ? 'box1Design' : activeStyleEditNum === 2 ? 'box2Design' : 'box3Design') as keyof Book;
+        const design = (activeBook[key] as BoxDesign) || (activeStyleEditNum === 1 ? DEFAULT_BOX1_DESIGN : activeStyleEditNum === 2 ? DEFAULT_BOX2_DESIGN : DEFAULT_BOX3_DESIGN);
+        const updateField = (field: string, val: any) => {
+          updateActiveBookConfig(key, { ...design, [field]: val });
+        };
+
+        return (
+          <div style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            backgroundColor: 'rgba(0,0,0,0.65)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center'
+          }} onClick={() => setActiveStyleEditNum(null)}>
+            <div style={{
+              backgroundColor: 'var(--sidebar-bg)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '12px',
+              padding: '24px',
+              maxWidth: '420px',
+              width: '90%',
+              boxShadow: '0 24px 60px rgba(0,0,0,0.6)',
+              display: 'flex', flexDirection: 'column', gap: '16px'
+            }} onClick={e => e.stopPropagation()}>
+              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-main)' }}>Stileinstellungen für Box {activeStyleEditNum}</h3>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="form-group">
+                  <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Hintergrundfarbe</label>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <input 
+                      type="color" 
+                      value={design.backgroundColor || '#f8fafc'} 
+                      onChange={e => updateField('backgroundColor', e.target.value)} 
+                      style={{ width: '28px', height: '24px', padding: 0, border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                    />
+                    <input 
+                      type="text" 
+                      value={design.backgroundColor || '#f8fafc'} 
+                      onChange={e => updateField('backgroundColor', e.target.value)} 
+                      style={{ flex: 1, fontSize: '11px', padding: '2px 6px', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)' }}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Rahmenfarbe</label>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <input 
+                      type="color" 
+                      value={design.borderColor || '#cbd5e1'} 
+                      onChange={e => updateField('borderColor', e.target.value)} 
+                      style={{ width: '28px', height: '24px', padding: 0, border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                    />
+                    <input 
+                      type="text" 
+                      value={design.borderColor || '#cbd5e1'} 
+                      onChange={e => updateField('borderColor', e.target.value)} 
+                      style={{ flex: 1, fontSize: '11px', padding: '2px 6px', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="form-group">
+                  <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Textfarbe</label>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <input 
+                      type="color" 
+                      value={design.textColor || '#0f172a'} 
+                      onChange={e => updateField('textColor', e.target.value)} 
+                      style={{ width: '28px', height: '24px', padding: 0, border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                    />
+                    <input 
+                      type="text" 
+                      value={design.textColor || '#0f172a'} 
+                      onChange={e => updateField('textColor', e.target.value)} 
+                      style={{ flex: 1, fontSize: '11px', padding: '2px 6px', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)' }}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Rahmenstil</label>
+                  <select 
+                    value={design.borderStyle || 'solid'} 
+                    onChange={e => updateField('borderStyle', e.target.value)} 
+                    style={{ width: '100%', fontSize: '11px', padding: '4px 6px', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)' }}
+                  >
+                    <option value="solid">Durchgezogen (solid)</option>
+                    <option value="dashed">Gestrichelt (dashed)</option>
+                    <option value="dotted">Gepunktet (dotted)</option>
+                    <option value="none">Kein Rahmen (none)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="form-group">
+                  <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Rahmendicke ({design.borderThickness || 1}px)</label>
+                  <input 
+                    type="range" 
+                    min="0" 
+                    max="10" 
+                    value={design.borderThickness || 0} 
+                    onChange={e => updateField('borderThickness', Number(e.target.value))} 
+                    style={{ width: '100%', accentColor: 'var(--primary)' }}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Eckenabrundung ({design.borderRadius || 4}px)</label>
+                  <input 
+                    type="range" 
+                    min="0" 
+                    max="30" 
+                    value={design.borderRadius || 0} 
+                    onChange={e => updateField('borderRadius', Number(e.target.value))} 
+                    style={{ width: '100%', accentColor: 'var(--primary)' }}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Schriftstil</label>
+                <select 
+                  value={design.fontStyle || 'normal'} 
+                  onChange={e => updateField('fontStyle', e.target.value)} 
+                  style={{ width: '100%', fontSize: '11px', padding: '4px 6px', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)' }}
+                >
+                  <option value="normal">Standard (Normal)</option>
+                  <option value="italic">Kursiv (Italic)</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                <button
+                  onClick={() => setActiveStyleEditNum(null)}
+                  className="btn btn-primary"
+                  style={{ flex: 1, padding: '8px', fontSize: '12px', fontWeight: 600, backgroundColor: 'var(--primary)', color: '#fff', border: 'none', cursor: 'pointer' }}
+                >
+                  Fertig
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Image Insert Modal */}
+      {showImageInsertModal && activeBook && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          backgroundColor: 'rgba(0,0,0,0.65)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }} onClick={() => setShowImageInsertModal(false)}>
+          <ImageInsertModalInner 
+            activeBook={activeBook}
+            updateActiveBookConfig={updateActiveBookConfig}
+            onClose={() => setShowImageInsertModal(false)}
+            onInsert={(tag) => {
+              const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement;
+              if (textarea) {
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const text = textarea.value;
+                const newText = text.substring(0, start) + '\n\n' + tag + '\n\n' + text.substring(end);
+                handleEditorChange({ target: { value: newText } } as React.ChangeEvent<HTMLTextAreaElement>);
+                setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + tag.length + 4, start + tag.length + 4); }, 0);
+              } else if (typeof selectedPage === 'number') {
+                const currentText = (activeBook.pagesText || {})[selectedPage] || '';
+                const newText = currentText + '\n\n' + tag + '\n\n';
+                handleEditorChange({ target: { value: newText } } as any);
+              }
+              setShowImageInsertModal(false);
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -8226,4 +8994,165 @@ function generateStructureVariationsLocal(text: string): { version_1: string; ve
   const version3 = groupedParas.join('\n\n');
 
   return { version_1: version1, version_2: version2, version_3: version3 };
+}
+
+interface ImageInsertModalInnerProps {
+  activeBook: Book;
+  updateActiveBookConfig: (key: keyof Book, val: any) => void;
+  onClose: () => void;
+  onInsert: (tag: string) => void;
+}
+
+function ImageInsertModalInner({ activeBook, updateActiveBookConfig, onClose, onInsert }: ImageInsertModalInnerProps) {
+  const [mode, setMode] = useState<'ki' | 'upload'>('ki');
+  const [prompt, setPrompt] = useState('');
+  const [uploadedId, setUploadedId] = useState('');
+  const [floatVal, setFloatVal] = useState<'none' | 'left' | 'right'>('none');
+  const [widthVal, setWidthVal] = useState<number>(85);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      if (!base64) {
+        setIsUploading(false);
+        return;
+      }
+      const newId = `img_${Date.now()}`;
+      
+      const currentImages = activeBook.images || {};
+      const newImages = { ...currentImages, [newId]: base64 };
+      updateActiveBookConfig('images', newImages);
+
+      setUploadedId(newId);
+      setIsUploading(false);
+    };
+    reader.onerror = () => setIsUploading(false);
+    reader.readAsDataURL(file);
+  };
+
+  const handleInsert = () => {
+    if (mode === 'ki') {
+      if (!prompt.trim()) return;
+      onInsert(`:::image ${prompt.trim()} float:${floatVal} width:${widthVal}`);
+    } else {
+      if (!uploadedId) return;
+      onInsert(`:::custom_image ${uploadedId} float:${floatVal} width:${widthVal}`);
+    }
+  };
+
+  return (
+    <div style={{
+      backgroundColor: 'var(--bg-dashboard)',
+      border: '1px solid var(--border-color)',
+      borderRadius: '12px',
+      padding: '24px',
+      maxWidth: '420px',
+      width: '95%',
+      boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+      display: 'flex', flexDirection: 'column', gap: '16px'
+    }} onClick={e => e.stopPropagation()}>
+      <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: 'var(--text-main)' }}>Bild / Grafik einfügen</h3>
+      
+      <div style={{ display: 'flex', gap: '4px', backgroundColor: 'var(--bg-main)', padding: '2px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+        <button
+          onClick={() => setMode('ki')}
+          style={{
+            flex: 1, padding: '6px 12px', fontSize: '11px', border: 'none', borderRadius: '6px', cursor: 'pointer',
+            backgroundColor: mode === 'ki' ? 'var(--primary)' : 'transparent',
+            color: mode === 'ki' ? '#ffffff' : 'var(--text-muted)',
+            fontWeight: mode === 'ki' ? 600 : 400
+          }}
+        >
+          K.I. Grafik-Platzhalter
+        </button>
+        <button
+          onClick={() => setMode('upload')}
+          style={{
+            flex: 1, padding: '6px 12px', fontSize: '11px', border: 'none', borderRadius: '6px', cursor: 'pointer',
+            backgroundColor: mode === 'upload' ? 'var(--primary)' : 'transparent',
+            color: mode === 'upload' ? '#ffffff' : 'var(--text-muted)',
+            fontWeight: mode === 'upload' ? 600 : 400
+          }}
+        >
+          Eigenes Bild hochladen
+        </button>
+      </div>
+
+      {mode === 'ki' ? (
+        <div className="form-group">
+          <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>K.I. Bildbeschreibung (Prompt)</label>
+          <textarea
+            rows={3}
+            placeholder="z.B. Eine filigrane Bleistiftzeichnung eines historischen Segelschiffes..."
+            value={prompt}
+            onChange={e => setPrompt(e.target.value)}
+            style={{ width: '100%', padding: '8px 12px', fontSize: '11px', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-main)', resize: 'none' }}
+          />
+        </div>
+      ) : (
+        <div className="form-group">
+          <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Bilddatei auswählen</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleFileUpload}
+            style={{ fontSize: '11px', color: 'var(--text-muted)', width: '100%', marginBottom: '8px' }}
+          />
+          {isUploading && <span style={{ fontSize: '10px', color: 'var(--primary)' }}>Bild wird geladen...</span>}
+          {uploadedId && <span style={{ fontSize: '10px', color: 'var(--success)' }}>✓ Bild bereit (ID: {uploadedId})</span>}
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+        <div className="form-group">
+          <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Ausrichtung (Float)</label>
+          <select 
+            value={floatVal} 
+            onChange={e => setFloatVal(e.target.value as any)} 
+            style={{ width: '100%', fontSize: '11px', padding: '4px 6px', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)' }}
+          >
+            <option value="none">Block (Mitte)</option>
+            <option value="left">Links umflossen</option>
+            <option value="right">Rechts umflossen</option>
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Breite ({widthVal}%)</label>
+          <input 
+            type="range" 
+            min="30" 
+            max="100" 
+            value={widthVal} 
+            onChange={e => setWidthVal(Number(e.target.value))} 
+            style={{ width: '100%', accentColor: 'var(--primary)' }}
+          />
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+        <button
+          onClick={onClose}
+          className="btn"
+          style={{ flex: 1, padding: '8px', fontSize: '12px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}
+        >
+          Abbrechen
+        </button>
+        <button
+          onClick={handleInsert}
+          disabled={mode === 'ki' ? !prompt.trim() : !uploadedId}
+          className="btn btn-primary"
+          style={{ flex: 1, padding: '8px', fontSize: '12px', fontWeight: 600, backgroundColor: 'var(--primary)', color: '#fff', border: 'none', cursor: 'pointer' }}
+        >
+          In Editor einfügen
+        </button>
+      </div>
+    </div>
+  );
 }
