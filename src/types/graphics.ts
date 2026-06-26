@@ -41,4 +41,9 @@ export interface GraphicDecision {
   scale?: number;
   x?: number;
   y?: number;
+  themeColor?: string;
+  fontFamily?: string;
+  borderRadius?: number;
+  preset?: string;
+  isRegenerating?: boolean;
 }

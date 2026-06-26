@@ -1793,6 +1793,43 @@ export default function App() {
   };
 
   // Switch config values on active book
+  const handleRegeneratePageGraphic = async (pageNum: number) => {
+    if (!activeBook || !activeBook.pagesText) return;
+    const text = activeBook.pagesText[pageNum];
+    if (!text) return;
+    
+    const curr = (activeBook.pagesGraphic || {})[pageNum] || {};
+    updateActiveBookConfig('pagesGraphic', {
+      ...(activeBook.pagesGraphic || {}),
+      [pageNum]: { ...curr, isRegenerating: true }
+    });
+
+    try {
+      const pagesSinceGraph = NecessityDetector.evaluateDensityPlacement(pageNum, activeBook.pagesGraphic);
+      const promptGraph = NecessityDetector.buildAnalysisPrompt(text, pagesSinceGraph, activeBook.outline?.language || 'de');
+      const rawJson = await getServiceInstance().evaluateRawJson(promptGraph, text);
+      const newDecision = NecessityDetector.parseAndValidateDecision(rawJson, text);
+      
+      updateActiveBookConfig('pagesGraphic', {
+        ...(activeBook.pagesGraphic || {}),
+        [pageNum]: {
+          ...newDecision,
+          themeColor: curr.themeColor,
+          fontFamily: curr.fontFamily,
+          borderRadius: curr.borderRadius,
+          preset: curr.preset,
+          selectedVariant: curr.selectedVariant
+        }
+      });
+    } catch (err) {
+      console.error("Regen graphic error:", err);
+      updateActiveBookConfig('pagesGraphic', {
+        ...(activeBook.pagesGraphic || {}),
+        [pageNum]: { ...curr, isRegenerating: false }
+      });
+    }
+  };
+
   const updateActiveBookConfig = (field: keyof Book, value: any) => {
     if (!activeBookId) return;
     if (field === 'generateTOC' && value === false && (selectedPage === 'toc' || (typeof selectedPage === 'string' && selectedPage.startsWith('toc')))) {
@@ -8556,6 +8593,14 @@ max="250"
                                         [selectedPage as number]: { ...curr, selectedVariant: newVar }
                                       });
                                     }}
+                                    onUpdateDecision={(upd) => {
+                                      const curr = (activeBook.pagesGraphic || {})[selectedPage as number];
+                                      updateActiveBookConfig('pagesGraphic', {
+                                        ...(activeBook.pagesGraphic || {}),
+                                        [selectedPage as number]: { ...curr, ...upd }
+                                      });
+                                    }}
+                                    onRegenerate={() => handleRegeneratePageGraphic(selectedPage as number)}
                                   />
                                 </PreviewGraphicBox>
                               )}
