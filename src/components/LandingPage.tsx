@@ -5,12 +5,21 @@ import ShinyText from './ShinyText';
 
 import Aurora from './Aurora';
 
+import ClickSpark from './ClickSpark';
+
 interface LandingPageProps {
   onLoginClick: () => void;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
   return (
+    <ClickSpark
+      sparkColor="#ffffff"
+      sparkSize={10}
+      sparkRadius={15}
+      sparkCount={8}
+      duration={400}
+    >
     <div style={{
       minHeight: '100vh',
       backgroundColor: '#0a0a0a',
@@ -177,5 +186,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
         &copy; {new Date().getFullYear()} Book24 Studio. All rights reserved.
       </footer>
     </div>
+    </ClickSpark>
   );
 };

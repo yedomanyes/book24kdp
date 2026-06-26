@@ -1,6 +1,3 @@
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '../firebase';
-
 export interface Competitor {
   id: string;
   title: string;
