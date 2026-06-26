@@ -6,12 +6,10 @@ import {
   CheckCircle2, 
   AlertCircle, 
   Loader2, 
-  Key, 
   FileDown,
   Plus,
   Trash2,
-  Moon,
-  Sun,
+  Settings,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -49,10 +47,26 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { Auth } from './components/Auth';
 import { LandingPage } from './components/LandingPage';
 import { NicheFinderDashboard } from './components/NicheFinderDashboard';
+import { BrainDashboard } from './components/BrainDashboard';
+import { SettingsModal } from './components/SettingsModal';
+import GooeyNav from './components/GooeyNav';
 import { searchNiche, type NicheResult } from './services/NicheService';
+import { BrainService } from './services/brain/BrainService';
+import { ObsidianSyncService } from './services/brain/ObsidianSyncService';
+import { hasBrainAccess } from './config/brainAccess';
 
 // Run migration once at module load (before any state is initialized)
 migrateOldKeys();
+
+const NAV_TABS = ['projects', 'dashboard', 'brain', 'studio'] as const;
+type NavTabId = typeof NAV_TABS[number];
+
+const NAV_TAB_PARTICLE_COLORS: Record<NavTabId, number[]> = {
+  projects: [1, 2, 3, 4],
+  dashboard: [1, 2, 3, 4],
+  brain: [1, 2, 3, 4],
+  studio: [1, 2, 3, 4],
+};
 
 const COVER_FONTS = [
   { value: 'playfair', label: 'Playfair Display (Serif)' },
@@ -857,7 +871,7 @@ export default function App() {
   const [geminiKeysInput, setGeminiKeysInput] = useState<string>(() => {
     return localStorage.getItem('gemini_api_keys') || '';
   });
-  const [showKeyInput, setShowKeyInput] = useState<boolean>(() => {
+  const [showSettings, setShowSettings] = useState<boolean>(() => {
     const groqEmpty = !(localStorage.getItem('groq_api_keys') || localStorage.getItem('groq_api_key'));
     const geminiEmpty = !localStorage.getItem('gemini_api_keys');
     return groqEmpty && geminiEmpty;
@@ -884,6 +898,22 @@ export default function App() {
   const hasKeysForModel = (modelName: string) => {
     return getActiveKeys(modelName).length > 0;
   };
+
+  const groqConnected = getActiveKeys('llama-3.3-70b-versatile').length > 0;
+  const geminiConnected = getActiveKeys('gemini-2.0-flash').length > 0;
+  const settingsNeedAttention = !groqConnected || !geminiConnected;
+
+  const handleGroqKeysChange = (value: string) => {
+    setGroqKeysInput(value);
+    localStorage.setItem('groq_api_keys', value);
+  };
+
+  const handleGeminiKeysChange = (value: string) => {
+    setGeminiKeysInput(value);
+    localStorage.setItem('gemini_api_keys', value);
+  };
+
+  const openSettings = () => setShowSettings(true);
 
   const getServiceInstance = () => {
     const groqList = groqKeysInput.split(/[\n,]+/).map(k => k.trim()).filter(Boolean);
@@ -1493,11 +1523,45 @@ export default function App() {
     return null;
   });
   const activeBook = books.find(b => b.id === activeBookId) || null;
+  const brainEnabled = hasBrainAccess(currentUser?.email);
 
   // Layout Tab Manager
-  const [activeTab, setActiveTab] = useState<'projects' | 'studio' | 'dashboard'>(() => {
+  const [activeTab, setActiveTab] = useState<'projects' | 'studio' | 'dashboard' | 'brain'>(() => {
     return (localStorage.getItem('b24studio_activeTab') as any) || 'projects';
   });
+  const [brainTick, setBrainTick] = useState(0);
+
+  const refreshBrain = () => setBrainTick(t => t + 1);
+
+  const runBrainPageLearn = (book: Book, pageNum: number, memory: ChapterMemory, status: CmiePageStatus, text: string) => {
+    if (!brainEnabled) return;
+    BrainService.learnFromPage(activeAccountIdRef.current, book, pageNum, memory, status, text);
+    if (pageNum === 1 || pageNum % 10 === 0) {
+      BrainService.trackBook(activeAccountIdRef.current, book);
+    }
+    refreshBrain();
+  };
+
+  const buildBrainEnrichedPrompt = (book: Book, repromptInstruction?: string) => {
+    const cmieCtx = CmieOrchestrator.enrichGenerationPrompt(
+      book.cmieStore,
+      book.cmieGlossary,
+      repromptInstruction
+    );
+    if (!brainEnabled) return cmieCtx;
+    const brainCtx = BrainService.buildContextPrompt(activeAccountIdRef.current, book);
+    return brainCtx + cmieCtx;
+  };
+
+  useEffect(() => {
+    if (brainEnabled) void ObsidianSyncService.init();
+  }, [brainEnabled]);
+
+  useEffect(() => {
+    if (!brainEnabled && activeTab === 'brain') {
+      setActiveTab('projects');
+    }
+  }, [brainEnabled, activeTab]);
 
   // Resizable Panes States
   const [leftWidth, setLeftWidth] = useState<number>(() => {
@@ -2145,8 +2209,8 @@ export default function App() {
     if (!activeBook) return;
     if (!hasKeysForModel(selectedModel)) {
       const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
-      alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} ein.`);
-      setShowKeyInput(true);
+      alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} in den Einstellungen ein.`);
+      openSettings();
       return;
     }
 
@@ -2174,8 +2238,8 @@ export default function App() {
   const handlePlanBook = async () => {
     if (!hasKeysForModel(selectedModel)) {
       const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
-      alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} ein (oben unter "Keys benötigt" oder "API Keys").`);
-      setShowKeyInput(true);
+      alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} in den Einstellungen ein.`);
+      openSettings();
       return;
     }
     if (!activeBook) return;
@@ -2292,6 +2356,10 @@ export default function App() {
         }));
 
         setSelectedPage(1);
+        if (brainEnabled) {
+          BrainService.learnFromOutline(activeAccountIdRef.current, currentActiveBook, processedOutline.target_pages);
+          refreshBrain();
+        }
         triggerPageWriting(generatedOutline, activeBook.id);
       } catch (err: any) {
         console.error(err);
@@ -2346,8 +2414,8 @@ export default function App() {
     if (!activeBook || !activeBook.outline) return;
     if (!hasKeysForModel(selectedModel)) {
       const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
-      alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} ein.`);
-      setShowKeyInput(true);
+      alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} in den Einstellungen ein.`);
+      openSettings();
       return;
     }
 
@@ -2411,8 +2479,8 @@ export default function App() {
     if (!activeBook || !activeBook.outline) return;
     if (!hasKeysForModel(selectedModel)) {
       const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
-      alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} ein.`);
-      setShowKeyInput(true);
+      alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} in den Einstellungen ein.`);
+      openSettings();
       return;
     }
 
@@ -2554,8 +2622,8 @@ export default function App() {
     if (!activeBook || !activeBook.outline) return;
     if (!hasKeysForModel(selectedModel)) {
       const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
-      alert(`Bitte zuerst einen API Key für ${providerName} eintragen.`);
-      setShowKeyInput(true);
+      alert(`Bitte zuerst einen API Key für ${providerName} in den Einstellungen eintragen.`);
+      openSettings();
       return;
     }
 
@@ -2673,8 +2741,8 @@ export default function App() {
   const handleExtendOutline = async () => {
     if (!hasKeysForModel(selectedModel)) {
       const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
-      alert(`Bitte zuerst einen API Key für ${providerName} eintragen.`);
-      setShowKeyInput(true);
+      alert(`Bitte zuerst einen API Key für ${providerName} in den Einstellungen eintragen.`);
+      openSettings();
       return;
     }
     if (!activeBook || !activeBook.outline) {
@@ -2768,8 +2836,8 @@ export default function App() {
   ) => {
     if (!hasKeysForModel(selectedModel)) {
       const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
-      alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} ein (oben unter "Keys benötigt" oder "API Keys").`);
-      setShowKeyInput(true);
+      alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} in den Einstellungen ein.`);
+      openSettings();
       return;
     }
     setIsGenerating(true);
@@ -2815,9 +2883,8 @@ export default function App() {
       }));
 
       try {
-        const cmieEnrichment = CmieOrchestrator.enrichGenerationPrompt(
-          currentBook.cmieStore,
-          currentBook.cmieGlossary,
+        const cmieEnrichment = buildBrainEnrichedPrompt(
+          currentBook,
           currentBook.pagesError?.[pageNum]
         );
         let rawText = await service.generatePage(
@@ -2921,6 +2988,8 @@ export default function App() {
           return b;
         }));
 
+        runBrainPageLearn(currentBook, pageNum, cmieRes.memory, cmieRes.pageStatus, text);
+
         setSelectedPage(prev => prev === null ? pageNum : prev);
 
       } catch (err: any) {
@@ -2946,8 +3015,8 @@ export default function App() {
   const handleRetryPage = async (pageNum: number) => {
     if (!hasKeysForModel(selectedModel)) {
       const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
-      alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} ein (oben unter "Keys benötigt" oder "API Keys").`);
-      setShowKeyInput(true);
+      alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} in den Einstellungen ein.`);
+      openSettings();
       return;
     }
     const currentBook = booksRef.current.find(b => b.id === activeBookId);
@@ -2968,9 +3037,8 @@ export default function App() {
 
     try {
       const service = getServiceInstance();
-      const cmieEnrichmentBulk = CmieOrchestrator.enrichGenerationPrompt(
-        currentBook.cmieStore,
-        currentBook.cmieGlossary,
+      const cmieEnrichmentBulk = buildBrainEnrichedPrompt(
+        currentBook,
         currentBook.pagesError?.[pageNum]
       );
       let rawText = await service.generatePage(
@@ -3058,6 +3126,7 @@ export default function App() {
         }
         return b;
       }));
+      runBrainPageLearn(currentBook, pageNum, cmieResBulk.memory, cmieResBulk.pageStatus, text);
       setSelectedPage(pageNum);
 
       const pagesStatus = currentBook.pagesStatus || {};
@@ -3088,8 +3157,8 @@ export default function App() {
   const handleLengthenPage = async (pageNum: number) => {
     if (!hasKeysForModel(selectedModel)) {
       const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
-      alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} ein.`);
-      setShowKeyInput(true);
+      alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} in den Einstellungen ein.`);
+      openSettings();
       return;
     }
     const currentBook = booksRef.current.find(b => b.id === activeBookId);
@@ -3160,8 +3229,8 @@ export default function App() {
   const handleGenerateStyleOptions = async (pageNum: number) => {
     if (!hasKeysForModel(selectedModel)) {
       const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
-      alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} ein.`);
-      setShowKeyInput(true);
+      alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} in den Einstellungen ein.`);
+      openSettings();
       return;
     }
     const currentBook = booksRef.current.find(b => b.id === activeBookId);
@@ -3264,8 +3333,8 @@ export default function App() {
     if (selectedPage === null || typeof selectedPage !== 'number') return;
     if (!hasKeysForModel(selectedModel)) {
       const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
-      alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} ein.`);
-      setShowKeyInput(true);
+      alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} in den Einstellungen ein.`);
+      openSettings();
       return;
     }
     const currentBook = booksRef.current.find(b => b.id === activeBookId);
@@ -3338,8 +3407,8 @@ export default function App() {
     if (selectedPage === null || typeof selectedPage !== 'number') return;
     if (!hasKeysForModel(selectedModel)) {
       const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
-      alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} ein.`);
-      setShowKeyInput(true);
+      alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} in den Einstellungen ein.`);
+      openSettings();
       return;
     }
     const currentBook = booksRef.current.find(b => b.id === activeBookId);
@@ -3417,8 +3486,8 @@ export default function App() {
     if (!activeBook) return;
     if (!hasKeysForModel(selectedModel)) {
       const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
-      alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} ein.`);
-      setShowKeyInput(true);
+      alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} in den Einstellungen ein.`);
+      openSettings();
       return;
     }
 
@@ -3444,8 +3513,8 @@ export default function App() {
     if (!activeBook) return;
     if (!hasKeysForModel(selectedModel)) {
       const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
-      alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} ein.`);
-      setShowKeyInput(true);
+      alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} in den Einstellungen ein.`);
+      openSettings();
       return;
     }
 
@@ -3471,8 +3540,8 @@ export default function App() {
     if (!activeBook) return;
     if (!hasKeysForModel(selectedModel)) {
       const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
-      alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} ein.`);
-      setShowKeyInput(true);
+      alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} in den Einstellungen ein.`);
+      openSettings();
       return;
     }
 
@@ -5278,7 +5347,7 @@ export default function App() {
       }
 
       if (!geminiKey) {
-        setNicheResult(prev => prev ? { ...prev, aiAnalysis: 'Fehler: Kein Gemini API Key hinterlegt. Bitte füge deinen API Key im Einstellungen-Tab (Schlüssel-Icon) ein, um die KI-Nischenanalyse nutzen zu können.' } : null);
+        setNicheResult(prev => prev ? { ...prev, aiAnalysis: 'Fehler: Kein Gemini API Key hinterlegt. Bitte füge deinen Key unter Einstellungen → API Keys ein.' } : null);
         return;
       }
 
@@ -5409,69 +5478,43 @@ export default function App() {
           </div>
         </div>
 
+        <div className="header-nav-wrap">
+          <GooeyNav
+            items={[
+              { label: 'Mediathek' },
+              { label: 'Nischen-Finder' },
+              { label: 'Brain', disabled: !brainEnabled },
+              { label: 'Schreibstudio', disabled: !activeBook },
+            ]}
+            activeIndex={Math.max(0, NAV_TABS.indexOf(activeTab as NavTabId))}
+            themeClassName={`gooey-tab-${activeTab}`}
+            colorsByIndex={NAV_TABS.map(tab => NAV_TAB_PARTICLE_COLORS[tab])}
+            onSelect={(index) => {
+              const tab = NAV_TABS[index];
+              if (tab === 'brain' && !brainEnabled) return;
+              if (tab === 'studio' && !activeBook) return;
+              setActiveTab(tab);
+            }}
+            particleCount={12}
+            particleDistances={[70, 8]}
+            particleR={80}
+            animationTime={550}
+          />
+        </div>
+
         <div className="header-right">
-          {/* Navigation Tabs — in header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginRight: '10px' }}>
-            <button
-              onClick={() => setActiveTab('projects')}
-              style={{
-                padding: '6px 16px',
-                fontSize: '13.5px',
-                fontWeight: activeTab === 'projects' ? 600 : 400,
-                fontFamily: 'var(--font-display)',
-                background: activeTab === 'projects' ? 'var(--primary-glow)' : 'transparent',
-                border: '1px solid ' + (activeTab === 'projects' ? 'var(--primary)' : 'transparent'),
-                borderRadius: '4px',
-                color: activeTab === 'projects' ? 'var(--primary)' : 'var(--text-muted)',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              Mediathek
-            </button>
-            <button
-              onClick={() => setActiveTab('dashboard')}
-              style={{
-                padding: '6px 16px',
-                fontSize: '13.5px',
-                fontWeight: activeTab === 'dashboard' ? 600 : 400,
-                fontFamily: 'var(--font-display)',
-                background: activeTab === 'dashboard' ? 'rgba(34,197,94,0.12)' : 'transparent',
-                border: '1px solid ' + (activeTab === 'dashboard' ? '#22c55e' : 'transparent'),
-                borderRadius: '4px',
-                color: activeTab === 'dashboard' ? '#22c55e' : 'var(--text-muted)',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              Nischen-Finder
-            </button>
-            <button
-              onClick={() => setActiveTab('studio')}
-              disabled={!activeBook}
-              style={{
-                padding: '6px 16px',
-                fontSize: '13.5px',
-                fontWeight: activeTab === 'studio' ? 600 : 400,
-                fontFamily: 'var(--font-display)',
-                background: activeTab === 'studio' ? 'var(--primary-glow)' : 'transparent',
-                border: '1px solid ' + (activeTab === 'studio' ? 'var(--primary)' : 'transparent'),
-                borderRadius: '4px',
-                color: activeTab === 'studio' ? 'var(--primary)' : (!activeBook ? 'var(--border-color)' : 'var(--text-muted)'),
-                cursor: activeBook ? 'pointer' : 'not-allowed',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              Schreibstudio
-            </button>
-          </div>
+          <div className="header-divider" />
 
-          <div style={{ width: '1px', height: '24px', backgroundColor: 'var(--border-color)' }} />
-
-          {/* Active Account Switcher */}
           <div style={{ position: 'relative' }}>
-            <button onClick={() => setShowAccountModal(!showAccountModal)} className="btn" style={{ background: 'transparent', border: '1px solid var(--border-color)', fontSize: '13px', fontWeight: 500, color: 'var(--text-main)' }}>
-              <span>{(accounts.find(a => a.id === activeAccountId)?.username) || 'Profil'}</span>
+            <button
+              type="button"
+              onClick={() => setShowAccountModal(!showAccountModal)}
+              className="header-profile-btn"
+            >
+              <User style={{ width: '14px', height: '14px', color: 'var(--text-muted)' }} />
+              <span className="truncate" style={{ maxWidth: '120px' }}>
+                {(accounts.find(a => a.id === activeAccountId)?.username) || 'Profil'}
+              </span>
               <ChevronDown style={{ width: '12px', height: '12px', color: 'var(--text-muted)' }} />
             </button>
 
@@ -5499,7 +5542,6 @@ export default function App() {
                     </button>
                   ))}
                 </div>
-                
                 <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '6px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
                   <input 
                     type="text" 
@@ -5516,110 +5558,26 @@ export default function App() {
             )}
           </div>
 
-          {/* Theme Toggle */}
-          <button onClick={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')} className="btn">
-            {theme === 'dark' ? <Sun style={{ width: '14px', height: '14px', color: 'var(--warning)' }} /> : <Moon style={{ width: '14px', height: '14px', color: 'var(--primary)' }} />}
+          <button
+            type="button"
+            className={`header-icon-btn${settingsNeedAttention ? ' has-alert' : ''}`}
+            onClick={openSettings}
+            title="Einstellungen"
+          >
+            <Settings style={{ width: '16px', height: '16px' }} />
           </button>
 
-          {/* API Key Connection */}
-          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-            {getActiveKeys('llama-3.3-70b-versatile').length > 0 ? (
-              <button 
-                onClick={() => setShowKeyInput(true)} 
-                className="btn" 
-                style={{ 
-                  background: 'transparent', 
-                  border: '1px solid var(--border-color)', 
-                  fontSize: '11.5px', 
-                  padding: '4px 8px',
-                  height: '28px',
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '4px',
-                  color: 'var(--text-main)'
-                }}
-              >
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--success)', display: 'inline-block' }} />
-                <span>Groq</span>
-              </button>
-            ) : (
-              <button 
-                onClick={() => setShowKeyInput(true)} 
-                className="btn" 
-                style={{ 
-                  background: 'transparent', 
-                  border: '1px solid var(--error)', 
-                  fontSize: '11.5px', 
-                  padding: '4px 8px',
-                  height: '28px',
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '4px',
-                  color: 'var(--error)'
-                }}
-              >
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--error)', display: 'inline-block' }} />
-                <span>Groq fehlt</span>
-              </button>
-            )}
-
-            {getActiveKeys('gemini-2.0-flash').length > 0 ? (
-              <button 
-                onClick={() => setShowKeyInput(true)} 
-                className="btn" 
-                style={{ 
-                  background: 'transparent', 
-                  border: '1px solid var(--border-color)', 
-                  fontSize: '11.5px', 
-                  padding: '4px 8px',
-                  height: '28px',
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '4px',
-                  color: 'var(--text-main)'
-                }}
-              >
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--success)', display: 'inline-block' }} />
-                <span>Gemini</span>
-              </button>
-            ) : (
-              <button 
-                onClick={() => setShowKeyInput(true)} 
-                className="btn" 
-                style={{ 
-                  background: 'transparent', 
-                  border: '1px solid var(--error)', 
-                  fontSize: '11.5px', 
-                  padding: '4px 8px',
-                  height: '28px',
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '4px',
-                  color: 'var(--error)'
-                }}
-              >
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--error)', display: 'inline-block' }} />
-                <span>Gemini fehlt</span>
-              </button>
-            )}
-          </div>
-
-          {/* User Profile & Logout */}
           {currentUser && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '1px', height: '24px', backgroundColor: 'var(--border-color)' }} />
+            <div className="header-user-chip">
               {currentUser.photoURL ? (
-                <img 
-                  src={currentUser.photoURL} 
-                  alt="Profile" 
-                  style={{ width: '24px', height: '24px', borderRadius: '50%', border: '1px solid var(--border-color)', objectFit: 'cover' }} 
-                />
+                <img src={currentUser.photoURL} alt="" className="header-user-avatar" />
               ) : (
-                <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: 'var(--primary)', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 'bold' }}>
+                <div className="header-user-avatar-fallback">
                   {currentUser.displayName ? currentUser.displayName[0] : (currentUser.email ? currentUser.email[0].toUpperCase() : 'U')}
                 </div>
               )}
-              <button 
+              <button
+                type="button"
                 onClick={() => {
                   showConfirm({
                     title: 'Abmelden',
@@ -5628,9 +5586,9 @@ export default function App() {
                     danger: true,
                     onConfirm: () => signOut(auth)
                   });
-                }} 
-                className="btn btn-danger" 
-                style={{ padding: '4px 10px', fontSize: '11px', height: '26px' }}
+                }}
+                className="btn btn-danger"
+                style={{ padding: '4px 10px', fontSize: '11px', height: '26px', borderRadius: '99px' }}
               >
                 Abmelden
               </button>
@@ -5780,6 +5738,16 @@ export default function App() {
           </div>
         )}
 
+
+        {/* Tab: Brain Dashboard (beta — allowlist only) */}
+        {activeTab === 'brain' && brainEnabled && (
+          <BrainDashboard
+            accountId={activeAccountId}
+            books={books}
+            refreshKey={brainTick}
+            onBrainUpdate={refreshBrain}
+          />
+        )}
 
         {/* Tab: Dashboard (Nischen-Finder) */}
         {activeTab === 'dashboard' && (
@@ -9099,108 +9067,21 @@ max="250"
         </div>
       )}
 
-      {/* Floating API Key Connections Modal (Clean, modern glassmorphism) */}
-      {showKeyInput && (
-        <div 
-          style={{ 
-            position: 'fixed', 
-            top: 0, 
-            left: 0, 
-            width: '100vw', 
-            height: '100vh', 
-            backgroundColor: 'rgba(0, 0, 0, 0.5)', 
-            backdropFilter: 'blur(10px) saturate(180%)',
-            display: 'flex', 
-            justifyContent: 'center', 
-            alignItems: 'center', 
-            zIndex: 1000
-          }}
-          onClick={() => setShowKeyInput(false)}
-        >
-          <div 
-            style={{ 
-              backgroundColor: 'var(--bg-card)', 
-              border: '1px solid var(--border-color)', 
-              borderRadius: '4px', 
-              padding: '24px', 
-              width: '420px', 
-              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '16px'
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Key style={{ width: '16px', height: '16px', color: 'var(--primary)' }} />
-                <span style={{ fontWeight: 'bold', fontSize: '13px', color: 'var(--text-main)' }}>API-Verbindungen & Keys</span>
-              </div>
-              <button 
-                onClick={() => setShowKeyInput(false)} 
-                className="btn"
-                style={{ padding: '4px 10px', fontSize: '10px' }}
-              >
-                Schließen
-              </button>
-            </div>
-
-            {/* Groq Keys Area */}
-            <div className="form-group">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-main)' }}>Groq API Keys (Llama/Mixtral)</span>
-                <a 
-                  href="https://console.groq.com/keys" 
-                  target="_blank" 
-                  rel="noreferrer" 
-                  style={{ fontSize: '10px', color: 'var(--accent)', textDecoration: 'none' }}
-                >
-                  Keys erstellen (kostenlos) ➜
-                </a>
-              </div>
-              <textarea 
-                rows={3}
-                placeholder="gsk_...&#10;(Mehrere Schlüssel durch Komma oder Zeilenumbruch trennen)" 
-                value={groqKeysInput}
-                onChange={e => {
-                  setGroqKeysInput(e.target.value);
-                  localStorage.setItem('groq_api_keys', e.target.value);
-                }}
-                style={{ padding: '8px 12px', fontSize: '11px', backgroundColor: 'var(--input-bg)', border: '1px solid var(--border-color)', borderRadius: '4px', color: 'var(--text-main)', resize: 'vertical', width: '100%' }}
-              />
-            </div>
-
-            {/* Gemini Keys Area */}
-            <div className="form-group">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-main)' }}>Gemini API Keys (Google)</span>
-                <a 
-                  href="https://aistudio.google.com/app/apikey" 
-                  target="_blank" 
-                  rel="noreferrer" 
-                  style={{ fontSize: '10px', color: 'var(--accent)', textDecoration: 'none' }}
-                >
-                  Keys holen ➜
-                </a>
-              </div>
-              <textarea 
-                rows={3}
-                placeholder="AIzaSy...&#10;(Mehrere Schlüssel durch Komma oder Zeilenumbruch trennen)" 
-                value={geminiKeysInput}
-                onChange={e => {
-                  setGeminiKeysInput(e.target.value);
-                  localStorage.setItem('gemini_api_keys', e.target.value);
-                }}
-                style={{ padding: '8px 12px', fontSize: '11px', backgroundColor: 'var(--input-bg)', border: '1px solid var(--border-color)', borderRadius: '4px', color: 'var(--text-main)', resize: 'vertical', width: '100%' }}
-              />
-            </div>
-            
-            <div style={{ fontSize: '10px', color: 'var(--text-muted)', lineHeight: '1.4', borderTop: '1px dashed var(--border-color)', paddingTop: '12px', marginTop: '4px' }}>
-              * Key-Rotation aktiv: Tritt bei einem API-Key ein Limit (429) auf, rotiert das System automatisch zum nächsten Key des Providers in der Liste.
-            </div>
-          </div>
-        </div>
-      )}
+      <SettingsModal
+        open={showSettings}
+        onClose={() => setShowSettings(false)}
+        theme={theme}
+        onThemeChange={setTheme}
+        groqKeys={groqKeysInput}
+        onGroqKeysChange={handleGroqKeysChange}
+        geminiKeys={geminiKeysInput}
+        onGeminiKeysChange={handleGeminiKeysChange}
+        selectedModel={selectedModel}
+        onModelChange={setSelectedModel}
+        groqConnected={groqConnected}
+        geminiConnected={geminiConnected}
+        userEmail={currentUser?.email}
+      />
       <div 
         id="book24-measurer" 
         className="preview-content"

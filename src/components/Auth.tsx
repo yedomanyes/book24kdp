@@ -222,7 +222,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onClose }) => {
         <button
           onClick={handleGoogleAuth}
           disabled={loading}
-          style={{ width: '100%', padding: '12px', fontSize: '14px', fontWeight: 'bold', backgroundColor: '#ffffff', border: '1px solid #dadce0', borderRadius: '100px', color: '#1f1f1f', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '24px', transition: 'background-color 0.2s', boxSizing: 'border-box' }}
+          style={{ width: '100%', padding: '12px', fontSize: '14px', fontWeight: 'bold', backgroundColor: '#ffffff', border: '1px solid #dadce0', borderRadius: '8px', color: '#1f1f1f', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '24px', transition: 'background-color 0.2s', boxSizing: 'border-box' }}
           onMouseOver={e => e.currentTarget.style.backgroundColor = '#f8f9fa'}
           onMouseOut={e => e.currentTarget.style.backgroundColor = '#ffffff'}
         >
@@ -282,7 +282,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onClose }) => {
           <button
             type="submit"
             disabled={loading}
-            style={{ width: '100%', padding: '12px', fontSize: '14px', fontWeight: 'bold', backgroundColor: '#0b57d0', border: 'none', borderRadius: '100px', color: '#ffffff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '8px', transition: 'background-color 0.2s', boxSizing: 'border-box' }}
+            style={{ width: '100%', padding: '12px', fontSize: '14px', fontWeight: 'bold', backgroundColor: '#0b57d0', border: 'none', borderRadius: '8px', color: '#ffffff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '8px', transition: 'background-color 0.2s', boxSizing: 'border-box' }}
             onMouseOver={e => e.currentTarget.style.backgroundColor = '#0842a0'}
             onMouseOut={e => e.currentTarget.style.backgroundColor = '#0b57d0'}
           >

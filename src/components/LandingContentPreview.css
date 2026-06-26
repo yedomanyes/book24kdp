@@ -1,0 +1,256 @@
+.landing-mock-page {
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
+  color: #1e293b;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-sizing: border-box;
+  font-family: 'Playfair Display', Georgia, serif;
+  padding: 16px 14px 12px;
+}
+
+.landing-mock-header {
+  font-size: 7px;
+  color: #94a3b8;
+  border-bottom: 0.5px solid #e2e8f0;
+  padding-bottom: 4px;
+  margin-bottom: 6px;
+  font-family: 'Playfair Display', serif;
+}
+
+.landing-mock-chapter {
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  margin: 0 0 10px;
+  letter-spacing: 0.02em;
+  color: #0f172a;
+}
+
+.landing-mock-body {
+  flex: 1;
+  font-size: 8.5px;
+  line-height: 1.55;
+}
+
+.landing-mock-body .literary-paragraph {
+  margin: 0 0 6px;
+  text-align: justify;
+  text-indent: 0.5em;
+}
+
+.landing-mock-body .literary-paragraph:first-of-type {
+  text-indent: 0;
+}
+
+.landing-mock-dropcap .drop-cap-letter {
+  float: left;
+  font-size: 2.8em;
+  line-height: 0.75;
+  margin-right: 4px;
+  margin-top: 0.06em;
+  font-weight: 700;
+  color: #000;
+}
+
+.landing-mock-graphic {
+  margin-top: 10px;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+}
+
+.landing-mock-graphic-title {
+  font-size: 7px;
+  font-weight: 700;
+  color: #38bdf8;
+  margin-bottom: 6px;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.landing-mock-graphic-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.landing-mock-graphic-bars span {
+  display: block;
+  height: 5px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #38bdf8, #818cf8);
+}
+
+.landing-mock-footer {
+  font-size: 7px;
+  color: #94a3b8;
+  text-align: center;
+  margin-top: auto;
+  padding-top: 6px;
+}
+
+.landing-mock-title {
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+}
+
+.landing-mock-title-border {
+  position: absolute;
+  border: 1px solid #64748b;
+  pointer-events: none;
+}
+
+.landing-mock-title-border-outer {
+  inset: 10px;
+}
+
+.landing-mock-title-border-inner {
+  inset: 14px;
+  border-width: 0.5px;
+}
+
+.landing-mock-title-content {
+  text-align: center;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.landing-mock-emblem {
+  font-size: 16px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.landing-mock-book-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.2;
+  color: #0f172a;
+}
+
+.landing-mock-book-subtitle {
+  font-size: 9px;
+  font-style: italic;
+  margin: 0;
+  color: #475569;
+  max-width: 85%;
+  line-height: 1.4;
+}
+
+.landing-mock-book-author {
+  font-size: 8px;
+  margin: 8px 0 0;
+  color: #334155;
+}
+
+.landing-mock-publisher {
+  font-size: 6.5px;
+  color: #94a3b8;
+  margin-top: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.landing-showcase-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 40px;
+  align-items: start;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.landing-showcase-card-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.landing-showcase-card-wrap.left,
+.landing-showcase-card-wrap.right {
+  justify-content: center;
+}
+
+.landing-compare-label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.landing-compare-label.bad {
+  color: #f87171;
+}
+
+.landing-compare-label.good {
+  color: #4ade80;
+}
+
+.landing-compare-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+.landing-compare-badge.bad {
+  background: #ef4444;
+  color: #fff;
+}
+
+.landing-compare-badge.good {
+  background: #22c55e;
+  color: #fff;
+}
+
+.landing-mock-bad {
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f8fafc;
+  color: #334155;
+}
+
+.landing-mock-bad-heading {
+  font-size: 10px;
+  font-weight: 700;
+  margin: 0 0 10px;
+  color: #64748b;
+}
+
+.landing-mock-bad-text {
+  font-size: 8px;
+  line-height: 1.45;
+  margin: 0 0 8px;
+  text-align: left;
+}
+
+.landing-mock-bad-meta {
+  margin-top: auto;
+  font-size: 7px;
+  color: #ef4444;
+  font-style: italic;
+}
+
+@media (max-width: 960px) {
+  .landing-showcase-grid {
+    grid-template-columns: 1fr;
+    gap: 48px;
+    max-width: 320px;
+  }
+}

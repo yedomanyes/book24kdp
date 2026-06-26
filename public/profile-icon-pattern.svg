@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <rect width="200" height="200" fill="#000"/>
+  <g fill="#fff">
+    <circle cx="25" cy="25" r="4"/>
+    <circle cx="75" cy="25" r="4"/>
+    <circle cx="125" cy="25" r="4"/>
+    <circle cx="175" cy="25" r="4"/>
+    <circle cx="25" cy="75" r="4"/>
+    <circle cx="75" cy="75" r="4"/>
+    <circle cx="125" cy="75" r="4"/>
+    <circle cx="175" cy="75" r="4"/>
+    <circle cx="25" cy="125" r="4"/>
+    <circle cx="75" cy="125" r="4"/>
+    <circle cx="125" cy="125" r="4"/>
+    <circle cx="175" cy="125" r="4"/>
+    <circle cx="25" cy="175" r="4"/>
+    <circle cx="75" cy="175" r="4"/>
+    <circle cx="125" cy="175" r="4"/>
+    <circle cx="175" cy="175" r="4"/>
+  </g>
+  <g stroke="#888" stroke-width="1" fill="none" opacity="0.6">
+    <path d="M25 25 L75 75 M75 25 L125 75 M125 25 L175 75"/>
+    <path d="M25 125 L75 175 M75 125 L125 175"/>
+  </g>
+</svg>
