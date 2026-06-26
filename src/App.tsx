@@ -5783,7 +5783,8 @@ export default function App() {
 
         {/* Tab: Dashboard (Nischen-Finder) */}
         {activeTab === 'dashboard' && (
-          <div style={{ padding: '32px 40px', overflowY: 'auto', height: 'calc(100vh - 110px)', display: 'flex', flexDirection: 'column', gap: '32px', background: 'var(--bg-main)' }}>
+          <div style={{ padding: '32px 40px', overflowY: 'auto', height: 'calc(100vh - 110px)', display: 'flex', flexDirection: 'column', flex: 1, width: '100%', alignItems: 'center', background: 'var(--bg-main)' }}>
+            <div style={{ width: '100%', maxWidth: '1200px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
 
             {/* TOP BAR */}
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
@@ -5802,6 +5803,7 @@ export default function App() {
               nicheAnalysisLoading={nicheAnalysisLoading}
               handleAnalyzeNicheAI={handleAnalyzeNicheAI}
             />
+            </div>
           </div>
         )}
 
