@@ -1626,11 +1626,7 @@ export default function App() {
   const [draggingItem, setDraggingItem] = useState<'emblem' | 'title' | 'subtitle' | 'author' | 'publisher' | null>(null);
   const [hoveredField, setHoveredField] = useState<'title' | 'subtitle' | 'author' | 'publisher' | null>(null);
 
-  // Modal for editing multiline text like Title and Subtitle
-  const [textEditModal, setTextEditModal] = useState<{
-    field: 'title' | 'subtitle' | 'authorName' | 'publisherLine';
-    value: string;
-  } | null>(null);
+
 
   const [editingField, setEditingField] = useState<'title' | 'subtitle' | 'author' | 'publisher' | null>(null);
   const [editingValue, setEditingValue] = useState<string>('');
@@ -5058,7 +5054,6 @@ export default function App() {
         case 'image': {
           const widthVal = block.width !== undefined ? block.width : 85;
           const floatVal = block.float !== undefined ? block.float : 'none';
-          const isFloated = floatVal === 'left' || floatVal === 'right';
 
           return (
             <PreviewGraphicBox
