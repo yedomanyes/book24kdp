@@ -503,33 +503,54 @@ export const serializeBlocksToMarkdown = (blocks: WorkbookBlock[]): string => {
 };
 
 const PreviewGraphicBox: React.FC<{
-  transform?: { scale?: number; x?: number; y?: number };
-  onChange: (t: { scale: number; x: number; y: number }) => void;
+  transform?: { scale?: number; x?: number; y?: number; width?: number; float?: 'none' | 'left' | 'right' };
+  onChange: (t: any) => void;
+  defaultWidth?: number;
+  defaultFloat?: 'none' | 'left' | 'right';
   children: React.ReactNode;
-}> = ({ transform = {}, onChange, children }) => {
+}> = ({ transform = {}, onChange, defaultWidth = 85, defaultFloat = 'none', children }) => {
   const scale = transform.scale ?? 1;
   const x = transform.x ?? 0;
   const y = transform.y ?? 0;
+  const currWidth = transform.width ?? defaultWidth;
+  const currFloat = transform.float ?? defaultFloat;
+  const isFloated = currFloat === 'left' || currFloat === 'right';
+
   const [isHovered, setIsHovered] = useState(false);
   const isDragging = useRef(false);
+  const isResizing = useRef(false);
   const dragStart = useRef({ x: 0, y: 0 });
+  const resizeStart = useRef({ x: 0, w: 0, dir: 1 });
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.button !== 0 || (e.target as HTMLElement).closest('button')) return;
+    if (e.button !== 0 || (e.target as HTMLElement).closest('button, input, select')) return;
     e.stopPropagation();
     isDragging.current = true;
     dragStart.current = { x: e.clientX - x, y: e.clientY - y };
   };
 
+  const handleResizeStart = (e: React.MouseEvent, dir: number) => {
+    e.stopPropagation();
+    isResizing.current = true;
+    resizeStart.current = { x: e.clientX, w: currWidth, dir };
+  };
+
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
+      if (isResizing.current) {
+        const dx = (e.clientX - resizeStart.current.x) * resizeStart.current.dir;
+        const newW = Math.max(15, Math.min(100, Math.round(resizeStart.current.w + dx * 0.35)));
+        onChange({ ...transform, width: newW });
+        return;
+      }
       if (!isDragging.current) return;
-      const nx = Math.max(-160, Math.min(160, e.clientX - dragStart.current.x));
-      const ny = Math.max(-260, Math.min(260, e.clientY - dragStart.current.y));
-      onChange({ scale, x: nx, y: ny });
+      const nx = Math.max(-180, Math.min(180, e.clientX - dragStart.current.x));
+      const ny = Math.max(-280, Math.min(280, e.clientY - dragStart.current.y));
+      onChange({ ...transform, x: nx, y: ny });
     };
     const handleMouseUp = () => {
       isDragging.current = false;
+      isResizing.current = false;
     };
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
@@ -537,7 +558,7 @@ const PreviewGraphicBox: React.FC<{
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [scale, x, y]);
+  }, [scale, x, y, currWidth, currFloat, transform]);
 
   return (
     <div
@@ -546,40 +567,67 @@ const PreviewGraphicBox: React.FC<{
       onMouseDown={handleMouseDown}
       style={{
         position: 'relative',
-        display: 'block',
-        margin: '12px auto',
-        transform: `translate(${x}px, ${y}px) scale(${scale})`,
-        transformOrigin: 'center center',
+        display: isFloated ? 'block' : 'block',
+        float: isFloated ? currFloat : 'none',
+        width: `${currWidth}%`,
+        margin: isFloated 
+          ? (currFloat === 'left' ? `${4 + y}px ${14 - x}px ${4 - y}px ${x}px` : `${4 + y}px ${x}px ${4 - y}px ${14 - x}px`)
+          : `${12 + y}px auto ${12 - y}px auto`,
+        transform: isFloated ? 'none' : `translate(${x}px, 0px)`,
+        clear: isFloated ? 'none' : 'both',
+        boxSizing: 'border-box',
         cursor: isDragging.current ? 'grabbing' : 'grab',
-        transition: isDragging.current ? 'none' : 'transform 0.15s ease'
+        transition: isDragging.current || isResizing.current ? 'none' : 'all 0.15s ease',
+        outline: isHovered ? '1.5px dashed #38bdf8' : 'none',
+        outlineOffset: '3px',
+        borderRadius: '4px'
       }}
     >
-      {(isHovered || scale !== 1 || x !== 0 || y !== 0) && (
+      {isHovered && (
+        <>
+          <div onMouseDown={e => handleResizeStart(e, -1)} style={{ position: 'absolute', top: -6, left: -6, width: 10, height: 10, background: '#38bdf8', border: '1.5px solid #fff', borderRadius: 2, cursor: 'nwse-resize', zIndex: 105 }} />
+          <div onMouseDown={e => handleResizeStart(e, 1)} style={{ position: 'absolute', top: -6, right: -6, width: 10, height: 10, background: '#38bdf8', border: '1.5px solid #fff', borderRadius: 2, cursor: 'nesw-resize', zIndex: 105 }} />
+          <div onMouseDown={e => handleResizeStart(e, -1)} style={{ position: 'absolute', bottom: -6, left: -6, width: 10, height: 10, background: '#38bdf8', border: '1.5px solid #fff', borderRadius: 2, cursor: 'nesw-resize', zIndex: 105 }} />
+          <div onMouseDown={e => handleResizeStart(e, 1)} style={{ position: 'absolute', bottom: -6, right: -6, width: 10, height: 10, background: '#38bdf8', border: '1.5px solid #fff', borderRadius: 2, cursor: 'nwse-resize', zIndex: 105 }} />
+        </>
+      )}
+
+      {(isHovered || scale !== 1 || x !== 0 || y !== 0 || currWidth !== defaultWidth || currFloat !== defaultFloat) && (
         <div style={{
-          position: 'absolute', top: -28, right: 0, zIndex: 100,
-          display: 'flex', alignItems: 'center', gap: 6,
+          position: 'absolute', top: -34, left: '50%', transform: 'translateX(-50%)', zIndex: 100,
+          display: 'flex', alignItems: 'center', gap: 5,
           background: '#0f172a', padding: '3px 8px', borderRadius: 6,
-          border: '1px solid #38bdf8', boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-          fontSize: 11, color: '#fff', userSelect: 'none'
+          border: '1px solid #38bdf8', boxShadow: '0 4px 12px rgba(0,0,0,0.6)',
+          fontSize: 10.5, color: '#fff', userSelect: 'none', whiteSpace: 'nowrap'
         }}>
-          <span style={{ fontSize: 9, color: '#94a3b8', textTransform: 'uppercase' }}>Bild</span>
-          <button
-            onMouseDown={e => e.stopPropagation()}
-            onClick={e => { e.stopPropagation(); onChange({ scale: Math.max(0.3, scale - 0.1), x, y }); }}
-            style={{ background: '#1e293b', border: '1px solid #334155', color: '#fff', borderRadius: 4, padding: '1px 6px', cursor: 'pointer' }}
-          >➖</button>
-          <span style={{ color: '#38bdf8', fontWeight: 700, minWidth: 32, textAlign: 'center' }}>{Math.round(scale * 100)}%</span>
-          <button
-            onMouseDown={e => e.stopPropagation()}
-            onClick={e => { e.stopPropagation(); onChange({ scale: Math.min(2.5, scale + 0.1), x, y }); }}
-            style={{ background: '#1e293b', border: '1px solid #334155', color: '#fff', borderRadius: 4, padding: '1px 6px', cursor: 'pointer' }}
-          >➕</button>
-          {(x !== 0 || y !== 0 || scale !== 1) && (
+          <span style={{ fontSize: 8.5, color: '#94a3b8', textTransform: 'uppercase' }}>Größe:</span>
+          <button onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); onChange({ ...transform, width: Math.max(15, currWidth - 5) }); }} style={{ background: '#1e293b', border: '1px solid #334155', color: '#fff', borderRadius: 3, padding: '0 4px', cursor: 'pointer' }}>➖</button>
+          <input
+            type="number"
+            min="15"
+            max="100"
+            value={currWidth}
+            onChange={e => {
+              const v = Number(e.target.value);
+              if (!isNaN(v) && v >= 10 && v <= 100) onChange({ ...transform, width: v });
+            }}
+            style={{ width: '38px', background: '#1e293b', border: '1px solid #38bdf8', color: '#38bdf8', borderRadius: 3, textAlign: 'center', fontWeight: 'bold', fontSize: 10 }}
+          />
+          <span style={{ color: '#38bdf8', fontWeight: 700 }}>%</span>
+          <button onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); onChange({ ...transform, width: Math.min(100, currWidth + 5) }); }} style={{ background: '#1e293b', border: '1px solid #334155', color: '#fff', borderRadius: 3, padding: '0 4px', cursor: 'pointer' }}>➕</button>
+          
+          <div style={{ width: 1, height: 10, background: '#334155', margin: '0 2px' }} />
+
+          <button onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); onChange({ ...transform, float: 'none' }); }} style={{ background: currFloat === 'none' ? '#38bdf8' : '#1e293b', color: currFloat === 'none' ? '#0f172a' : '#fff', fontWeight: 700, borderRadius: 3, padding: '1px 5px', border: 'none', cursor: 'pointer', fontSize: 8.5 }}>⏹️ Mitte</button>
+          <button onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); onChange({ ...transform, float: 'left' }); }} style={{ background: currFloat === 'left' ? '#38bdf8' : '#1e293b', color: currFloat === 'left' ? '#0f172a' : '#fff', fontWeight: 700, borderRadius: 3, padding: '1px 5px', border: 'none', cursor: 'pointer', fontSize: 8.5 }}>⬅️ Links</button>
+          <button onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); onChange({ ...transform, float: 'right' }); }} style={{ background: currFloat === 'right' ? '#38bdf8' : '#1e293b', color: currFloat === 'right' ? '#0f172a' : '#fff', fontWeight: 700, borderRadius: 3, padding: '1px 5px', border: 'none', cursor: 'pointer', fontSize: 8.5 }}>➡️ Rechts</button>
+
+          {(x !== 0 || y !== 0 || scale !== 1 || currWidth !== defaultWidth || currFloat !== defaultFloat) && (
             <button
               onMouseDown={e => e.stopPropagation()}
-              onClick={e => { e.stopPropagation(); onChange({ scale: 1, x: 0, y: 0 }); }}
+              onClick={e => { e.stopPropagation(); onChange({ scale: 1, x: 0, y: 0, width: defaultWidth, float: defaultFloat }); }}
               title="Reset"
-              style={{ background: '#ef444420', border: '1px solid #ef4444', color: '#ef4444', borderRadius: 4, padding: '1px 5px', cursor: 'pointer', fontSize: 9 }}
+              style={{ background: '#ef444420', border: '1px solid #ef4444', color: '#ef4444', borderRadius: 3, padding: '1px 4px', cursor: 'pointer', fontSize: 8.5 }}
             >Reset</button>
           )}
         </div>
@@ -3625,21 +3673,7 @@ export default function App() {
           })}
         </div>
 
-        {/* Footer Page Number */}
-        {activeBook?.showPageNumbers !== false && (
-          <div style={{
-            position: 'absolute',
-            bottom: `${bottomMarginPx - 20 * previewScaleY}px`,
-            left: 0,
-            right: 0,
-            textAlign: 'center',
-            fontSize: `${9 * previewScaleY}px`,
-            fontWeight: 'bold',
-            color: '#64748b'
-          }}>
-            {toRoman(2 + pageIndex)}
-          </div>
-        )}
+
       </div>
     );
   };
@@ -4700,7 +4734,6 @@ export default function App() {
         case 'custom_image': {
           const widthVal = block.width !== undefined ? block.width : 85;
           const floatVal = block.float !== undefined ? block.float : 'none';
-          const isFloated = floatVal === 'left' || floatVal === 'right';
           const imgSrc = activeBook.images?.[block.id] || '';
           const transform = activeBook.imagesTransform?.[block.id] || {};
 
@@ -4708,6 +4741,8 @@ export default function App() {
             <PreviewGraphicBox
               key={key}
               transform={transform}
+              defaultWidth={widthVal}
+              defaultFloat={floatVal}
               onChange={newT => {
                 updateActiveBookConfig('imagesTransform', {
                   ...(activeBook.imagesTransform || {}),
@@ -4715,16 +4750,7 @@ export default function App() {
                 });
               }}
             >
-              <div 
-                style={{
-                  margin: isFloated ? '4px 10px' : '12px auto',
-                  width: `${widthVal}%`,
-                  float: isFloated ? floatVal : undefined,
-                  clear: isFloated ? undefined : 'both',
-                  boxSizing: 'border-box',
-                  textAlign: 'center'
-                }}
-              >
+              <div style={{ width: '100%', margin: 0, textAlign: 'center' }}>
               {imgSrc ? (
                 <img 
                   src={imgSrc} 
