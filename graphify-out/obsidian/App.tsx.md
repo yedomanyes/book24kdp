@@ -1,0 +1,86 @@
+---
+source_file: "src/App.tsx"
+type: "code"
+community: "Community 7"
+location: "L1"
+tags:
+  - graphify/code
+  - graphify/EXTRACTED
+  - community/Community_7
+---
+
+# App.tsx
+
+## Connections
+- [[Account]] - `contains` [EXTRACTED]
+- [[App()]] - `contains` [EXTRACTED]
+- [[Auth()]] - `imports` [EXTRACTED]
+- [[Auth.tsx]] - `imports_from` [EXTRACTED]
+- [[Book]] - `contains` [EXTRACTED]
+- [[BookOutline]] - `imports` [EXTRACTED]
+- [[BookOutlinePage]] - `imports` [EXTRACTED]
+- [[BoxDesign]] - `contains` [EXTRACTED]
+- [[BrainDashboard()]] - `imports` [EXTRACTED]
+- [[BrainDashboard.tsx]] - `imports_from` [EXTRACTED]
+- [[BrainService]] - `imports` [EXTRACTED]
+- [[BrainService.ts]] - `imports_from` [EXTRACTED]
+- [[COVER_FONTS]] - `contains` [EXTRACTED]
+- [[ChapterMemory]] - `imports` [EXTRACTED]
+- [[CmieConfig]] - `imports` [EXTRACTED]
+- [[CmieOrchestrator]] - `imports` [EXTRACTED]
+- [[CmieOrchestrator.ts]] - `imports_from` [EXTRACTED]
+- [[CmiePageStatus]] - `imports` [EXTRACTED]
+- [[DEFAULT_BOX1_DESIGN]] - `contains` [EXTRACTED]
+- [[DEFAULT_BOX2_DESIGN]] - `contains` [EXTRACTED]
+- [[DEFAULT_BOX3_DESIGN]] - `contains` [EXTRACTED]
+- [[GeminiService]] - `imports` [EXTRACTED]
+- [[GeminiService.ts]] - `imports_from` [EXTRACTED]
+- [[GooeyNav.tsx]] - `imports_from` [EXTRACTED]
+- [[GraphicDecision]] - `imports` [EXTRACTED]
+- [[ImageInsertModalInner()]] - `contains` [EXTRACTED]
+- [[ImageInsertModalInnerProps]] - `contains` [EXTRACTED]
+- [[KEYS]] - `imports` [EXTRACTED]
+- [[LandingPage()]] - `imports` [EXTRACTED]
+- [[LandingPage.tsx]] - `imports_from` [EXTRACTED]
+- [[NAV_TABS]] - `contains` [EXTRACTED]
+- [[NAV_TAB_PARTICLE_COLORS]] - `contains` [EXTRACTED]
+- [[NavTabId]] - `contains` [EXTRACTED]
+- [[NecessityDetector]] - `imports` [EXTRACTED]
+- [[NecessityDetector.ts]] - `imports_from` [EXTRACTED]
+- [[NicheFinderDashboard()]] - `imports` [EXTRACTED]
+- [[NicheFinderDashboard.tsx]] - `imports_from` [EXTRACTED]
+- [[NicheResult]] - `imports` [EXTRACTED]
+- [[NicheService.ts]] - `imports_from` [EXTRACTED]
+- [[ObsidianSyncService]] - `imports` [EXTRACTED]
+- [[ObsidianSyncService.ts]] - `imports_from` [EXTRACTED]
+- [[PdfConfig]] - `imports` [EXTRACTED]
+- [[PdfGenerator.ts]] - `imports_from` [EXTRACTED]
+- [[PreviewGraphicBox()]] - `contains` [EXTRACTED]
+- [[SettingsModal()]] - `imports` [EXTRACTED]
+- [[SettingsModal.tsx]] - `imports_from` [EXTRACTED]
+- [[StorageService.ts]] - `imports_from` [EXTRACTED]
+- [[SvgGraphicRenderer()]] - `imports` [EXTRACTED]
+- [[SvgGraphicRenderer.tsx]] - `imports_from` [EXTRACTED]
+- [[WorkbookBlock]] - `contains` [EXTRACTED]
+- [[brainAccess.ts]] - `imports_from` [EXTRACTED]
+- [[cleanPageText()]] - `contains` [EXTRACTED]
+- [[cmie.ts]] - `imports_from` [EXTRACTED]
+- [[deleteBookFromCloud()]] - `imports` [EXTRACTED]
+- [[firebase.ts]] - `imports_from` [EXTRACTED]
+- [[generateBookPdf()]] - `imports` [EXTRACTED]
+- [[generateStructureVariationsLocal()]] - `contains` [EXTRACTED]
+- [[getCssFontFamily()]] - `contains` [EXTRACTED]
+- [[getProjectFormattedDate()]] - `contains` [EXTRACTED]
+- [[graphics.ts]] - `imports_from` [EXTRACTED]
+- [[hasBrainAccess()]] - `imports` [EXTRACTED]
+- [[loadAccountsFromCloud()]] - `imports` [EXTRACTED]
+- [[loadBooksFromCloud()]] - `imports` [EXTRACTED]
+- [[main.tsx]] - `imports_from` [EXTRACTED]
+- [[migrateOldKeys()]] - `imports` [EXTRACTED]
+- [[parsePageLines()]] - `contains` [EXTRACTED]
+- [[saveBookToCloud()]] - `imports` [EXTRACTED]
+- [[searchNiche()]] - `imports` [EXTRACTED]
+- [[serializeBlocksToMarkdown()]] - `contains` [EXTRACTED]
+- [[syncLocalLibraryToCloud()]] - `imports` [EXTRACTED]
+
+#graphify/code #graphify/EXTRACTED #community/Community_7

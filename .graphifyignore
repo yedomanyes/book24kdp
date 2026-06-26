@@ -1,0 +1,31 @@
+# Exclude non-code files from Graphify to run as a code-only corpus
+*.pdf
+*.png
+*.jpeg
+*.jpg
+*.gif
+*.svg
+*.docx
+*.doc
+*.pptx
+*.ppt
+*.epub
+*.mobi
+*.md
+*.html
+*.txt
+
+# Exclude generated/build files
+node_modules/
+dist/
+dist-ssr/
+.vercel/
+graphify-out/
+vault/
+functions/node_modules/
+package-lock.json
+
+# Exclude specific text/status/logs files
+STATUS.txt
+*.log
+logs/

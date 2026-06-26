@@ -36,6 +36,79 @@ const EVENT_LABELS: Record<string, { label: string; color: string }> = {
   obsidian_sync: { label: 'Obsidian', color: '#c084fc' },
 };
 
+const BRAIN_REGIONS = [
+  {
+    id: 'prefrontal',
+    name: 'PREFRONTAL',
+    x: 400,
+    y: 70,
+    neurons: '140 Neuronen',
+    desc: 'Wächter-Funktionen: Führt Plagiats-Prüfungen durch, kontrolliert Kapitel-Doppelungen und validiert die Konsistenz des Inhalts.',
+    color: '#a78bfa',
+    glowColor: 'rgba(167, 139, 250, 0.4)',
+  },
+  {
+    id: 'sensory',
+    name: 'SENSORY CORTEX',
+    x: 580,
+    y: 90,
+    neurons: '200 Neuronen',
+    desc: 'Eingangs-Sensoren: Liest Rohdaten aus der Buchmediathek ein und verarbeitet kontinuierliches Benutzer-Feedback.',
+    color: '#22d3ee',
+    glowColor: 'rgba(34, 211, 238, 0.4)',
+  },
+  {
+    id: 'concept',
+    name: 'CONCEPT LAYER',
+    x: 200,
+    y: 160,
+    neurons: '160 Neuronen',
+    desc: 'Kategorisierung: Baut strukturiertes Nischenwissen auf und klassifiziert Buchtitel nach Suchvolumen und KDP-Relevanz.',
+    color: '#f59e0b',
+    glowColor: 'rgba(245, 158, 11, 0.4)',
+  },
+  {
+    id: 'language',
+    name: 'LANGUAGE LAYER',
+    x: 600,
+    y: 180,
+    neurons: '170 Neuronen',
+    desc: 'Formulierungs-Engine: Steuert Tonalität, Grammatik und sprachlichen Stil über die Groq/Gemini LLM-Schnittstellen.',
+    color: '#ec4899',
+    glowColor: 'rgba(236, 72, 153, 0.4)',
+  },
+  {
+    id: 'predictive',
+    name: 'PREDICTIVE LAYER',
+    x: 280,
+    y: 260,
+    neurons: '130 Neuronen',
+    desc: 'Markt-Analyse: Schätzt Live-BSR-Werte, KDP-Verdienstpotenziale und berechnet den Profitabilitäts-Score einer Nische.',
+    color: '#ef4444',
+    glowColor: 'rgba(239, 68, 68, 0.4)',
+  },
+  {
+    id: 'feature',
+    name: 'FEATURE LAYER',
+    x: 500,
+    y: 270,
+    neurons: '180 Neuronen',
+    desc: 'Layout & Schaubilder: Plant und generiert visuelle Diagramme (SvgGraphicRenderer) und formatiert präzise Druckränder.',
+    color: '#3b82f6',
+    glowColor: 'rgba(59, 130, 246, 0.4)',
+  },
+  {
+    id: 'hippocampus',
+    name: 'HIPPOCAMPUS',
+    x: 400,
+    y: 330,
+    neurons: '160 Neuronen',
+    desc: 'Langzeitgedächtnis: Synchronisiert erlerntes Wissen und Erfolgspatterns als Markdown-Notizen mit dem Obsidian Vault.',
+    color: '#22c55e',
+    glowColor: 'rgba(34, 197, 94, 0.4)',
+  },
+];
+
 function formatTime(iso: string): string {
   try {
     return new Date(iso).toLocaleString('de-DE', {
@@ -55,6 +128,7 @@ export const BrainDashboard: React.FC<BrainDashboardProps> = ({
   const [state, setState] = useState<BrainState>(() => BrainService.getState(accountId));
   const [obsidianBusy, setObsidianBusy] = useState(false);
   const [rebuildBusy, setRebuildBusy] = useState(false);
+  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
 
   useEffect(() => {
     void ObsidianSyncService.init().then(() => {
@@ -151,6 +225,179 @@ export const BrainDashboard: React.FC<BrainDashboardProps> = ({
             )}
           </div>
         </div>
+
+        {/* Brain Visualizer */}
+        <section style={{
+          background: 'rgba(255, 255, 255, 0.01)',
+          border: '1px solid var(--border-color)',
+          borderRadius: '16px',
+          padding: '24px',
+          position: 'relative',
+          overflow: 'hidden',
+          boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+        }}>
+          {/* Neon background glows */}
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: '600px',
+            height: '250px',
+            background: 'radial-gradient(circle, rgba(167, 139, 250, 0.06) 0%, transparent 70%)',
+            zIndex: 0,
+            pointerEvents: 'none',
+          }} />
+
+          <h2 style={{ ...sectionTitleStyle, marginBottom: '6px' }}>
+            <Activity style={{ width: '18px', height: '18px', color: '#a78bfa' }} />
+            Neurales Netzwerk — Book24 Brain Center
+          </h2>
+          <p style={{ margin: '0 0 20px 0', color: 'var(--text-muted)', fontSize: '13px' }}>
+            Interaktive Ansicht der neuronalen Schichten des KDP-Agenten-Gedächtnisses.
+          </p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '3fr 1.2fr', gap: '24px', alignItems: 'center', position: 'relative', zIndex: 1 }} className="brain-vis-grid">
+            {/* SVG Visualizer */}
+            <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.03)', padding: '12px', display: 'flex', justifyContent: 'center' }}>
+              <svg viewBox="0 0 800 400" style={{ width: '100%', height: 'auto', maxHeight: '330px' }}>
+                <defs>
+                  <linearGradient id="gradient-pulse-1" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.8" />
+                    <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
+                  </linearGradient>
+                  <linearGradient id="gradient-pulse-2" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#ec4899" stopOpacity="0.8" />
+                    <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
+                  </linearGradient>
+                  <linearGradient id="gradient-pulse-3" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#ef4444" stopOpacity="0.8" />
+                    <stop offset="100%" stopColor="#22c55e" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+
+                {/* Connections */}
+                <line x1={400} y1={70} x2={580} y2={90} stroke="rgba(255,255,255,0.06)" strokeWidth="1.5" />
+                <line x1={400} y1={70} x2={200} y2={160} stroke="rgba(255,255,255,0.06)" strokeWidth="1.5" />
+                <line x1={400} y1={70} x2={600} y2={180} stroke="rgba(255,255,255,0.06)" strokeWidth="1.5" />
+                <line x1={580} y1={90} x2={600} y2={180} stroke="rgba(255,255,255,0.06)" strokeWidth="1.5" />
+                <line x1={200} y1={160} x2={280} y2={260} stroke="rgba(255,255,255,0.06)" strokeWidth="1.5" />
+                <line x1={280} y1={260} x2={400} y2={330} stroke="rgba(255,255,255,0.06)" strokeWidth="1.5" />
+                <line x1={600} y1={180} x2={500} y2={270} stroke="rgba(255,255,255,0.06)" strokeWidth="1.5" />
+                <line x1={500} y1={270} x2={400} y2={330} stroke="rgba(255,255,255,0.06)" strokeWidth="1.5" />
+                <line x1={400} y1={330} x2={200} y2={160} stroke="rgba(255,255,255,0.06)" strokeWidth="1.5" />
+                <line x1={200} y1={160} x2={600} y2={180} stroke="rgba(255,255,255,0.03)" strokeWidth="1" strokeDasharray="4 4" />
+                <line x1={280} y1={260} x2={500} y2={270} stroke="rgba(255,255,255,0.03)" strokeWidth="1" strokeDasharray="4 4" />
+
+                {/* Animated Pulses */}
+                <path d="M400,70 L200,160" stroke="url(#gradient-pulse-1)" strokeWidth="2.5" fill="none" className="pulse-path-1" />
+                <path d="M600,180 L500,270" stroke="url(#gradient-pulse-2)" strokeWidth="2.5" fill="none" className="pulse-path-2" />
+                <path d="M280,260 L400,330" stroke="url(#gradient-pulse-3)" strokeWidth="2.5" fill="none" className="pulse-path-3" />
+                <path d="M400,330 L200,160" stroke="url(#gradient-pulse-1)" strokeWidth="2" fill="none" className="pulse-path-4" />
+
+                {/* Node groups */}
+                {BRAIN_REGIONS.map((region) => {
+                  const isHovered = selectedRegion === region.id;
+                  return (
+                    <g 
+                      key={region.id} 
+                      style={{ cursor: 'pointer' }}
+                      onMouseEnter={() => setSelectedRegion(region.id)}
+                      onMouseLeave={() => setSelectedRegion(null)}
+                    >
+                      {/* Outer glow ring */}
+                      <circle 
+                        cx={region.x} 
+                        cy={region.y} 
+                        r={isHovered ? 18 : 10} 
+                        fill={isHovered ? region.glowColor : 'rgba(255,255,255,0.02)'} 
+                        stroke={region.color} 
+                        strokeWidth={isHovered ? 2 : 1.5}
+                        style={{ transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)' }}
+                      />
+                      
+                      {/* Inner solid firing node */}
+                      <circle 
+                        cx={region.x} 
+                        cy={region.y} 
+                        r={isHovered ? 8 : 5} 
+                        fill={region.color}
+                        style={{ transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)' }}
+                      />
+
+                      {/* Pill Label */}
+                      <g transform={`translate(${region.x}, ${region.y - 20})`}>
+                        {/* Shadow box */}
+                        <rect 
+                          x={-60} 
+                          y={-12} 
+                          width={120} 
+                          height={18} 
+                          rx={4} 
+                          fill="rgba(10,10,10,0.85)" 
+                          stroke={isHovered ? region.color : 'rgba(255,255,255,0.08)'} 
+                          strokeWidth={isHovered ? 1.5 : 1}
+                          style={{ transition: 'all 0.2s ease' }}
+                        />
+                        <text 
+                          x={0} 
+                          y={0} 
+                          textAnchor="middle" 
+                          fill={isHovered ? '#ffffff' : 'rgba(255,255,255,0.75)'} 
+                          style={{ fontSize: '9px', fontWeight: 800, fontFamily: "'Poppins', sans-serif", letterSpacing: '0.02em', transition: 'all 0.2s ease' }}
+                        >
+                          {region.name}
+                        </text>
+                      </g>
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+
+            {/* Region Info Panel */}
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.015)',
+              border: '1px solid rgba(255, 255, 255, 0.05)',
+              borderRadius: '14px',
+              padding: '20px',
+              height: '100%',
+              minHeight: '260px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              boxShadow: 'inset 0 0 20px rgba(0,0,0,0.2)',
+            }}>
+              {selectedRegion ? (() => {
+                const region = BRAIN_REGIONS.find(r => r.id === selectedRegion)!;
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: region.color }} />
+                      <span style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.08em', color: 'var(--text-muted)' }}>AKTIVES AREAL</span>
+                    </div>
+                    <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.02em', margin: 0 }}>
+                      {region.name}
+                    </h3>
+                    <div style={{ fontSize: '12px', color: region.color, fontWeight: 700 }}>
+                      {region.neurons} · aktiv
+                    </div>
+                    <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>
+                      {region.desc}
+                    </p>
+                  </div>
+                );
+              })() : (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <Brain style={{ width: '40px', height: '40px', color: 'rgba(255,255,255,0.06)' }} />
+                  <p style={{ fontSize: '13px', margin: 0, lineHeight: 1.5, maxWidth: '200px' }}>
+                    Bewege die Maus über ein Hirnareal, um Aktivitäts-Details zu scannen.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
 
         {/* Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
@@ -275,6 +522,30 @@ export const BrainDashboard: React.FC<BrainDashboardProps> = ({
           .brain-grid { grid-template-columns: 1fr !important; }
         }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        
+        @keyframes pulseFlow {
+          0% { stroke-dashoffset: 350px; }
+          100% { stroke-dashoffset: 0; }
+        }
+        .pulse-path-1 {
+          stroke-dasharray: 20px 100px;
+          animation: pulseFlow 4s linear infinite;
+        }
+        .pulse-path-2 {
+          stroke-dasharray: 30px 120px;
+          animation: pulseFlow 5s linear infinite reverse;
+        }
+        .pulse-path-3 {
+          stroke-dasharray: 25px 90px;
+          animation: pulseFlow 3s linear infinite;
+        }
+        .pulse-path-4 {
+          stroke-dasharray: 15px 80px;
+          animation: pulseFlow 6s linear infinite reverse;
+        }
+        @media (max-width: 768px) {
+          .brain-vis-grid { grid-template-columns: 1fr !important; }
+        }
       `}</style>
     </div>
   );
