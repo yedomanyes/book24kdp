@@ -761,13 +761,15 @@ export default function App() {
               const cloudBook = cloudBooks.find((cb: any) => cb.id === localBook.id);
               if (!cloudBook) return localBook;
               
-              // If local has more outline pages or more text pages, it's newer.
-              const localPageCount = Object.keys(localBook.pagesText || {}).length;
-              const cloudPageCount = Object.keys(cloudBook.pagesText || {}).length;
-              if (localPageCount >= cloudPageCount) {
-                return localBook;
-              }
-              return cloudBook;
+              // Smart deep merge: always preserve all local images, transforms, and text edits
+              return {
+                ...cloudBook,
+                ...localBook,
+                images: { ...(cloudBook.images || {}), ...(localBook.images || {}) },
+                imagesTransform: { ...(cloudBook.imagesTransform || {}), ...(localBook.imagesTransform || {}) },
+                pagesText: { ...(cloudBook.pagesText || {}), ...(localBook.pagesText || {}) },
+                pagesOverflow: { ...(cloudBook.pagesOverflow || {}), ...(localBook.pagesOverflow || {}) }
+              };
             });
             // Add any cloud books that aren't in local
             cloudBooks.forEach((cb: any) => {
@@ -792,17 +794,8 @@ export default function App() {
           setBooksState([]);
         }
       } else {
-        // User logged out — immediately clear everything
         setCurrentUser(null);
-        setBooksState([]);
-        // Wipe all cached data so next user starts fresh
-        const keysToRemove: string[] = [];
-        for (let i = 0; i < localStorage.length; i++) {
-          const k = localStorage.key(i);
-          if (k && k.startsWith('b24studio_v1')) keysToRemove.push(k);
-        }
-        keysToRemove.forEach(k => localStorage.removeItem(k));
-        localStorage.removeItem('b24studio_last_uid');
+        // Do not wipe localStorage on null auth emission (prevents localhost F5 race condition data loss)
       }
       setAuthLoading(false);
     });
@@ -1418,7 +1411,7 @@ export default function App() {
         for (const book of booksToSave) {
           await saveBookToCloud(currentUser.uid, book);
         }
-      }, 2000);
+      }, 500);
     }
   };
 
@@ -2837,7 +2830,7 @@ export default function App() {
         if (currentBook.autoChapterGraphics !== false) {
           try {
             const pagesSinceGraph = NecessityDetector.evaluateDensityPlacement(pageNum, currentBook.pagesGraphic);
-            const promptGraph = NecessityDetector.buildAnalysisPrompt(text, pagesSinceGraph);
+            const promptGraph = NecessityDetector.buildAnalysisPrompt(text, pagesSinceGraph, currentOutline?.language || 'de');
             const rawJsonGraph = await service.evaluateRawJson(promptGraph, text);
             graphicDecisionSingle = NecessityDetector.parseAndValidateDecision(rawJsonGraph, text);
           } catch(eG) { console.warn("AGVE Error:", eG); }
@@ -2975,7 +2968,7 @@ export default function App() {
       if (currentBook.autoChapterGraphics !== false) {
         try {
           const pagesSinceGraphBulk = NecessityDetector.evaluateDensityPlacement(pageNum, currentBook.pagesGraphic);
-          const promptGraphBulk = NecessityDetector.buildAnalysisPrompt(text, pagesSinceGraphBulk);
+          const promptGraphBulk = NecessityDetector.buildAnalysisPrompt(text, pagesSinceGraphBulk, outline?.language || 'de');
           const rawJsonGraphBulk = await service.evaluateRawJson(promptGraphBulk, text);
           graphicDecisionBulk = NecessityDetector.parseAndValidateDecision(rawJsonGraphBulk, text);
         } catch(eGB) { console.warn("AGVE Bulk Error:", eGB); }

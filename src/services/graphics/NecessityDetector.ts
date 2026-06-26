@@ -4,13 +4,17 @@ export class NecessityDetector {
   /**
    * Erzeugt den strikten JSON-Prompt zur Analyse von KDP-Kapiteltexten.
    */
-  public static buildAnalysisPrompt(chapterText: string, pagesSinceLastGraphic: number): string {
+  public static buildAnalysisPrompt(chapterText: string, pagesSinceLastGraphic: number, language: string = 'de'): string {
     let strictnessHint = "";
     if (pagesSinceLastGraphic <= 2) {
       strictnessHint = "\nHINWEIS ZUR DICHTE: Es wurde erst vor kurzem eine Grafik platziert. Sei SEHR STRENG. Antworte nur dann mit true, wenn eine Tabelle oder ein Ablaufdiagramm für das Verständnis absolut unverzichtbar ist!";
     } else if (pagesSinceLastGraphic >= 7) {
       strictnessHint = "\nHINWEIS ZUR DICHTE: Seit vielen Seiten gab es keine Visualisierung. Sei GROSSZÜGIGER. Wenn der Text auch nur leichte Phasen oder Vergleiche aufweist, wähle eine Grafik!";
     }
+
+    const langRule = language === 'en'
+      ? "\nCRITICAL LANGUAGE REQUIREMENT: The chapter text is in ENGLISH. ALL generated text inside the JSON (titel, spalten, zeilen, schritte, punkte, ereignis, ebenen) MUST BE WRITTEN IN ENGLISH ONLY! DO NOT USE GERMAN WORDS AT ALL!"
+      : "\nSPRACH-REGEL: Der Kapiteltext ist auf DEUTSCH. Alle Inhalte der JSON-Antwort müssen auf Deutsch formuliert sein.";
 
     return `Du analysierst einen Kapitelabschnitt und entscheidest, ob eine visuelle Grafik sinnvoll ist.
 
@@ -59,7 +63,7 @@ Für Hierarchie:
   "titel": "...",
   "ebenen": ["Oberste Ebene", "Mittlere Ebene", "Unterste Ebene"]
 }
-${strictnessHint}
+${strictnessHint}${langRule}
 
 WICHTIG: Erfinde keine Fakten/Zahlen, die nicht im Kapiteltext stehen. Nutze ausschließlich Informationen, die im Text bereits vorkommen – die Grafik visualisiert nur, was schon da steht, sie fügt nichts Neues hinzu. Antworte ausschließlich mit gültigem JSON!`;
   }
