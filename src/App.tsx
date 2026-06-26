@@ -9095,18 +9095,23 @@ max="250"
           backdropFilter: 'blur(4px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center'
         }} onClick={() => setShowImageInsertModal(false)}>
-          <ImageInsertModalInner 
-            activeBook={activeBook}
-            updateActiveBookConfig={updateActiveBookConfig}
+          <ImageInsertModalInner
+ 
             onClose={() => setShowImageInsertModal(false)}
-            onInsert={(tag) => {
+            onInstantInsert={(imageId, base64, tag) => {
               if (typeof selectedPage === 'number') {
-                const currentText = (activeBook.pagesText || {})[selectedPage] || '';
-                const newText = currentText ? (currentText + '\n\n' + tag) : tag;
-                updateActiveBookConfig('pagesText', {
-                  ...(activeBook.pagesText || {}),
-                  [selectedPage]: newText
-                });
+                const currText = (activeBook.pagesText || {})[selectedPage] || '';
+                const newText = currText ? (currText + '\n\n' + tag) : tag;
+                const newImages = { ...(activeBook.images || {}), [imageId]: base64 };
+                const newPagesText = { ...(activeBook.pagesText || {}), [selectedPage]: newText };
+                
+                setBooks(prev => prev.map(b => {
+                  if (b.id === activeBook.id) {
+                    const updated = { ...b, images: newImages, pagesText: newPagesText };
+                    return { ...updated, pagesOverflow: recalculateBookOverflows(updated) };
+                  }
+                  return b;
+                }));
                 setEditorText(newText);
               } else {
                 alert("Bitte wähle zuerst eine Buchseite im Navigator aus!");
@@ -9252,42 +9257,26 @@ function generateStructureVariationsLocal(text: string): { version_1: string; ve
 }
 
 interface ImageInsertModalInnerProps {
-  activeBook: Book;
-  updateActiveBookConfig: (key: keyof Book, val: any) => void;
   onClose: () => void;
-  onInsert: (tag: string) => void;
+  onInstantInsert: (imageId: string, base64: string, tag: string) => void;
 }
 
-function ImageInsertModalInner({ activeBook, updateActiveBookConfig, onClose, onInsert }: ImageInsertModalInnerProps) {
+function ImageInsertModalInner({ onClose, onInstantInsert }: ImageInsertModalInnerProps) {
   const [floatVal, setFloatVal] = useState<'none' | 'left' | 'right'>('none');
   const [widthVal, setWidthVal] = useState<number>(85);
-  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setIsUploading(true);
     const reader = new FileReader();
     reader.onload = (event) => {
       const base64 = event.target?.result as string;
-      if (!base64) {
-        setIsUploading(false);
-        return;
-      }
+      if (!base64) return;
       const newId = `img_${Date.now()}`;
-      
-      const currentImages = activeBook.images || {};
-      const newImages = { ...currentImages, [newId]: base64 };
-      updateActiveBookConfig('images', newImages);
-
-      setIsUploading(false);
-      onInsert(`:::custom_image ${newId} float:${floatVal} width:${widthVal}`);
-    };
-    reader.onerror = () => {
-      setIsUploading(false);
-      alert("Fehler beim Lesen der Bilddatei.");
+      const tag = `:::custom_image ${newId} float:${floatVal} width:${widthVal}`;
+      onInstantInsert(newId, base64, tag);
     };
     reader.readAsDataURL(file);
   };
@@ -9341,8 +9330,6 @@ function ImageInsertModalInner({ activeBook, updateActiveBookConfig, onClose, on
             Wird beim Auswählen sofort auf der aktuellen Seite eingefügt
           </span>
         </div>
-
-        {isUploading && <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 600, textAlign: 'center' }}>⏳ Bild wird geladen & platziert...</span>}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', background: '#1e293b', padding: '12px', borderRadius: '8px' }}>
@@ -9381,7 +9368,6 @@ function ImageInsertModalInner({ activeBook, updateActiveBookConfig, onClose, on
         </button>
         <button
           onClick={handleTriggerPicker}
-          disabled={isUploading}
           style={{ flex: 1.5, padding: '10px', fontSize: '12px', fontWeight: 700, backgroundColor: '#38bdf8', color: '#0f172a', border: 'none', borderRadius: '6px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(56,189,248,0.3)' }}
         >
           Bild auswählen & einfügen
