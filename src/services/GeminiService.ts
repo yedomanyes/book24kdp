@@ -672,7 +672,8 @@ Schreibe jetzt den Fortsetzungstext (${continuationMin}–${continuationMax} Wö
     fontSize: number = 11,
     shorterRetry: boolean = false,
     customGuidelines: string = '',
-    autoChapterGraphics: boolean = false
+    autoChapterGraphics: boolean = false,
+    cmiePromptEnrichment: string = ''
   ): Promise<string> {
     const currentPageInfo = outline.pages.find(p => p.page_number === pageNumber);
     if (!currentPageInfo) throw new Error(`Seite ${pageNumber} nicht in der Outline gefunden.`);
@@ -761,6 +762,10 @@ Achte auf maximale sprachliche Vielfalt! Verwende kreative, abwechslungsreiche u
 
     if (shorterRetry) {
       finalSystemPrompt += `\n\nACHTUNG: Dein vorheriger Entwurf war etwas zu lang und ist über das Buchseiten-Limit hinausgelaufen! Du MUSST diesen Entwurf jetzt um ca. 15% bis 20% kürzen (also ca. ${Math.round(minWords * 0.8)} bis ${Math.round(maxWords * 0.8)} Wörter), damit er exakt auf eine Seite passt, ohne abgeschnitten zu werden. Behalte alle wichtigen Informationen bei, aber schreibe kompakter.`;
+    }
+
+    if (cmiePromptEnrichment && cmiePromptEnrichment.trim()) {
+      finalSystemPrompt += `\n\n` + cmiePromptEnrichment;
     }
 
     const userPrompt = `
@@ -1375,6 +1380,10 @@ Antworte ausschließlich im JSON-Format mit folgender Struktur: { "categories": 
   async humanizeText(text: string): Promise<string> {
     const systemPrompt = `Du bist ein extrem fähiger Autor, der exakt wie ein Mensch schreibt. Deine Aufgabe ist es, diesen Text umzuschreiben, um JEDE KI-Erkennung (ZeroGPT etc.) zu umgehen. Verwende abwechslungsreichen Satzbau, streue subtil natürliche Ungenauigkeiten ein, benutze dynamische Rhythmen (kurze Sätze abwechselnd mit langen). VERMEIDE TYPISCHE KI-MUSTER WIE: 'Zusammenfassend lässt sich sagen', 'Es ist wichtig zu betonen', 'Tauchen wir ein'. Mach den Text locker, professionell und 100% menschlich. Behalte Absätze und Markdown-Tags (wie **bold** oder :::box) intakt. Antworte ausschließlich mit dem überarbeiteten Text, ohne Einleitung, Kommentar oder Anführungszeichen.`;
     return (await this.askAI(systemPrompt, text, false)).trim();
+  }
+
+  async evaluateRawJson(systemPrompt: string, userPrompt: string): Promise<string> {
+    return (await this.askAI(systemPrompt, userPrompt, true)).trim();
   }
 
   async generateTitlePageOptions(

@@ -28,6 +28,11 @@ import {
 } from 'lucide-react';
 import { GeminiService } from './services/GeminiService';
 import type { BookOutline, BookOutlinePage } from './services/GeminiService';
+import type { ChapterMemory, CmieConfig, CmiePageStatus } from './types/cmie';
+import { CmieOrchestrator } from './services/cmie/CmieOrchestrator';
+import { NecessityDetector } from './services/graphics/NecessityDetector';
+import { SvgGraphicRenderer } from './services/graphics/SvgGraphicRenderer';
+import type { GraphicDecision } from './types/graphics';
 import { generateBookPdf } from './utils/PdfGenerator';
 import type { PdfConfig } from './utils/PdfGenerator';
 import { 
@@ -237,6 +242,11 @@ interface Book {
   pagesTextBackup?: { [key: number]: string };
   pagesStatusBackup?: { [key: number]: 'idle' | 'generating' | 'completed' | 'failed' };
   pagesErrorBackup?: { [key: number]: string };
+  cmieStore?: { [key: number]: ChapterMemory };
+  cmieStatus?: { [key: number]: CmiePageStatus };
+  cmieGlossary?: { [key: string]: string };
+  cmieConfig?: CmieConfig;
+  pagesGraphic?: { [key: number]: GraphicDecision };
 }
 
 const getProjectFormattedDate = (book: Book): string => {
@@ -1995,8 +2005,9 @@ export default function App() {
           }
         );
 
+        const processedOutline = CmieOrchestrator.processOutline(generatedOutline, currentActiveBook.cmieConfig);
         const initialStatus: { [key: number]: 'idle' } = {};
-        for (let i = 1; i <= generatedOutline.target_pages; i++) {
+        for (let i = 1; i <= processedOutline.target_pages; i++) {
           initialStatus[i] = 'idle';
         }
 
@@ -2004,7 +2015,7 @@ export default function App() {
           if (b.id === activeBookId) {
             return {
               ...b,
-              outline: generatedOutline,
+              outline: processedOutline,
               pagesStatus: initialStatus
             };
           }
@@ -2533,6 +2544,11 @@ export default function App() {
       }));
 
       try {
+        const cmieEnrichment = CmieOrchestrator.enrichGenerationPrompt(
+          currentBook.cmieStore,
+          currentBook.cmieGlossary,
+          currentBook.pagesError?.[pageNum]
+        );
         let rawText = await service.generatePage(
           currentOutline,
           pageNum,
@@ -2542,7 +2558,8 @@ export default function App() {
           currentBook.fontSize,
           false,
           getEffectiveGuidelines(currentBook),
-          currentBook.autoChapterGraphics || false
+          currentBook.autoChapterGraphics || false,
+          cmieEnrichment
         );
         let text = cleanPageText(rawText);
 
@@ -2560,7 +2577,8 @@ export default function App() {
               currentBook.fontSize,
               true, // shorterRetry = true
               getEffectiveGuidelines(currentBook),
-              currentBook.autoChapterGraphics || false
+              currentBook.autoChapterGraphics || false,
+              cmieEnrichment
             );
             const retryText = cleanPageText(retryRawText);
             if (checkTextOverflow(retryText, currentBook, pageNum)) {
@@ -2592,13 +2610,41 @@ export default function App() {
           break;
         }
 
+        const pageInfo = currentOutline.pages.find(p => p.page_number === pageNum);
+        const cmieRes = await CmieOrchestrator.inspectAndStorePage(
+          pageNum,
+          pageInfo?.chapter_title || `Seite ${pageNum}`,
+          text,
+          currentBook.extractedSourceText,
+          currentBook.cmieStore,
+          currentBook.cmieStatus,
+          currentBook.cmieGlossary,
+          currentBook.cmieConfig,
+          (pageInfo as any)?.chapter_scope
+        );
+
+        let graphicDecisionSingle: GraphicDecision = { grafik_sinnvoll: false };
+        if (currentBook.autoChapterGraphics !== false) {
+          try {
+            const pagesSinceGraph = NecessityDetector.evaluateDensityPlacement(pageNum, currentBook.pagesGraphic);
+            const promptGraph = NecessityDetector.buildAnalysisPrompt(text, pagesSinceGraph);
+            const rawJsonGraph = await service.evaluateRawJson(promptGraph, text);
+            graphicDecisionSingle = NecessityDetector.parseAndValidateDecision(rawJsonGraph, text);
+          } catch(eG) { console.warn("AGVE Error:", eG); }
+        }
+
         setBooks(prev => prev.map(b => {
           if (b.id === targetBookId) {
             return {
               ...b,
               pagesText: { ...(b.pagesText || {}), [pageNum]: text },
-              pagesStatus: { ...(b.pagesStatus || {}), [pageNum]: 'completed' },
-              pagesOverflow: { ...(b.pagesOverflow || {}), [pageNum]: finalOverflow }
+              pagesStatus: { ...(b.pagesStatus || {}), [pageNum]: cmieRes.passed ? 'completed' : 'failed' },
+              pagesError: cmieRes.warningMessage ? { ...(b.pagesError || {}), [pageNum]: cmieRes.warningMessage } : (b.pagesError || {}),
+              pagesOverflow: { ...(b.pagesOverflow || {}), [pageNum]: finalOverflow },
+              cmieStore: { ...(b.cmieStore || {}), [pageNum]: cmieRes.memory },
+              cmieStatus: { ...(b.cmieStatus || {}), [pageNum]: cmieRes.pageStatus },
+              cmieGlossary: cmieRes.updatedGlossary,
+              pagesGraphic: graphicDecisionSingle.grafik_sinnvoll ? { ...(b.pagesGraphic || {}), [pageNum]: graphicDecisionSingle } : (b.pagesGraphic || {})
             };
           }
           return b;
@@ -2651,6 +2697,11 @@ export default function App() {
 
     try {
       const service = getServiceInstance();
+      const cmieEnrichmentBulk = CmieOrchestrator.enrichGenerationPrompt(
+        currentBook.cmieStore,
+        currentBook.cmieGlossary,
+        currentBook.pagesError?.[pageNum]
+      );
       let rawText = await service.generatePage(
         outline,
         pageNum,
@@ -2660,7 +2711,8 @@ export default function App() {
         currentBook.fontSize,
         false,
         getEffectiveGuidelines(currentBook),
-        currentBook.autoChapterGraphics || false
+        currentBook.autoChapterGraphics || false,
+        cmieEnrichmentBulk
       );
       let text = cleanPageText(rawText);
 
@@ -2678,7 +2730,8 @@ export default function App() {
             currentBook.fontSize,
             true, // shorterRetry = true
             getEffectiveGuidelines(currentBook),
-            currentBook.autoChapterGraphics || false
+            currentBook.autoChapterGraphics || false,
+            cmieEnrichmentBulk
           );
           const retryText = cleanPageText(retryRawText);
           if (checkTextOverflow(retryText, currentBook, pageNum)) {
@@ -2695,13 +2748,41 @@ export default function App() {
 
       const finalOverflow = checkTextOverflow(text, currentBook, pageNum);
 
+      const bulkPageInfo = outline.pages.find(p => p.page_number === pageNum);
+      const cmieResBulk = await CmieOrchestrator.inspectAndStorePage(
+        pageNum,
+        bulkPageInfo?.chapter_title || `Seite ${pageNum}`,
+        text,
+        currentBook.extractedSourceText,
+        currentBook.cmieStore,
+        currentBook.cmieStatus,
+        currentBook.cmieGlossary,
+        currentBook.cmieConfig,
+        (bulkPageInfo as any)?.chapter_scope
+      );
+
+      let graphicDecisionBulk: GraphicDecision = { grafik_sinnvoll: false };
+      if (currentBook.autoChapterGraphics !== false) {
+        try {
+          const pagesSinceGraphBulk = NecessityDetector.evaluateDensityPlacement(pageNum, currentBook.pagesGraphic);
+          const promptGraphBulk = NecessityDetector.buildAnalysisPrompt(text, pagesSinceGraphBulk);
+          const rawJsonGraphBulk = await service.evaluateRawJson(promptGraphBulk, text);
+          graphicDecisionBulk = NecessityDetector.parseAndValidateDecision(rawJsonGraphBulk, text);
+        } catch(eGB) { console.warn("AGVE Bulk Error:", eGB); }
+      }
+
       setBooks(prev => prev.map(b => {
         if (b.id === activeBookId) {
           return {
             ...b,
             pagesText: { ...(b.pagesText || {}), [pageNum]: text },
-            pagesStatus: { ...(b.pagesStatus || {}), [pageNum]: 'completed' },
-            pagesOverflow: { ...(b.pagesOverflow || {}), [pageNum]: finalOverflow }
+            pagesStatus: { ...(b.pagesStatus || {}), [pageNum]: cmieResBulk.passed ? 'completed' : 'failed' },
+            pagesError: cmieResBulk.warningMessage ? { ...(b.pagesError || {}), [pageNum]: cmieResBulk.warningMessage } : (b.pagesError || {}),
+            pagesOverflow: { ...(b.pagesOverflow || {}), [pageNum]: finalOverflow },
+            cmieStore: { ...(b.cmieStore || {}), [pageNum]: cmieResBulk.memory },
+            cmieStatus: { ...(b.cmieStatus || {}), [pageNum]: cmieResBulk.pageStatus },
+            cmieGlossary: cmieResBulk.updatedGlossary,
+            pagesGraphic: graphicDecisionBulk.grafik_sinnvoll ? { ...(b.pagesGraphic || {}), [pageNum]: graphicDecisionBulk } : (b.pagesGraphic || {})
           };
         }
         return b;
@@ -5359,331 +5440,255 @@ export default function App() {
         {/* Tab 2: Studio Layout Panel Grid */}
         {activeTab === 'studio' && activeBook && (
           <div className="studio-grid" style={{ display: 'flex', width: '100%', height: 'calc(100vh - 110px)', gap: '0px', position: 'relative' }}>
-            {/* Left Panel: Library & Settings */}
-            <div 
-              className="pane" 
-              style={{ 
-                width: `${leftWidth}px`, 
-                flexShrink: 0, 
+            {/* Left Panel: Library & Settings — Redesigned */}
+            <div
+              className="ex-pane"
+              style={{
+                width: `${leftWidth}px`,
+                flexShrink: 0,
                 display: isExplorerCollapsed ? 'none' : 'flex',
-                flexDirection: 'column'
               }}
             >
-              <div className="pane-header" style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingBottom: '8px', height: 'auto' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                  <div className="pane-title">Explorer</div>
-                  <button 
-                    onClick={() => {
-                      setIsExplorerCollapsed(true);
-                      localStorage.setItem('b24studio_left_collapsed', 'true');
-                    }}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: 'var(--text-muted)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: '4px',
-                      borderRadius: '4px',
-                      transition: 'background-color 0.2s, color 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--input-bg)';
-                      e.currentTarget.style.color = 'var(--text-main)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                      e.currentTarget.style.color = 'var(--text-muted)';
-                    }}
-                    title="Explorer einklappen"
-                  >
-                    <ChevronLeft style={{ width: '16px', height: '16px' }} />
-                  </button>
+              {/* ── Header ── */}
+              <div className="ex-header">
+                <div className="ex-wordmark">
+                  <div className="ex-wordmark-dot" />
+                  <span className="ex-wordmark-text">Explorer</span>
                 </div>
-                <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', width: '100%', gap: '12px' }}>
-                  <button 
-                    onClick={() => setExplorerTab('settings')}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: explorerTab === 'settings' ? 'var(--primary)' : 'var(--text-muted)',
-                      borderBottom: explorerTab === 'settings' ? '2px solid var(--primary)' : '2px solid transparent',
-                      padding: '4px 8px',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Layout & Inhalt
-                  </button>
-                  <button 
-                    onClick={() => setExplorerTab('marketing')}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: explorerTab === 'marketing' ? 'var(--primary)' : 'var(--text-muted)',
-                      borderBottom: explorerTab === 'marketing' ? '2px solid var(--primary)' : '2px solid transparent',
-                      padding: '4px 8px',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    KDP Marketing
-                  </button>
-                </div>
+                <button
+                  className="ex-collapse-btn"
+                  onClick={() => {
+                    setIsExplorerCollapsed(true);
+                    localStorage.setItem('b24studio_left_collapsed', 'true');
+                  }}
+                  title="Panel einklappen"
+                >
+                  <ChevronLeft style={{ width: '15px', height: '15px' }} />
+                </button>
+              </div>
+
+              {/* ── Tab switcher ── */}
+              <div className="ex-tabs">
+                <button
+                  className={`ex-tab${explorerTab === 'settings' ? ' active' : ''}`}
+                  onClick={() => setExplorerTab('settings')}
+                >
+                  Layout & Inhalt
+                </button>
+                <button
+                  className={`ex-tab${explorerTab === 'marketing' ? ' active' : ''}`}
+                  onClick={() => setExplorerTab('marketing')}
+                >
+                  KDP Marketing
+                </button>
               </div>
               
-              <div className="pane-content">
+              {/* ── Body ── */}
+              <div className="ex-body">
                 {explorerTab === 'settings' ? (
-                  <div className="flex-col" style={{ gap: '8px' }}>
-                    <div className="form-group">
-                      <label className="form-label">Titel</label>
-                      <input 
-                        type="text" 
-                        value={activeBook.title}
-                        onChange={e => updateActiveBookConfig('title', e.target.value)}
-                        disabled={isPlanning || isGenerating}
-                      />
+                  <>
+                    {/* ── Buch ── */}
+                    <div className="ex-section-label">Buch</div>
+                    <div className="ex-section">
+                      <div className="ex-field">
+                        <label className="ex-label">Titel</label>
+                        <input
+                          className="ex-input"
+                          type="text"
+                          value={activeBook.title}
+                          onChange={e => updateActiveBookConfig('title', e.target.value)}
+                          disabled={isPlanning || isGenerating}
+                          placeholder="Buchtitel..."
+                        />
+                      </div>
+                      <div className="ex-field">
+                        <label className="ex-label">Untertitel</label>
+                        <input
+                          className="ex-input"
+                          type="text"
+                          value={activeBook.subtitle}
+                          onChange={e => updateActiveBookConfig('subtitle', e.target.value)}
+                          disabled={isPlanning || isGenerating}
+                          placeholder="Untertitel..."
+                        />
+                      </div>
                     </div>
 
-                    <div className="form-group">
-                      <label className="form-label">Untertitel</label>
-                      <input 
-                        type="text" 
-                        value={activeBook.subtitle}
-                        onChange={e => updateActiveBookConfig('subtitle', e.target.value)}
-                        disabled={isPlanning || isGenerating}
-                      />
-                    </div>
+                    <div className="ex-divider" />
 
-                    <div className="form-group" style={{ marginBottom: '16px' }}>
-                      <div style={{ display: 'flex', gap: '4px', marginBottom: '8px' }}>
+                    {/* ── Inhalt ── */}
+                    <div className="ex-section-label">Inhalt & Idee</div>
+                    <div className="ex-section">
+                      <div className="ex-idea-tabs">
                         <button
                           type="button"
+                          className={`ex-idea-tab${ideaTab === 'text' ? ' active' : ''}`}
                           onClick={() => setIdeaTab('text')}
-                          style={{
-                            flex: 1, padding: '4px', fontSize: '10px', fontWeight: 600,
-                            borderRadius: '4px', cursor: 'pointer',
-                            backgroundColor: ideaTab === 'text' ? 'var(--primary)' : 'transparent',
-                            color: ideaTab === 'text' ? '#fff' : 'var(--text-muted)',
-                            border: ideaTab === 'text' ? '1px solid var(--primary)' : '1px solid var(--border-color)'
-                          }}
-                        >
-                          Plot / Idee
-                        </button>
+                        >Plot / Idee</button>
                         <button
                           type="button"
+                          className={`ex-idea-tab${ideaTab === 'sources' ? ' active' : ''}`}
                           onClick={() => setIdeaTab('sources')}
-                          style={{
-                            flex: 1, padding: '4px', fontSize: '10px', fontWeight: 600,
-                            borderRadius: '4px', cursor: 'pointer',
-                            backgroundColor: ideaTab === 'sources' ? 'var(--primary)' : 'transparent',
-                            color: ideaTab === 'sources' ? '#fff' : 'var(--text-muted)',
-                            border: ideaTab === 'sources' ? '1px solid var(--primary)' : '1px solid var(--border-color)'
-                          }}
-                        >
-                          KI Futter (Websites)
-                        </button>
+                        >KI Futter (URLs)</button>
                       </div>
 
                       {ideaTab === 'text' ? (
-                        <textarea 
-                          rows={6}
+                        <textarea
+                          className="ex-textarea"
+                          rows={5}
                           value={activeBook.idea}
                           onChange={e => updateActiveBookConfig('idea', e.target.value)}
                           disabled={isPlanning || isGenerating}
-                          placeholder="Fasse hier die Hauptidee deines Buches zusammen..."
+                          placeholder="Hauptidee deines Buches..."
                         />
                       ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                          <textarea 
+                        <div className="ex-section">
+                          <textarea
+                            className="ex-textarea"
                             rows={4}
                             value={activeBook.sourceUrls || ''}
                             onChange={e => updateActiveBookConfig('sourceUrls', e.target.value)}
                             disabled={isPlanning || isGenerating || isFetchingSources}
-                            placeholder="Füge hier Website-URLs ein (eine pro Zeile)..."
-                            style={{ fontFamily: 'monospace', fontSize: '10px' }}
+                            placeholder="Website-URLs (eine pro Zeile)..."
+                            style={{ fontFamily: 'monospace', fontSize: '11px' }}
                           />
                           <button
                             type="button"
+                            className="ex-btn ex-btn-plan"
                             onClick={handleFetchSources}
                             disabled={isFetchingSources || isPlanning || isGenerating || !(activeBook.sourceUrls || '').trim()}
-                            className="btn btn-primary"
-                            style={{ padding: '6px', fontSize: '11px', display: 'flex', justifyContent: 'center', gap: '6px' }}
                           >
-                            {isFetchingSources ? (
-                              <><Loader2 className="animate-spin" style={{ width: '12px', height: '12px' }}/> Lade Websites...</>
-                            ) : (
-                              <><CheckCircle2 style={{ width: '12px', height: '12px' }}/> Websites jetzt einlesen</>
-                            )}
+                            {isFetchingSources
+                              ? <><Loader2 className="animate-spin" style={{ width: '13px', height: '13px' }} /> Lade Websites...</>
+                              : <><CheckCircle2 style={{ width: '13px', height: '13px' }} /> Websites einlesen</>}
                           </button>
                           {activeBook.extractedSourceText && (
-                            <div style={{ fontSize: '9px', color: 'var(--success)', marginTop: '2px', padding: '4px', backgroundColor: 'rgba(34, 197, 94, 0.1)', borderRadius: '4px', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
-                              ✓ Quellen eingelesen: {activeBook.extractedSourceText.length} Zeichen Text gespeichert.
+                            <div className="ex-source-ok">
+                              ✓ {activeBook.extractedSourceText.length.toLocaleString()} Zeichen eingelesen
                             </div>
                           )}
                         </div>
                       )}
                     </div>
 
-                    <div className="grid-2">
-                      <div className="form-group">
-                        <label className="form-label">Sprache</label>
-                        <select 
-                          value={activeBook.language}
-                          onChange={e => updateActiveBookConfig('language', e.target.value)}
-                          disabled={isPlanning || isGenerating}
-                          style={{ width: '100%' }}
-                        >
-                          <option value="de">Deutsch</option>
-                          <option value="en">Englisch</option>
-                        </select>
-                        {activeBook.language === 'de' && (
-                          <button
-                            type="button"
-                            onClick={() => setShowTranslationWarning(true)}
-                            disabled={isTranslating || isGenerating || isPlanning}
-                            className="btn"
-                            style={{
-                              marginTop: '6px',
-                              width: '100%',
-                              fontSize: '10px',
-                              padding: '5px 8px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '4px',
-                              backgroundColor: 'rgba(59, 130, 246, 0.08)',
-                              color: 'var(--primary)',
-                              border: '1px solid rgba(59, 130, 246, 0.3)',
-                              cursor: 'pointer',
-                              borderRadius: '6px',
-                              whiteSpace: 'normal',
-                              wordBreak: 'break-all'
-                            }}
+                    <div className="ex-divider" />
+
+                    {/* ── Parameter ── */}
+                    <div className="ex-section-label">Parameter</div>
+                    <div className="ex-section">
+                      <div className="ex-grid-2">
+                        <div className="ex-field">
+                          <label className="ex-label">Sprache</label>
+                          <select
+                            className="ex-select"
+                            value={activeBook.language}
+                            onChange={e => updateActiveBookConfig('language', e.target.value)}
+                            disabled={isPlanning || isGenerating}
                           >
-                            {isTranslating ? (
-                              <>
-                                <Loader2 className="animate-spin" style={{ width: '11px', height: '11px' }} />
-                                <span style={{ fontSize: '9px' }}>{translationProgress || 'Übersetze...'}</span>
-                              </>
-                            ) : (
-                              <>
-                                <Sparkles style={{ width: '11px', height: '11px' }} />
-                                <span>Buch auf Englisch übersetzen</span>
-                              </>
-                            )}
-                          </button>
-                        )}
+                            <option value="de">Deutsch</option>
+                            <option value="en">Englisch</option>
+                          </select>
+                        </div>
+                        <div className="ex-field">
+                          <label className="ex-label">Seiten (max. 200)</label>
+                          <input
+                            className="ex-input"
+                            type="number"
+                            min={5} max={200}
+                            value={activeBook.targetPages}
+                            onChange={e => updateActiveBookConfig('targetPages', Math.max(5, Math.min(200, Number(e.target.value))))}
+                            disabled={isPlanning || isGenerating}
+                          />
+                        </div>
                       </div>
 
-                      <div className="form-group">
-                        <label className="form-label">Seiten (max. 200)</label>
-                        <input 
-                          type="number" 
-                          min={5}
-                          max={200}
-                          value={activeBook.targetPages}
-                          onChange={e => updateActiveBookConfig('targetPages', Math.max(5, Math.min(200, Number(e.target.value))))}
+                      {activeBook.language === 'de' && (
+                        <button
+                          type="button"
+                          className="ex-btn ex-btn-ghost"
+                          onClick={() => setShowTranslationWarning(true)}
+                          disabled={isTranslating || isGenerating || isPlanning}
+                        >
+                          {isTranslating
+                            ? <><Loader2 className="animate-spin" style={{ width: '12px', height: '12px' }} />{translationProgress || 'Übersetze...'}</>
+                            : <><Sparkles style={{ width: '12px', height: '12px' }} />Auf Englisch übersetzen</>}
+                        </button>
+                      )}
+
+                      <div className="ex-field">
+                        <label className="ex-label">Schreibstil</label>
+                        <select
+                          className="ex-select"
+                          value={activeBook.writingStyle}
+                          onChange={e => updateActiveBookConfig('writingStyle', e.target.value)}
+                          disabled={isPlanning || isGenerating}
+                        >
+                          <option value="Sachbuch / Informativ">Sachbuch / Informativ</option>
+                          <option value="Kreatives Storytelling">Kreatives Storytelling</option>
+                          <option value="Akademisch / Wissenschaftlich">Akademisch / Wissenschaftlich</option>
+                          <option value="Einfache Sprache">Einfache Sprache</option>
+                        </select>
+                      </div>
+
+                      <div className="ex-field">
+                        <label className="ex-label">Autoren-Richtlinien</label>
+                        <textarea
+                          className="ex-textarea"
+                          value={activeBook.customGuidelines || ''}
+                          onChange={e => updateActiveBookConfig('customGuidelines', e.target.value)}
+                          placeholder="z. B. Ich-Perspektive, verbotene Wörter..."
+                          rows={3}
                           disabled={isPlanning || isGenerating}
                         />
                       </div>
-                    </div>
 
-                    <div className="form-group">
-                      <label className="form-label">Schreibstil</label>
-                      <select 
-                        value={activeBook.writingStyle}
-                        onChange={e => updateActiveBookConfig('writingStyle', e.target.value)}
-                        disabled={isPlanning || isGenerating}
-                      >
-                        <option value="Sachbuch / Informativ">Sachbuch / Informativ</option>
-                        <option value="Kreatives Storytelling">Kreatives Storytelling</option>
-                        <option value="Akademisch / Wissenschaftlich">Akademisch / Wissenschaftlich</option>
-                        <option value="Einfache Sprache">Einfache Sprache</option>
-                      </select>
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">Autoren-Richtlinien & Stil-Vorgaben</label>
-                      <textarea 
-                        value={activeBook.customGuidelines || ''}
-                        onChange={e => updateActiveBookConfig('customGuidelines', e.target.value)}
-                        placeholder="z. B. Ich-Perspektive, Altersfreigabe, Fachbegriffe, verbotene Wörter..."
-                        rows={3}
-                        style={{ resize: 'vertical', minHeight: '50px', fontSize: '10.5px' }}
-                        disabled={isPlanning || isGenerating}
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">KI-Modell & Provider</label>
-                      <select
-                        value={selectedModel}
-                        onChange={e => setSelectedModel(e.target.value)}
-                        disabled={isPlanning || isGenerating}
-                      >
-                        <optgroup label="Groq API (Llama/Mixtral)">
-                          <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Beste Qualität)</option>
-                          <option value="llama-3.1-8b-instant">Llama 3.1 8B (Schnell / Backup)</option>
-                          <option value="mixtral-8x7b-32768">Mixtral 8x7B (Alternative)</option>
-                        </optgroup>
-                        <optgroup label="Google Gemini API">
-                          <option value="gemini-2.0-flash">Gemini 2.0 Flash (Sehr intelligent & schnell)</option>
-                          <option value="gemini-1.5-flash">Gemini 1.5 Flash (Standard)</option>
-                          <option value="gemini-1.5-pro">Gemini 1.5 Pro (Hohe literarische Qualität)</option>
-                        </optgroup>
-                      </select>
-                      <div style={{ fontSize: '8.5px', color: 'var(--text-muted)', marginTop: '3px', lineHeight: '1.3' }}>
-                        Schlüssel-Rotation ist aktiv. Trage unter API Keys mehrere Schlüssel ein, um Limits zu umgehen.
+                      <div className="ex-field">
+                        <label className="ex-label">KI-Modell</label>
+                        <select
+                          className="ex-select"
+                          value={selectedModel}
+                          onChange={e => setSelectedModel(e.target.value)}
+                          disabled={isPlanning || isGenerating}
+                        >
+                          <optgroup label="Groq API">
+                            <option value="llama-3.3-70b-versatile">Llama 3.3 70B — Top Qualität</option>
+                            <option value="llama-3.1-8b-instant">Llama 3.1 8B — Schnell</option>
+                            <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
+                          </optgroup>
+                          <optgroup label="Google Gemini">
+                            <option value="gemini-2.0-flash">Gemini 2.0 Flash ✦</option>
+                            <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                            <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                          </optgroup>
+                        </select>
                       </div>
                     </div>
 
-                    {/* Design Presets Section */}
-                    <div className="form-group" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '8px', marginTop: '4px' }}>
-                      <label className="form-label">Design-Presets</label>
-                      <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                        <button 
-                          onClick={applyRomanPreset} 
-                          className="btn" 
-                          style={{ flex: 1, fontSize: '10px', padding: '6px', fontWeight: 600, backgroundColor: 'rgba(161, 66, 244, 0.1)', color: 'var(--accent)', border: '1px solid var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
-                        >
-                          Roman-Preset
-                        </button>
-                        <button 
-                          onClick={applySachbuchPreset} 
-                          className="btn" 
-                          style={{ flex: 1, fontSize: '10px', padding: '6px', fontWeight: 600, backgroundColor: 'var(--primary-glow)', color: 'var(--primary)', border: '1px solid var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
-                        >
-                          Sachbuch-Preset
-                        </button>
-                      </div>
-                    </div>
+                    <div className="ex-divider" />
 
-                    {/* KDP & Layout specifications */}
-                    <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '8px', marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <div className="grid-2">
-                        <div className="form-group">
-                          <label className="form-label">Schriftart</label>
-                          <select 
+                    {/* ── Layout ── */}
+                    <div className="ex-section-label">Layout & Design</div>
+                    <div className="ex-section">
+                      <div className="ex-grid-2">
+                        <div className="ex-field">
+                          <label className="ex-label">Schriftart</label>
+                          <select
+                            className="ex-select"
                             value={activeBook.fontFamily}
                             onChange={e => updateActiveBookConfig('fontFamily', e.target.value)}
                           >
                             <option value="times">Times (Serif)</option>
-                            <option value="playfair">Playfair Display (Premium Serif)</option>
-                            <option value="helvetica">Helvetica (Sans)</option>
-                            <option value="inter">Inter (Modern Sans)</option>
-                            <option value="courier">Courier (Mono)</option>
-                            <option value="arial">Arial (Sans-Serif)</option>
+                            <option value="playfair">Playfair Display</option>
+                            <option value="helvetica">Helvetica</option>
+                            <option value="inter">Inter (Modern)</option>
+                            <option value="courier">Courier Mono</option>
+                            <option value="arial">Arial</option>
                           </select>
                         </div>
-
-                        <div className="form-group">
-                          <label className="form-label">Größe</label>
-                          <select 
+                        <div className="ex-field">
+                          <label className="ex-label">Größe</label>
+                          <select
+                            className="ex-select"
                             value={activeBook.fontSize}
                             onChange={e => updateActiveBookConfig('fontSize', Number(e.target.value))}
                           >
@@ -5696,376 +5701,460 @@ export default function App() {
                         </div>
                       </div>
 
-                      <div className="grid-2">
-                        <div className="form-group">
-                          <label className="form-label">Ausrichtung</label>
-                          <select 
+                      <div className="ex-grid-2">
+                        <div className="ex-field">
+                          <label className="ex-label">Ausrichtung</label>
+                          <select
+                            className="ex-select"
                             value={activeBook.alignment || 'justify'}
                             onChange={e => updateActiveBookConfig('alignment', e.target.value)}
                           >
-                            <option value="justify">Blocksatz (Justified)</option>
-                            <option value="left">Linksbündig (Left-aligned)</option>
+                            <option value="justify">Blocksatz</option>
+                            <option value="left">Linksbündig</option>
                           </select>
                         </div>
-
-                        <div className="form-group">
-                          <label className="form-label">Kapitel-Ornament</label>
-                          <select 
+                        <div className="ex-field">
+                          <label className="ex-label">Ornament</label>
+                          <select
+                            className="ex-select"
                             value={activeBook.chapterOrnament || ''}
                             onChange={e => updateActiveBookConfig('chapterOrnament', e.target.value)}
                           >
                             <option value="">Keines</option>
-                            <option value="❦">Floral (❦)</option>
-                            <option value="❖">Raute (❖)</option>
-                            <option value="✻">Stern (✻)</option>
+                            <option value="❦">Floral ❦</option>
+                            <option value="❖">Raute ❖</option>
+                            <option value="✻">Stern ✻</option>
                           </select>
                         </div>
                       </div>
 
-                      <div className="grid-2">
-                        <div className="form-group">
-                          <label className="form-label">Buchgröße</label>
-                          <select 
+                      <div className="ex-grid-2">
+                        <div className="ex-field">
+                          <label className="ex-label">Buchgröße</label>
+                          <select
+                            className="ex-select"
                             value={activeBook.pageSize}
                             onChange={e => updateActiveBookConfig('pageSize', e.target.value)}
                           >
-                            <option value="5x8">5" x 8" Taschenbuch</option>
-                            <option value="5.5x8.5">5.5" x 8.5" Taschenbuch</option>
-                            <option value="6x9">6" x 9" Standard KDP</option>
-                            <option value="8.5x11">8.5" x 11" Großformat</option>
-                            <option value="custom">Benutzerdefiniert (Custom)</option>
-                            <option value="a4">DIN A4 Dokument</option>
+                            <option value="5x8">5×8″ Taschenbuch</option>
+                            <option value="5.5x8.5">5.5×8.5″</option>
+                            <option value="6x9">6×9″ Standard KDP</option>
+                            <option value="8.5x11">8.5×11″ Großformat</option>
+                            <option value="custom">Custom</option>
+                            <option value="a4">DIN A4</option>
                           </select>
                         </div>
-
-                        <div className="form-group">
-                          <label className="form-label">Kopfzeile (Titel/Kapitel)</label>
-                          <select 
+                        <div className="ex-field">
+                          <label className="ex-label">Kopfzeile</label>
+                          <select
+                            className="ex-select"
                             value={activeBook.showRunningHeader !== false ? 'true' : 'false'}
                             onChange={e => updateActiveBookConfig('showRunningHeader', e.target.value === 'true')}
                           >
-                            <option value="true">Anzeigen (Ein)</option>
-                            <option value="false">Ausblenden (Aus)</option>
+                            <option value="true">Ein</option>
+                            <option value="false">Aus</option>
                           </select>
                         </div>
                       </div>
 
-                      <div className="grid-2">
-                        <div className="form-group">
-                          <label className="form-label">Inhaltsverzeichnis (TOC)</label>
-                          <select 
+                      <div className="ex-grid-2">
+                        <div className="ex-field">
+                          <label className="ex-label">TOC</label>
+                          <select
+                            className="ex-select"
                             value={activeBook.generateTOC !== false ? 'true' : 'false'}
                             onChange={e => updateActiveBookConfig('generateTOC', e.target.value === 'true')}
                           >
-                            <option value="true">Generieren (Ja)</option>
-                            <option value="false">Überspringen (Nein)</option>
+                            <option value="true">Generieren</option>
+                            <option value="false">Überspringen</option>
                           </select>
                         </div>
-                        <div style={{ flex: 1 }} />
+                        <div />
                       </div>
 
-                      {/* Custom Width / Height inches input */}
                       {activeBook.pageSize === 'custom' && (
-                        <div className="grid-2">
-                          <div className="form-group">
-                            <label className="form-label">Breite (Zoll)</label>
-                            <input 
-                              type="number"
-                              step="0.1"
-                              min="3"
-                              max="12"
+                        <div className="ex-grid-2">
+                          <div className="ex-field">
+                            <label className="ex-label">Breite (Zoll)</label>
+                            <input
+                              className="ex-input"
+                              type="number" step="0.1" min="3" max="12"
                               value={activeBook.customWidth || 6}
                               onChange={e => updateActiveBookConfig('customWidth', Math.max(3, Math.min(12, Number(e.target.value))))}
                             />
                           </div>
-                          <div className="form-group">
-                            <label className="form-label">Höhe (Zoll)</label>
-                            <input 
-                              type="number"
-                              step="0.1"
-                              min="4"
-                              max="18"
+                          <div className="ex-field">
+                            <label className="ex-label">Höhe (Zoll)</label>
+                            <input
+                              className="ex-input"
+                              type="number" step="0.1" min="4" max="18"
                               value={activeBook.customHeight || 9}
                               onChange={e => updateActiveBookConfig('customHeight', Math.max(4, Math.min(18, Number(e.target.value))))}
                             />
                           </div>
                         </div>
                       )}
+
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button onClick={applyRomanPreset} className="ex-btn ex-btn-accent" style={{ flex: 1, padding: '7px' }}>
+                          Roman
+                        </button>
+                        <button onClick={applySachbuchPreset} className="ex-btn ex-btn-plan" style={{ flex: 1, padding: '7px' }}>
+                          Sachbuch
+                        </button>
+                      </div>
                     </div>
 
-                    {outline ? (
-                      <div className="flex-col" style={{ gap: '6px', width: '100%', marginTop: '6px' }}>
-                        {!isGenerating && completedPagesCount < totalPagesCount && (
-                          <button 
-                            onClick={() => triggerPageWriting(outline, activeBook.id)}
-                            className="btn btn-primary"
-                            style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px' }}
-                            disabled={isPlanning}
-                          >
-                            <Play style={{ width: '12px', height: '12px', fill: 'currentColor' }} />
-                            {completedPagesCount > 0
-                              ? `▶ Weiter generieren (${completedPagesCount}/${totalPagesCount} fertig)`
-                              : 'Alle nicht generierten Seiten generieren'}
-                          </button>
-                        )}
+                    <div className="ex-divider" />
 
-                        {isGenerating && (
-                          <button 
-                            onClick={() => { cancelGenerationRef.current = true; }}
-                            className="btn btn-danger"
-                            style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px' }}
-                          >
-                            <Loader2 className="spinner" style={{ width: '12px', height: '12px' }} />
-                            Generierung abbrechen
-                          </button>
-                        )}
-                        
-                        {isPlanning && planningProgress && (
-                          <div style={{ marginTop: '6px', marginBottom: '6px', width: '100%', backgroundColor: 'var(--bg-card)', padding: '8px', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
-                              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                <Loader2 className="spinner" style={{ width: '10px', height: '10px' }} />
-                                {planningProgress.message}
-                              </span>
-                              <span>{planningProgress.percent}%</span>
-                            </div>
-                            <div style={{ width: '100%', height: '4px', backgroundColor: 'var(--bg-main)', borderRadius: '2px', overflow: 'hidden' }}>
-                              <div style={{ width: `${planningProgress.percent}%`, height: '100%', backgroundColor: 'var(--accent-color)', transition: 'width 0.3s ease' }} />
-                            </div>
-                          </div>
-                        )}
-
-                        <button 
-                          onClick={handlePlanBook}
-                          disabled={isPlanning || isGenerating || !activeBook.title || !activeBook.title.trim()}
-                          className="btn"
-                          style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', backgroundColor: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-muted)' }}
-                        >
-                          <RotateCw style={{ width: '12px', height: '12px' }} />
-                          Gliederung neu planen
-                        </button>
-
-                        <button 
-                          onClick={handleCondenseOutline}
-                          disabled={isPlanning || isGenerating || !activeBook.outline}
-                          className="btn btn-warning"
-                          style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', marginTop: '4px' }}
-                          title="Nur Kapitelnamen im Inhaltsverzeichnis kürzen – Seitenanzahl bleibt identisch"
-                        >
-                          {isPlanning ? (
-                            <Loader2 className="spinner" style={{ width: '12px', height: '12px' }} />
-                          ) : (
-                            <Scissors style={{ width: '12px', height: '12px' }} />
+                    {/* ── Aktionen ── */}
+                    <div className="ex-section-label">Aktionen</div>
+                    <div className="ex-section">
+                      {outline ? (
+                        <>
+                          {!isGenerating && completedPagesCount < totalPagesCount && (
+                            <button
+                              className="ex-btn ex-btn-generate"
+                              onClick={() => triggerPageWriting(outline, activeBook.id)}
+                              disabled={isPlanning}
+                            >
+                              <Play style={{ width: '13px', height: '13px', fill: 'currentColor' }} />
+                              {completedPagesCount > 0
+                                ? `Weiter (${completedPagesCount}/${totalPagesCount})`
+                                : 'Alle Seiten generieren'}
+                            </button>
                           )}
-                          Inhaltsverz. einkürzen (AI)
-                        </button>
-                        {/* Restore button – shown when backup snapshot exists */}
-                        {activeBook.outlineBackup && (
-                          <button
-                            onClick={handleRestoreOutline}
-                            className="btn"
-                            style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', marginTop: '4px', backgroundColor: 'transparent', border: '1px solid var(--accent-green, #4caf50)', color: 'var(--accent-green, #4caf50)' }}
-                          >
-                            <RotateCw style={{ width: '12px', height: '12px' }} />
-                            {activeBook.pagesTextBackup && Object.keys(activeBook.pagesTextBackup).length > 0
-                              ? `Gliederung & Seiten wiederherstellen (${activeBook.outlineBackup.length} S.)`
-                              : `Gliederung wiederherstellen (${activeBook.outlineBackup.length} Seiten)`
-                            }
-                          </button>
-                        )}
-                        {/* Emergency recovery – shown when pagesText has more pages than outline */}
-                        {activeBook.outline && Object.keys(activeBook.pagesText || {}).length > activeBook.outline.pages.length && (
-                          <button
-                            onClick={handleRecoverOutlineFromPages}
-                            className="btn"
-                            style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', marginTop: '4px', backgroundColor: 'transparent', border: '1px solid #ff9800', color: '#ff9800' }}
-                            title="Gliederung aus vorhandenem Seiteninhalt rekonstruieren"
-                          >
-                            <RotateCw style={{ width: '12px', height: '12px' }} />
-                            ⚠️ {Object.keys(activeBook.pagesText || {}).length} Seiten wiederherstellen
-                          </button>
-                        )}
 
-                        {activeBook.outline && activeBook.outline.pages.length < activeBook.targetPages && (
+                          {isGenerating && (
+                            <button
+                              className="ex-btn ex-btn-danger"
+                              onClick={() => { cancelGenerationRef.current = true; }}
+                            >
+                              <Loader2 className="spinner" style={{ width: '13px', height: '13px' }} />
+                              Generierung stoppen
+                            </button>
+                          )}
+
+                          {isPlanning && planningProgress && (
+                            <div className="ex-progress-box">
+                              <div className="ex-progress-info">
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <Loader2 className="spinner" style={{ width: '10px', height: '10px' }} />
+                                  {planningProgress.message}
+                                </span>
+                                <span>{planningProgress.percent}%</span>
+                              </div>
+                              <div className="ex-progress-track">
+                                <div className="ex-progress-bar" style={{ width: `${planningProgress.percent}%` }} />
+                              </div>
+                            </div>
+                          )}
+
                           <button
-                            onClick={handleExtendOutline}
-                            disabled={isPlanning || isGenerating}
-                            className="btn"
-                            style={{
-                              width: '100%',
-                              display: 'flex',
-                              justifyContent: 'center',
-                              alignItems: 'center',
-                              gap: '6px',
-                              backgroundColor: '#92400e',
-                              border: '1px solid #d97706',
-                              color: '#fcd34d',
-                              fontWeight: 700,
-                              fontSize: '10px',
-                              whiteSpace: 'normal',
-                              lineHeight: '1.3',
-                              padding: '6px 8px',
-                              textAlign: 'center'
-                            }}
+                            className="ex-btn ex-btn-plan"
+                            onClick={handlePlanBook}
+                            disabled={isPlanning || isGenerating || !activeBook.title?.trim()}
+                          >
+                            <RotateCw style={{ width: '13px', height: '13px' }} />
+                            Gliederung neu planen
+                          </button>
+
+                          <button
+                            className="ex-btn ex-btn-warn"
+                            onClick={handleCondenseOutline}
+                            disabled={isPlanning || isGenerating || !activeBook.outline}
+                            title="Kapitelnamen kürzen"
                           >
                             {isPlanning
-                              ? <><Loader2 className="spinner" style={{ width: '12px', height: '12px', flexShrink: 0 }} /> Erweitere...</>  
-                              : `Notfall: ${activeBook.outline.pages.length} von ${activeBook.targetPages} Seiten – Rest ergänzen`
-                            }
+                              ? <Loader2 className="spinner" style={{ width: '13px', height: '13px' }} />
+                              : <Scissors style={{ width: '13px', height: '13px' }} />}
+                            TOC einkürzen (AI)
                           </button>
-                        )}
-                      </div>
-                    ) : (
-                      <>
-                        {isPlanning && planningProgress && (
-                          <div style={{ marginTop: '6px', marginBottom: '6px', width: '100%', backgroundColor: 'var(--bg-card)', padding: '8px', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
-                              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                <Loader2 className="spinner" style={{ width: '10px', height: '10px' }} />
-                                {planningProgress.message}
-                              </span>
-                              <span>{planningProgress.percent}%</span>
+
+                          {activeBook.outlineBackup && (
+                            <button className="ex-btn ex-btn-restore" onClick={handleRestoreOutline}>
+                              <RotateCw style={{ width: '13px', height: '13px' }} />
+                              {activeBook.pagesTextBackup && Object.keys(activeBook.pagesTextBackup).length > 0
+                                ? 'Gliederung & Seiten wiederherstellen'
+                                : 'Gliederung wiederherstellen'}
+                            </button>
+                          )}
+
+                          {activeBook.outline && Object.keys(activeBook.pagesText || {}).length > activeBook.outline.pages.length && (
+                            <button className="ex-btn ex-btn-recover" onClick={handleRecoverOutlineFromPages}>
+                              <RotateCw style={{ width: '13px', height: '13px' }} />
+                              ⚠ {Object.keys(activeBook.pagesText || {}).length} Seiten wiederherstellen
+                            </button>
+                          )}
+
+                          {activeBook.outline && activeBook.outline.pages.length < activeBook.targetPages && (
+                            <button className="ex-btn ex-btn-recover" onClick={handleExtendOutline} disabled={isPlanning || isGenerating}>
+                              {isPlanning
+                                ? <><Loader2 className="spinner" style={{ width: '13px', height: '13px' }} />Erweitere...</>
+                                : `Notfall: ${activeBook.outline.pages.length}/${activeBook.targetPages} — Rest ergänzen`}
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          {isPlanning && planningProgress && (
+                            <div className="ex-progress-box">
+                              <div className="ex-progress-info">
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <Loader2 className="spinner" style={{ width: '10px', height: '10px' }} />
+                                  {planningProgress.message}
+                                </span>
+                                <span>{planningProgress.percent}%</span>
+                              </div>
+                              <div className="ex-progress-track">
+                                <div className="ex-progress-bar" style={{ width: `${planningProgress.percent}%` }} />
+                              </div>
                             </div>
-                            <div style={{ width: '100%', height: '4px', backgroundColor: 'var(--bg-main)', borderRadius: '2px', overflow: 'hidden' }}>
-                              <div style={{ width: `${planningProgress.percent}%`, height: '100%', backgroundColor: 'var(--accent-color)', transition: 'width 0.3s ease' }} />
+                          )}
+                          <button
+                            className="ex-btn ex-btn-generate"
+                            onClick={handlePlanBook}
+                            disabled={isPlanning || isGenerating || !activeBook.title?.trim()}
+                          >
+                            {isPlanning
+                              ? <><Loader2 className="spinner" style={{ width: '13px', height: '13px' }} />Plane Gliederung...</>
+                              : isGenerating
+                              ? <><Loader2 className="spinner" style={{ width: '13px', height: '13px' }} />Schreibe Seiten...</>
+                              : <><Play style={{ width: '13px', height: '13px', fill: 'currentColor' }} />Buch generieren</>}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* ── Amazon Beschreibung ── */}
+                    <div className="ex-section-label">Amazon Listing</div>
+                    <div className="ex-section">
+                      <div style={{
+                        background: 'linear-gradient(135deg, rgba(37,99,235,0.12) 0%, rgba(29,78,216,0.06) 100%)',
+                        border: '1px solid rgba(56,189,248,0.2)',
+                        borderRadius: '10px',
+                        padding: '12px 14px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '10px'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{
+                              width: '28px', height: '28px', borderRadius: '7px',
+                              background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              boxShadow: '0 2px 8px rgba(37,99,235,0.4)'
+                            }}>
+                              <span style={{ fontSize: '13px' }}>📝</span>
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-main)', fontFamily: 'var(--ex-font)' }}>HTML Beschreibung</div>
+                              <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--ex-font)' }}>Amazon KDP Produktseite</div>
                             </div>
                           </div>
-                        )}
-                        <button 
-                          onClick={handlePlanBook}
-                        disabled={isPlanning || isGenerating || !activeBook.title || !activeBook.title.trim()}
-                        className="btn btn-primary"
-                        style={{ width: '100%', marginTop: '6px' }}
-                      >
-                        {isPlanning ? (
-                          <>
-                            <Loader2 className="spinner" />
-                            Gliederung planen...
-                          </>
-                        ) : isGenerating ? (
-                          <>
-                            <Loader2 className="spinner" />
-                            Seiten schreiben...
-                          </>
-                        ) : (
-                          <>
-                            <Play style={{ width: '12px', height: '12px', fill: 'currentColor' }} />
-                            Buch generieren
-                          </>
-                        )}
-                      </button>
-                      </>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex-col" style={{ gap: '12px' }}>
-                    {/* Amazon HTML Beschreibung Box */}
-                    <div className="form-group">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-main)' }}>Amazon HTML Beschreibung</span>
-                        <button 
+                          {activeBook.amazonDescription && (
+                            <span style={{
+                              fontSize: '9px', fontWeight: 700, padding: '2px 8px',
+                              borderRadius: '20px', background: 'rgba(56,189,248,0.12)',
+                              color: 'var(--ex-nvidia)', border: '1px solid rgba(56,189,248,0.25)',
+                              fontFamily: 'var(--ex-font)', letterSpacing: '0.04em'
+                            }}>✓ BEREIT</span>
+                          )}
+                        </div>
+                        <button
+                          className="ex-btn ex-btn-generate"
                           onClick={handleGenerateAmazonDescription}
-                          className="btn btn-primary"
-                          style={{ padding: '2px 8px', fontSize: '9.5px', height: '22px', display: 'flex', alignItems: 'center', gap: '4px' }}
                           disabled={isGeneratingMarketing || isPlanning || isGenerating}
                         >
-                          {isGeneratingMarketing ? <Loader2 className="spinner" style={{ width: '9px', height: '9px' }} /> : <Sparkles style={{ width: '9px', height: '9px' }} />}
-                          Erstellen
+                          {isGeneratingMarketing
+                            ? <><Loader2 className="animate-spin" style={{ width: '13px', height: '13px' }} />Generiere...</>
+                            : <><Sparkles style={{ width: '13px', height: '13px' }} />Mit AI erstellen</>}
                         </button>
                       </div>
-                      <textarea 
-                        rows={6}
-                        value={activeBook.amazonDescription || ''}
-                        onChange={e => updateActiveBookConfig('amazonDescription', e.target.value)}
-                        placeholder="Verkaufstarke Amazon KDP Produktbeschreibung in HTML..."
-                        style={{ width: '100%', padding: '8px', fontSize: '10.5px', fontFamily: 'monospace', backgroundColor: 'var(--input-bg)', border: '1px solid var(--border-color)', borderRadius: '4px', color: 'var(--text-main)', resize: 'vertical' }}
-                      />
-                      {activeBook.amazonDescription && (
-                        <button 
-                          onClick={() => {
-                            navigator.clipboard.writeText(activeBook.amazonDescription || '');
-                            alert("Beschreibung in Zwischenablage kopiert!");
-                          }}
-                          className="btn"
-                          style={{ width: '100%', fontSize: '9.5px', padding: '4px', marginTop: '4px', backgroundColor: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
-                        >
-                          HTML in die Zwischenablage kopieren
-                        </button>
-                      )}
+
+                      <div className="ex-field">
+                        <textarea
+                          className="ex-textarea"
+                          rows={7}
+                          value={activeBook.amazonDescription || ''}
+                          onChange={e => updateActiveBookConfig('amazonDescription', e.target.value)}
+                          placeholder="Füge hier deine Amazon HTML Beschreibung ein oder lass sie von der AI generieren..."
+                          style={{ fontFamily: 'monospace', fontSize: '11px', lineHeight: '1.6' }}
+                        />
+                        {activeBook.amazonDescription && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--ex-font)' }}>
+                              {activeBook.amazonDescription.length} Zeichen
+                            </span>
+                            <button
+                              className="ex-btn ex-btn-ghost"
+                              onClick={() => { navigator.clipboard.writeText(activeBook.amazonDescription || ''); alert('Beschreibung kopiert!'); }}
+                              style={{ width: 'auto', padding: '5px 14px', fontSize: '11px' }}
+                            >
+                              <Copy style={{ width: '11px', height: '11px' }} />
+                              HTML kopieren
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    {/* 7 KDP Keywords Box */}
-                    <div className="form-group" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '10px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-main)' }}>7 KDP Keywords</span>
-                        <button 
+                    <div className="ex-divider" />
+
+                    {/* ── Keywords ── */}
+                    <div className="ex-section-label">Keywords & Ranking</div>
+                    <div className="ex-section">
+                      <div style={{
+                        background: 'linear-gradient(135deg, rgba(29,78,216,0.1) 0%, rgba(37,99,235,0.04) 100%)',
+                        border: '1px solid rgba(56,189,248,0.15)',
+                        borderRadius: '10px',
+                        padding: '12px 14px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '10px'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{
+                              width: '28px', height: '28px', borderRadius: '7px',
+                              background: 'linear-gradient(135deg, #38bdf8, #2563eb)',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              boxShadow: '0 2px 8px rgba(56,189,248,0.35)'
+                            }}>
+                              <span style={{ fontSize: '13px' }}>🔑</span>
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-main)', fontFamily: 'var(--ex-font)' }}>7 KDP Keywords</div>
+                              <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--ex-font)' }}>SEO Optimierung</div>
+                            </div>
+                          </div>
+                          {activeBook.kdpKeywords && activeBook.kdpKeywords.length > 0 && (
+                            <span style={{
+                              fontSize: '9px', fontWeight: 700, padding: '2px 8px',
+                              borderRadius: '20px', background: 'rgba(56,189,248,0.12)',
+                              color: 'var(--ex-nvidia)', border: '1px solid rgba(56,189,248,0.25)',
+                              fontFamily: 'var(--ex-font)', letterSpacing: '0.04em'
+                            }}>{activeBook.kdpKeywords.length}/7</span>
+                          )}
+                        </div>
+                        <button
+                          className="ex-btn ex-btn-plan"
                           onClick={handleGenerateKdpKeywords}
-                          className="btn btn-primary"
-                          style={{ padding: '2px 8px', fontSize: '9.5px', height: '22px', display: 'flex', alignItems: 'center', gap: '4px' }}
                           disabled={isGeneratingMarketing || isPlanning || isGenerating}
                         >
-                          {isGeneratingMarketing ? <Loader2 className="spinner" style={{ width: '9px', height: '9px' }} /> : <Sparkles style={{ width: '9px', height: '9px' }} />}
-                          Optimieren
+                          {isGeneratingMarketing
+                            ? <><Loader2 className="animate-spin" style={{ width: '13px', height: '13px' }} />Optimiere...</>
+                            : <><Sparkles style={{ width: '13px', height: '13px' }} />Keywords optimieren</>}
                         </button>
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px', marginBottom: '4px' }}>
-                        {activeBook.kdpKeywords && activeBook.kdpKeywords.length > 0 ? (
-                          activeBook.kdpKeywords.map((kw, idx) => (
-                            <div key={idx} style={{ display: 'flex', alignItems: 'center', backgroundColor: 'var(--input-bg)', border: '1px solid var(--border-color)', borderRadius: '3px', padding: '4px 8px', fontSize: '10.5px' }}>
-                              <span style={{ color: 'var(--accent)', marginRight: '8px', fontWeight: 'bold' }}>{idx + 1}.</span>
-                              <span style={{ color: 'var(--text-main)' }}>{kw}</span>
+
+                      {activeBook.kdpKeywords && activeBook.kdpKeywords.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                          {activeBook.kdpKeywords.map((kw, idx) => (
+                            <div key={idx} className="ex-kw-item" style={{ borderRadius: '8px', padding: '8px 12px' }}>
+                              <span className="ex-kw-num" style={{ fontSize: '11px', fontWeight: 800 }}>{idx + 1}</span>
+                              <span className="ex-kw-text" style={{ fontSize: '12px', fontWeight: 500 }}>{kw}</span>
                             </div>
-                          ))
-                        ) : (
-                          <span style={{ color: 'var(--text-muted)', fontSize: '10.5px', fontStyle: 'italic' }}>Keine Keywords generiert.</span>
-                        )}
-                      </div>
-                      {activeBook.kdpKeywords && activeBook.kdpKeywords.length > 0 && (
-                        <button 
-                          onClick={() => {
-                            navigator.clipboard.writeText((activeBook.kdpKeywords || []).join(', '));
-                            alert("Keywords kopiert!");
-                          }}
-                          className="btn"
-                          style={{ width: '100%', fontSize: '9.5px', padding: '4px', backgroundColor: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
-                        >
-                          Keywords kopieren (kommagetrennt)
-                        </button>
+                          ))}
+                          <button
+                            className="ex-btn ex-btn-ghost"
+                            onClick={() => { navigator.clipboard.writeText((activeBook.kdpKeywords || []).join(', ')); alert('Keywords kopiert!'); }}
+                            style={{ marginTop: '2px' }}
+                          >
+                            <Copy style={{ width: '12px', height: '12px' }} />
+                            Alle kopieren (kommagetrennt)
+                          </button>
+                        </div>
+                      ) : (
+                        <div style={{
+                          textAlign: 'center', padding: '16px 12px',
+                          border: '1px dashed var(--ex-border)', borderRadius: '10px',
+                          color: 'var(--text-muted)', fontSize: '11.5px',
+                          fontFamily: 'var(--ex-font)', fontWeight: 500
+                        }}>
+                          Noch keine Keywords generiert
+                        </div>
                       )}
                     </div>
 
-                    {/* KDP Category Finder Box */}
-                    <div className="form-group" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '10px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-main)' }}>Kategorie-Finder</span>
-                        <button 
+                    <div className="ex-divider" />
+
+                    {/* ── Kategorien ── */}
+                    <div className="ex-section-label">Kategorien</div>
+                    <div className="ex-section">
+                      <div style={{
+                        background: 'linear-gradient(135deg, rgba(37,99,235,0.08) 0%, rgba(56,189,248,0.04) 100%)',
+                        border: '1px solid rgba(56,189,248,0.15)',
+                        borderRadius: '10px',
+                        padding: '12px 14px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '10px'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{
+                              width: '28px', height: '28px', borderRadius: '7px',
+                              background: 'linear-gradient(135deg, #1d4ed8, #1e40af)',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              boxShadow: '0 2px 8px rgba(29,78,216,0.35)'
+                            }}>
+                              <span style={{ fontSize: '13px' }}>📂</span>
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-main)', fontFamily: 'var(--ex-font)' }}>Kategorie-Finder</div>
+                              <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--ex-font)' }}>Amazon Browse Node</div>
+                            </div>
+                          </div>
+                          {activeBook.kdpCategories && activeBook.kdpCategories.length > 0 && (
+                            <span style={{
+                              fontSize: '9px', fontWeight: 700, padding: '2px 8px',
+                              borderRadius: '20px', background: 'rgba(56,189,248,0.12)',
+                              color: 'var(--ex-nvidia)', border: '1px solid rgba(56,189,248,0.25)',
+                              fontFamily: 'var(--ex-font)', letterSpacing: '0.04em'
+                            }}>{activeBook.kdpCategories.length} FOUND</span>
+                          )}
+                        </div>
+                        <button
+                          className="ex-btn ex-btn-ghost"
+                          style={{ border: '1px solid rgba(56,189,248,0.3)', color: 'var(--ex-nvidia)' }}
                           onClick={handleGenerateKdpCategories}
-                          className="btn btn-primary"
-                          style={{ padding: '2px 8px', fontSize: '9.5px', height: '22px', display: 'flex', alignItems: 'center', gap: '4px' }}
                           disabled={isGeneratingMarketing || isPlanning || isGenerating}
                         >
-                          {isGeneratingMarketing ? <Loader2 className="spinner" style={{ width: '9px', height: '9px' }} /> : <Sparkles style={{ width: '9px', height: '9px' }} />}
-                          Suchen
+                          {isGeneratingMarketing
+                            ? <><Loader2 className="animate-spin" style={{ width: '13px', height: '13px' }} />Suche...</>
+                            : <><Sparkles style={{ width: '13px', height: '13px' }} />Kategorien suchen</>}
                         </button>
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
-                        {activeBook.kdpCategories && activeBook.kdpCategories.length > 0 ? (
-                          activeBook.kdpCategories.map((cat, idx) => (
-                            <div key={idx} style={{ display: 'flex', alignItems: 'center', backgroundColor: 'var(--input-bg)', border: '1px solid var(--border-color)', borderRadius: '3px', padding: '4px 8px', fontSize: '10.5px' }}>
-                              <span style={{ color: 'var(--success)', marginRight: '6px' }}>✔</span>
-                              <span style={{ color: 'var(--text-main)' }}>{cat}</span>
+
+                      {activeBook.kdpCategories && activeBook.kdpCategories.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                          {activeBook.kdpCategories.map((cat, idx) => (
+                            <div key={idx} className="ex-cat-item" style={{ borderRadius: '8px', padding: '9px 12px', gap: '10px' }}>
+                              <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ex-nvidia)', flexShrink: 0 }}>#{idx + 1}</span>
+                              <span className="ex-cat-text" style={{ fontSize: '11.5px', fontWeight: 500, lineHeight: '1.3' }}>{cat}</span>
                             </div>
-                          ))
-                        ) : (
-                          <span style={{ color: 'var(--text-muted)', fontSize: '10.5px', fontStyle: 'italic' }}>Keine Kategorien vorgeschlagen.</span>
-                        )}
-                      </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div style={{
+                          textAlign: 'center', padding: '16px 12px',
+                          border: '1px dashed var(--ex-border)', borderRadius: '10px',
+                          color: 'var(--text-muted)', fontSize: '11.5px',
+                          fontFamily: 'var(--ex-font)', fontWeight: 500
+                        }}>
+                          Noch keine Kategorien vorgeschlagen
+                        </div>
+                      )}
                     </div>
-                  </div>
+                  </>
                 )}
               </div>
             </div>
-            
+
             {/* Draggable Resizer Bar */}
             {!isExplorerCollapsed && <div className="resizer-bar" onMouseDown={startResizingLeft} />}
 
@@ -6201,8 +6290,8 @@ export default function App() {
                       {completedPagesCount < totalPagesCount && !isGenerating && (
                         <button 
                           onClick={() => triggerPageWriting(outline, activeBook.id)}
-                          className="btn btn-primary"
-                          style={{ padding: '3px 8px', fontSize: '9.5px', height: '22px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          className="btn"
+                          style={{ padding: '4px 10px', fontSize: '10px', fontWeight: 700, height: '24px', display: 'flex', alignItems: 'center', gap: '5px', background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', color: '#fff', border: '1px solid #38bdf8', borderRadius: '6px', boxShadow: '0 2px 8px rgba(37,99,235,0.3)', cursor: 'pointer' }}
                         >
                           <Play style={{ width: '10px', height: '10px', fill: 'currentColor' }} />
                           Alle nicht generierten Seiten generieren
@@ -6233,13 +6322,14 @@ export default function App() {
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '8px',
-                        padding: '10px 12px',
-                        backgroundColor: 'rgba(11, 87, 208, 0.08)',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '8px',
+                        padding: '12px',
+                        background: 'linear-gradient(135deg, rgba(37,99,235,0.08), rgba(56,189,248,0.03))',
+                        border: '1px solid rgba(56,189,248,0.25)',
+                        borderRadius: '10px',
                         fontSize: '11px',
                         marginTop: '6px',
-                        marginBottom: '4px'
+                        marginBottom: '4px',
+                        boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                           <span style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '11.5px' }}>
@@ -6254,21 +6344,13 @@ export default function App() {
                             placeholder="Gemeinsamen Kapitelnamen eingeben..."
                             value={bulkChapterTitle}
                             onChange={(e) => setBulkChapterTitle(e.target.value)}
-                            style={{
-                              flex: 1,
-                              padding: '4px 8px',
-                              fontSize: '10.5px',
-                              border: '1px solid var(--border-color)',
-                              borderRadius: '4px',
-                              backgroundColor: 'var(--input-bg)',
-                              color: 'var(--text-main)',
-                              height: '26px'
-                            }}
+                            className="ex-input-sleek"
+                            style={{ flex: 1, height: '28px' }}
                           />
                           <button
                             onClick={handleApplyBulkChapterTitle}
-                            className="btn btn-primary"
-                            style={{ padding: '4px 10px', fontSize: '10.5px', height: '26px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            className="btn"
+                            style={{ padding: '4px 12px', fontSize: '11px', fontWeight: 700, height: '28px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', color: '#fff', border: '1px solid #38bdf8', borderRadius: '6px' }}
                             title="Alle markierten Seiten unter diesem Kapitelnamen zusammenführen"
                           >
                             Zusammenführen / Umbenennen
@@ -6422,19 +6504,20 @@ export default function App() {
                         disabled={isPlanning || isGenerating || !activeBook.outline}
                         style={{
                           width: '100%',
-                          fontSize: '9.5px',
+                          fontSize: '10px',
                           fontWeight: 600,
-                          padding: '5px 8px',
+                          padding: '6px 10px',
                           borderRadius: '6px',
-                          backgroundColor: 'rgba(234, 88, 12, 0.08)',
-                          color: '#ea580c',
-                          border: '1px solid rgba(234, 88, 12, 0.3)',
+                          background: 'rgba(56, 189, 248, 0.08)',
+                          color: 'var(--text-main)',
+                          border: '1px solid rgba(56, 189, 248, 0.25)',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          gap: '4px',
-                          marginTop: '2px'
+                          gap: '5px',
+                          marginTop: '4px',
+                          transition: 'all 0.15s ease'
                         }}
                       >
                         <Scissors style={{ width: '10px', height: '10px' }} />
@@ -6501,19 +6584,20 @@ export default function App() {
                         disabled={isPlanning || isGenerating || !activeBook.outline}
                         style={{
                           width: '100%',
-                          fontSize: '9.5px',
+                          fontSize: '10px',
                           fontWeight: 600,
-                          padding: '5px 8px',
+                          padding: '6px 10px',
                           borderRadius: '6px',
-                          backgroundColor: 'rgba(124, 58, 237, 0.08)',
-                          color: '#7c3aed',
-                          border: '1px solid rgba(124, 58, 237, 0.3)',
+                          background: 'linear-gradient(135deg, rgba(37,99,235,0.12), rgba(29,78,216,0.05))',
+                          color: '#38bdf8',
+                          border: '1px solid rgba(56, 189, 248, 0.3)',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          gap: '4px',
-                          marginTop: '2px'
+                          gap: '5px',
+                          marginTop: '4px',
+                          transition: 'all 0.15s ease'
                         }}
                         title="Die KI analysiert den Text aller bereits geschriebenen Seiten und erstellt das Inhaltsverzeichnis passend dazu neu."
                       >
@@ -6560,6 +6644,15 @@ export default function App() {
                             {status === 'completed' && !hasOverflow && <CheckCircle2 style={{ width: '9px', height: '9px', color: isSelected ? '#ffffff' : 'var(--success)', marginTop: '1px' }} />}
                             {status === 'completed' && hasOverflow && <AlertCircle style={{ width: '9px', height: '9px', color: 'var(--error)', marginTop: '1px' }} />}
                             {status === 'failed' && <AlertCircle style={{ width: '9px', height: '9px', color: 'var(--error)', marginTop: '1px' }} />}
+                            {(activeBook.cmieStatus || {})[p.page_number] === 'similar' && (
+                              <span title="CMIE: Ähnlichkeit zu früherem Kapitel" style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#eab308', display: 'inline-block', marginLeft: '2px' }}></span>
+                            )}
+                            {(activeBook.cmieStatus || {})[p.page_number] === 'review_needed' && (
+                              <span title="CMIE: Copyright Warnung (>15 Wörter Exakt-Match)" style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#ef4444', display: 'inline-block', marginLeft: '2px' }}></span>
+                            )}
+                            {(activeBook.cmieStatus || {})[p.page_number] === 'ok' && status === 'completed' && !hasOverflow && (
+                              <span title="CMIE Integrität bestätigt" style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#38bdf8', display: 'inline-block', marginLeft: '2px' }}></span>
+                            )}
                           </button>
                         );
                       })}
@@ -7322,7 +7415,19 @@ max="250"
                       </div>
 
                       {/* Clean Inline Chapter Title and Focus */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '2px' }}>
+                      <div style={{
+                        background: 'linear-gradient(135deg, rgba(37,99,235,0.07), rgba(29,78,216,0.02))',
+                        border: '1px solid rgba(56,189,248,0.2)',
+                        borderRadius: '8px',
+                        padding: '8px 12px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '4px',
+                        marginTop: '6px'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '8.5px', fontWeight: 800, color: '#38bdf8', letterSpacing: '0.08em', textTransform: 'uppercase' }}>KAPITEL-ÜBERSCHRIFT</span>
+                        </div>
                         <input 
                           type="text"
                           value={editingChapterTitle !== null ? editingChapterTitle : (outline?.pages[(selectedPage as number) - 1]?.chapter_title || '')}
@@ -7333,44 +7438,33 @@ max="250"
                               handleSaveChapterTitle(selectedPage as number, editingChapterTitle);
                             }
                           }}
-                          style={{ 
-                            width: '100%',
-                            padding: '2px 0', 
-                            fontSize: '13px', 
-                            fontWeight: '600',
-                            border: 'none', 
-                            borderBottom: '1px solid transparent',
-                            backgroundColor: 'transparent',
-                            color: 'var(--text-main)',
-                            outline: 'none',
-                            transition: 'border-color 0.2s'
-                          }}
-                          onFocus={(e) => e.currentTarget.style.borderBottom = '1px solid var(--primary)'}
-                          onBlur={(e) => {
-                            e.currentTarget.style.borderBottom = '1px solid transparent';
+                          className="ex-input-sleek"
+                          style={{ width: '100%', fontSize: '13px', fontWeight: '700' }}
+                          onBlur={() => {
                             if (editingChapterTitle !== null) {
                               handleSaveChapterTitle(selectedPage as number, editingChapterTitle);
                             }
                           }}
                         />
-                        <div style={{ color: 'var(--text-muted)', fontSize: '9.5px', display: 'flex', alignItems: 'baseline', gap: '4px', marginTop: '1px' }}>
-                          <span style={{ color: 'var(--primary)', fontWeight: '700', fontSize: '8px', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>Planung:</span>
-                          <span style={{ lineHeight: '1.3' }}>{outline?.pages[(selectedPage as number) - 1]?.focus}</span>
+                        <div style={{ color: 'var(--text-muted)', fontSize: '10px', display: 'flex', alignItems: 'baseline', gap: '5px', marginTop: '2px' }}>
+                          <span style={{ color: '#60a5fa', fontWeight: '700', fontSize: '8.5px', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>Fokus:</span>
+                          <span style={{ lineHeight: '1.4', color: 'var(--text-main)' }}>{outline?.pages[(selectedPage as number) - 1]?.focus}</span>
                         </div>
                       </div>
                     </div>
 
                     <div style={{ 
                       display: 'flex', 
-                      gap: '4px', 
-                      padding: '3px', 
-                      backgroundColor: 'var(--bg-card)', 
-                      borderRadius: '6px', 
-                      border: '1px solid var(--border-color)', 
+                      gap: '6px', 
+                      padding: '6px 8px', 
+                      background: 'linear-gradient(135deg, rgba(37,99,235,0.08), rgba(56,189,248,0.03))', 
+                      borderRadius: '8px', 
+                      border: '1px solid rgba(56,189,248,0.22)', 
                       alignItems: 'center', 
                       flexWrap: 'wrap',
-                      marginBottom: '8px',
-                      width: '100%'
+                      marginBottom: '10px',
+                      width: '100%',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
                     }}>
                       <button
                         onMouseDown={(e) => e.preventDefault()}
@@ -7519,11 +7613,15 @@ max="250"
                         <div style={{ 
                           display: 'flex', 
                           gap: '6px', 
-                          padding: '6px 12px', 
-                          borderBottom: '1px solid var(--border-color)',
-                          backgroundColor: '#334155',
+                          padding: '8px 14px', 
+                          borderBottom: '1px solid rgba(56,189,248,0.15)',
+                          background: 'linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%)',
                           color: '#ffffff',
-                          alignItems: 'center'
+                          alignItems: 'center',
+                          borderTopLeftRadius: '10px',
+                          borderTopRightRadius: '10px',
+                          border: '1px solid rgba(56,189,248,0.2)',
+                          borderBottomWidth: 0
                         }}>
                           <button onMouseDown={(e) => e.preventDefault()} onClick={() => {
                             const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement;
@@ -7616,12 +7714,24 @@ max="250"
                             <Undo style={{ width: '12px', height: '12px' }} />
                           </button>
                         </div>
+                        {(activeBook.cmieStatus || {})[selectedPage as number] === 'review_needed' && (
+                          <div style={{ padding: '10px 14px', backgroundColor: '#991b1b', color: '#fef2f2', fontSize: '11px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px', borderLeft: '4px solid #ef4444' }}>
+                            <AlertCircle size={16} style={{ flexShrink: 0 }} />
+                            <span>CMIE Schutzsperre: Diese Seite überschreitet die Zitat-Länge (&gt;15 Wörter Ähnlichkeit zu externer Quelle/Quellmaterial). Manuelle Überarbeitung erforderlich!</span>
+                          </div>
+                        )}
+                        {(activeBook.cmieStatus || {})[selectedPage as number] === 'similar' && (
+                          <div style={{ padding: '10px 14px', backgroundColor: '#854d0e', color: '#fef9c3', fontSize: '11px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px', borderLeft: '4px solid #eab308' }}>
+                            <AlertCircle size={16} style={{ flexShrink: 0 }} />
+                            <span>CMIE Dopplungs-Hinweis: Die Eröffnung oder Struktur dieser Seite ähnelt einem früheren Kapitel.</span>
+                          </div>
+                        )}
                         <textarea
                           value={editorText}
                           onChange={handleEditorChange}
                           placeholder="Inhalt wird geladen/generiert. Du kannst auch direkt losschreiben..."
                           className="editor-textarea"
-                          style={{ borderTop: 'none', height: '400px' }}
+                          style={{ borderTop: 'none', height: '420px', background: '#0f172a', color: '#f8fafc', border: '1px solid rgba(56,189,248,0.2)', borderBottomLeftRadius: '10px', borderBottomRightRadius: '10px', padding: '16px', fontFamily: 'var(--ex-font)', fontSize: '13.5px', lineHeight: '1.7', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}
                         />
                       </div>
                     )}
@@ -7641,10 +7751,13 @@ max="250"
             {/* Draggable Resizer Bar */}
             <div className="resizer-bar" onMouseDown={startResizingRight} />
 
-            {/* Right Panel: Live Print Preview */}
-            <div className="pane" style={{ width: `${rightWidth}px`, flexShrink: 0 }}>
-              <div className="pane-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                <div className="pane-title">Layout-Viewer</div>
+            {/* Right Panel: Live Print Preview — Billion Dollar Vibe */}
+            <div className="ex-pane" style={{ width: `${rightWidth}px`, flexShrink: 0, display: 'flex', flexDirection: 'column', background: '#070d19' }}>
+              <div className="ex-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '12px 16px', background: '#0f172a', borderBottom: '1px solid rgba(56,189,248,0.2)' }}>
+                <div className="ex-wordmark">
+                  <div className="ex-wordmark-dot" style={{ background: '#38bdf8', boxShadow: '0 0 10px #38bdf8' }} />
+                  <span className="ex-wordmark-text">Layout-Viewer</span>
+                </div>
                 {activeBook && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <select 
@@ -7757,7 +7870,7 @@ max="250"
                 </div>
               )}
 
-              <div className="pane-content" style={{ justifyContent: 'space-between' }}>
+              <div className="ex-content" style={{ display: 'flex', flexDirection: 'column', padding: '24px 16px', background: '#060a14', overflowY: 'auto', flex: 1, gap: '20px', alignItems: 'center', justifyContent: 'space-between' }}>
                 {activeBook && selectedPage !== null ? (
                   <div className="preview-area" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
                     {/* Page Actions Toolbar */}
@@ -8201,6 +8314,19 @@ max="250"
                               >
                                 {content}
                               </div>
+
+                              {typeof selectedPage === 'number' && partIndex === 0 && (activeBook?.pagesGraphic || {})[selectedPage]?.grafik_sinnvoll && (
+                                <SvgGraphicRenderer
+                                  decision={(activeBook.pagesGraphic || {})[selectedPage]}
+                                  onVariantChange={(newVar) => {
+                                    const curr = (activeBook.pagesGraphic || {})[selectedPage as number];
+                                    updateActiveBookConfig('pagesGraphic', {
+                                      ...(activeBook.pagesGraphic || {}),
+                                      [selectedPage as number]: { ...curr, selectedVariant: newVar }
+                                    });
+                                  }}
+                                />
+                              )}
 
                               {/* Footer page numbers (centered) */}
                               <div style={{ fontSize: '5.5px', fontWeight: 'bold', color: '#94a3b8', marginTop: '4px', textAlign: 'center', visibility: (activeBook.showPageNumbers !== false && (typeof selectedPage === 'number' || (typeof selectedPage === 'string' && selectedPage.startsWith('toc_')))) ? 'visible' : 'hidden' }}>
