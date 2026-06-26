@@ -81,7 +81,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
             onMouseLeave={(e) => { e.currentTarget.style.filter = 'brightness(1)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderBottomWidth = '3px'; e.currentTarget.style.marginBottom = '0px'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(59,130,246,0.5), inset 0 2px 4px rgba(255,255,255,0.3)'; }}
           >
             <span style={{ fontSize: '15px', fontWeight: 800 }}>
-              <ShinyText text="Anmelden" disabled={false} speed={3} color="rgba(255,255,255,0.7)" shineColor="#ffffff" />
+              <ShinyText text="Anmelden" disabled={false} speed={3} color="#ffffff" shineColor="#ffffff" />
             </span>
           </button>
         </nav>
@@ -137,7 +137,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
             onMouseLeave={(e) => { e.currentTarget.style.filter = 'brightness(1)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderBottomWidth = '4px'; e.currentTarget.style.marginBottom = '0px'; e.currentTarget.style.boxShadow = '0 10px 30px rgba(59,130,246,0.5), inset 0 2px 4px rgba(255,255,255,0.3)'; }}
           >
             <span style={{ fontSize: '18px', fontWeight: 800 }}>
-              <ShinyText text="Jetzt Erstellen" disabled={false} speed={3} color="rgba(255,255,255,0.7)" shineColor="#ffffff" />
+              <ShinyText text="Jetzt Erstellen" disabled={false} speed={3} color="#ffffff" shineColor="#ffffff" />
             </span>
             <ChevronRight style={{ width: '20px', height: '20px', color: '#fff' }} />
           </button>
