@@ -521,7 +521,9 @@ const PreviewGraphicBox: React.FC<{
   const [liveX, setLiveX] = useState(propX);
   const [liveY, setLiveY] = useState(propY);
   const [liveW, setLiveW] = useState(currWidth);
+  const [flipBottom, setFlipBottom] = useState(false);
 
+  const boxRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const isResizing = useRef(false);
   const dragStart = useRef({ x: 0, y: 0 });
@@ -536,6 +538,13 @@ const PreviewGraphicBox: React.FC<{
       setLiveW(currWidth);
     }
   }, [propX, propY, currWidth]);
+
+  useEffect(() => {
+    if (boxRef.current) {
+      const top = boxRef.current.offsetTop;
+      setFlipBottom(top < 50 || liveY < -15);
+    }
+  }, [liveY, isHovered, isSelected]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0 || (e.target as HTMLElement).closest('button, input, select')) return;
@@ -593,6 +602,7 @@ const PreviewGraphicBox: React.FC<{
 
   return (
     <div
+      ref={boxRef}
       className="preview-graphic-container"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -615,8 +625,9 @@ const PreviewGraphicBox: React.FC<{
         borderRadius: '4px'
       }}
     >
-      {/* Invisible hover bridge to prevent toolbar vanishing */}
+      {/* Invisible hover bridges for top and bottom */}
       <div style={{ position: 'absolute', top: -38, left: 0, width: '100%', height: 38, zIndex: 99 }} />
+      <div style={{ position: 'absolute', bottom: -38, left: 0, width: '100%', height: 38, zIndex: 99 }} />
 
       {(isHovered || isSelected) && (
         <>
@@ -629,7 +640,9 @@ const PreviewGraphicBox: React.FC<{
 
       {(isHovered || isSelected || scale !== 1 || propX !== 0 || propY !== 0 || currWidth !== defaultWidth || currFloat !== defaultFloat) && (
         <div style={{
-          position: 'absolute', top: -34, left: '50%', transform: 'translateX(-50%)', zIndex: 100,
+          position: 'absolute', 
+          top: flipBottom ? 'calc(100% + 8px)' : -34, 
+          left: '50%', transform: 'translateX(-50%)', zIndex: 100,
           display: 'flex', alignItems: 'center', gap: 5,
           background: '#0f172a', padding: '3px 8px', borderRadius: 6,
           border: '1px solid #38bdf8', boxShadow: '0 4px 12px rgba(0,0,0,0.6)',
@@ -1343,10 +1356,14 @@ export default function App() {
     booksRef.current = next;
     setBooksState(next);
     const currentAcc = activeAccountIdRef.current;
-    if (next.length > 0) {
-      localStorage.setItem(KEYS.library(currentAcc), JSON.stringify(next));
-    } else {
-      localStorage.removeItem(KEYS.library(currentAcc));
+    try {
+      if (next.length > 0) {
+        localStorage.setItem(KEYS.library(currentAcc), JSON.stringify(next));
+      } else {
+        localStorage.removeItem(KEYS.library(currentAcc));
+      }
+    } catch (err) {
+      console.warn("localStorage quota exceeded, relying on Firestore cloud save:", err);
     }
 
     // Sync updates and deletions to Firestore (Debounced)
@@ -9333,11 +9350,29 @@ function ImageInsertModalInner({ onClose, onInstantInsert }: ImageInsertModalInn
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      const base64 = event.target?.result as string;
-      if (!base64) return;
-      const newId = `img_${Date.now()}`;
-      const tag = `:::custom_image ${newId} float:${floatVal} width:${widthVal}`;
-      onInstantInsert(newId, base64, tag);
+      const rawBase64 = event.target?.result as string;
+      if (!rawBase64) return;
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width; let h = img.height;
+        const maxDim = 1200;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+          else { w = Math.round((w * maxDim) / h); h = maxDim; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
+          ctx.drawImage(img, 0, 0, w, h);
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.82);
+          const newId = `img_${Date.now()}`;
+          const tag = `:::custom_image ${newId} float:${floatVal} width:${widthVal}`;
+          onInstantInsert(newId, compressedBase64, tag);
+        }
+      };
+      img.src = rawBase64;
     };
     reader.readAsDataURL(file);
   };
