@@ -38,4 +38,7 @@ export interface GraphicDecision {
   pipeline?: 'A' | 'B'; // A = SVG Structured Data, B = Image Illustration
   imagePrompt?: string;
   imageUrl?: string;
+  scale?: number;
+  x?: number;
+  y?: number;
 }

@@ -151,6 +151,7 @@ interface Book {
   box2Design?: BoxDesign;
   box3Design?: BoxDesign;
   images?: { [key: string]: string };
+  imagesTransform?: { [key: string]: { scale?: number; x?: number; y?: number } };
   idea: string;
   language: string;
   targetPages: number;
@@ -499,6 +500,93 @@ export const serializeBlocksToMarkdown = (blocks: WorkbookBlock[]): string => {
 
   blocks.forEach(b => serializeBlock(b));
   return lines.join('\n');
+};
+
+const PreviewGraphicBox: React.FC<{
+  transform?: { scale?: number; x?: number; y?: number };
+  onChange: (t: { scale: number; x: number; y: number }) => void;
+  children: React.ReactNode;
+}> = ({ transform = {}, onChange, children }) => {
+  const scale = transform.scale ?? 1;
+  const x = transform.x ?? 0;
+  const y = transform.y ?? 0;
+  const [isHovered, setIsHovered] = useState(false);
+  const isDragging = useRef(false);
+  const dragStart = useRef({ x: 0, y: 0 });
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0 || (e.target as HTMLElement).closest('button')) return;
+    e.stopPropagation();
+    isDragging.current = true;
+    dragStart.current = { x: e.clientX - x, y: e.clientY - y };
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging.current) return;
+      const nx = Math.max(-160, Math.min(160, e.clientX - dragStart.current.x));
+      const ny = Math.max(-260, Math.min(260, e.clientY - dragStart.current.y));
+      onChange({ scale, x: nx, y: ny });
+    };
+    const handleMouseUp = () => {
+      isDragging.current = false;
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [scale, x, y]);
+
+  return (
+    <div
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onMouseDown={handleMouseDown}
+      style={{
+        position: 'relative',
+        display: 'block',
+        margin: '12px auto',
+        transform: `translate(${x}px, ${y}px) scale(${scale})`,
+        transformOrigin: 'center center',
+        cursor: isDragging.current ? 'grabbing' : 'grab',
+        transition: isDragging.current ? 'none' : 'transform 0.15s ease'
+      }}
+    >
+      {(isHovered || scale !== 1 || x !== 0 || y !== 0) && (
+        <div style={{
+          position: 'absolute', top: -28, right: 0, zIndex: 100,
+          display: 'flex', alignItems: 'center', gap: 6,
+          background: '#0f172a', padding: '3px 8px', borderRadius: 6,
+          border: '1px solid #38bdf8', boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+          fontSize: 11, color: '#fff', userSelect: 'none'
+        }}>
+          <span style={{ fontSize: 9, color: '#94a3b8', textTransform: 'uppercase' }}>Bild</span>
+          <button
+            onMouseDown={e => e.stopPropagation()}
+            onClick={e => { e.stopPropagation(); onChange({ scale: Math.max(0.3, scale - 0.1), x, y }); }}
+            style={{ background: '#1e293b', border: '1px solid #334155', color: '#fff', borderRadius: 4, padding: '1px 6px', cursor: 'pointer' }}
+          >➖</button>
+          <span style={{ color: '#38bdf8', fontWeight: 700, minWidth: 32, textAlign: 'center' }}>{Math.round(scale * 100)}%</span>
+          <button
+            onMouseDown={e => e.stopPropagation()}
+            onClick={e => { e.stopPropagation(); onChange({ scale: Math.min(2.5, scale + 0.1), x, y }); }}
+            style={{ background: '#1e293b', border: '1px solid #334155', color: '#fff', borderRadius: 4, padding: '1px 6px', cursor: 'pointer' }}
+          >➕</button>
+          {(x !== 0 || y !== 0 || scale !== 1) && (
+            <button
+              onMouseDown={e => e.stopPropagation()}
+              onClick={e => { e.stopPropagation(); onChange({ scale: 1, x: 0, y: 0 }); }}
+              title="Reset"
+              style={{ background: '#ef444420', border: '1px solid #ef4444', color: '#ef4444', borderRadius: 4, padding: '1px 5px', cursor: 'pointer', fontSize: 9 }}
+            >Reset</button>
+          )}
+        </div>
+      )}
+      {children}
+    </div>
+  );
 };
 
 export default function App() {
@@ -1613,9 +1701,12 @@ export default function App() {
 
   const handleSaveChapterTitle = (pageNum: number, newTitle: string) => {
     if (!activeBook || !activeBook.outline) return;
+    const oldTitle = activeBook.outline.pages[pageNum - 1]?.chapter_title;
+    const cleanTitle = newTitle.trim();
+    if (!cleanTitle) return;
     const updatedPages = activeBook.outline.pages.map(p => {
-      if (p.page_number === pageNum) {
-        return { ...p, chapter_title: newTitle.trim() };
+      if (p.page_number === pageNum || (oldTitle && p.chapter_title === oldTitle)) {
+        return { ...p, chapter_title: cleanTitle };
       }
       return p;
     });
@@ -3429,21 +3520,6 @@ export default function App() {
       : 0;
 
     const chaptersOnPage = tocPages[pageIndex] || [];
-    const writableWidthPx = previewWidth - insideMarginPx - outsideMarginPx;
-
-    const getTOCEntryFontSize = (title: string) => {
-      const baseFontSize = activeBook?.tocFontSize || 10;
-      const baseFontSizePx = baseFontSize * previewScaleY;
-      const reservedWidthPx = 35 * previewScaleY;
-      const maxTitleWidthPx = writableWidthPx - reservedWidthPx;
-      const estimatedWidth = title.length * (baseFontSizePx * 0.55);
-      if (estimatedWidth > maxTitleWidthPx) {
-        const minFontSizePx = 6.5 * previewScaleY;
-        const scaledSizePx = (maxTitleWidthPx / estimatedWidth) * baseFontSizePx;
-        return Math.max(minFontSizePx, Math.min(baseFontSizePx, scaledSizePx));
-      }
-      return baseFontSizePx;
-    };
 
     const tocFontFamily = activeBook?.tocFontFamily || activeBook?.fontFamily || 'times';
     const tocLineSpacing = activeBook?.tocLineSpacing || 18;
@@ -3497,8 +3573,8 @@ export default function App() {
           width: '100%'
         }}>
           {chaptersOnPage.map((ch, idx) => {
-            const fontSizePx = getTOCEntryFontSize(ch.title);
             const relativeFontSize = activeBook?.tocFontSize || 10;
+            const uniformFontSizePx = relativeFontSize * previewScaleY;
             return (
               <div 
                 key={idx} 
@@ -3521,8 +3597,9 @@ export default function App() {
                   fontWeight: 'bold', 
                   whiteSpace: 'nowrap', 
                   overflow: 'hidden',
+                  textOverflow: 'ellipsis',
                   flex: '0 1 auto', 
-                  fontSize: `${fontSizePx}px`,
+                  fontSize: `${uniformFontSizePx}px`,
                   color: '#000000',
                   marginRight: '4px'
                 }}>
@@ -3537,7 +3614,7 @@ export default function App() {
                 <span style={{ 
                   fontWeight: 'bold', 
                   flex: '0 0 auto',
-                  fontSize: `${fontSizePx}px`,
+                  fontSize: `${uniformFontSizePx}px`,
                   color: '#000000',
                   marginLeft: '4px'
                 }}>
@@ -4625,24 +4702,29 @@ export default function App() {
           const floatVal = block.float !== undefined ? block.float : 'none';
           const isFloated = floatVal === 'left' || floatVal === 'right';
           const imgSrc = activeBook.images?.[block.id] || '';
+          const transform = activeBook.imagesTransform?.[block.id] || {};
 
           return (
-            <div 
-              key={key} 
-              draggable={true}
-              onDragStart={(e) => {
-                e.dataTransfer.setData('text/plain', JSON.stringify({ sourcePath: path }));
-              }}
-              style={{
-                margin: isFloated ? '4px 10px' : '16px auto',
-                width: `${widthVal}%`,
-                float: isFloated ? floatVal : undefined,
-                clear: isFloated ? undefined : 'both',
-                boxSizing: 'border-box',
-                textAlign: 'center',
-                cursor: 'grab'
+            <PreviewGraphicBox
+              key={key}
+              transform={transform}
+              onChange={newT => {
+                updateActiveBookConfig('imagesTransform', {
+                  ...(activeBook.imagesTransform || {}),
+                  [block.id]: newT
+                });
               }}
             >
+              <div 
+                style={{
+                  margin: isFloated ? '4px 10px' : '12px auto',
+                  width: `${widthVal}%`,
+                  float: isFloated ? floatVal : undefined,
+                  clear: isFloated ? undefined : 'both',
+                  boxSizing: 'border-box',
+                  textAlign: 'center'
+                }}
+              >
               {imgSrc ? (
                 <img 
                   src={imgSrc} 
@@ -4667,7 +4749,8 @@ export default function App() {
                   [Bild fehlt: {block.id}]
                 </div>
               )}
-            </div>
+              </div>
+            </PreviewGraphicBox>
           );
         }
 
@@ -7591,6 +7674,33 @@ max="250"
                         Vermenschlichen
                       </button>
 
+                      <div style={{ width: '1px', height: '10px', backgroundColor: 'var(--border-color)', margin: '0 4px' }}></div>
+                      
+                      <button
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => setShowImageInsertModal(true)}
+                        className="btn"
+                        style={{ 
+                          padding: '2px 8px', 
+                          fontSize: '9px', 
+                          height: '20px', 
+                          borderRadius: '4px',
+                          border: '1px solid #38bdf8', 
+                          backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                          color: '#38bdf8',
+                          cursor: 'pointer',
+                          fontWeight: 600,
+                          transition: 'all 0.15s ease',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '3px'
+                        }}
+                        disabled={isGenerating || isPlanning}
+                        title="Bild / Grafik in diese Seite einfügen"
+                      >
+                        Bild
+                      </button>
+
                       {isInlineAILoading && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '6px', fontSize: '9px', color: 'var(--primary)' }}>
                           <Loader2 className="spinner" style={{ width: '9px', height: '9px' }} />
@@ -7701,7 +7811,6 @@ max="250"
                             }} 
                             title="Bild / Grafik einfügen"
                           >
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                             Bild
                           </button>
 
@@ -8071,7 +8180,6 @@ max="250"
                           }}
                           title="Bild / Grafik in diese Seite einfügen"
                         >
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                           Bild einfügen
                         </button>
                       )}
@@ -8216,7 +8324,23 @@ max="250"
                               {/* Header Line */}
                               {typeof selectedPage === 'number' && !isFirstPageOfChapter && activeBook.showRunningHeader !== false ? (
                                 <div style={{ fontSize: '5.5px', color: '#94a3b8', display: 'flex', justifyContent: 'space-between', borderBottom: '0.5px solid #e2e8f0', paddingBottom: '1px', marginBottom: '4px' }}>
-                                  <span className="truncate" style={{ maxWidth: '100%' }}>
+                                  <span 
+                                    className="truncate" 
+                                    style={{ maxWidth: '100%', outline: 'none', cursor: 'text' }}
+                                    contentEditable={true}
+                                    suppressContentEditableWarning={true}
+                                    onBlur={e => {
+                                      const text = e.currentTarget.innerText.trim();
+                                      if (!text) return;
+                                      if ((getPreviewPageNumber(partIndex) as number) % 2 === 0) {
+                                        updateActiveBookConfig('title', text);
+                                      } else {
+                                        handleSaveChapterTitle(selectedPage as number, text);
+                                      }
+                                    }}
+                                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }}
+                                    title="Klicken zum Bearbeiten der Kopfzeile"
+                                  >
                                     {(getPreviewPageNumber(partIndex) as number) % 2 === 0 ? activeBook.title : (outline?.pages[(selectedPage as number) - 1]?.chapter_title || '')}
                                   </span>
                                 </div>
@@ -8293,10 +8417,6 @@ max="250"
                               <div 
                                 ref={partIndex === 0 ? previewContentRef : null}
                                 className={`preview-content${typeof selectedPage === 'number' && (activeBook?.pagesInitial || []).includes(selectedPage) && partIndex === 0 ? ' has-initial' : ''}`}
-                                onClick={() => {
-                                  const ta = document.querySelector('.editor-textarea') as HTMLTextAreaElement;
-                                  if (ta) ta.focus();
-                                }}
                                 style={{ 
                                   fontSize: `${previewFontSize}px`,
                                   color: '#1e293b',
@@ -8316,16 +8436,27 @@ max="250"
                               </div>
 
                               {typeof selectedPage === 'number' && partIndex === 0 && (activeBook?.pagesGraphic || {})[selectedPage]?.grafik_sinnvoll && (
-                                <SvgGraphicRenderer
-                                  decision={(activeBook.pagesGraphic || {})[selectedPage]}
-                                  onVariantChange={(newVar) => {
-                                    const curr = (activeBook.pagesGraphic || {})[selectedPage as number];
+                                <PreviewGraphicBox
+                                  transform={(activeBook.pagesGraphic || {})[selectedPage]}
+                                  onChange={newT => {
+                                    const curr = (activeBook.pagesGraphic || {})[selectedPage as number] || { grafik_sinnvoll: true };
                                     updateActiveBookConfig('pagesGraphic', {
                                       ...(activeBook.pagesGraphic || {}),
-                                      [selectedPage as number]: { ...curr, selectedVariant: newVar }
+                                      [selectedPage as number]: { ...curr, ...newT }
                                     });
                                   }}
-                                />
+                                >
+                                  <SvgGraphicRenderer
+                                    decision={(activeBook.pagesGraphic || {})[selectedPage]}
+                                    onVariantChange={(newVar) => {
+                                      const curr = (activeBook.pagesGraphic || {})[selectedPage as number];
+                                      updateActiveBookConfig('pagesGraphic', {
+                                        ...(activeBook.pagesGraphic || {}),
+                                        [selectedPage as number]: { ...curr, selectedVariant: newVar }
+                                      });
+                                    }}
+                                  />
+                                </PreviewGraphicBox>
                               )}
 
                               {/* Footer page numbers (centered) */}
@@ -8969,18 +9100,16 @@ max="250"
             updateActiveBookConfig={updateActiveBookConfig}
             onClose={() => setShowImageInsertModal(false)}
             onInsert={(tag) => {
-              const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement;
-              if (textarea) {
-                const start = textarea.selectionStart;
-                const end = textarea.selectionEnd;
-                const text = textarea.value;
-                const newText = text.substring(0, start) + '\n\n' + tag + '\n\n' + text.substring(end);
-                handleEditorChange({ target: { value: newText } } as React.ChangeEvent<HTMLTextAreaElement>);
-                setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + tag.length + 4, start + tag.length + 4); }, 0);
-              } else if (typeof selectedPage === 'number') {
+              if (typeof selectedPage === 'number') {
                 const currentText = (activeBook.pagesText || {})[selectedPage] || '';
-                const newText = currentText + '\n\n' + tag + '\n\n';
-                handleEditorChange({ target: { value: newText } } as any);
+                const newText = currentText ? (currentText + '\n\n' + tag) : tag;
+                updateActiveBookConfig('pagesText', {
+                  ...(activeBook.pagesText || {}),
+                  [selectedPage]: newText
+                });
+                setEditorText(newText);
+              } else {
+                alert("Bitte wähle zuerst eine Buchseite im Navigator aus!");
               }
               setShowImageInsertModal(false);
             }}
@@ -9130,12 +9259,10 @@ interface ImageInsertModalInnerProps {
 }
 
 function ImageInsertModalInner({ activeBook, updateActiveBookConfig, onClose, onInsert }: ImageInsertModalInnerProps) {
-  const [mode, setMode] = useState<'ki' | 'upload'>('ki');
-  const [prompt, setPrompt] = useState('');
-  const [uploadedId, setUploadedId] = useState('');
   const [floatVal, setFloatVal] = useState<'none' | 'left' | 'right'>('none');
   const [widthVal, setWidthVal] = useState<number>(85);
   const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -9155,128 +9282,109 @@ function ImageInsertModalInner({ activeBook, updateActiveBookConfig, onClose, on
       const newImages = { ...currentImages, [newId]: base64 };
       updateActiveBookConfig('images', newImages);
 
-      setUploadedId(newId);
       setIsUploading(false);
+      onInsert(`:::custom_image ${newId} float:${floatVal} width:${widthVal}`);
     };
-    reader.onerror = () => setIsUploading(false);
+    reader.onerror = () => {
+      setIsUploading(false);
+      alert("Fehler beim Lesen der Bilddatei.");
+    };
     reader.readAsDataURL(file);
   };
 
-  const handleInsert = () => {
-    if (mode === 'ki') {
-      if (!prompt.trim()) return;
-      onInsert(`:::image ${prompt.trim()} float:${floatVal} width:${widthVal}`);
-    } else {
-      if (!uploadedId) return;
-      onInsert(`:::custom_image ${uploadedId} float:${floatVal} width:${widthVal}`);
-    }
+  const handleTriggerPicker = () => {
+    fileInputRef.current?.click();
   };
 
   return (
     <div style={{
-      backgroundColor: 'var(--bg-dashboard)',
-      border: '1px solid var(--border-color)',
+      backgroundColor: '#0f172a',
+      border: '1px solid #38bdf8',
       borderRadius: '12px',
       padding: '24px',
       maxWidth: '420px',
       width: '95%',
-      boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
-      display: 'flex', flexDirection: 'column', gap: '16px'
+      boxShadow: '0 20px 40px rgba(0,0,0,0.7)',
+      display: 'flex', flexDirection: 'column', gap: '16px',
+      color: '#fff'
     }} onClick={e => e.stopPropagation()}>
-      <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: 'var(--text-main)' }}>Bild / Grafik einfügen</h3>
-      
-      <div style={{ display: 'flex', gap: '4px', backgroundColor: 'var(--bg-main)', padding: '2px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-        <button
-          onClick={() => setMode('ki')}
-          style={{
-            flex: 1, padding: '6px 12px', fontSize: '11px', border: 'none', borderRadius: '6px', cursor: 'pointer',
-            backgroundColor: mode === 'ki' ? 'var(--primary)' : 'transparent',
-            color: mode === 'ki' ? '#ffffff' : 'var(--text-muted)',
-            fontWeight: mode === 'ki' ? 600 : 400
-          }}
-        >
-          K.I. Grafik-Platzhalter
-        </button>
-        <button
-          onClick={() => setMode('upload')}
-          style={{
-            flex: 1, padding: '6px 12px', fontSize: '11px', border: 'none', borderRadius: '6px', cursor: 'pointer',
-            backgroundColor: mode === 'upload' ? 'var(--primary)' : 'transparent',
-            color: mode === 'upload' ? '#ffffff' : 'var(--text-muted)',
-            fontWeight: mode === 'upload' ? 600 : 400
-          }}
-        >
-          Eigenes Bild hochladen
-        </button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #334155', paddingBottom: '12px' }}>
+        <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#38bdf8' }}>Bild vom Schreibtisch einfügen</h3>
       </div>
-
-      {mode === 'ki' ? (
-        <div className="form-group">
-          <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>K.I. Bildbeschreibung (Prompt)</label>
-          <textarea
-            rows={3}
-            placeholder="z.B. Eine filigrane Bleistiftzeichnung eines historischen Segelschiffes..."
-            value={prompt}
-            onChange={e => setPrompt(e.target.value)}
-            style={{ width: '100%', padding: '8px 12px', fontSize: '11px', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-main)', resize: 'none' }}
-          />
-        </div>
-      ) : (
-        <div className="form-group">
-          <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Bilddatei auswählen</label>
+      
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>Klicke in die Box, um deine Bilddatei auszuwählen:</label>
+        
+        <div 
+          onClick={handleTriggerPicker}
+          style={{ 
+            padding: '28px 16px', 
+            border: '2px dashed #38bdf8', 
+            borderRadius: '10px', 
+            background: 'rgba(56,189,248,0.05)', 
+            textAlign: 'center',
+            cursor: 'pointer',
+            transition: 'all 0.2s'
+          }}
+        >
           <input
+            ref={fileInputRef}
             type="file"
             accept="image/*"
             onChange={handleFileUpload}
-            style={{ fontSize: '11px', color: 'var(--text-muted)', width: '100%', marginBottom: '8px' }}
+            style={{ display: 'none' }}
           />
-          {isUploading && <span style={{ fontSize: '10px', color: 'var(--primary)' }}>Bild wird geladen...</span>}
-          {uploadedId && <span style={{ fontSize: '10px', color: 'var(--success)' }}>✓ Bild bereit (ID: {uploadedId})</span>}
+          <span style={{ fontSize: '13px', color: '#38bdf8', fontWeight: 700, display: 'block' }}>
+            📁 Datei auswählen (Schreibtisch / PC)
+          </span>
+          <span style={{ fontSize: '10.5px', color: '#94a3b8', marginTop: '4px', display: 'block' }}>
+            Wird beim Auswählen sofort auf der aktuellen Seite eingefügt
+          </span>
         </div>
-      )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-        <div className="form-group">
-          <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Ausrichtung (Float)</label>
+        {isUploading && <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 600, textAlign: 'center' }}>⏳ Bild wird geladen & platziert...</span>}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', background: '#1e293b', padding: '12px', borderRadius: '8px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>Text-Umfluss:</label>
           <select 
             value={floatVal} 
             onChange={e => setFloatVal(e.target.value as any)} 
-            style={{ width: '100%', fontSize: '11px', padding: '4px 6px', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)' }}
+            style={{ width: '100%', fontSize: '12px', padding: '6px', border: '1px solid #475569', borderRadius: '6px', backgroundColor: '#0f172a', color: '#fff' }}
           >
-            <option value="none">Block (Mitte)</option>
+            <option value="none">Zentriert (Eigene Zeile)</option>
             <option value="left">Links umflossen</option>
             <option value="right">Rechts umflossen</option>
           </select>
         </div>
 
-        <div className="form-group">
-          <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', display: 'block' }}>Breite ({widthVal}%)</label>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>Größe: {widthVal}%</label>
           <input 
             type="range" 
-            min="30" 
+            min="25" 
             max="100" 
             value={widthVal} 
             onChange={e => setWidthVal(Number(e.target.value))} 
-            style={{ width: '100%', accentColor: 'var(--primary)' }}
+            style={{ width: '100%', accentColor: '#38bdf8', marginTop: '6px' }}
           />
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+      <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
         <button
           onClick={onClose}
-          className="btn"
-          style={{ flex: 1, padding: '8px', fontSize: '12px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer' }}
+          style={{ flex: 1, padding: '10px', fontSize: '12px', borderRadius: '6px', border: '1px solid #475569', background: 'transparent', color: '#94a3b8', cursor: 'pointer', fontWeight: 600 }}
         >
           Abbrechen
         </button>
         <button
-          onClick={handleInsert}
-          disabled={mode === 'ki' ? !prompt.trim() : !uploadedId}
-          className="btn btn-primary"
-          style={{ flex: 1, padding: '8px', fontSize: '12px', fontWeight: 600, backgroundColor: 'var(--primary)', color: '#fff', border: 'none', cursor: 'pointer' }}
+          onClick={handleTriggerPicker}
+          disabled={isUploading}
+          style={{ flex: 1.5, padding: '10px', fontSize: '12px', fontWeight: 700, backgroundColor: '#38bdf8', color: '#0f172a', border: 'none', borderRadius: '6px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(56,189,248,0.3)' }}
         >
-          In Editor einfügen
+          Bild auswählen & einfügen
         </button>
       </div>
     </div>
