@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { BookOpen, Sparkles, TrendingUp, Layers, ChevronRight, Zap } from 'lucide-react';
 import ShinyText from './ShinyText';
 
+import Aurora from './Aurora';
+
 interface LandingPageProps {
   onLoginClick: () => void;
 }
@@ -17,9 +19,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
       overflowX: 'hidden',
       position: 'relative'
     }}>
-      {/* Background Gradients */}
-      <div style={{ position: 'fixed', top: '-10%', left: '-10%', width: '50vw', height: '50vw', background: 'radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(0,0,0,0) 70%)', filter: 'blur(80px)', zIndex: 0, pointerEvents: 'none' }} />
-      <div style={{ position: 'fixed', bottom: '-10%', right: '-10%', width: '50vw', height: '50vw', background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, rgba(0,0,0,0) 70%)', filter: 'blur(80px)', zIndex: 0, pointerEvents: 'none' }} />
+      {/* Background Aurora */}
+      <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 0, pointerEvents: 'none' }}>
+        <Aurora
+          colorStops={["#4722de","#128ff0","#121aa7"]}
+          amplitude={0.4}
+          blend={0.4}
+        />
+      </div>
 
       {/* Navbar */}
       <nav style={{ position: 'relative', zIndex: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px 48px', borderBottom: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(12px)' }}>
