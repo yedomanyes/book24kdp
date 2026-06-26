@@ -5,6 +5,64 @@ export class NecessityDetector {
    * Erzeugt den strikten JSON-Prompt zur Analyse von KDP-Kapiteltexten.
    */
   public static buildAnalysisPrompt(chapterText: string, pagesSinceLastGraphic: number, language: string = 'de'): string {
+    if (language === 'en') {
+      let strictEng = "";
+      if (pagesSinceLastGraphic <= 2) {
+        strictEng = "\nDENSITY NOTE: A graphic was placed very recently. Be EXTREMELY STRICT. Only return true if a table or flowchart is 100% indispensable!";
+      } else if (pagesSinceLastGraphic >= 7) {
+        strictEng = "\nDENSITY NOTE: No graphic has been placed for many pages. Be MORE GENEROUS. Return true if there are comparisons or phases!";
+      }
+      return `You are analyzing a book chapter section and deciding whether a visual graphic structure is beneficial.
+
+CHAPTER TEXT:
+"${chapterText}"
+${strictEng}
+CRITICAL LANGUAGE ENFORCEMENT: ALL JSON VALUES (titel, spalten, zeilen, schritte, punkte, ereignis, ebenen) MUST BE WRITTEN IN 100% NATIVE ENGLISH ONLY! NOT A SINGLE GERMAN WORD ALLOWED!
+
+STEP 1 – Check: Does this text contain one of these structures?
+a) Comparison between 2+ concepts/options
+b) A clear sequence of steps or phases
+c) A chronological timeline
+d) A hierarchy or classification
+
+If NO to all: Return exclusively {"grafik_sinnvoll": false}
+
+If YES: Return JSON in the following format (pick matching "typ"):
+
+For comparison table:
+{
+  "grafik_sinnvoll": true,
+  "typ": "tabelle",
+  "titel": "Comparison Overview",
+  "spalten": ["Feature", "Option A", "Option B"],
+  "zeilen": [["Cost", "$10", "$20"], ["Speed", "Fast", "Slow"]]
+}
+
+For process flowchart:
+{
+  "grafik_sinnvoll": true,
+  "typ": "prozess",
+  "titel": "Step-by-Step Flow",
+  "schritte": ["First step details", "Second step details", "Third step details"]
+}
+
+For timeline:
+{
+  "grafik_sinnvoll": true,
+  "typ": "timeline",
+  "titel": "Chronological Evolution",
+  "punkte": [{"zeitpunkt": "Phase 1", "ereignis": "Initial trigger occurs"}]
+}
+
+For hierarchy:
+{
+  "grafik_sinnvoll": true,
+  "typ": "hierarchie",
+  "titel": "Structural Levels",
+  "ebenen": ["Top Level Concept", "Middle Level Subcategory", "Base Level Elements"]
+}`;
+    }
+
     let strictnessHint = "";
     if (pagesSinceLastGraphic <= 2) {
       strictnessHint = "\nHINWEIS ZUR DICHTE: Es wurde erst vor kurzem eine Grafik platziert. Sei SEHR STRENG. Antworte nur dann mit true, wenn eine Tabelle oder ein Ablaufdiagramm für das Verständnis absolut unverzichtbar ist!";

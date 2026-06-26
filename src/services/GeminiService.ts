@@ -681,11 +681,17 @@ Schreibe jetzt den Fortsetzungstext (${continuationMin}–${continuationMax} Wö
     let contextPrompt = '';
     if (pageNumber > 1) {
       const prevText = previousPagesText[pageNumber - 1] || '';
-      const lastSentences = this.getLastSentences(prevText, 2);
-      contextPrompt = `Bisheriger Buchtext zur Wahrung des Flusses und Vermeidung von Wiederholungen:
+      const lastSentences = this.getLastSentences(prevText, 3);
+      
+      // Um TPM-Limits bei Groq/Gemini zu vermeiden, senden wir nur die letzten ca. 150 Wörter
+      // der vorherigen Seite anstatt ganzer Seiten. Die grobe Struktur kennt die KI ohnehin über das CMIE Memory.
+      const words = prevText.split(/\s+/);
+      const truncatedPrevText = words.length > 150 ? '... ' + words.slice(-150).join(' ') : prevText;
+
+      contextPrompt = `Bisheriger Buchtext zur Wahrung des Flusses:
 ---
-${pageNumber > 2 ? `SEITE ${pageNumber - 2}:\n${previousPagesText[pageNumber - 2] || ''}\n\n` : ''}
-SEITE ${pageNumber - 1}:\n${prevText}
+[Vorheriger Text gekürzt]
+${truncatedPrevText}
 ---
 Der allerletzte Satz / die letzten Sätze der vorherigen Seite waren:
 "${lastSentences}"
@@ -1258,7 +1264,38 @@ Entwirf jetzt drei unterschiedliche Struktur-Varianten (version_1, version_2, ve
     }
   }
 
-  private async askAI(systemPrompt: string, userPrompt: string, jsonFormat: boolean = false): Promise<string> {
+  private enforceEnglishOnly(prompt: string, isEnglish: boolean): string {
+    if (!isEnglish || !prompt) return prompt;
+
+    let p = prompt;
+    p = p.replace(/Du bist ein professioneller/gi, "You are an elite professional");
+    p = p.replace(/Sprache des Buches:/gi, "Book Language:");
+    p = p.replace(/Sprache:/gi, "Language:");
+    p = p.replace(/Buchtitel:/gi, "Book Title:");
+    p = p.replace(/Untertitel:/gi, "Subtitle:");
+    p = p.replace(/Ziel-Seitenzahl:/gi, "Target Page Count:");
+    p = p.replace(/STRIKTE REGEL/gi, "STRICT RULE");
+    p = p.replace(/VERBOTENE SEITEN-ANFÄNGE/gi, "FORBIDDEN PAGE OPENERS");
+    p = p.replace(/Kapitel-Überschrift \(z\.B\. Einleitung\)/gi, "Chapter Title (e.g. Introduction)");
+    p = p.replace(/Der exakte Inhaltsschwerpunkt dieser einzelnen Seite/gi, "The exact content focus of this page");
+    p = p.replace(/Wichtiger Punkt/gi, "Key Point");
+    p = p.replace(/Einleitung/gi, "Introduction");
+    p = p.replace(/Kapitel/gi, "Chapter");
+
+    return `### CRITICAL SYSTEM OVERRIDE: 100% NATIVE ENGLISH MODE ###
+YOU ARE AN ELITE NATIVE ENGLISH AUTHOR, NEW YORK TIMES BESTSELLER, AND PUBLISHING DIRECTOR.
+THE USER IS CREATING AN ENGLISH BOOK. DO NOT GENERATE ANY GERMAN WORDS OR GERMAN PHRASES AT ALL!
+EVERY SINGLE WORD OF YOUR OUTPUT (CHAPTER TITLES, SUBTITLES, BULLET POINTS, FOCUS DESCRIPTIONS, KEY POINTS, QUOTES, AND BODY TEXT) MUST BE 100% IN NATIVE, FLAWLESS ENGLISH.
+IF YOU ARE GENERATING JSON, ALL STRING VALUES INSIDE THE JSON MUST BE IN ENGLISH ONLY.
+
+ORIGINAL PROMPT SPECIFICATION:
+` + p;
+  }
+
+  private async askAI(rawSys: string, rawUsr: string, jsonFormat: boolean = false): Promise<string> {
+    const isEng = rawSys.includes('ENGLISH') || rawSys.includes('English') || rawUsr.includes('ENGLISH') || rawUsr.includes('English') || rawSys.includes('Englisch') || rawUsr.includes('Englisch');
+    const systemPrompt = this.enforceEnglishOnly(rawSys, isEng);
+    const userPrompt = this.enforceEnglishOnly(rawUsr, isEng);
     const provider = this.getProvider();
     if (provider === 'groq') {
       const data = await this.executeWithKeyRotation('groq', (key) =>

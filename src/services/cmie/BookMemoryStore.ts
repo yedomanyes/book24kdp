@@ -71,10 +71,14 @@ export class BookMemoryStore {
    */
   public static buildMemoryContextPrompt(store?: { [pageNum: number]: ChapterMemory }): string {
     if (!store) return '';
-    const memories = Object.values(store).sort((a, b) => a.chapter_id - b.chapter_id);
+    let memories = Object.values(store).sort((a, b) => a.chapter_id - b.chapter_id);
+    // Limit to the last 4-5 pages to prevent blowing up the Groq 6000 TPM limit!
+    if (memories.length > 5) {
+      memories = memories.slice(-5);
+    }
     if (memories.length === 0) return '';
 
-    let prompt = `\n### [CMIE] CONTENT MEMORY ENGINE (Bereits verfasste Buchkapitel):\n`;
+    let prompt = `\n### [CMIE] CONTENT MEMORY ENGINE (Letzte ${memories.length} generierte Seiten):\n`;
     memories.forEach(m => {
       prompt += `[Kapitel ${m.chapter_id}: ${m.chapter_title}]\n`;
       if (m.chapter_scope) prompt += `  - Scope: ${m.chapter_scope}\n`;

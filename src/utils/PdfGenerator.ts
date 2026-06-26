@@ -242,48 +242,63 @@ export function generateBookPdf(
   // --- Helper: compute X for text alignment + custom offset ---
   function getTitleElemX(align: 'left' | 'center' | 'right', offsetPt: number, leftM: number): number {
     if (align === 'left') return leftM + offsetPt;
-    if (align === 'right') return pageWidth - outsideMargin + offsetPt;
+    if (align === 'right') return pageWidth - leftM + offsetPt;
     return pageWidth / 2 + offsetPt; // center
   }
 
+  // Use a wider width (20pt margins) for the Title Page to fit more text on one line
+  const titleMargin = 20;
+  const titleWritableWidth = pageWidth - (titleMargin * 2);
+
   // Render Title
-  const titleFont = resolvePdfFont(config.titlePageTitleFont);
+  const titleFont = resolvePdfFont(config.titlePageTitleFont || 'playfair');
   const titleAlign: 'left' | 'center' | 'right' = config.titlePageTitleAlign || 'center';
   const titleSize = config.titlePageTitleSize || (pageWidth < 400 ? 22 : 28);
   const titleOffsetPt = Number(config.titlePageTitleX || 0);
   const titleUserOffsetY = Number(config.titlePageTitleY || 0);
   doc.setFont(titleFont, fontStyleBold);
   doc.setFontSize(titleSize);
-  const titleLines = doc.splitTextToSize(config.title || outline.title || '', writableWidth);
-
-  // Dynamic Y starting position based on title layout
+  const rawTitle = config.title || outline.title || '';
+  const hardLines = rawTitle.split('\n');
+  const titleLines: string[] = [];
+  hardLines.forEach(hLine => {
+    titleLines.push(...doc.splitTextToSize(hLine, titleWritableWidth));
+  });
   const layout = config.titlePageLayout || 'centered';
+
+  // The Live Preview title starts at 14% or 25% of the page height
   const titleBaseY = (layout === 'top_centered' ? pageHeight * 0.14 : pageHeight * 0.25);
-  // Apply user Y-offset to titleBaseY so title stays on page
+  // Apply user Y-offset to titleBaseY
   let titleY = titleBaseY + titleUserOffsetY;
   // Clamp: never render above top margin
-  titleY = Math.max(topMargin + titleSize, titleY);
+  titleY = Math.max(topMargin, titleY);
 
   titleLines.forEach((line: string) => {
-    const tx = getTitleElemX(titleAlign, titleOffsetPt, insideMargin);
+    const tx = getTitleElemX(titleAlign, titleOffsetPt, titleMargin);
     doc.text(line, tx, titleY, { align: titleAlign, baseline: 'top' });
     titleY += titleSize * 1.2;
   });
 
-  // Subtitle: positioned below the last title line, then shifted by its own Y offset
+  // Subtitle: positioned right below the last title line (with 8pt margin)
   const subtitleUserOffsetY = Number(config.titlePageSubtitleY || 0);
-  let subtitleY = titleY + 12 + subtitleUserOffsetY;
+  let subtitleY = titleY + 8 + subtitleUserOffsetY;
   const finalSubtitle = config.subtitle || outline.subtitle;
   if (finalSubtitle) {
-    const subtitleFont = resolvePdfFont(config.titlePageSubtitleFont);
+    const subtitleFont = resolvePdfFont(config.titlePageSubtitleFont || 'times');
     const subtitleAlign: 'left' | 'center' | 'right' = config.titlePageSubtitleAlign || 'center';
     const subtitleSize = config.titlePageSubtitleSize || 12;
     const subtitleOffsetPt = Number(config.titlePageSubtitleX || 0);
     doc.setFont(subtitleFont, fontStyleItalic);
     doc.setFontSize(subtitleSize);
-    const subtitleLines = doc.splitTextToSize(finalSubtitle, writableWidth);
+    
+    const hardSubLines = finalSubtitle.split('\n');
+    const subtitleLines: string[] = [];
+    hardSubLines.forEach(hLine => {
+      subtitleLines.push(...doc.splitTextToSize(hLine, titleWritableWidth));
+    });
+    
     subtitleLines.forEach((line: string) => {
-      const sx = getTitleElemX(subtitleAlign, subtitleOffsetPt, insideMargin);
+      const sx = getTitleElemX(subtitleAlign, subtitleOffsetPt, titleMargin);
       doc.text(line, sx, subtitleY, { align: subtitleAlign, baseline: 'top' });
       subtitleY += subtitleSize * 1.4;
     });
@@ -297,14 +312,14 @@ export function generateBookPdf(
   const authorY = pubY - 8 - authorSize;
 
   if (config.authorName) {
-    const authorFont = resolvePdfFont(config.titlePageAuthorFont);
+    const authorFont = resolvePdfFont(config.titlePageAuthorFont || 'times');
     doc.setFont(authorFont, fontStyleRegular);
     doc.setFontSize(authorSize);
     doc.text(config.authorName, pageWidth / 2, authorY, { align: 'center', baseline: 'top' });
   }
 
   if (config.publisherLine) {
-    const pubFont = resolvePdfFont(config.titlePagePublisherFont);
+    const pubFont = resolvePdfFont(config.titlePagePublisherFont || 'times');
     doc.setFont(pubFont, fontStyleRegular);
     doc.setFontSize(pubSize);
     doc.setTextColor(80);
@@ -317,11 +332,9 @@ export function generateBookPdf(
   const shiftX = Number(config.titlePageImageX !== undefined ? config.titlePageImageX : 0);
   const shiftY = Number(config.titlePageImageY !== undefined ? config.titlePageImageY : 0);
 
-  // Base emblem Y: below the subtitle block (or default center position), clamped so image doesn't overlap text
-  const layoutFraction = layout === 'top_centered' ? 0.45 : 0.58;
-  const defaultEmblemY = pageHeight * layoutFraction;
-  // Strictly match the HTML preview which uses the layoutFraction without auto-pushing.
-  // The user can manually adjust overlapping using shiftY.
+  // Base emblem Y: matches Live Preview exactly (45% or 58% of page height)
+  const defaultEmblemY = (layout === 'top_centered' ? pageHeight * 0.45 : pageHeight * 0.58);
+  // Add manual offset if shifted by user
   const baseEmblemY = defaultEmblemY + shiftY;
   const emblemY = baseEmblemY;
   const emblemSize = scale;
@@ -365,15 +378,21 @@ export function generateBookPdf(
     return text.split(/\r?\n\s*-{3,}\s*(?:\r?\n|$)/);
   };
 
+  // Pre-sort the actual pages to handle gaps (e.g. if pages were deleted) and string types.
+  const sortedPages = [...outline.pages]
+    .map(p => ({ ...p, page_number: Number(p.page_number) }))
+    .sort((a, b) => a.page_number - b.page_number);
+
   // 1. Collect all chapter start pages
   const chapterStarts: { [title: string]: number } = {};
-  for (let i = 1; i <= outline.pages.length; i++) {
-    const pageInfo = outline.pages.find(p => p.page_number === i);
-    const isFirstPageOfChapter = pageInfo ? outline.pages.find(p => p.chapter_title === pageInfo.chapter_title)?.page_number === i : false;
-    if (isFirstPageOfChapter && pageInfo) {
-      chapterStarts[pageInfo.chapter_title] = i;
+  sortedPages.forEach(pageInfo => {
+    // Find the very first page in the sorted list that has this chapter title
+    const firstOfChapter = sortedPages.find(p => p.chapter_title === pageInfo.chapter_title);
+    const isFirstPageOfChapter = firstOfChapter?.page_number === pageInfo.page_number;
+    if (isFirstPageOfChapter) {
+      chapterStarts[pageInfo.chapter_title] = pageInfo.page_number;
     }
-  }
+  });
 
   // 2. Calculate number of pages the TOC will occupy
   let tocPagesCount = 0;
@@ -398,11 +417,11 @@ export function generateBookPdf(
   const pageContentNumberMap: { [pageNum: number]: number } = {};
   const chapterToPageMap: { [title: string]: number } = {};
 
-  for (let i = 1; i <= outline.pages.length; i++) {
-    const pageInfo = outline.pages.find(p => p.page_number === i);
-    const isFirstPageOfChapter = pageInfo ? outline.pages.find(p => p.chapter_title === pageInfo.chapter_title)?.page_number === i : false;
+  sortedPages.forEach(pageInfo => {
+    const firstOfChapter = sortedPages.find(p => p.chapter_title === pageInfo.chapter_title);
+    const isFirstPageOfChapter = firstOfChapter?.page_number === pageInfo.page_number;
     
-    if (isFirstPageOfChapter && pageInfo) {
+    if (isFirstPageOfChapter) {
       if (config.autoChapterRecto && currentPhysicalPage % 2 === 0) {
         currentPhysicalPage++;
       }
@@ -411,13 +430,13 @@ export function generateBookPdf(
       chapterToPageMap[pageInfo.chapter_title] = printedPageNum;
     }
     
-    pagePhysicalMap[i] = currentPhysicalPage;
-    pageContentNumberMap[i] = currentPhysicalPage - (firstContentPhysicalPage - 1);
+    pagePhysicalMap[pageInfo.page_number] = currentPhysicalPage;
+    pageContentNumberMap[pageInfo.page_number] = currentPhysicalPage - (firstContentPhysicalPage - 1);
     
-    const pageText = pagesText[i] || '';
+    const pageText = pagesText[pageInfo.page_number] || '';
     const partsCount = splitPageText(pageText).length;
     currentPhysicalPage += partsCount;
-  }
+  });
 
   // --- 2. TABLE OF CONTENTS (Render only if enabled) ---
   let pdfPageCounter = 1; // page 1 is title page
@@ -514,7 +533,8 @@ export function generateBookPdf(
   }
 
   // --- 3. CONTENT PAGES ---
-  for (let i = 1; i <= outline.pages.length; i++) {
+  sortedPages.forEach(pageInfo => {
+    const i = pageInfo.page_number;
     const targetPhysicalPage = pagePhysicalMap[i];
     
     // Add blank pages if we skipped physical page numbers (recto alignment)
@@ -524,7 +544,6 @@ export function generateBookPdf(
       // Blank page is left completely empty (no header/footer)
     }
 
-    const pageInfo = outline.pages.find(p => p.page_number === i);
     const pageText = pagesText[i] || (outline.language === 'de' ? '[Inhalt wird geladen...]' : '[Content loading...]');
     const parts = splitPageText(pageText);
 
@@ -536,7 +555,8 @@ export function generateBookPdf(
       let contentY = topMargin;
       let activeFloat: { float: 'left' | 'right'; width: number; height: number; bottomY: number } | null = null;
 
-      const isFirstPageOfChapter = pageInfo ? outline.pages.find(p => p.chapter_title === pageInfo.chapter_title)?.page_number === i : false;
+      const firstOfChapter = sortedPages.find(p => p.chapter_title === pageInfo.chapter_title);
+      const isFirstPageOfChapter = firstOfChapter?.page_number === i;
       const isFirstPartOfPage = partIndex === 0;
 
       // Header formatting (skip on first page of a chapter, and only on the first part of that page)
@@ -1351,7 +1371,7 @@ export function generateBookPdf(
         doc.text(arabicPageNum.toString(), footerX, pageHeight - bottomMargin + 20, { align: 'center' });
       }
     });
-  }
+  });
 
   return doc.output('blob');
 }

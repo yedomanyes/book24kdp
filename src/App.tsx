@@ -248,6 +248,7 @@ interface Book {
   cmieGlossary?: { [key: string]: string };
   cmieConfig?: CmieConfig;
   pagesGraphic?: { [key: number]: GraphicDecision };
+  pagesGraphicDisabled?: { [key: number]: boolean };
 }
 
 const getProjectFormattedDate = (book: Book): string => {
@@ -556,6 +557,11 @@ const PreviewGraphicBox: React.FC<{
     setIsSelected(true);
     isDragging.current = true;
     dragStart.current = { x: e.clientX - liveX, y: e.clientY - liveY };
+    
+    // Set focus to the box so keyboard events (like Backspace) are caught reliably
+    if (boxRef.current) {
+      boxRef.current.focus();
+    }
   };
 
   const handleResizeStart = (e: React.MouseEvent, dir: number) => {
@@ -596,15 +602,27 @@ const PreviewGraphicBox: React.FC<{
       }
     };
 
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isSelected && onDelete && (e.key === 'Backspace' || e.key === 'Delete')) {
+        const target = e.target as HTMLElement;
+        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && !target.isContentEditable) {
+          e.preventDefault();
+          onDelete();
+        }
+      }
+    };
+
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
     window.addEventListener('mousedown', handleGlobalDown);
+    window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
       window.removeEventListener('mousedown', handleGlobalDown);
+      window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [transform, onChange, liveX, currFloat, isFloated]);
+  }, [transform, onChange, liveX, currFloat, isFloated, isSelected, onDelete]);
 
   // Ensure bottom margin is strictly positive (>= 12px) so text NEVER overlaps the image
   const topMargin = Math.max(4, 10 + liveY);
@@ -613,6 +631,7 @@ const PreviewGraphicBox: React.FC<{
   return (
     <div
       ref={boxRef}
+      tabIndex={0}
       className="preview-graphic-container"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -1003,7 +1022,7 @@ export default function App() {
           const p = document.createElement('p');
           p.className = 'literary-paragraph';
           p.style.fontWeight = 'bold';
-          p.style.margin = '0';
+          p.style.margin = '1.5em 0';
           p.style.padding = '0';
           p.style.lineHeight = '1.5';
           p.innerHTML = `<strong>${renderInlineHtml(block.text)}</strong>`;
@@ -1606,6 +1625,13 @@ export default function App() {
   // Title Page dragging / editing states
   const [draggingItem, setDraggingItem] = useState<'emblem' | 'title' | 'subtitle' | 'author' | 'publisher' | null>(null);
   const [hoveredField, setHoveredField] = useState<'title' | 'subtitle' | 'author' | 'publisher' | null>(null);
+
+  // Modal for editing multiline text like Title and Subtitle
+  const [textEditModal, setTextEditModal] = useState<{
+    field: 'title' | 'subtitle' | 'authorName' | 'publisherLine';
+    value: string;
+  } | null>(null);
+
   const [editingField, setEditingField] = useState<'title' | 'subtitle' | 'author' | 'publisher' | null>(null);
   const [editingValue, setEditingValue] = useState<string>('');
   const [activeCoverEditField, setActiveCoverEditField] = useState<'title' | 'subtitle' | 'author' | 'publisher' | null>(null);
@@ -2749,7 +2775,9 @@ export default function App() {
     const textAccumulator: { [key: number]: string } = {};
     let hasGeneratedAny = false;
 
-    for (let pageNum = 1; pageNum <= currentOutline.target_pages; pageNum++) {
+    const sortedPages = [...currentOutline.pages].sort((a, b) => Number(a.page_number) - Number(b.page_number));
+    for (const page of sortedPages) {
+      const pageNum = Number(page.page_number);
       if (cancelGenerationRef.current) {
         break;
       }
@@ -2798,7 +2826,7 @@ export default function App() {
           currentBook.fontSize,
           false,
           getEffectiveGuidelines(currentBook),
-          currentBook.autoChapterGraphics || false,
+          (currentBook.autoChapterGraphics !== false) && !(currentBook.pagesGraphicDisabled?.[pageNum]),
           cmieEnrichment
         );
         let text = cleanPageText(rawText);
@@ -2864,7 +2892,7 @@ export default function App() {
         );
 
         let graphicDecisionSingle: GraphicDecision = { grafik_sinnvoll: false };
-        if (currentBook.autoChapterGraphics !== false) {
+        if ((currentBook.autoChapterGraphics !== false) && !(currentBook.pagesGraphicDisabled?.[pageNum])) {
           try {
             const pagesSinceGraph = NecessityDetector.evaluateDensityPlacement(pageNum, currentBook.pagesGraphic);
             const promptGraph = NecessityDetector.buildAnalysisPrompt(text, pagesSinceGraph, currentOutline?.language || 'de');
@@ -2951,7 +2979,7 @@ export default function App() {
         currentBook.fontSize,
         false,
         getEffectiveGuidelines(currentBook),
-        currentBook.autoChapterGraphics || false,
+        (currentBook.autoChapterGraphics !== false) && !(currentBook.pagesGraphicDisabled?.[pageNum]),
         cmieEnrichmentBulk
       );
       let text = cleanPageText(rawText);
@@ -2970,7 +2998,7 @@ export default function App() {
             currentBook.fontSize,
             true, // shorterRetry = true
             getEffectiveGuidelines(currentBook),
-            currentBook.autoChapterGraphics || false,
+            (currentBook.autoChapterGraphics !== false) && !(currentBook.pagesGraphicDisabled?.[pageNum]),
             cmieEnrichmentBulk
           );
           const retryText = cleanPageText(retryRawText);
@@ -3002,7 +3030,7 @@ export default function App() {
       );
 
       let graphicDecisionBulk: GraphicDecision = { grafik_sinnvoll: false };
-      if (currentBook.autoChapterGraphics !== false) {
+      if ((currentBook.autoChapterGraphics !== false) && !(currentBook.pagesGraphicDisabled?.[pageNum])) {
         try {
           const pagesSinceGraphBulk = NecessityDetector.evaluateDensityPlacement(pageNum, currentBook.pagesGraphic);
           const promptGraphBulk = NecessityDetector.buildAnalysisPrompt(text, pagesSinceGraphBulk, outline?.language || 'de');
@@ -3465,6 +3493,7 @@ export default function App() {
 
   // Download compiled PDF
   const handleDownloadPdf = () => {
+    const activeBook = booksRef.current.find(b => b.id === activeBookId);
     if (!activeBook || !activeBook.outline) return;
     try {
       const config: PdfConfig = {
@@ -3882,8 +3911,8 @@ export default function App() {
         {/* Title & Subtitle centered at top (layout depending) */}
         <div style={{ 
           position: 'absolute',
-          left: '20px',
-          right: '20px',
+          left: `${20 * previewScaleX}px`,
+          right: `${20 * previewScaleX}px`,
           top: `${(layout === 'top_centered' ? 0.14 : 0.25) * previewHeight}px`,
           transition: 'top 0.2s ease',
           zIndex: 2
@@ -3897,7 +3926,7 @@ export default function App() {
                 setEditingField(null);
               }}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                   e.preventDefault();
                   updateActiveBookConfig('title', editingValue);
                   setEditingField(null);
@@ -3922,7 +3951,8 @@ export default function App() {
                 width: '100%',
                 resize: 'none',
                 outline: 'none',
-                boxSizing: 'border-box'
+                boxSizing: 'border-box',
+                whiteSpace: 'break-spaces'
               }}
             />
           ) : (
@@ -3960,25 +3990,57 @@ export default function App() {
                 cursor: draggingItem === 'title' ? 'grabbing' : 'grab',
                 border: (hoveredField === 'title' || activeCoverEditField === 'title') ? '1px dashed var(--primary)' : '1px dashed transparent',
                 borderRadius: '4px',
-                position: 'relative'
+                position: 'relative',
+                whiteSpace: 'break-spaces'
               }}
             >
               {activeBook.title || <span style={{ color: '#cbd5e1', fontStyle: 'italic' }}>[Titel]</span>}
               {(hoveredField === 'title' || activeCoverEditField === 'title') && (
-                <span style={{
-                  position: 'absolute',
-                  top: '-16px',
-                  right: '0',
-                  fontSize: '8px',
-                  backgroundColor: 'var(--primary)',
-                  color: '#ffffff',
-                  padding: '2px 4px',
-                  borderRadius: '3px',
-                  pointerEvents: 'none',
-                  zIndex: 10
-                }}>
-                  ↔↕ Ziehen / Doppelklick
-                </span>
+                <>
+                  <span style={{
+                    position: 'absolute',
+                    top: '-16px',
+                    right: '0',
+                    fontSize: '8px',
+                    backgroundColor: 'var(--primary)',
+                    color: '#ffffff',
+                    padding: '2px 4px',
+                    borderRadius: '3px',
+                    pointerEvents: 'none',
+                    zIndex: 10
+                  }}>
+                    ↔↕ Ziehen / Doppelklick
+                  </span>
+                  <div 
+                    style={{
+                      position: 'absolute',
+                      bottom: '-24px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '2px',
+                      backgroundColor: '#1e293b',
+                      padding: '2px 4px',
+                      borderRadius: '6px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                      zIndex: 11,
+                      border: '1px solid #475569',
+                      pointerEvents: 'auto'
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      onClick={(e) => { e.stopPropagation(); updateActiveBookConfig('titlePageTitleSize', Math.max(12, (activeBook.titlePageTitleSize || 28) - 2)); }}
+                      style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '2px 6px', fontSize: '11px', fontWeight: 'bold' }}
+                    >-</button>
+                    <span style={{ color: '#94a3b8', fontSize: '9px', padding: '0 2px' }}>{activeBook.titlePageTitleSize || 28}pt</span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); updateActiveBookConfig('titlePageTitleSize', Math.min(60, (activeBook.titlePageTitleSize || 28) + 2)); }}
+                      style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '2px 6px', fontSize: '11px', fontWeight: 'bold' }}
+                    >+</button>
+                  </div>
+                </>
               )}
             </h1>
           )}
@@ -3992,7 +4054,7 @@ export default function App() {
                 setEditingField(null);
               }}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                   e.preventDefault();
                   updateActiveBookConfig('subtitle', editingValue);
                   setEditingField(null);
@@ -4019,7 +4081,8 @@ export default function App() {
                 width: '100%',
                 resize: 'none',
                 outline: 'none',
-                boxSizing: 'border-box'
+                boxSizing: 'border-box',
+                whiteSpace: 'break-spaces'
               }}
             />
           ) : (
@@ -4058,25 +4121,57 @@ export default function App() {
                 cursor: draggingItem === 'subtitle' ? 'grabbing' : 'grab',
                 border: (hoveredField === 'subtitle' || activeCoverEditField === 'subtitle') ? '1px dashed var(--primary)' : '1px dashed transparent',
                 borderRadius: '4px',
-                position: 'relative'
+                position: 'relative',
+                whiteSpace: 'break-spaces'
               }}
             >
               {activeBook.subtitle || '[Untertitel hinzufügen]'}
               {(hoveredField === 'subtitle' || activeCoverEditField === 'subtitle') && (
-                <span style={{
-                  position: 'absolute',
-                  top: '-16px',
-                  right: '0',
-                  fontSize: '8px',
-                  backgroundColor: 'var(--primary)',
-                  color: '#ffffff',
-                  padding: '2px 4px',
-                  borderRadius: '3px',
-                  pointerEvents: 'none',
-                  zIndex: 10
-                }}>
-                  ↔↕ Ziehen / Doppelklick
-                </span>
+                <>
+                  <span style={{
+                    position: 'absolute',
+                    top: '-16px',
+                    right: '0',
+                    fontSize: '8px',
+                    backgroundColor: 'var(--primary)',
+                    color: '#ffffff',
+                    padding: '2px 4px',
+                    borderRadius: '3px',
+                    pointerEvents: 'none',
+                    zIndex: 10
+                  }}>
+                    ↔↕ Ziehen / Doppelklick
+                  </span>
+                  <div 
+                    style={{
+                      position: 'absolute',
+                      bottom: '-24px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '2px',
+                      backgroundColor: '#1e293b',
+                      padding: '2px 4px',
+                      borderRadius: '6px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                      zIndex: 11,
+                      border: '1px solid #475569',
+                      pointerEvents: 'auto'
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      onClick={(e) => { e.stopPropagation(); updateActiveBookConfig('titlePageSubtitleSize', Math.max(8, (activeBook.titlePageSubtitleSize || 12) - 1)); }}
+                      style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '2px 6px', fontSize: '11px', fontWeight: 'bold' }}
+                    >-</button>
+                    <span style={{ color: '#94a3b8', fontSize: '9px', padding: '0 2px' }}>{activeBook.titlePageSubtitleSize || 12}pt</span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); updateActiveBookConfig('titlePageSubtitleSize', Math.min(36, (activeBook.titlePageSubtitleSize || 12) + 1)); }}
+                      style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '2px 6px', fontSize: '11px', fontWeight: 'bold' }}
+                    >+</button>
+                  </div>
+                </>
               )}
             </h2>
           )}
@@ -4322,17 +4417,69 @@ export default function App() {
                 setEditingField('author');
                 setEditingValue(activeBook.authorName || '');
               }}
+              onMouseEnter={() => setHoveredField('author')}
+              onMouseLeave={() => setHoveredField(null)}
               title="Doppelklick zum Bearbeiten"
               style={{
+                position: 'relative',
                 fontSize: `${(activeBook.titlePageAuthorSize || 14) * previewScaleY}px`,
                 fontFamily: getCssFontFamily(activeBook.titlePageAuthorFont, 'times'),
                 color: '#0f172a',
                 lineHeight: '1.2',
                 cursor: 'text',
-                padding: '2px 8px'
+                padding: '2px 8px',
+                border: (hoveredField === 'author' || activeCoverEditField === 'author') ? '1px dashed var(--primary)' : '1px dashed transparent',
+                borderRadius: '4px'
               }}
             >
               {activeBook.authorName || <span style={{ color: '#cbd5e1', fontStyle: 'italic' }}>[Autorenname]</span>}
+              {(hoveredField === 'author' || activeCoverEditField === 'author') && (
+                <>
+                  <span style={{
+                    position: 'absolute',
+                    top: '-16px',
+                    right: '0',
+                    fontSize: '8px',
+                    backgroundColor: 'var(--primary)',
+                    color: '#ffffff',
+                    padding: '2px 4px',
+                    borderRadius: '3px',
+                    pointerEvents: 'none',
+                    zIndex: 10
+                  }}>
+                    ↔↕ Ziehen / Doppelklick
+                  </span>
+                  <div 
+                    style={{
+                      position: 'absolute',
+                      bottom: '-24px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '2px',
+                      backgroundColor: '#1e293b',
+                      padding: '2px 4px',
+                      borderRadius: '6px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                      zIndex: 11,
+                      border: '1px solid #475569',
+                      pointerEvents: 'auto'
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      onClick={(e) => { e.stopPropagation(); updateActiveBookConfig('titlePageAuthorSize', Math.max(8, (activeBook.titlePageAuthorSize || 14) - 1)); }}
+                      style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '2px 6px', fontSize: '11px', fontWeight: 'bold' }}
+                    >-</button>
+                    <span style={{ color: '#94a3b8', fontSize: '9px', padding: '0 2px' }}>{activeBook.titlePageAuthorSize || 14}pt</span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); updateActiveBookConfig('titlePageAuthorSize', Math.min(36, (activeBook.titlePageAuthorSize || 14) + 1)); }}
+                      style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '2px 6px', fontSize: '11px', fontWeight: 'bold' }}
+                    >+</button>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -4375,17 +4522,69 @@ export default function App() {
                 setEditingField('publisher');
                 setEditingValue(activeBook.publisherLine || publisherLine);
               }}
+              onMouseEnter={() => setHoveredField('publisher')}
+              onMouseLeave={() => setHoveredField(null)}
               title="Doppelklick zum Bearbeiten"
               style={{
+                position: 'relative',
                 fontSize: `${(activeBook.titlePagePublisherSize || 10) * previewScaleY}px`,
                 fontFamily: getCssFontFamily(activeBook.titlePagePublisherFont, 'times'),
                 color: '#475569',
                 lineHeight: '1.2',
                 cursor: 'text',
-                padding: '2px 8px'
+                padding: '2px 8px',
+                border: (hoveredField === 'publisher' || activeCoverEditField === 'publisher') ? '1px dashed var(--primary)' : '1px dashed transparent',
+                borderRadius: '4px'
               }}
             >
-              {activeBook.publisherLine || publisherLine}
+              {activeBook.publisherLine || publisherLine || <span style={{ color: '#cbd5e1', fontStyle: 'italic' }}>[Verlag]</span>}
+              {(hoveredField === 'publisher' || activeCoverEditField === 'publisher') && (
+                <>
+                  <span style={{
+                    position: 'absolute',
+                    top: '-16px',
+                    right: '0',
+                    fontSize: '8px',
+                    backgroundColor: 'var(--primary)',
+                    color: '#ffffff',
+                    padding: '2px 4px',
+                    borderRadius: '3px',
+                    pointerEvents: 'none',
+                    zIndex: 10
+                  }}>
+                    ↔↕ Ziehen / Doppelklick
+                  </span>
+                  <div 
+                    style={{
+                      position: 'absolute',
+                      bottom: '-24px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '2px',
+                      backgroundColor: '#1e293b',
+                      padding: '2px 4px',
+                      borderRadius: '6px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                      zIndex: 11,
+                      border: '1px solid #475569',
+                      pointerEvents: 'auto'
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      onClick={(e) => { e.stopPropagation(); updateActiveBookConfig('titlePagePublisherSize', Math.max(8, (activeBook.titlePagePublisherSize || 10) - 1)); }}
+                      style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '2px 6px', fontSize: '11px', fontWeight: 'bold' }}
+                    >-</button>
+                    <span style={{ color: '#94a3b8', fontSize: '9px', padding: '0 2px' }}>{activeBook.titlePagePublisherSize || 10}pt</span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); updateActiveBookConfig('titlePagePublisherSize', Math.min(24, (activeBook.titlePagePublisherSize || 10) + 1)); }}
+                      style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '2px 6px', fontSize: '11px', fontWeight: 'bold' }}
+                    >+</button>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -4565,17 +4764,75 @@ export default function App() {
       }
     });
 
+    const handleMergeWithPrevious = (path: number[], currentText: string) => {
+      const updatedBlocks = JSON.parse(JSON.stringify(blocks));
+      let current = updatedBlocks;
+      for (let i = 0; i < path.length - 1; i++) {
+        current = current[path[i]].children;
+      }
+      const index = path[path.length - 1];
+      if (index > 0) {
+        const prevBlock = current[index - 1];
+        if (prevBlock.type === 'paragraph' || prevBlock.type === 'heading' || prevBlock.type === 'quote' || prevBlock.type === 'bullet') {
+          const currentTextClean = currentText.replace(/\u200B/g, '').trim();
+          const prevTextClean = prevBlock.text.replace(/\u200B/g, '').trim();
+          prevBlock.text = prevTextClean + (prevTextClean && currentTextClean ? ' ' : '') + currentTextClean;
+          if (!prevBlock.text) prevBlock.text = '\u200B';
+          current.splice(index, 1);
+          updatePagePartBlocks(updatedBlocks);
+        }
+      }
+    };
+
+    const handleMergeWithNext = (path: number[], currentText: string) => {
+      const updatedBlocks = JSON.parse(JSON.stringify(blocks));
+      let current = updatedBlocks;
+      for (let i = 0; i < path.length - 1; i++) {
+        current = current[path[i]].children;
+      }
+      const index = path[path.length - 1];
+      if (index < current.length - 1) {
+        const nextBlock = current[index + 1];
+        if (nextBlock.type === 'paragraph' || nextBlock.type === 'heading' || nextBlock.type === 'quote' || nextBlock.type === 'bullet') {
+          const currentBlock = current[index];
+          if (currentBlock.type === 'paragraph' || currentBlock.type === 'heading') {
+            const currentTextClean = currentText.replace(/\u200B/g, '').trim();
+            const nextTextClean = nextBlock.text.replace(/\u200B/g, '').trim();
+            currentBlock.text = currentTextClean + (currentTextClean && nextTextClean ? ' ' : '') + nextTextClean;
+            if (!currentBlock.text) currentBlock.text = '\u200B';
+            current.splice(index + 1, 1);
+            updatePagePartBlocks(updatedBlocks);
+          }
+        }
+      }
+    };
+
     const makeEditable = (path: number[]) => ({
       contentEditable: true,
       suppressContentEditableWarning: true,
       onBlur: (e: React.FocusEvent<any>) => {
-        const text = e.currentTarget.innerText || '';
+        let text = e.currentTarget.innerText || '';
+        if (text.trim() === '') {
+           text = '\u200B';
+        }
         handleBlockTextChange(path, text);
       },
       onKeyDown: (e: React.KeyboardEvent<any>) => {
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
           e.currentTarget.blur();
+        } else if (e.key === 'Backspace') {
+          const selection = window.getSelection();
+          if (selection && selection.isCollapsed && selection.anchorOffset === 0) {
+            e.preventDefault();
+            handleMergeWithPrevious(path, e.currentTarget.innerText);
+          }
+        } else if (e.key === 'Delete') {
+          const selection = window.getSelection();
+          if (selection && selection.isCollapsed && selection.anchorOffset === e.currentTarget.innerText.length) {
+            e.preventDefault();
+            handleMergeWithNext(path, e.currentTarget.innerText);
+          }
         }
       }
     });
@@ -4604,7 +4861,7 @@ export default function App() {
             <p 
               key={key} 
               className="literary-paragraph" 
-              style={{ fontWeight: 'bold', marginTop: path[path.length - 1] > 0 ? '0.4em' : '0', margin: '0', padding: '0', lineHeight: '1.5', outline: 'none' }}
+              style={{ fontWeight: 'bold', marginTop: path[path.length - 1] > 0 ? '1.5em' : '0', marginBottom: '1.5em', padding: '0', lineHeight: '1.5', outline: 'none' }}
               {...getDragDropProps(path)}
               {...makeEditable(path)}
             >
@@ -4804,41 +5061,52 @@ export default function App() {
           const isFloated = floatVal === 'left' || floatVal === 'right';
 
           return (
-            <div 
-              key={key} 
-              draggable={true}
-              onDragStart={(e) => {
-                e.dataTransfer.setData('text/plain', JSON.stringify({ sourcePath: path }));
-              }}
-              style={{
-                margin: isFloated ? '4px 10px' : '16px auto',
-                padding: '16px',
-                backgroundColor: 'rgba(241, 245, 249, 0.4)',
-                border: '1px dashed rgba(148, 163, 184, 0.5)',
-                borderRadius: '6px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '8px',
-                color: '#64748b',
-                textAlign: 'center',
-                width: `${widthVal}%`,
-                float: isFloated ? floatVal : undefined,
-                clear: isFloated ? undefined : 'both',
-                boxSizing: 'border-box',
-                cursor: 'grab'
+            <PreviewGraphicBox
+              key={key}
+              transform={activeBook.imagesTransform?.[`ai_${block.prompt}`] || {}}
+              defaultWidth={widthVal}
+              defaultFloat={floatVal}
+              onDelete={() => handleDeleteBlock(path)}
+              onChange={newT => {
+                updateActiveBookConfig('imagesTransform', {
+                  ...(activeBook.imagesTransform || {}),
+                  [`ai_${block.prompt}`]: newT
+                });
               }}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                <circle cx="8.5" cy="8.5" r="1.5" />
-                <polyline points="21 15 16 10 5 21" />
-              </svg>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <span style={{ fontSize: '9px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#475569' }}>K.I. Grafik-Platzhalter</span>
-                <span style={{ fontSize: '8px', fontStyle: 'italic', maxWidth: '100%', lineHeight: '1.3' }}>"{block.prompt}"</span>
+              <div 
+                draggable={true}
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('text/plain', JSON.stringify({ sourcePath: path }));
+                }}
+                style={{
+                  margin: '0 auto',
+                  padding: '16px',
+                  backgroundColor: 'rgba(241, 245, 249, 0.4)',
+                  border: '1px dashed rgba(148, 163, 184, 0.5)',
+                  borderRadius: '6px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '8px',
+                  color: '#64748b',
+                  textAlign: 'center',
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  cursor: 'grab'
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <polyline points="21 15 16 10 5 21" />
+                </svg>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span style={{ fontSize: '9px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#475569' }}>K.I. Grafik-Platzhalter</span>
+                  <span style={{ fontSize: '8px', fontStyle: 'italic', maxWidth: '100%', lineHeight: '1.3' }}>"{block.prompt}"</span>
+                </div>
               </div>
-            </div>
+            </PreviewGraphicBox>
           );
         }
 
@@ -8302,6 +8570,31 @@ max="250"
                             <span style={{ fontSize: '11px', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontWeight: 700 }}>„“</span>
                             Zitat {(activeBook.pagesHideQuotes || []).includes(selectedPage) ? 'AUS' : 'AN'}
                           </button>
+                          
+                          {(activeBook.autoChapterGraphics !== false) && (
+                            <button
+                              onClick={() => {
+                                const currentDisabled = activeBook.pagesGraphicDisabled || {};
+                                const isCurrentlyDisabled = !!currentDisabled[selectedPage];
+                                updateActiveBookConfig('pagesGraphicDisabled', {
+                                  ...currentDisabled,
+                                  [selectedPage]: !isCurrentlyDisabled
+                                });
+                              }}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: '5px',
+                                padding: '4px 10px', borderRadius: '8px', fontSize: '10px', fontWeight: 600,
+                                border: '1px solid var(--border-color)', cursor: 'pointer',
+                                backgroundColor: activeBook.pagesGraphicDisabled?.[selectedPage] ? '#dc2626' : 'var(--bg-card)',
+                                color: activeBook.pagesGraphicDisabled?.[selectedPage] ? '#ffffff' : 'var(--text-muted)',
+                                transition: 'all 0.2s',
+                              }}
+                              title={activeBook.pagesGraphicDisabled?.[selectedPage] ? 'Automatische Grafik auf dieser Seite wieder erlauben' : 'Automatische Grafik auf dieser Seite verbieten'}
+                            >
+                              <ImageIcon style={{ width: '11px', height: '11px' }} />
+                              Grafik {activeBook.pagesGraphicDisabled?.[selectedPage] ? 'AUS' : 'AN'}
+                            </button>
+                          )}
                         </>
                       )}
                       {typeof selectedPage === 'number' && (
@@ -8323,111 +8616,85 @@ max="250"
                       )}
                     </div>
 
-                    {selectedPage === 'title' && activeCoverEditField && (
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '12px',
-                        padding: '10px 14px',
-                        backgroundColor: 'var(--bg-card)',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '10px',
-                        marginBottom: '10px',
-                        width: `${previewWidth}px`,
-                        boxSizing: 'border-box',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                      }}>
-                        <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-main)', textTransform: 'capitalize' }}>
-                          {activeCoverEditField === 'title' ? 'Titel' : activeCoverEditField === 'subtitle' ? 'Untertitel' : activeCoverEditField === 'author' ? 'Autor' : 'Verlag'}:
-                        </span>
-                        
-                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                          <select
-                            value={
-                              activeCoverEditField === 'title' ? (activeBook.titlePageTitleFont || 'playfair') :
-                              activeCoverEditField === 'subtitle' ? (activeBook.titlePageSubtitleFont || 'times') :
-                              activeCoverEditField === 'author' ? (activeBook.titlePageAuthorFont || 'times') :
-                              (activeBook.titlePagePublisherFont || 'times')
-                            }
-                            onChange={(e) => {
-                              const fieldMap = {
-                                title: 'titlePageTitleFont',
-                                subtitle: 'titlePageSubtitleFont',
-                                author: 'titlePageAuthorFont',
-                                publisher: 'titlePagePublisherFont'
-                              };
-                              updateActiveBookConfig(fieldMap[activeCoverEditField] as keyof Book, e.target.value);
+                    {selectedPage === 'title' && (() => {
+                      const currentCoverField = activeCoverEditField || 'title';
+                      const fieldMapFont: Record<string, keyof Book> = { title: 'titlePageTitleFont', subtitle: 'titlePageSubtitleFont', author: 'titlePageAuthorFont', publisher: 'titlePagePublisherFont' };
+                      const fieldMapSize: Record<string, keyof Book> = { title: 'titlePageTitleSize', subtitle: 'titlePageSubtitleSize', author: 'titlePageAuthorSize', publisher: 'titlePagePublisherSize' };
+                      
+                      return (
+                        <div style={{
+                          display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between',
+                          gap: '10px', padding: '10px 14px', backgroundColor: 'var(--bg-card)',
+                          border: '1px solid var(--border-color)', borderRadius: '10px', marginBottom: '14px',
+                          width: `${previewWidth}px`, boxSizing: 'border-box', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                        }}>
+                          {/* Field selector tabs */}
+                          <div style={{ display: 'flex', gap: '4px', borderRight: '1px solid var(--border-color)', paddingRight: '8px' }}>
+                            {(['title', 'subtitle', 'author', 'publisher'] as const).map(f => {
+                              const labels: Record<string, string> = { title: '📖 Titel', subtitle: '💬 Untertitel', author: '✍️ Autor', publisher: '🏢 Verlag' };
+                              const isSel = currentCoverField === f;
+                              return (
+                                <button
+                                  key={f}
+                                  onClick={() => setActiveCoverEditField(f)}
+                                  style={{
+                                    padding: '5px 9px', fontSize: '11px', fontWeight: isSel ? 700 : 500,
+                                    borderRadius: '6px', border: isSel ? '1px solid var(--primary)' : '1px solid transparent',
+                                    backgroundColor: isSel ? 'rgba(59,130,246,0.15)' : 'transparent',
+                                    color: isSel ? 'var(--primary)' : 'var(--text-muted)', cursor: 'pointer',
+                                    transition: 'all 0.15s'
+                                  }}
+                                >
+                                  {labels[f]}
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {/* Font selector */}
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Schrift:</span>
+                            <select
+                              value={activeBook[fieldMapFont[currentCoverField]] as string || (currentCoverField === 'title' ? 'playfair' : 'times')}
+                              onChange={e => updateActiveBookConfig(fieldMapFont[currentCoverField], e.target.value)}
+                              style={{ fontSize: '11px', padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', outline: 'none', fontWeight: 500 }}
+                            >
+                              {COVER_FONTS.map(font => <option key={font.value} value={font.value}>{font.label}</option>)}
+                            </select>
+                          </div>
+
+                          {/* Size range */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Größe:</span>
+                            <input
+                              type="range"
+                              min={currentCoverField === 'title' ? 14 : 8}
+                              max={currentCoverField === 'title' ? 72 : 40}
+                              value={Number(activeBook[fieldMapSize[currentCoverField]]) || (currentCoverField === 'title' ? 28 : currentCoverField === 'author' ? 14 : 12)}
+                              onChange={e => updateActiveBookConfig(fieldMapSize[currentCoverField], Number(e.target.value))}
+                              style={{ width: '80px', height: '5px', cursor: 'pointer', accentColor: 'var(--primary)' }}
+                            />
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-main)', width: '32px' }}>
+                              {Number(activeBook[fieldMapSize[currentCoverField]]) || (currentCoverField === 'title' ? 28 : currentCoverField === 'author' ? 14 : 12)}px
+                            </span>
+                          </div>
+
+                          {/* Reset position button */}
+                          <button
+                            onClick={() => {
+                              const mapX: Record<string, keyof Book> = { title: 'titlePageTitleX', subtitle: 'titlePageSubtitleX', author: 'titlePageAuthorX', publisher: 'titlePagePublisherX' };
+                              const mapY: Record<string, keyof Book> = { title: 'titlePageTitleY', subtitle: 'titlePageSubtitleY', author: 'titlePageAuthorY', publisher: 'titlePagePublisherY' };
+                              updateActiveBookConfig(mapX[currentCoverField], 0);
+                              updateActiveBookConfig(mapY[currentCoverField], 0);
                             }}
-                            style={{ fontSize: '11px', padding: '3px 6px', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', outline: 'none' }}
+                            style={{ padding: '4px 9px', fontSize: '10.5px', fontWeight: 600, borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', cursor: 'pointer' }}
+                            title="Position der gewählten Zeile auf Mitte zurücksetzen"
                           >
-                            {COVER_FONTS.map(f => (
-                              <option key={f.value} value={f.value}>{f.label}</option>
-                            ))}
-                          </select>
+                            📍 Reset Pos
+                          </button>
                         </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <input
-                            type="range"
-                            min={activeCoverEditField === 'title' ? 12 : 8}
-                            max={activeCoverEditField === 'title' ? 60 : 32}
-                            value={
-                              activeCoverEditField === 'title' ? (activeBook.titlePageTitleSize || 28) :
-                              activeCoverEditField === 'subtitle' ? (activeBook.titlePageSubtitleSize || 12) :
-                              activeCoverEditField === 'author' ? (activeBook.titlePageAuthorSize || 14) :
-                              (activeBook.titlePagePublisherSize || 10)
-                            }
-                            onChange={(e) => {
-                              const fieldMap = {
-                                title: 'titlePageTitleSize',
-                                subtitle: 'titlePageSubtitleSize',
-                                author: 'titlePageAuthorSize',
-                                publisher: 'titlePagePublisherSize'
-                              };
-                              updateActiveBookConfig(fieldMap[activeCoverEditField] as keyof Book, Number(e.target.value));
-                            }}
-                            style={{ width: '60px', height: '4px', cursor: 'pointer' }}
-                          />
-                          <span style={{ fontSize: '10px', color: 'var(--text-main)', width: '22px', textAlign: 'right' }}>
-                            {activeCoverEditField === 'title' ? (activeBook.titlePageTitleSize || 28) :
-                             activeCoverEditField === 'subtitle' ? (activeBook.titlePageSubtitleSize || 12) :
-                             activeCoverEditField === 'author' ? (activeBook.titlePageAuthorSize || 14) :
-                             (activeBook.titlePagePublisherSize || 10)}pt
-                          </span>
-                        </div>
-
-                        <button
-                          onClick={() => {
-                            if (activeCoverEditField === 'title') {
-                              updateActiveBookConfig('titlePageTitleX', 0);
-                              updateActiveBookConfig('titlePageTitleY', 0);
-                            } else if (activeCoverEditField === 'subtitle') {
-                              updateActiveBookConfig('titlePageSubtitleX', 0);
-                              updateActiveBookConfig('titlePageSubtitleY', 0);
-                            } else if (activeCoverEditField === 'author') {
-                              updateActiveBookConfig('titlePageAuthorX', 0);
-                              updateActiveBookConfig('titlePageAuthorY', 0);
-                            } else if (activeCoverEditField === 'publisher') {
-                              updateActiveBookConfig('titlePagePublisherX', 0);
-                              updateActiveBookConfig('titlePagePublisherY', 0);
-                            }
-                          }}
-                          style={{
-                            padding: '3px 8px',
-                            fontSize: '9.5px',
-                            fontWeight: '600',
-                            borderRadius: '4px',
-                            border: '1px solid var(--border-color)',
-                            backgroundColor: 'var(--bg-main)',
-                            color: 'var(--text-main)',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          Reset
-                        </button>
-                      </div>
-                    )}
+                      );
+                    })()}
 
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
                       {(() => {
@@ -8583,6 +8850,15 @@ max="250"
                                       [selectedPage as number]: { ...curr, ...newT }
                                     });
                                   }}
+                                  onDelete={() => {
+                                    const updated = { ...(activeBook.pagesGraphic || {}) };
+                                    delete updated[selectedPage as number];
+                                    updateActiveBookConfig('pagesGraphic', updated);
+                                    updateActiveBookConfig('pagesGraphicDisabled', {
+                                      ...(activeBook.pagesGraphicDisabled || {}),
+                                      [selectedPage as number]: true
+                                    });
+                                  }}
                                 >
                                   <SvgGraphicRenderer
                                     decision={(activeBook.pagesGraphic || {})[selectedPage]}
@@ -8628,29 +8904,59 @@ max="250"
                     </div>
 
                       {typeof selectedPage === 'number' && (
-                        <button
-                          onClick={() => handleRetryPage(selectedPage as number)}
-                          className="btn btn-primary"
-                          style={{
-                            marginTop: '8px',
-                            padding: '6px 18px',
-                            fontSize: '11.5px',
-                            fontWeight: 600,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            backgroundColor: 'var(--primary)',
-                            borderColor: 'var(--primary)',
-                            borderRadius: '6px',
-                            boxShadow: '0 2px 8px rgba(11, 87, 208, 0.25)',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                          }}
-                          disabled={isGenerating || isPlanning || isGeneratingStyleOptions || isGeneratingStructureOptions}
-                          title="Generiert den Inhalt dieser Seite komplett neu basierend auf der Gliederung"
-                        >
-                          <RotateCw style={{ width: '13px', height: '13px' }} /> Seite neu generieren
-                        </button>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
+                          <button
+                            onClick={() => handleRetryPage(selectedPage as number)}
+                            className="btn btn-primary"
+                            style={{
+                              padding: '6px 18px',
+                              fontSize: '11.5px',
+                              fontWeight: 600,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              backgroundColor: 'var(--primary)',
+                              borderColor: 'var(--primary)',
+                              borderRadius: '6px',
+                              boxShadow: '0 2px 8px rgba(11, 87, 208, 0.25)',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                              width: '100%',
+                              justifyContent: 'center'
+                            }}
+                            disabled={isGenerating || isPlanning || isGeneratingStyleOptions || isGeneratingStructureOptions}
+                            title="Generiert den Inhalt dieser Seite komplett neu basierend auf der Gliederung"
+                          >
+                            <RotateCw style={{ width: '13px', height: '13px' }} /> Seite neu generieren
+                          </button>
+                          
+                          {(activeBook?.autoChapterGraphics !== false) && (
+                            <label style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              fontSize: '10px',
+                              color: 'var(--text-muted)',
+                              cursor: 'pointer',
+                              padding: '2px 4px',
+                              borderRadius: '4px',
+                              backgroundColor: 'rgba(255,255,255,0.03)'
+                            }}>
+                              <input
+                                type="checkbox"
+                                checked={!!activeBook?.pagesGraphicDisabled?.[selectedPage as number]}
+                                onChange={(e) => {
+                                  updateActiveBookConfig('pagesGraphicDisabled', {
+                                    ...(activeBook?.pagesGraphicDisabled || {}),
+                                    [selectedPage as number]: e.target.checked
+                                  });
+                                }}
+                                style={{ margin: 0, cursor: 'pointer' }}
+                              />
+                              Ohne Grafik generieren (Nur Text)
+                            </label>
+                          )}
+                        </div>
                       )}
                     </div>
                 ) : (
