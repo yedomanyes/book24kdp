@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, TrendingUp, Layers, ChevronRight, Zap } from 'lucide-react';
+import { TrendingUp, Layers, ChevronRight, Zap } from 'lucide-react';
 import ShinyText from './ShinyText';
 
 import Aurora from './Aurora';
@@ -37,41 +37,55 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
         />
       </div>
 
-      {/* Navbar */}
-      <nav style={{ position: 'relative', zIndex: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px 48px', borderBottom: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(12px)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: '36px', height: '36px', background: 'linear-gradient(135deg, #3b82f6, #2563eb)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 20px rgba(59,130,246,0.4)' }}>
-            <BookOpen style={{ color: '#fff', width: '20px', height: '20px' }} />
+      {/* Navbar Wrapper */}
+      <div style={{ position: 'relative', zIndex: 10, padding: '24px', display: 'flex', justifyContent: 'center' }}>
+        <nav style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          padding: '12px 24px', 
+          background: 'rgba(255, 255, 255, 0.02)', 
+          border: '1px solid rgba(255, 255, 255, 0.08)', 
+          borderRadius: '99px', 
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          width: '100%',
+          maxWidth: '1000px',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <span style={{ fontSize: '20px', fontWeight: 900, letterSpacing: '-0.04em', color: '#ffffff' }}>
+              Book24 Studio
+            </span>
           </div>
-          <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.03em' }}>Book24 <span style={{ color: '#3b82f6' }}>Studio</span></span>
-        </div>
-        <button 
-          onClick={onLoginClick}
-          style={{
-            background: 'linear-gradient(to bottom, #3b82f6, #2563eb)',
-            border: 'none',
-            borderBottom: '4px solid #1d4ed8',
-            padding: '10px 24px',
-            borderRadius: '99px',
-            cursor: 'pointer',
-            transition: 'all 0.15s ease',
-            boxShadow: '0 8px 24px rgba(59,130,246,0.5), inset 0 2px 4px rgba(255,255,255,0.3)',
-            transform: 'translateY(0)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: 0
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(1.1)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 28px rgba(59,130,246,0.6), inset 0 2px 4px rgba(255,255,255,0.3)'; }}
-          onMouseDown={(e) => { e.currentTarget.style.filter = 'brightness(0.9)'; e.currentTarget.style.transform = 'translateY(4px)'; e.currentTarget.style.borderBottomWidth = '0px'; e.currentTarget.style.marginBottom = '4px'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(59,130,246,0.4), inset 0 2px 4px rgba(255,255,255,0.1)'; }}
-          onMouseUp={(e) => { e.currentTarget.style.filter = 'brightness(1.1)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderBottomWidth = '4px'; e.currentTarget.style.marginBottom = '0px'; e.currentTarget.style.boxShadow = '0 12px 28px rgba(59,130,246,0.6), inset 0 2px 4px rgba(255,255,255,0.3)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.filter = 'brightness(1)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderBottomWidth = '4px'; e.currentTarget.style.marginBottom = '0px'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(59,130,246,0.5), inset 0 2px 4px rgba(255,255,255,0.3)'; }}
-        >
-          <span style={{ fontSize: '15px', fontWeight: 800 }}>
-            <ShinyText text="Anmelden" disabled={false} speed={3} color="#ffffff" shineColor="#93c5fd" />
-          </span>
-        </button>
-      </nav>
+          <button 
+            onClick={onLoginClick}
+            style={{
+              background: 'linear-gradient(to bottom, #3b82f6, #2563eb)',
+              border: 'none',
+              borderBottom: '3px solid #1d4ed8',
+              padding: '10px 24px',
+              borderRadius: '99px',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+              boxShadow: '0 8px 24px rgba(59,130,246,0.5), inset 0 2px 4px rgba(255,255,255,0.3)',
+              transform: 'translateY(0)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: 0
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(1.1)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 28px rgba(59,130,246,0.6), inset 0 2px 4px rgba(255,255,255,0.3)'; }}
+            onMouseDown={(e) => { e.currentTarget.style.filter = 'brightness(0.9)'; e.currentTarget.style.transform = 'translateY(3px)'; e.currentTarget.style.borderBottomWidth = '0px'; e.currentTarget.style.marginBottom = '3px'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(59,130,246,0.4), inset 0 2px 4px rgba(255,255,255,0.1)'; }}
+            onMouseUp={(e) => { e.currentTarget.style.filter = 'brightness(1.1)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderBottomWidth = '3px'; e.currentTarget.style.marginBottom = '0px'; e.currentTarget.style.boxShadow = '0 12px 28px rgba(59,130,246,0.6), inset 0 2px 4px rgba(255,255,255,0.3)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.filter = 'brightness(1)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderBottomWidth = '3px'; e.currentTarget.style.marginBottom = '0px'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(59,130,246,0.5), inset 0 2px 4px rgba(255,255,255,0.3)'; }}
+          >
+            <span style={{ fontSize: '15px', fontWeight: 800 }}>
+              <ShinyText text="Anmelden" disabled={false} speed={3} color="rgba(255,255,255,0.7)" shineColor="#ffffff" />
+            </span>
+          </button>
+        </nav>
+      </div>
 
       {/* Hero Section */}
       <main style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '120px', paddingBottom: '100px', textAlign: 'center', padding: '120px 24px' }}>
@@ -123,7 +137,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
             onMouseLeave={(e) => { e.currentTarget.style.filter = 'brightness(1)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderBottomWidth = '4px'; e.currentTarget.style.marginBottom = '0px'; e.currentTarget.style.boxShadow = '0 10px 30px rgba(59,130,246,0.5), inset 0 2px 4px rgba(255,255,255,0.3)'; }}
           >
             <span style={{ fontSize: '18px', fontWeight: 800 }}>
-              <ShinyText text="Jetzt Erstellen" disabled={false} speed={3} color="#ffffff" shineColor="#93c5fd" />
+              <ShinyText text="Jetzt Erstellen" disabled={false} speed={3} color="rgba(255,255,255,0.7)" shineColor="#ffffff" />
             </span>
             <ChevronRight style={{ width: '20px', height: '20px', color: '#fff' }} />
           </button>
