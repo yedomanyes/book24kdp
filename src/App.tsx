@@ -48,6 +48,8 @@ import { auth } from './firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { Auth } from './components/Auth';
 import { LandingPage } from './components/LandingPage';
+import { NicheFinderDashboard } from './components/NicheFinderDashboard';
+import { searchNiche, NicheResult } from './services/NicheService';
 
 // Run migration once at module load (before any state is initialized)
 migrateOldKeys();
@@ -5240,6 +5242,71 @@ export default function App() {
   };
 
   const [showAuthModal, setShowAuthModal] = useState(false);
+  
+  // Nischen-Finder State
+  const [nicheQuery, setNicheQuery] = useState('');
+  const [isSearchingNiche, setIsSearchingNiche] = useState(false);
+  const [nicheResult, setNicheResult] = useState<NicheResult | null>(null);
+  const [nicheAnalysisLoading, setNicheAnalysisLoading] = useState(false);
+
+  const handleSearchNiche = async () => {
+    if (!nicheQuery.trim()) return;
+    setIsSearchingNiche(true);
+    setNicheResult(null);
+    try {
+      const result = await searchNiche(nicheQuery);
+      setNicheResult(result);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSearchingNiche(false);
+    }
+  };
+
+  const handleAnalyzeNicheAI = async () => {
+    if (!nicheResult || !selectedModel) return;
+    setNicheAnalysisLoading(true);
+    try {
+      // Hole API Keys aus dem LocalStorage
+      const keysStr = localStorage.getItem('b24studio_api_keys');
+      let geminiKey = '';
+      if (keysStr) {
+        try { 
+          const parsed = JSON.parse(keysStr); 
+          geminiKey = (parsed.gemini && parsed.gemini.length > 0) ? parsed.gemini[0] : '';
+        } catch (e) {}
+      }
+
+      if (!geminiKey) {
+        setNicheResult(prev => prev ? { ...prev, aiAnalysis: 'Fehler: Kein Gemini API Key hinterlegt. Bitte füge deinen API Key im Einstellungen-Tab (Schlüssel-Icon) ein, um die KI-Nischenanalyse nutzen zu können.' } : null);
+        return;
+      }
+
+      const prompt = `Analysiere die KDP Nische "${nicheResult.keyword}". Das Suchvolumen beträgt ${nicheResult.metrics.searchVolume} und der Ø BSR ist ${nicheResult.metrics.averageBsr}. Finde eine Lücke im Markt und gib uns einen Tipp für einen perfekten Buchtitel. Antworte in 2-3 knappen, professionellen Absätzen auf Deutsch.`;
+      
+      const payload = {
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: 800, temperature: 0.7 }
+      };
+
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      const data = await res.json();
+      if (data.candidates && data.candidates[0]) {
+        const analysis = data.candidates[0].content.parts[0].text;
+        setNicheResult(prev => prev ? { ...prev, aiAnalysis: analysis } : null);
+      }
+    } catch (err) {
+      console.error(err);
+      setNicheResult(prev => prev ? { ...prev, aiAnalysis: 'Ein Fehler ist bei der KI-Analyse aufgetreten.' } : null);
+    } finally {
+      setNicheAnalysisLoading(false);
+    }
+  };
 
   if (authLoading) {
     return (
@@ -5721,49 +5788,20 @@ export default function App() {
             {/* TOP BAR */}
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
               <div>
-                <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '6px' }}>KDP Publishing Studio</div>
+                <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '6px' }}>KDP Publishing</div>
                 <h1 style={{ margin: 0, fontSize: '32px', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.03em', lineHeight: 1 }}>Nischen-Finder</h1>
               </div>
             </div>
 
-            {/* PLACEHOLDER CONTENT */}
-            <div style={{
-              background: 'var(--bg-card)',
-              border: '1px dashed var(--border-subtle)',
-              borderRadius: '12px',
-              padding: '60px 40px',
-              textAlign: 'center',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '16px'
-            }}>
-              <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(34,197,94,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#22c55e' }}>
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-              </div>
-              <div>
-                <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 8px 0' }}>Der Nischen-Finder ist in Arbeit</h2>
-                <p style={{ color: 'var(--text-muted)', fontSize: '14px', maxWidth: '400px', margin: '0 auto', lineHeight: '1.5' }}>
-                  Hier kannst du bald profitable KDP-Nischen analysieren, Suchvolumen prüfen und die Konkurrenz bewerten.
-                </p>
-              </div>
-              <button 
-                disabled
-                style={{
-                  marginTop: '12px',
-                  padding: '10px 24px',
-                  background: 'var(--bg-elevated)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: '6px',
-                  color: 'var(--text-muted)',
-                  fontWeight: 600,
-                  fontSize: '13px',
-                  cursor: 'not-allowed'
-                }}
-              >
-                Demnächst verfügbar
-              </button>
-            </div>
+            <NicheFinderDashboard 
+              nicheQuery={nicheQuery}
+              setNicheQuery={setNicheQuery}
+              isSearchingNiche={isSearchingNiche}
+              handleSearchNiche={handleSearchNiche}
+              nicheResult={nicheResult}
+              nicheAnalysisLoading={nicheAnalysisLoading}
+              handleAnalyzeNicheAI={handleAnalyzeNicheAI}
+            />
           </div>
         )}
 

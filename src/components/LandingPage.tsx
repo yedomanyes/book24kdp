@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, Sparkles, TrendingUp, Layers, ChevronRight, Zap } from 'lucide-react';
+import ShinyText from './ShinyText';
 
 interface LandingPageProps {
   onLoginClick: () => void;
@@ -17,32 +18,37 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
       position: 'relative'
     }}>
       {/* Background Gradients */}
-      <div style={{ position: 'fixed', top: '-10%', left: '-10%', width: '50vw', height: '50vw', background: 'radial-gradient(circle, rgba(34,197,94,0.15) 0%, rgba(0,0,0,0) 70%)', filter: 'blur(80px)', zIndex: 0, pointerEvents: 'none' }} />
+      <div style={{ position: 'fixed', top: '-10%', left: '-10%', width: '50vw', height: '50vw', background: 'radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(0,0,0,0) 70%)', filter: 'blur(80px)', zIndex: 0, pointerEvents: 'none' }} />
       <div style={{ position: 'fixed', bottom: '-10%', right: '-10%', width: '50vw', height: '50vw', background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, rgba(0,0,0,0) 70%)', filter: 'blur(80px)', zIndex: 0, pointerEvents: 'none' }} />
 
       {/* Navbar */}
       <nav style={{ position: 'relative', zIndex: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px 48px', borderBottom: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(12px)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: '36px', height: '36px', background: 'linear-gradient(135deg, #22c55e, #16a34a)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 20px rgba(34,197,94,0.4)' }}>
+          <div style={{ width: '36px', height: '36px', background: 'linear-gradient(135deg, #3b82f6, #2563eb)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 20px rgba(59,130,246,0.4)' }}>
             <BookOpen style={{ color: '#fff', width: '20px', height: '20px' }} />
           </div>
-          <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.03em' }}>Book24 <span style={{ color: '#22c55e' }}>Studio</span></span>
+          <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.03em' }}>Book24 <span style={{ color: '#3b82f6' }}>Studio</span></span>
         </div>
         <button 
           onClick={onLoginClick}
           style={{
-            background: 'rgba(255,255,255,0.05)',
+            background: 'linear-gradient(to bottom, rgba(255,255,255,0.1), rgba(255,255,255,0.05))',
             border: '1px solid rgba(255,255,255,0.1)',
+            borderBottomWidth: '3px',
+            borderBottomColor: 'rgba(255,255,255,0.02)',
             padding: '10px 24px',
             borderRadius: '99px',
             color: '#fff',
-            fontWeight: 600,
+            fontWeight: 700,
             fontSize: '14px',
             cursor: 'pointer',
-            transition: 'all 0.2s ease',
+            transition: 'all 0.1s ease',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            transform: 'translateY(0)',
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+          onMouseDown={(e) => { e.currentTarget.style.transform = 'translateY(2px)'; e.currentTarget.style.borderBottomWidth = '1px'; }}
+          onMouseUp={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderBottomWidth = '3px'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderBottomWidth = '3px'; }}
         >
           Anmelden
         </button>
@@ -54,10 +60,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)', padding: '6px 16px', borderRadius: '99px', marginBottom: '24px' }}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', padding: '6px 16px', borderRadius: '99px', marginBottom: '24px' }}
         >
-          <Sparkles style={{ width: '14px', height: '14px', color: '#4ade80' }} />
-          <span style={{ fontSize: '12px', fontWeight: 600, color: '#4ade80', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Das KDP Publishing System</span>
+          <Sparkles style={{ width: '14px', height: '14px', color: '#60a5fa' }} />
+          <ShinyText 
+            text="Das KDP Publishing System" 
+            disabled={false} 
+            speed={3} 
+            color="#60a5fa" 
+            shineColor="#ffffff" 
+            className="custom-shiny-text"
+          />
         </motion.div>
 
         <motion.h1
@@ -67,7 +80,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
           style={{ fontSize: 'clamp(48px, 6vw, 84px)', fontWeight: 900, lineHeight: 1.05, letterSpacing: '-0.04em', maxWidth: '1000px', margin: '0 0 24px 0' }}
         >
           Skaliere dein Business <br/>
-          mit <span style={{ background: 'linear-gradient(135deg, #4ade80, #3b82f6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Künstlicher Intelligenz</span>
+          mit <span style={{ background: 'linear-gradient(135deg, #60a5fa, #818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Künstlicher Intelligenz</span>
         </motion.h1>
 
         <motion.p
@@ -88,22 +101,25 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
           <button 
             onClick={onLoginClick}
             style={{
-              background: '#22c55e',
+              background: 'linear-gradient(to bottom, #3b82f6, #2563eb)',
               border: 'none',
+              borderBottom: '4px solid #1d4ed8',
               padding: '16px 32px',
               borderRadius: '99px',
-              color: '#000',
+              color: '#ffffff',
               fontWeight: 800,
               fontSize: '16px',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              boxShadow: '0 0 30px rgba(34,197,94,0.4)',
-              transition: 'transform 0.2s, box-shadow 0.2s'
+              boxShadow: '0 10px 30px rgba(59,130,246,0.4)',
+              transition: 'transform 0.1s, box-shadow 0.1s',
+              transform: 'translateY(0)',
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 10px 40px rgba(34,197,94,0.6)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 0 30px rgba(34,197,94,0.4)'; }}
+            onMouseDown={(e) => { e.currentTarget.style.transform = 'translateY(4px)'; e.currentTarget.style.borderBottomWidth = '0px'; e.currentTarget.style.marginBottom = '4px'; }}
+            onMouseUp={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderBottomWidth = '4px'; e.currentTarget.style.marginBottom = '0px'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderBottomWidth = '4px'; e.currentTarget.style.marginBottom = '0px'; }}
           >
             Jetzt kostenlos starten <ChevronRight style={{ width: '18px', height: '18px' }} />
           </button>
@@ -115,9 +131,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
           
           {[
-            { icon: <TrendingUp />, title: "Nischen-Finder", desc: "Analysiere profitable Nischen, Suchvolumen und Konkurrenz auf Amazon in Echtzeit.", color: "#6366f1" },
-            { icon: <Zap />, title: "KI Buch-Generierung", desc: "Lass die KI hochwertigen, literarischen Content schreiben – strukturiert und ready to publish.", color: "#f59e0b" },
-            { icon: <Layers />, title: "Automatisches Layout", desc: "Professioneller PDF-Export (KDP kompatibel) inklusive automatisch eingefügten KI-Grafiken.", color: "#ec4899" }
+            { icon: <TrendingUp />, title: "Nischen-Finder", desc: "Analysiere profitable Nischen, Suchvolumen und Konkurrenz auf Amazon in Echtzeit.", color: "#60a5fa" },
+            { icon: <Zap />, title: "KI Buch-Generierung", desc: "Lass die KI hochwertigen, literarischen Content schreiben – strukturiert und ready to publish.", color: "#818cf8" },
+            { icon: <Layers />, title: "Automatisches Layout", desc: "Professioneller PDF-Export (KDP kompatibel) inklusive automatisch eingefügten KI-Grafiken.", color: "#38bdf8" }
           ].map((feat, i) => (
             <motion.div
               key={i}
