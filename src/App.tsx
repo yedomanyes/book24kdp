@@ -47,6 +47,7 @@ import {
 import { auth } from './firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { Auth } from './components/Auth';
+import { LandingPage } from './components/LandingPage';
 
 // Run migration once at module load (before any state is initialized)
 migrateOldKeys();
@@ -5238,6 +5239,8 @@ export default function App() {
     return '';
   };
 
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
   if (authLoading) {
     return (
       <div style={{ display: 'flex', minHeight: '100vh', width: '100vw', backgroundColor: '#121212', alignItems: 'center', justifyContent: 'center', color: '#ffffff', fontFamily: "'Poppins', sans-serif", fontSize: '13px', gap: '8px' }}>
@@ -5248,7 +5251,17 @@ export default function App() {
   }
 
   if (!currentUser) {
-    return <Auth onAuthSuccess={() => {}} />;
+    return (
+      <>
+        <LandingPage onLoginClick={() => setShowAuthModal(true)} />
+        {showAuthModal && (
+          <Auth 
+            onAuthSuccess={() => setShowAuthModal(false)} 
+            onClose={() => setShowAuthModal(false)} 
+          />
+        )}
+      </>
+    );
   }
 
   return (

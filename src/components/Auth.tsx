@@ -6,13 +6,14 @@ import {
   GoogleAuthProvider 
 } from 'firebase/auth';
 import { auth, isFirebaseConfigured } from '../firebase';
-import { Key, Mail, Lock, LogIn, UserPlus, Globe, HelpCircle } from 'lucide-react';
+import { X, Key, Mail, Lock, LogIn, UserPlus, Globe, HelpCircle } from 'lucide-react';
 
 interface AuthProps {
   onAuthSuccess: () => void;
+  onClose?: () => void;
 }
 
-export const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
+export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onClose }) => {
   const [isSetup, setIsSetup] = useState(!isFirebaseConfigured());
   const [firebaseConfigInput, setFirebaseConfigInput] = useState('');
   const [setupError, setSetupError] = useState<string | null>(null);
@@ -184,9 +185,18 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
 
   // Render standard Login/Register page
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', width: '100vw', backgroundColor: '#121212', alignItems: 'center', justifyContent: 'center', fontFamily: "'Poppins', sans-serif", padding: '24px', boxSizing: 'border-box', position: 'fixed', top: 0, left: 0, zIndex: 9999 }}>
-      <div style={{ backgroundColor: '#1e1f20', borderRadius: '12px', border: '1px solid #2e2f30', width: '100%', maxWidth: '420px', padding: '36px', color: '#e3e3e3', boxShadow: '0 8px 30px rgba(0,0,0,0.5)', boxSizing: 'border-box' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', width: '100vw', backgroundColor: onClose ? 'rgba(0,0,0,0.7)' : '#121212', backdropFilter: onClose ? 'blur(10px)' : 'none', alignItems: 'center', justifyContent: 'center', fontFamily: "'Poppins', sans-serif", padding: '24px', boxSizing: 'border-box', position: 'fixed', top: 0, left: 0, zIndex: 9999 }}>
+      <div style={{ position: 'relative', backgroundColor: '#1e1f20', borderRadius: '12px', border: '1px solid #2e2f30', width: '100%', maxWidth: '420px', padding: '36px', color: '#e3e3e3', boxShadow: '0 8px 30px rgba(0,0,0,0.5)', boxSizing: 'border-box' }}>
         
+        {onClose && (
+          <button 
+            onClick={onClose}
+            style={{ position: 'absolute', top: '16px', right: '16px', background: 'transparent', border: 'none', color: '#8e918f', cursor: 'pointer', padding: '4px' }}
+          >
+            <X style={{ width: '20px', height: '20px' }} />
+          </button>
+        )}
+
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
           <h2 style={{ margin: '0 0 6px 0', fontSize: '24px', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em' }}>Book24 Studio</h2>
           <p style={{ margin: '0', fontSize: '13px', color: '#c4c7c5' }}>Erstelle professionelle KDP-Bücher in Minuten</p>
