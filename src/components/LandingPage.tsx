@@ -90,7 +90,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
             letterSpacing: '-0.05em', 
             maxWidth: '1000px', 
             margin: '0 0 24px 0',
-            fontFamily: "'Poppins', sans-serif" 
+            fontFamily: "'Poppins', sans-serif",
+            textTransform: 'uppercase'
           }}
         >
           Ein echtes Buch <br/>
