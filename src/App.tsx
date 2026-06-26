@@ -49,7 +49,7 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { Auth } from './components/Auth';
 import { LandingPage } from './components/LandingPage';
 import { NicheFinderDashboard } from './components/NicheFinderDashboard';
-import { searchNiche, NicheResult } from './services/NicheService';
+import { searchNiche, type NicheResult } from './services/NicheService';
 
 // Run migration once at module load (before any state is initialized)
 migrateOldKeys();

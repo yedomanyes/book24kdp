@@ -1,6 +1,7 @@
 import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getFunctions } from 'firebase/functions';
 
 const INLINE_CONFIG = {
   apiKey: "AIzaSyB2pqa2S0XO5CMla6mmwuwFzCOmTDZXYkk",
@@ -40,15 +41,17 @@ export const isFirebaseConfigured = (): boolean => {
 let app: any = null;
 let auth: any = null;
 let db: any = null;
+let functions: any = null;
 
 if (config) {
   try {
     app = getApps().length === 0 ? initializeApp(config) : getApp();
     auth = getAuth(app);
     db = getFirestore(app);
+    functions = getFunctions(app);
   } catch (err) {
     console.error('Firebase initialization failed:', err);
   }
 }
 
-export { app, auth, db };
+export { app, auth, db, functions };

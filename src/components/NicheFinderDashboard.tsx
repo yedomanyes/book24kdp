@@ -1,6 +1,6 @@
 import React from 'react';
 import { Search, RefreshCw, Sparkles, Star } from 'lucide-react';
-import { NicheResult } from '../services/NicheService';
+import { type NicheResult } from '../services/NicheService';
 
 interface NicheFinderDashboardProps {
   nicheQuery: string;
