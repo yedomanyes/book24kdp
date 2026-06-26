@@ -505,16 +505,16 @@ export const serializeBlocksToMarkdown = (blocks: WorkbookBlock[]): string => {
 const PreviewGraphicBox: React.FC<{
   transform?: { scale?: number; x?: number; y?: number; width?: number; float?: 'none' | 'left' | 'right' };
   onChange: (t: any) => void;
+  onDelete?: () => void;
   defaultWidth?: number;
   defaultFloat?: 'none' | 'left' | 'right';
   children: React.ReactNode;
-}> = ({ transform = {}, onChange, defaultWidth = 85, defaultFloat = 'none', children }) => {
+}> = ({ transform = {}, onChange, onDelete, defaultWidth = 85, defaultFloat = 'none', children }) => {
   const scale = transform.scale ?? 1;
   const propX = transform.x ?? 0;
   const propY = transform.y ?? 0;
   const currWidth = transform.width ?? defaultWidth;
   const currFloat = transform.float ?? defaultFloat;
-  const isFloated = currFloat === 'left' || currFloat === 'right';
 
   const [isHovered, setIsHovered] = useState(false);
   const [isSelected, setIsSelected] = useState(false);
@@ -530,6 +530,10 @@ const PreviewGraphicBox: React.FC<{
   const resizeStart = useRef({ x: 0, w: 0, dir: 1 });
   const stateRef = useRef({ x: propX, y: propY, w: currWidth });
   stateRef.current = { x: liveX, y: liveY, w: liveW };
+
+  // Smart live float based on horizontal drag offset so text wraps cleanly around the outside
+  const effectiveFloat = liveX < -35 ? 'left' : (liveX > 35 ? 'right' : currFloat);
+  const isFloated = effectiveFloat === 'left' || effectiveFloat === 'right';
 
   useEffect(() => {
     if (!isDragging.current && !isResizing.current) {
@@ -580,7 +584,9 @@ const PreviewGraphicBox: React.FC<{
       if (isDragging.current || isResizing.current) {
         isDragging.current = false;
         isResizing.current = false;
-        onChange({ ...transform, x: stateRef.current.x, y: stateRef.current.y, width: stateRef.current.w });
+        const finalFloat = liveX < -35 ? 'left' : (liveX > 35 ? 'right' : currFloat);
+        const finalX = isFloated ? 0 : stateRef.current.x;
+        onChange({ ...transform, x: finalX, y: stateRef.current.y, width: stateRef.current.w, float: finalFloat });
       }
     };
 
@@ -598,7 +604,11 @@ const PreviewGraphicBox: React.FC<{
       window.removeEventListener('mouseup', handleMouseUp);
       window.removeEventListener('mousedown', handleGlobalDown);
     };
-  }, [transform, onChange]);
+  }, [transform, onChange, liveX, currFloat, isFloated]);
+
+  // Ensure bottom margin is strictly positive (>= 12px) so text NEVER overlaps the image
+  const topMargin = Math.max(4, 10 + liveY);
+  const botMargin = Math.max(12, 14 - liveY);
 
   return (
     <div
@@ -609,12 +619,12 @@ const PreviewGraphicBox: React.FC<{
       onMouseDown={handleMouseDown}
       style={{
         position: 'relative',
-        display: isFloated ? 'block' : 'block',
-        float: isFloated ? currFloat : 'none',
+        display: 'block',
+        float: isFloated ? effectiveFloat : 'none',
         width: `${liveW}%`,
         margin: isFloated 
-          ? (currFloat === 'left' ? `${4 + liveY}px ${14 - liveX}px ${4 - liveY}px ${liveX}px` : `${4 + liveY}px ${liveX}px ${4 - liveY}px ${14 - liveX}px`)
-          : `${12 + liveY}px auto ${12 - liveY}px auto`,
+          ? (effectiveFloat === 'left' ? `${topMargin}px 16px ${botMargin}px 0px` : `${topMargin}px 0px ${botMargin}px 16px`)
+          : `${topMargin}px auto ${botMargin}px auto`,
         transform: isFloated ? 'none' : `translate(${liveX}px, 0px)`,
         clear: isFloated ? 'none' : 'both',
         boxSizing: 'border-box',
@@ -666,9 +676,9 @@ const PreviewGraphicBox: React.FC<{
           
           <div style={{ width: 1, height: 10, background: '#334155', margin: '0 2px' }} />
 
-          <button onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); onChange({ ...transform, float: 'none' }); }} style={{ background: currFloat === 'none' ? '#38bdf8' : '#1e293b', color: currFloat === 'none' ? '#0f172a' : '#fff', fontWeight: 700, borderRadius: 3, padding: '1px 5px', border: 'none', cursor: 'pointer', fontSize: 8.5 }}>⏹️ Mitte</button>
-          <button onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); onChange({ ...transform, float: 'left' }); }} style={{ background: currFloat === 'left' ? '#38bdf8' : '#1e293b', color: currFloat === 'left' ? '#0f172a' : '#fff', fontWeight: 700, borderRadius: 3, padding: '1px 5px', border: 'none', cursor: 'pointer', fontSize: 8.5 }}>⬅️ Links</button>
-          <button onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); onChange({ ...transform, float: 'right' }); }} style={{ background: currFloat === 'right' ? '#38bdf8' : '#1e293b', color: currFloat === 'right' ? '#0f172a' : '#fff', fontWeight: 700, borderRadius: 3, padding: '1px 5px', border: 'none', cursor: 'pointer', fontSize: 8.5 }}>➡️ Rechts</button>
+          <button onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); onChange({ ...transform, float: 'none' }); }} style={{ background: effectiveFloat === 'none' ? '#38bdf8' : '#1e293b', color: effectiveFloat === 'none' ? '#0f172a' : '#fff', fontWeight: 700, borderRadius: 3, padding: '1px 5px', border: 'none', cursor: 'pointer', fontSize: 8.5 }}>⏹️ Mitte</button>
+          <button onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); onChange({ ...transform, float: 'left' }); }} style={{ background: effectiveFloat === 'left' ? '#38bdf8' : '#1e293b', color: effectiveFloat === 'left' ? '#0f172a' : '#fff', fontWeight: 700, borderRadius: 3, padding: '1px 5px', border: 'none', cursor: 'pointer', fontSize: 8.5 }}>⬅️ Links</button>
+          <button onMouseDown={e => e.stopPropagation()} onClick={e => { e.stopPropagation(); onChange({ ...transform, float: 'right' }); }} style={{ background: effectiveFloat === 'right' ? '#38bdf8' : '#1e293b', color: effectiveFloat === 'right' ? '#0f172a' : '#fff', fontWeight: 700, borderRadius: 3, padding: '1px 5px', border: 'none', cursor: 'pointer', fontSize: 8.5 }}>➡️ Rechts</button>
 
           {(propX !== 0 || propY !== 0 || scale !== 1 || currWidth !== defaultWidth || currFloat !== defaultFloat) && (
             <button
@@ -677,6 +687,15 @@ const PreviewGraphicBox: React.FC<{
               title="Reset"
               style={{ background: '#ef444420', border: '1px solid #ef4444', color: '#ef4444', borderRadius: 3, padding: '1px 4px', cursor: 'pointer', fontSize: 8.5 }}
             >Reset</button>
+          )}
+
+          {onDelete && (
+            <button
+              onMouseDown={e => e.stopPropagation()}
+              onClick={e => { e.stopPropagation(); onDelete(); }}
+              title="Bild löschen"
+              style={{ background: '#dc2626', border: 'none', color: '#ffffff', borderRadius: 3, padding: '1px 6px', cursor: 'pointer', fontWeight: 'bold', fontSize: 9 }}
+            >🗑️ Löschen</button>
           )}
         </div>
       )}
@@ -4386,6 +4405,16 @@ export default function App() {
       updatePagePartBlocks(updatedBlocks);
     };
 
+    const handleDeleteBlock = (path: number[]) => {
+      const updatedBlocks = JSON.parse(JSON.stringify(blocks));
+      let current = updatedBlocks;
+      for (let i = 0; i < path.length - 1; i++) {
+        current = current[path[i]].children;
+      }
+      current.splice(path[path.length - 1], 1);
+      updatePagePartBlocks(updatedBlocks);
+    };
+
     const handleMoveImage = (sourcePath: number[], targetPath: number[], floatVal: 'none' | 'left' | 'right', insertBefore: boolean) => {
       const updatedBlocks = JSON.parse(JSON.stringify(blocks));
       
@@ -4795,6 +4824,7 @@ export default function App() {
               transform={transform}
               defaultWidth={widthVal}
               defaultFloat={floatVal}
+              onDelete={() => handleDeleteBlock(path)}
               onChange={newT => {
                 updateActiveBookConfig('imagesTransform', {
                   ...(activeBook.imagesTransform || {}),
