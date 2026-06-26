@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, Sparkles, TrendingUp, Layers, ChevronRight, Zap } from 'lucide-react';
+import { BookOpen, TrendingUp, Layers, ChevronRight, Zap } from 'lucide-react';
 import ShinyText from './ShinyText';
 
 import Aurora from './Aurora';
@@ -48,46 +48,33 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
         <button 
           onClick={onLoginClick}
           style={{
-            background: 'linear-gradient(to bottom, rgba(255,255,255,0.1), rgba(255,255,255,0.05))',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderBottomWidth: '3px',
-            borderBottomColor: 'rgba(255,255,255,0.02)',
+            background: 'linear-gradient(to bottom, #3b82f6, #2563eb)',
+            border: 'none',
+            borderBottom: '4px solid #1d4ed8',
             padding: '10px 24px',
             borderRadius: '99px',
-            color: '#fff',
-            fontWeight: 700,
-            fontSize: '14px',
             cursor: 'pointer',
-            transition: 'all 0.1s ease',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            transition: 'all 0.15s ease',
+            boxShadow: '0 8px 24px rgba(59,130,246,0.5), inset 0 2px 4px rgba(255,255,255,0.3)',
             transform: 'translateY(0)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: 0
           }}
-          onMouseDown={(e) => { e.currentTarget.style.transform = 'translateY(2px)'; e.currentTarget.style.borderBottomWidth = '1px'; }}
-          onMouseUp={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderBottomWidth = '3px'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderBottomWidth = '3px'; }}
+          onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(1.1)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 28px rgba(59,130,246,0.6), inset 0 2px 4px rgba(255,255,255,0.3)'; }}
+          onMouseDown={(e) => { e.currentTarget.style.filter = 'brightness(0.9)'; e.currentTarget.style.transform = 'translateY(4px)'; e.currentTarget.style.borderBottomWidth = '0px'; e.currentTarget.style.marginBottom = '4px'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(59,130,246,0.4), inset 0 2px 4px rgba(255,255,255,0.1)'; }}
+          onMouseUp={(e) => { e.currentTarget.style.filter = 'brightness(1.1)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderBottomWidth = '4px'; e.currentTarget.style.marginBottom = '0px'; e.currentTarget.style.boxShadow = '0 12px 28px rgba(59,130,246,0.6), inset 0 2px 4px rgba(255,255,255,0.3)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.filter = 'brightness(1)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderBottomWidth = '4px'; e.currentTarget.style.marginBottom = '0px'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(59,130,246,0.5), inset 0 2px 4px rgba(255,255,255,0.3)'; }}
         >
-          Anmelden
+          <span style={{ fontSize: '15px', fontWeight: 800 }}>
+            <ShinyText text="Anmelden" disabled={false} speed={3} color="#ffffff" shineColor="#93c5fd" />
+          </span>
         </button>
       </nav>
 
       {/* Hero Section */}
       <main style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '120px', paddingBottom: '100px', textAlign: 'center', padding: '120px 24px' }}>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', padding: '6px 16px', borderRadius: '99px', marginBottom: '24px' }}
-        >
-          <Sparkles style={{ width: '14px', height: '14px', color: '#60a5fa' }} />
-          <ShinyText 
-            text="Das KDP Publishing System" 
-            disabled={false} 
-            speed={3} 
-            color="#60a5fa" 
-            shineColor="#ffffff" 
-            className="custom-shiny-text"
-          />
-        </motion.div>
 
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
@@ -122,22 +109,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
               borderBottom: '4px solid #1d4ed8',
               padding: '16px 32px',
               borderRadius: '99px',
-              color: '#ffffff',
-              fontWeight: 800,
-              fontSize: '16px',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              boxShadow: '0 10px 30px rgba(59,130,246,0.4)',
-              transition: 'transform 0.1s, box-shadow 0.1s',
+              boxShadow: '0 10px 30px rgba(59,130,246,0.5), inset 0 2px 4px rgba(255,255,255,0.3)',
+              transition: 'all 0.15s ease',
               transform: 'translateY(0)',
             }}
-            onMouseDown={(e) => { e.currentTarget.style.transform = 'translateY(4px)'; e.currentTarget.style.borderBottomWidth = '0px'; e.currentTarget.style.marginBottom = '4px'; }}
-            onMouseUp={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderBottomWidth = '4px'; e.currentTarget.style.marginBottom = '0px'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderBottomWidth = '4px'; e.currentTarget.style.marginBottom = '0px'; }}
+            onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(1.1)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 14px 40px rgba(59,130,246,0.6), inset 0 2px 4px rgba(255,255,255,0.3)'; }}
+            onMouseDown={(e) => { e.currentTarget.style.filter = 'brightness(0.9)'; e.currentTarget.style.transform = 'translateY(4px)'; e.currentTarget.style.borderBottomWidth = '0px'; e.currentTarget.style.marginBottom = '4px'; e.currentTarget.style.boxShadow = '0 2px 10px rgba(59,130,246,0.4), inset 0 2px 4px rgba(255,255,255,0.1)'; }}
+            onMouseUp={(e) => { e.currentTarget.style.filter = 'brightness(1.1)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderBottomWidth = '4px'; e.currentTarget.style.marginBottom = '0px'; e.currentTarget.style.boxShadow = '0 14px 40px rgba(59,130,246,0.6), inset 0 2px 4px rgba(255,255,255,0.3)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.filter = 'brightness(1)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderBottomWidth = '4px'; e.currentTarget.style.marginBottom = '0px'; e.currentTarget.style.boxShadow = '0 10px 30px rgba(59,130,246,0.5), inset 0 2px 4px rgba(255,255,255,0.3)'; }}
           >
-            Jetzt kostenlos starten <ChevronRight style={{ width: '18px', height: '18px' }} />
+            <span style={{ fontSize: '18px', fontWeight: 800 }}>
+              <ShinyText text="Jetzt Erstellen" disabled={false} speed={3} color="#ffffff" shineColor="#93c5fd" />
+            </span>
+            <ChevronRight style={{ width: '20px', height: '20px', color: '#fff' }} />
           </button>
         </motion.div>
       </main>
