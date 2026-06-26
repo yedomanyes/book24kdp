@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ChevronRight, X, Check } from 'lucide-react';
+import { ChevronRight, X, Check, ChevronDown, Search, Sparkles, Download } from 'lucide-react';
 import ShinyText from './ShinyText';
 import ProfileCard from './ProfileCard';
 import TiltedCard from './TiltedCard';
@@ -34,11 +34,40 @@ const TEAM = [
 
 const CARD_SIZE = '280px';
 
+const FAQS = [
+  {
+    q: 'Gehören mir die Rechte an den generierten Büchern?',
+    a: 'Ja. Alle generierten Inhalte, Texte und Layouts gehören zu 100% dir. Du kannst sie uneingeschränkt auf Amazon KDP oder anderen Plattformen unter deinem Namen veröffentlichen und monetarisieren.'
+  },
+  {
+    q: 'Welche Nischen kann ich mit Book24 Studio analysieren?',
+    a: 'Jede erdenkliche Buchkategorie auf Amazon. Unser Live-Nischen-Rechner analysiert BSR-Daten (Best Sellers Rank), Suchvolumina und Wettbewerbsdichten, um dir einen klaren Profitabilitäts-Score zu berechnen.'
+  },
+  {
+    q: 'Benötige ich Vorkenntnisse im Buch-Layouting?',
+    a: 'Nein, überhaupt nicht. Die Plattform übernimmt das komplette Design, die Ränder und die Schriftformatierung automatisch nach offiziellen Amazon KDP-Druckstandards (z.B. 6x9 Zoll Taschenbuchformat).'
+  },
+  {
+    q: 'Gibt es versteckte monatliche Gebühren?',
+    a: 'Nein. Mit dem Studio-Pass sicherst du dir einen lebenslangen Zugang zu allen Kernfunktionen. Keine Abos, keine versteckten Kosten.'
+  },
+  {
+    q: 'Was ist, wenn ich nicht zufrieden bin?',
+    a: 'Wir bieten eine risikofreie 14-Tage-Geld-zurück-Garantie. Wenn dir das Tool nicht gefällt, erstatten wir dir den vollen Kaufpreis.'
+  }
+];
+
 interface LandingPageProps {
   onLoginClick: () => void;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
+  const [openFaq, setOpenFaq] = React.useState<number | null>(null);
+
+  const toggleFaq = (index: number) => {
+    setOpenFaq(prev => prev === index ? null : index);
+  };
+
   return (
     <ClickSpark
       sparkColor="#ffffff"
@@ -98,14 +127,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
           in <span className="slogan-accent">3 Minuten</span>
         </motion.h1>
 
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          style={{ fontSize: '15px', color: '#8e8e93', maxWidth: '560px', margin: '0 0 48px 0', lineHeight: 1.6 }}
-        >
-          Finde profitable Nischen, generiere fesselnde Buchinhalte und erstelle druckfertige PDF-Layouts in Rekordzeit. Book24 Studio ist das ultimative All-in-One Tool für professionelle Amazon KDP Publisher.
-        </motion.p>
+
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -143,7 +165,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
           <button 
             onClick={onLoginClick}
             style={{
-              background: 'linear-gradient(135deg, #6366f1 0%, #d946ef 100%)',
+              background: 'linear-gradient(135deg, #1d4ed8 0%, #3b82f6 50%, #6366f1 100%)',
               border: 'none',
               padding: '16px 36px',
               borderRadius: '99px',
@@ -151,7 +173,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
               display: 'flex',
               alignItems: 'center',
               gap: '12px',
-              boxShadow: '0 10px 30px rgba(217, 70, 239, 0.3), inset 0 2px 4px rgba(255, 255, 255, 0.4)',
+              boxShadow: '0 10px 30px rgba(59, 130, 246, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.4)',
               transition: 'all 0.2s ease',
               transform: 'translateY(0)',
               position: 'relative',
@@ -159,12 +181,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
             }}
             onMouseEnter={(e) => { 
               e.currentTarget.style.transform = 'translateY(-2px)'; 
-              e.currentTarget.style.boxShadow = '0 14px 40px rgba(217, 70, 239, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.5)';
+              e.currentTarget.style.boxShadow = '0 14px 40px rgba(59, 130, 246, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.5)';
               e.currentTarget.style.filter = 'brightness(1.1)';
             }}
             onMouseLeave={(e) => { 
               e.currentTarget.style.transform = 'translateY(0)'; 
-              e.currentTarget.style.boxShadow = '0 10px 30px rgba(217, 70, 239, 0.3), inset 0 2px 4px rgba(255, 255, 255, 0.4)';
+              e.currentTarget.style.boxShadow = '0 10px 30px rgba(59, 130, 246, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.4)';
               e.currentTarget.style.filter = 'brightness(1)';
             }}
           >
@@ -260,6 +282,77 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
         </div>
       </section>
 
+      {/* Wie es funktioniert */}
+      <section id="funktionsweise" style={{ position: 'relative', zIndex: 10, padding: '80px 24px', maxWidth: '1100px', margin: '0 auto', scrollMarginTop: '100px' }}>
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          style={{ textAlign: 'center', marginBottom: '16px' }}
+        >
+          <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#737373', marginBottom: '10px' }}>
+            Der Ablauf
+          </div>
+          <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 12px', color: '#fff' }}>
+            In 3 Schritten zum fertigen Buch
+          </h2>
+          <p style={{ color: '#a3a3a3', fontSize: '16px', margin: '0 auto', lineHeight: 1.6, maxWidth: '560px' }}>
+            Unser automatisierter Workflow führt dich von der Idee bis zum fertigen Amazon-Upload.
+          </p>
+        </motion.div>
+
+        <div className="steps-grid">
+          <motion.div 
+            className="step-card" 
+            style={{ '--step-color': '#3b82f6', '--step-gradient': 'linear-gradient(135deg, #3b82f6, #60a5fa)' } as React.CSSProperties}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="step-number">01</div>
+            <div className="step-icon-wrap">
+              <Search size={24} />
+            </div>
+            <h3>Nische analysieren</h3>
+            <p>Finde rentable Buchnischen auf Amazon. Unser Nischen-Rechner berechnet Suchvolumen und Konkurrenzwerte live.</p>
+          </motion.div>
+
+          <motion.div 
+            className="step-card" 
+            style={{ '--step-color': '#a855f7', '--step-gradient': 'linear-gradient(135deg, #a855f7, #c084fc)' } as React.CSSProperties}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="step-number">02</div>
+            <div className="step-icon-wrap">
+              <Sparkles size={24} />
+            </div>
+            <h3>Inhalte generieren</h3>
+            <p>Erstelle strukturierte Buch-Outlines und vollständige Kapitel mit hochentwickelten, verlagsoptimierten KI-Prompts.</p>
+          </motion.div>
+
+          <motion.div 
+            className="step-card" 
+            style={{ '--step-color': '#06b6d4', '--step-gradient': 'linear-gradient(135deg, #06b6d4, #22d3ee)' } as React.CSSProperties}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.6, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="step-number">03</div>
+            <div className="step-icon-wrap">
+              <Download size={24} />
+            </div>
+            <h3>PDF-Export & KDP-Ready</h3>
+            <p>Lade dein Werk als perfekt formatiertes PDF mit präzisen Rändern herunter. Bereit für den direkten Upload bei KDP.</p>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Team / Leadership */}
       <section id="team" style={{ position: 'relative', zIndex: 10, padding: '40px 24px 100px', maxWidth: '900px', margin: '0 auto', scrollMarginTop: '100px' }}>
         <motion.div
@@ -312,6 +405,46 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
               />
             </motion.div>
           ))}
+        </div>
+      </section>
+
+      {/* FAQ Sektion */}
+      <section id="faq" style={{ position: 'relative', zIndex: 10, padding: '80px 24px', maxWidth: '800px', margin: '0 auto', scrollMarginTop: '100px' }}>
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          style={{ textAlign: 'center', marginBottom: '16px' }}
+        >
+          <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#737373', marginBottom: '10px' }}>
+            Support & Details
+          </div>
+          <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 12px', color: '#fff' }}>
+            Häufig gestellte Fragen
+          </h2>
+          <p style={{ color: '#a3a3a3', fontSize: '16px', margin: '0 auto', lineHeight: 1.6, maxWidth: '560px' }}>
+            Alles, was du über Book24 Studio und die Veröffentlichung wissen musst.
+          </p>
+        </motion.div>
+
+        <div className="faq-container">
+          {FAQS.map((item, idx) => {
+            const isActive = openFaq === idx;
+            return (
+              <div key={idx} className={`faq-item ${isActive ? 'active' : ''}`}>
+                <button className="faq-question" onClick={() => toggleFaq(idx)}>
+                  <span>{item.q}</span>
+                  <ChevronDown className="faq-chevron" size={20} />
+                </button>
+                <div className="faq-answer-wrapper">
+                  <div className="faq-answer">
+                    {item.a}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -382,7 +515,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
             <button 
               onClick={onLoginClick}
               style={{
-                background: 'linear-gradient(135deg, #6366f1 0%, #d946ef 100%)',
+                background: 'linear-gradient(135deg, #1d4ed8 0%, #3b82f6 50%, #6366f1 100%)',
                 border: 'none',
                 padding: '16px 36px',
                 borderRadius: '99px',
@@ -390,7 +523,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '12px',
-                boxShadow: '0 10px 30px rgba(217, 70, 239, 0.3), inset 0 2px 4px rgba(255, 255, 255, 0.4)',
+                boxShadow: '0 10px 30px rgba(59, 130, 246, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.4)',
                 transition: 'all 0.2s ease',
                 transform: 'translateY(0)',
                 position: 'relative',
@@ -398,12 +531,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
               }}
               onMouseEnter={(e) => { 
                 e.currentTarget.style.transform = 'translateY(-2px)'; 
-                e.currentTarget.style.boxShadow = '0 14px 40px rgba(217, 70, 239, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.5)';
+                e.currentTarget.style.boxShadow = '0 14px 40px rgba(59, 130, 246, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.5)';
                 e.currentTarget.style.filter = 'brightness(1.1)';
               }}
               onMouseLeave={(e) => { 
                 e.currentTarget.style.transform = 'translateY(0)'; 
-                e.currentTarget.style.boxShadow = '0 10px 30px rgba(217, 70, 239, 0.3), inset 0 2px 4px rgba(255, 255, 255, 0.4)';
+                e.currentTarget.style.boxShadow = '0 10px 30px rgba(59, 130, 246, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.4)';
                 e.currentTarget.style.filter = 'brightness(1)';
               }}
             >
