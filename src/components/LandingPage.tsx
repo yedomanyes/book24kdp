@@ -95,7 +95,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
           }}
         >
           Ein echtes Buch <br/>
-          in <span style={{ background: 'linear-gradient(135deg, #60a5fa, #818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>3 Minuten</span>
+          in <span className="slogan-accent">3 Minuten</span>
         </motion.h1>
 
         <motion.p

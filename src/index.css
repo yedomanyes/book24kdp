@@ -2020,3 +2020,31 @@ input:focus, select:focus, textarea:focus {
   border-radius: 4px !important;
   transition: box-shadow 0.3s ease !important;
 }
+
+/* Slogan Hover Underline Accent */
+.slogan-accent {
+  background: linear-gradient(135deg, #60a5fa, #818cf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+  position: relative;
+  cursor: pointer;
+}
+
+.slogan-accent::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 2px;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(135deg, #60a5fa, #818cf8);
+  transform: scaleX(0);
+  transform-origin: bottom right;
+  transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.slogan-accent:hover::after {
+  transform: scaleX(1);
+  transform-origin: bottom left;
+}
