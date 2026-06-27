@@ -9,8 +9,8 @@ const INLINE_CONFIG = {
   projectId: "book24-adf73",
   storageBucket: "book24-adf73.firebasestorage.app",
   messagingSenderId: "1499275537",
-  appId: "1:1499275537:web:15432133ae27e19d23ecb0",
-  measurementId: "G-HSVG5M5F25"
+  appId: "1:1499275537:web:2cc0737ee7439d9823ecb0",
+  measurementId: "G-PD6V4PJ0MT"
 };
 
 // Check if configuration is saved in localStorage

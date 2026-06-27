@@ -5,6 +5,7 @@ import { DuplicateGuard } from './DuplicateGuard';
 import { CopyrightGuard, LocalSourcePlagiarismChecker } from './CopyrightGuard';
 import { ConsistencyValidator } from './ConsistencyValidator';
 import { OutlinePlanner } from './OutlinePlanner';
+import { GlobalDiversityIndex } from '../brain/GlobalDiversityIndex';
 
 export class CmieOrchestrator {
   /**
@@ -14,7 +15,8 @@ export class CmieOrchestrator {
   public static enrichGenerationPrompt(
     cmieStore?: { [pageNum: number]: ChapterMemory },
     cmieGlossary?: { [term: string]: string },
-    repromptInstruction?: string
+    repromptInstruction?: string,
+    isGroq: boolean = false
   ): string {
     let enrichment = '';
     
@@ -22,7 +24,7 @@ export class CmieOrchestrator {
     enrichment += CopyrightGuard.MANDATORY_PROMPT_CLAUSE;
 
     // 2. Memory Context (bereits geschriebene Kapitel)
-    enrichment += BookMemoryStore.buildMemoryContextPrompt(cmieStore);
+    enrichment += BookMemoryStore.buildMemoryContextPrompt(cmieStore, isGroq);
 
     // 3. Consistency Glossary
     enrichment += ConsistencyValidator.buildGlossaryPrompt(cmieGlossary);
@@ -95,6 +97,22 @@ export class CmieOrchestrator {
 
     // 4. Consistency Validator
     const consResult = ConsistencyValidator.updateGlossaryAndCheck(memory, currentGlossary, currentStore);
+
+    // 5. GIL 2.0: GlobalDiversityIndex (CMIE 2.0) Check
+    const globalDivResult = GlobalDiversityIndex.validateAgainstGlobalIndex(memory.opening_sentences, chapterScope || 'unknown');
+    if (!globalDivResult.passed) {
+      return {
+        passed: false,
+        pageStatus: 'similar',
+        memory,
+        updatedGlossary: currentGlossary || {},
+        repromptInstruction: globalDivResult.reprompt,
+        warningMessage: 'GLOBAL DIVERSITY INDEX: Einstieg ist systemübergreifend zu ähnlich!'
+      };
+    }
+
+    // Wenn bestanden, in Global Index aufnehmen
+    GlobalDiversityIndex.addOpening(chapterScope || 'unknown', pageNum, memory.opening_sentences);
 
     return {
       passed: true,

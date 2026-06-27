@@ -10,13 +10,14 @@ import PixelSnow from './PixelSnow';
 
 import ClickSpark from './ClickSpark';
 import { LandingNavbar } from './LandingNavbar';
+import Grainient from './Grainient';
 
 const PROFILE_ICON_PATTERN = '/profile-icon-pattern.svg';
 
 const TEAM = [
   {
     name: 'Akim Gürel',
-    title: 'CEO',
+    title: 'Head Of Marketing',
     avatarUrl: '/akim.jpg',
     iconUrl: PROFILE_ICON_PATTERN,
     behindGlowColor: 'rgba(125, 190, 255, 0.67)',
@@ -59,9 +60,11 @@ const FAQS = [
 
 interface LandingPageProps {
   onLoginClick: () => void;
+  theme: 'dark' | 'light';
+  setTheme: (t: 'dark' | 'light') => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, setTheme }) => {
   const [openFaq, setOpenFaq] = React.useState<number | null>(null);
 
   const toggleFaq = (index: number) => {
@@ -70,7 +73,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
 
   return (
     <ClickSpark
-      sparkColor="#ffffff"
+      sparkColor={theme === 'dark' ? '#ffffff' : '#0a0a0a'}
       sparkSize={10}
       sparkRadius={15}
       sparkCount={8}
@@ -78,32 +81,62 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
     >
     <div style={{
       minHeight: '100vh',
-      backgroundColor: '#0a0a0a',
-      color: '#ffffff',
+      backgroundColor: theme === 'dark' ? '#0a0a0a' : '#f8f9fa',
+      color: theme === 'dark' ? '#ffffff' : '#111827',
       fontFamily: "'Inter', sans-serif",
       overflowX: 'hidden',
-      position: 'relative'
+      position: 'relative',
+      transition: 'background-color 0.3s ease, color 0.3s ease'
     }}>
-      {/* Background Pixel Snow */}
-      <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 0, pointerEvents: 'none' }}>
-        <PixelSnow 
-          color="#ffffff"
-          flakeSize={0.01}
-          minFlakeSize={1.25}
-          pixelResolution={200}
-          speed={1.6}
-          density={0.35}
-          direction={110}
-          brightness={3}
-          depthFade={2}
-          farPlane={21}
-          gamma={0.4545}
-          variant="round"
-        />
-      </div>
+      {/* Background */}
+      {theme === 'dark' ? (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 0, pointerEvents: 'none' }}>
+          <PixelSnow 
+            color="#ffffff"
+            flakeSize={0.01}
+            minFlakeSize={1.25}
+            pixelResolution={200}
+            speed={1.6}
+            density={0.35}
+            direction={110}
+            brightness={3}
+            depthFade={2}
+            farPlane={21}
+            gamma={0.4545}
+            variant="round"
+          />
+        </div>
+      ) : (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+          <Grainient
+            color1="#fffeff"
+            color2="#d6d6d8"
+            color3="#c7c6c6"
+            timeSpeed={0.25}
+            colorBalance={0}
+            warpStrength={1}
+            warpFrequency={5}
+            warpSpeed={2}
+            warpAmplitude={50}
+            blendAngle={0}
+            blendSoftness={0.05}
+            rotationAmount={500}
+            noiseScale={2}
+            grainAmount={0.1}
+            grainScale={2}
+            grainAnimated={false}
+            contrast={1.5}
+            gamma={1}
+            saturation={1}
+            centerX={0}
+            centerY={0}
+            zoom={0.9}
+          />
+        </div>
+      )}
 
       {/* Navbar */}
-      <LandingNavbar onLoginClick={onLoginClick} />
+      <LandingNavbar onLoginClick={onLoginClick} theme={theme} setTheme={setTheme} />
 
       {/* Hero Section */}
       <main style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '140px', paddingBottom: '100px', textAlign: 'center', padding: '140px 24px 100px' }}>
@@ -210,10 +243,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           style={{ textAlign: 'center', marginBottom: '48px' }}
         >
-          <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#737373', marginBottom: '10px' }}>
+          <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: theme === 'dark' ? '#737373' : '#666', marginBottom: '10px' }}>
             So sieht dein Buch aus
           </div>
-          <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 12px', color: '#fff' }}>
+          <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 12px', color: theme === 'dark' ? '#fff' : '#1a1a1a' }}>
             KI-Content, der wie ein echtes Buch wirkt
           </h2>
           <p style={{ color: '#a3a3a3', fontSize: '16px', margin: '0 auto', lineHeight: 1.6, maxWidth: '560px' }}>
@@ -417,13 +450,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           style={{ textAlign: 'center', marginBottom: '16px' }}
         >
-          <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#737373', marginBottom: '10px' }}>
+          <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: theme === 'dark' ? '#737373' : '#666', marginBottom: '10px' }}>
             Support & Details
           </div>
-          <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 12px', color: '#fff' }}>
+          <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 12px', color: theme === 'dark' ? '#fff' : '#1a1a1a' }}>
             Häufig gestellte Fragen
           </h2>
-          <p style={{ color: '#a3a3a3', fontSize: '16px', margin: '0 auto', lineHeight: 1.6, maxWidth: '560px' }}>
+          <p style={{ color: theme === 'dark' ? '#a3a3a3' : '#666', fontSize: '16px', margin: '0 auto', lineHeight: 1.6, maxWidth: '560px' }}>
             Alles, was du über Book24 Studio und die Veröffentlichung wissen musst.
           </p>
         </motion.div>
@@ -554,8 +587,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
 
       {/* Footer */}
       <footer style={{
-        borderTop: '1px solid rgba(255,255,255,0.06)',
-        backgroundColor: 'rgba(10, 10, 10, 0.6)',
+        borderTop: theme === 'dark' ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(0,0,0,0.06)',
+        backgroundColor: theme === 'dark' ? 'rgba(10, 10, 10, 0.6)' : 'rgba(255, 255, 255, 0.4)',
         backdropFilter: 'blur(12px)',
         padding: '80px 24px 40px',
         position: 'relative',
@@ -572,31 +605,31 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
         }}>
           {/* Logo & Description */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', gridColumn: 'span 2' }}>
-            <span style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.02em', color: '#ffffff' }}>
-              Book24 <span style={{ fontWeight: 300, color: 'rgba(255,255,255,0.6)' }}>Studio</span>
+            <span style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.02em', color: theme === 'dark' ? '#ffffff' : '#1a1a1a' }}>
+              Book24 <span style={{ fontWeight: 300, color: theme === 'dark' ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)' }}>Studio</span>
             </span>
-            <p style={{ color: '#737373', fontSize: '14px', lineHeight: 1.6, maxWidth: '320px' }}>
+            <p style={{ color: theme === 'dark' ? '#737373' : '#666', fontSize: '14px', lineHeight: 1.6, maxWidth: '320px' }}>
               Die führende All-in-One Plattform für Amazon KDP Publisher. Gestalte Bestseller in Rekordzeit mit hochentwickelter KI.
             </p>
           </div>
 
           {/* Links 1 */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <h4 style={{ color: '#ffffff', fontSize: '14px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Produkt</h4>
+            <h4 style={{ color: theme === 'dark' ? '#ffffff' : '#1a1a1a', fontSize: '14px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Produkt</h4>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <li><a href="#produkt" style={{ color: '#737373', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = '#fff'} onMouseLeave={e => e.currentTarget.style.color = '#737373'}>Features</a></li>
-              <li><a href="#produkt" style={{ color: '#737373', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = '#fff'} onMouseLeave={e => e.currentTarget.style.color = '#737373'}>Buch-Vorschau</a></li>
-              <li><button onClick={onLoginClick} style={{ background: 'none', border: 'none', padding: 0, color: '#737373', fontSize: '14px', cursor: 'pointer', textAlign: 'left', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = '#fff'} onMouseLeave={e => e.currentTarget.style.color = '#737373'}>Jetzt Starten</button></li>
+              <li><a href="#produkt" style={{ color: theme === 'dark' ? '#737373' : '#666', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = theme === 'dark' ? '#fff' : '#000'} onMouseLeave={e => e.currentTarget.style.color = theme === 'dark' ? '#737373' : '#666'}>Features</a></li>
+              <li><a href="#produkt" style={{ color: theme === 'dark' ? '#737373' : '#666', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = theme === 'dark' ? '#fff' : '#000'} onMouseLeave={e => e.currentTarget.style.color = theme === 'dark' ? '#737373' : '#666'}>Buch-Vorschau</a></li>
+              <li><button onClick={onLoginClick} style={{ background: 'none', border: 'none', padding: 0, color: theme === 'dark' ? '#737373' : '#666', fontSize: '14px', cursor: 'pointer', textAlign: 'left', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = theme === 'dark' ? '#fff' : '#000'} onMouseLeave={e => e.currentTarget.style.color = theme === 'dark' ? '#737373' : '#666'}>Jetzt Starten</button></li>
             </ul>
           </div>
 
           {/* Links 2 */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <h4 style={{ color: '#ffffff', fontSize: '14px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Unternehmen</h4>
+            <h4 style={{ color: theme === 'dark' ? '#ffffff' : '#1a1a1a', fontSize: '14px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Unternehmen</h4>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <li><a href="#team" style={{ color: '#737373', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = '#fff'} onMouseLeave={e => e.currentTarget.style.color = '#737373'}>Über uns</a></li>
-              <li><a href="#team" style={{ color: '#737373', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = '#fff'} onMouseLeave={e => e.currentTarget.style.color = '#737373'}>Leadership</a></li>
-              <li><a href="mailto:support@book24.studio" style={{ color: '#737373', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = '#fff'} onMouseLeave={e => e.currentTarget.style.color = '#737373'}>Support</a></li>
+              <li><a href="#team" style={{ color: theme === 'dark' ? '#737373' : '#666', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = theme === 'dark' ? '#fff' : '#000'} onMouseLeave={e => e.currentTarget.style.color = theme === 'dark' ? '#737373' : '#666'}>Über uns</a></li>
+              <li><a href="#team" style={{ color: theme === 'dark' ? '#737373' : '#666', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = theme === 'dark' ? '#fff' : '#000'} onMouseLeave={e => e.currentTarget.style.color = theme === 'dark' ? '#737373' : '#666'}>Leadership</a></li>
+              <li><a href="mailto:support@book24.studio" style={{ color: theme === 'dark' ? '#737373' : '#666', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = theme === 'dark' ? '#fff' : '#000'} onMouseLeave={e => e.currentTarget.style.color = theme === 'dark' ? '#737373' : '#666'}>Support</a></li>
             </ul>
           </div>
 
@@ -608,7 +641,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick }) => {
           maxWidth: '1120px',
           margin: '0 auto',
           paddingTop: '32px',
-          borderTop: '1px solid rgba(255,255,255,0.06)',
+          borderTop: theme === 'dark' ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(0,0,0,0.06)',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',

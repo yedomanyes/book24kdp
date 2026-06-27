@@ -192,6 +192,28 @@ function ApiKeyBlock({
   onChange: (v: string) => void;
   connected: boolean;
 }) {
+  const [newKey, setNewKey] = useState('');
+  const keys = value.split(/[\n,]+/).map(k => k.trim()).filter(Boolean);
+
+  const updateKey = (index: number, newKeyVal: string) => {
+    const newKeys = [...keys];
+    newKeys[index] = newKeyVal;
+    onChange(newKeys.filter(Boolean).join(','));
+  };
+
+  const removeKey = (index: number) => {
+    const newKeys = [...keys];
+    newKeys.splice(index, 1);
+    onChange(newKeys.join(','));
+  };
+
+  const handleAddKey = () => {
+    if (newKey.trim()) {
+      onChange([...keys, newKey.trim()].join(','));
+      setNewKey('');
+    }
+  };
+
   return (
     <div className="settings-api-block">
       <div className="settings-api-head">
@@ -208,13 +230,67 @@ function ApiKeyBlock({
           <a href={link} target="_blank" rel="noreferrer" className="settings-link">{linkLabel} →</a>
         </div>
       </div>
-      <textarea
-        className="settings-textarea"
-        rows={3}
-        placeholder={placeholder}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-      />
+      
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+        {keys.map((key, index) => (
+          <div key={index} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 'bold', width: '20px' }}>#{index + 1}</span>
+            <input
+              type="text"
+              className="settings-textarea"
+              style={{ padding: '6px 10px', height: '32px', margin: 0, flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+              placeholder={placeholder.split('\n')[0]}
+              value={key}
+              onChange={e => updateKey(index, e.target.value)}
+            />
+            <button 
+              onClick={() => removeKey(index)}
+              style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              title="Key entfernen"
+            >
+              <X style={{ width: 16, height: 16 }} />
+            </button>
+          </div>
+        ))}
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 'bold', width: '20px' }}>#{keys.length + 1}</span>
+          <input
+            type="text"
+            className="settings-textarea"
+            style={{ padding: '6px 10px', height: '32px', margin: 0, flex: 1 }}
+            placeholder="Neuen API Key hier einfügen..."
+            value={newKey}
+            onChange={e => setNewKey(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleAddKey();
+              }
+            }}
+          />
+          <button
+            onClick={handleAddKey}
+            style={{
+              padding: '0 12px',
+              height: '32px',
+              backgroundColor: 'var(--primary)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '12px',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            Hinzufügen
+          </button>
+        </div>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
+        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+          Das System rotiert bei Pausen automatisch durch die Liste!
+        </span>
+      </div>
     </div>
   );
 }

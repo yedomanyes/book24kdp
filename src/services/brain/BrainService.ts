@@ -7,6 +7,7 @@ import type {
 } from '../../types/brain';
 import { EMPTY_BRAIN_STATE } from '../../types/brain';
 import { ObsidianSyncService } from './ObsidianSyncService';
+import { CloudQueueService } from './CloudQueueService';
 
 const BRAIN_KEY = (accountId: string) => `b24studio_v1_brain_${accountId}`;
 const MAX_EVENTS = 120;
@@ -25,6 +26,26 @@ export function slugify(text: string): string {
 
 function estimateTokens(text: string): number {
   return Math.max(1, Math.ceil((text || '').length / EST_CHARS_PER_TOKEN));
+}
+
+const NEON_COLORS = [
+  '#ec4899', // Pink
+  '#22d3ee', // Cyan
+  '#a78bfa', // Purple
+  '#fbbf24', // Amber
+  '#10b981', // Emerald
+  '#ef4444', // Red
+  '#3b82f6', // Blue
+  '#f97316', // Orange
+];
+
+export function getNicheColor(nicheName: string): string {
+  if (!nicheName) return NEON_COLORS[0];
+  let hash = 0;
+  for (let i = 0; i < nicheName.length; i++) {
+    hash = nicheName.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return NEON_COLORS[Math.abs(hash) % NEON_COLORS.length];
 }
 
 function nicheKeyword(book: BrainBookInput): string {
@@ -108,6 +129,19 @@ export class BrainService {
 
   static saveState(accountId: string, state: BrainState): void {
     localStorage.setItem(BRAIN_KEY(accountId), JSON.stringify(state));
+    void CloudQueueService.pushBrainState(accountId, state);
+  }
+
+  static async syncCloudState(accountId: string): Promise<BrainState> {
+    const cloudState = await CloudQueueService.pullBrainState(accountId);
+    const localState = this.loadState(accountId);
+    
+    if (cloudState && cloudState.totalEvents > localState.totalEvents) {
+      // Cloud is newer/more populated, overwrite local
+      localStorage.setItem(BRAIN_KEY(accountId), JSON.stringify(cloudState));
+      return cloudState;
+    }
+    return localState;
   }
 
   static getState(accountId: string): BrainState {
@@ -124,7 +158,8 @@ export class BrainService {
     pageNum: number,
     memory: ChapterMemory,
     cmieStatus: CmiePageStatus,
-    pageText: string
+    pageText: string,
+    qualityScore?: number
   ): BrainState {
     let state = this.loadState(accountId);
     const tokens = estimateTokens(pageText);
@@ -184,6 +219,28 @@ export class BrainService {
       };
     }
 
+    if (qualityScore && qualityScore >= 8) {
+      const golden = `Golden Example (Score ${qualityScore}/10) aus Kap. ${pageNum}: "${memory.opening_sentences.slice(0, 80)}..."`;
+      state = {
+        ...state,
+        patterns: {
+          ...state.patterns,
+          success: upsertPattern(state.patterns.success, golden),
+        },
+      };
+      state = upsertNiche(state, book, {
+        successPatterns: upsertPattern(state.niches[nicheSlug]?.successPatterns || [], golden, 15),
+      });
+      state = pushEvent(state, {
+        type: 'pattern_success',
+        bookId: book.id,
+        bookTitle: book.title,
+        niche,
+        pageNum,
+        message: `High-Quality Score (${qualityScore}/10) für Seite ${pageNum}`,
+      });
+    }
+
     state = pushEvent(state, {
       type: 'page_learned',
       bookId: book.id,
@@ -196,6 +253,7 @@ export class BrainService {
 
     this.saveState(accountId, state);
     void ObsidianSyncService.syncPageLearned(book, pageNum, memory, state);
+    void CloudQueueService.pushBookToQueue(accountId, book);
     return state;
   }
 
@@ -212,6 +270,7 @@ export class BrainService {
     });
     this.saveState(accountId, state);
     void ObsidianSyncService.syncNicheProfile(state.niches[slugify(nicheKeyword(book))], state);
+    void CloudQueueService.pushBookToQueue(accountId, book);
     return state;
   }
 
@@ -267,6 +326,7 @@ export class BrainService {
 
     this.saveState(accountId, state);
     void ObsidianSyncService.syncBookMeta(book, state);
+    void CloudQueueService.pushBookToQueue(accountId, book);
     return state;
   }
 
@@ -348,6 +408,9 @@ export class BrainService {
     }
 
     let prompt = `\n### [BOOK24 BRAIN] Globales Lern-Gedächtnis:\n`;
+
+    const nicheColor = getNicheColor(nicheKeyword(book));
+    prompt += `[SEMANTIC CLUSTER: ${nicheColor}]\n`;
 
     if (niche) {
       prompt += `Nische "${niche.keyword}": ${niche.booksCount} Bücher, Ø ${niche.avgTokensPerPage} Tokens/Seite`;

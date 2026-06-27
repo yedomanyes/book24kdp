@@ -80,7 +80,7 @@ export class DuplicateGuard {
     };
   }
 
-  private static getWordBigrams(text: string): Set<string> {
+  public static getWordBigrams(text: string): Set<string> {
     const clean = (text || '').toLowerCase().replace(/[^a-zäöüß0-9\s]/g, ' ');
     const words = clean.split(/\s+/).filter(w => w.length > 1);
     const set = new Set<string>();
@@ -90,7 +90,7 @@ export class DuplicateGuard {
     return set;
   }
 
-  private static computeBigramOverlap(setA: Set<string>, setB: Set<string>): number {
+  public static computeBigramOverlap(setA: Set<string>, setB: Set<string>): number {
     if (!setA || !setB || setA.size === 0 || setB.size === 0) return 0;
     let match = 0;
     for (const bg of setA) {

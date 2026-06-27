@@ -242,7 +242,11 @@ export class ObsidianSyncService {
 
   static async connectVault(): Promise<boolean> {
     if (!window.showDirectoryPicker) {
-      alert('Dein Browser unterstützt keinen direkten Vault-Zugriff. Nutze Chrome/Edge.');
+      alert(
+        '⚠️ Hinweis für Safari / Firefox Nutzer:\n\n' +
+        'Apple Safari blockiert aus Sicherheitsgründen den direkten lokalen Dateizugriff für Web-Apps.\n\n' +
+        '👉 Damit deine KDP-Kapitel vollautomatisch als Markdown (.md) in deinen Obsidian-Ordner gespiegelt werden können, kopiere bitte die URL oben und öffne diese Studio-App kurz in Google Chrome, Microsoft Edge oder Brave!'
+      );
       return false;
     }
     try {

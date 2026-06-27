@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Menu, X } from 'lucide-react';
+import { ArrowRight, Menu, X, Sun, Moon } from 'lucide-react';
 import './LandingNavbar.css';
+import RotatingText from './RotatingText';
 
 const NAV_ITEMS = [
   { label: 'Produkt', target: 'produkt' },
@@ -10,9 +11,11 @@ const NAV_ITEMS = [
 
 interface LandingNavbarProps {
   onLoginClick: () => void;
+  theme: 'dark' | 'light';
+  setTheme: (t: 'dark' | 'light') => void;
 }
 
-export const LandingNavbar: React.FC<LandingNavbarProps> = ({ onLoginClick }) => {
+export const LandingNavbar: React.FC<LandingNavbarProps> = ({ onLoginClick, theme, setTheme }) => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -41,7 +44,7 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({ onLoginClick }) =>
   return (
     <header className="landing-nav-shell">
       <motion.nav
-        className={`landing-nav${scrolled ? ' scrolled' : ''}`}
+        className={`landing-nav${scrolled ? ' scrolled' : ''} theme-${theme}`}
         initial={{ opacity: 0, y: -16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
@@ -57,6 +60,24 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({ onLoginClick }) =>
           </span>
         </button>
 
+        {/* Extra Container: Rotating Text Pill */}
+        <div className="landing-nav-promo-badge">
+          <RotatingText
+            texts={['Jetzt starten', 'Buch erstellen']}
+            staggerFrom="last"
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "-120%" }}
+            staggerDuration={0.025}
+            splitLevelClassName="overflow-hidden pb-0.5"
+            transition={{ type: "spring", damping: 30, stiffness: 400 }}
+            rotationInterval={2500}
+            splitBy="lines"
+            auto
+            loop
+          />
+        </div>
+
         <div className="landing-nav-links">
           {NAV_ITEMS.map(item => (
             <button
@@ -71,6 +92,15 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({ onLoginClick }) =>
         </div>
 
         <div className="landing-nav-actions">
+          <button
+            type="button"
+            className="landing-nav-link"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            title={theme === 'dark' ? 'Whitemode aktivieren' : 'Darkmode aktivieren'}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', padding: 0 }}
+          >
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
           <button type="button" className="landing-nav-cta" onClick={onLoginClick}>
             Anmelden
           </button>
@@ -94,6 +124,22 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({ onLoginClick }) =>
             exit={{ opacity: 0, y: -8, height: 0 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
           >
+            <div className="landing-nav-mobile-promo-badge">
+              <RotatingText
+                texts={['Jetzt starten', 'Buch erstellen']}
+                staggerFrom="last"
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "-120%" }}
+                staggerDuration={0.025}
+                splitLevelClassName="overflow-hidden pb-0.5"
+                transition={{ type: "spring", damping: 30, stiffness: 400 }}
+                rotationInterval={2500}
+                splitBy="lines"
+                auto
+                loop
+              />
+            </div>
             {NAV_ITEMS.map(item => (
               <button
                 key={item.target}

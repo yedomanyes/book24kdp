@@ -65,16 +65,16 @@ export class BookMemoryStore {
       chapter_scope: chapterScope
     };
   }
-
   /**
    * Erzeugt den systemseitigen Kontext-Prompt für das CMIE-Gedächtnis.
    */
-  public static buildMemoryContextPrompt(store?: { [pageNum: number]: ChapterMemory }): string {
+  public static buildMemoryContextPrompt(store?: { [pageNum: number]: ChapterMemory }, isGroq: boolean = false): string {
     if (!store) return '';
     let memories = Object.values(store).sort((a, b) => a.chapter_id - b.chapter_id);
-    // Limit to the last 4-5 pages to prevent blowing up the Groq 6000 TPM limit!
-    if (memories.length > 5) {
-      memories = memories.slice(-5);
+    // Limit to the last 4-5 pages (2 pages for Groq to prevent blowing up the Groq 6000 TPM limit)
+    const limit = isGroq ? 2 : 5;
+    if (memories.length > limit) {
+      memories = memories.slice(-limit);
     }
     if (memories.length === 0) return '';
 
