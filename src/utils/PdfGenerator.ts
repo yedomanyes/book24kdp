@@ -249,9 +249,11 @@ export function generateBookPdf(
     return pageWidth / 2 + offsetPt; // center
   }
 
-  // Use a wider width (10pt margins) for the Title Page to prevent premature wrapping due to PDF font metric differences compared to web fonts
+  // Use a much wider virtual width for Title Page text wrapping calculation
+  // This compensates for jsPDF's standard fonts (like Times) being wider than web fonts (like Playfair)
+  // so that text doesn't wrap in the PDF if it didn't wrap in the live preview.
   const titleMargin = 10;
-  const titleWritableWidth = pageWidth - (titleMargin * 2);
+  const titleWritableWidth = pageWidth + 50;
 
   // Render Title
   const titleFont = resolvePdfFont(config.titlePageTitleFont || 'playfair');
