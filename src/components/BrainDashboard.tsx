@@ -316,7 +316,7 @@ export const BrainDashboard: React.FC<BrainDashboardProps> = ({
         <ForceGraph3D
           ref={fgRef}
           graphData={graphData}
-          onNodeClick={(node) => setSelectedNode(node)}
+          onNodeClick={(node: any) => setSelectedNode(node)}
           nodeLabel={() => ''} // Disabled native tooltips in favor of custom panel
           nodeColor="color"
           nodeRelSize={4}
