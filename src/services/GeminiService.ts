@@ -14,10 +14,29 @@ export interface BookOutline {
   pages: BookOutlinePage[];
 }
 
+import { LayoutFixDB } from './brain/LayoutFixDB';
+
 export class GeminiService {
   private groqKeys: string[] = [];
   private geminiKeys: string[] = [];
   private model: string;
+  private static promptCache: { [key: string]: { name: string; expiresAt: number } } = {};
+  private static keyBlacklist: { [key: string]: number } = {};
+
+  private static blacklistKey(key: string, durationMs: number = 300000) {
+    this.keyBlacklist[key] = Date.now() + durationMs;
+    console.warn(`API Key blacklisted für ${durationMs / 1000}s`);
+  }
+
+  private static isKeyBlacklisted(key: string): boolean {
+    const expires = this.keyBlacklist[key];
+    if (!expires) return false;
+    if (Date.now() > expires) {
+      delete this.keyBlacklist[key];
+      return false;
+    }
+    return true;
+  }
 
   constructor(
     apiKeys: string | { groq?: string[]; gemini?: string[] } | string[],
@@ -78,28 +97,35 @@ export class GeminiService {
     }
 
     let lastError: any = null;
-    for (let i = 0; i < keys.length; i++) {
-      const key = keys[i];
-      let attempts = 0;
-      const maxAttempts = 5;
+    const maxGlobalCycles = 6;
 
-      while (attempts < maxAttempts) {
+    for (let cycle = 0; cycle < maxGlobalCycles; cycle++) {
+      // Filter out blacklisted keys dynamically at the beginning of each cycle
+      let keysToTry = keys.filter(k => !GeminiService.isKeyBlacklisted(k));
+      if (keysToTry.length === 0) {
+        console.warn(`Alle ${provider.toUpperCase()}-Keys sind geblacklistet. Hebe Blacklist temporär auf.`);
+        keysToTry = keys;
+      }
+
+      for (let i = 0; i < keysToTry.length; i++) {
+        const key = keysToTry[i];
+        const keyIndexInOriginal = keys.indexOf(key);
         try {
           const response = await requestFn(key);
           
-          // Handle 429 Rate Limit
-          if (response.status === 429) {
-            attempts++;
-            if (attempts < maxAttempts) {
-              // Groq enforces per-minute token limits – wait longer before retry
-              const waitTime = provider === 'groq' ? attempts * 15000 : attempts * 5000;
-              console.warn(`${provider.toUpperCase()} Key #${i + 1} hat ein Rate Limit erreicht (429). Warte ${waitTime / 1000}s vor erneutem Versuch (Versuch ${attempts} von ${maxAttempts - 1})...`);
-              await new Promise(resolve => setTimeout(resolve, waitTime));
-              continue;
-            }
-            console.warn(`${provider.toUpperCase()} Key #${i + 1} hat nach ${maxAttempts} Versuchen immer noch ein Rate Limit (429). Probiere nächsten Key...`);
-            lastError = new Error(`Key #${i + 1} ausgelastet (429).`);
-            break; // Break attempt loop, move to next key
+          if (response.status === 429 || response.status === 413 || response.status === 401 || response.status === 403) {
+            const errText = await response.text();
+            let errorMessage = errText;
+            try {
+              const parsed = JSON.parse(errText);
+              errorMessage = parsed.error?.message || errText;
+            } catch (e) {}
+
+            console.warn(`${provider.toUpperCase()} Key #${keyIndexInOriginal + 1} fehlgeschlagen mit Status ${response.status}. Blackliste Key...`);
+            GeminiService.blacklistKey(key, 300000); // Blacklist for 5 minutes
+
+            lastError = new Error(`Key #${keyIndexInOriginal + 1} Fehler (${response.status}): ${errorMessage}`);
+            continue; // Go to next key immediately!
           }
 
           if (!response.ok) {
@@ -110,44 +136,25 @@ export class GeminiService {
               errorMessage = parsed.error?.message || errText;
             } catch (e) {}
 
-            const lowerMsg = errorMessage.toLowerCase();
-            if (
-              lowerMsg.includes('rate limit') || 
-              lowerMsg.includes('quota') || 
-              lowerMsg.includes('exceeded') || 
-              lowerMsg.includes('429') ||
-              lowerMsg.includes('tpm') ||
-              lowerMsg.includes('tokens per minute') ||
-              lowerMsg.includes('too large') ||
-              lowerMsg.includes('reduce your message size')
-            ) {
-              attempts++;
-              if (attempts < maxAttempts) {
-                const waitTime = provider === 'groq' ? attempts * 15000 : attempts * 5000;
-                console.warn(`${provider.toUpperCase()} Key #${i + 1} Quoten-, Rate- oder TPM-Limit überschritten. Warte ${waitTime / 1000}s vor erneutem Versuch...`);
-                await new Promise(resolve => setTimeout(resolve, waitTime));
-                continue;
-              }
-              console.warn(`${provider.toUpperCase()} Key #${i + 1} Limit überschritten. Probiere nächsten Key...`);
-              lastError = new Error(`Key #${i + 1} Limit überschritten: ${errorMessage}`);
-              break;
-            }
-
-            throw new Error(errorMessage);
+            console.warn(`${provider.toUpperCase()} Key #${keyIndexInOriginal + 1} fehlgeschlagen mit Status ${response.status}: ${errorMessage}. Probiere nächsten Key...`);
+            lastError = new Error(`Key #${keyIndexInOriginal + 1} Fehler (${response.status}): ${errorMessage}`);
+            continue; // Go to next key immediately!
           }
 
           const data = await response.json();
           return data; // Success!
         } catch (err: any) {
-          console.error(`${provider.toUpperCase()} Key #${i + 1} Fehler (Versuch ${attempts + 1}):`, err);
+          console.error(`${provider.toUpperCase()} Key #${keyIndexInOriginal + 1} Exception:`, err);
           lastError = err;
-          attempts++;
-          if (attempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            continue;
-          }
-          break;
+          continue; // Go to next key immediately!
         }
+      }
+      
+      // If we cycled through all keys and still failed, wait before next cycle
+      if (cycle < maxGlobalCycles - 1) {
+        const waitTime = provider === 'groq' ? 15000 : 4000;
+        console.warn(`Alle aktiven ${provider.toUpperCase()}-Keys ausprobiert. Warte ${waitTime / 1000}s vor dem nächsten Gesamtdurchlauf...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
       }
     }
 
@@ -564,11 +571,13 @@ Die "pages"-Liste muss EXAKT ${chunkSize} Einträge enthalten, mit page_number v
       ? previousOpenings.map((o, i) => `Kapitel ${i + 1} Eröffnung:\n"${o.slice(0, 200)}..."`).join('\n\n')
       : 'Keine bisherigen Kapitelanfänge.';
 
-    const systemPrompt = `Du bist ein professioneller Sachbuchautor. Schreibe ausschließlich auf ${lang}.
+    const systemPrompt = `[CACHE_CONTROL: EPHEMERAL_START]
+Du bist ein professioneller Sachbuchautor. Schreibe ausschließlich auf ${lang}.
 Du schreibst NUR den Eröffnungsabsatz (3-5 Sätze) für ein Kapitel.
 
 PFLICHT-STILTECHNIK FÜR DIESEN ABSATZ: ${style.name}
 (Beschreibung der Technik: ${style.description})
+[CACHE_CONTROL: EPHEMERAL_END]
 
 STRIKT VERBOTEN - vermeide jede strukturelle oder wörtliche Ähnlichkeit zu diesen bereits verwendeten Kapitelanfängen:
 ${previousList}
@@ -632,10 +641,17 @@ Schreibe jetzt den Eröffnungsabsatz mit der Technik "${style.name}":`;
       contextPrompt = `\nLetzter Satz der vorherigen Seite: "${lastSentences}"`;
     }
 
-    const systemPrompt = `Du bist ein professioneller Buchautor. Du schreibst im Stil: "${writingStyle}".
+    const layoutWarnings = LayoutFixDB.getWarningsForPrompt(pageSize, 'chapter_page');
+    if (layoutWarnings.length > 0) {
+      contextPrompt += `\n\n[WICHTIGES LAYOUT-FEEDBACK (Aus vergangenen Fehlern gelernt)]:\n${layoutWarnings.join('\n')}\n`;
+    }
+
+    const systemPrompt = `[CACHE_CONTROL: EPHEMERAL_START]
+Du bist ein professioneller Buchautor. Du schreibst im Stil: "${writingStyle}".
 Sprache: ${lang}.
 
 Du schreibst die FORTSETZUNG von Kapitel "${chapterTitle}" nach einem bereits feststehenden Eröffnungsabsatz.
+[CACHE_CONTROL: EPHEMERAL_END]
 
 Der Eröffnungsabsatz steht bereits fest und darf NICHT verändert oder wiederholt werden:
 "${generatedOpening}"
@@ -684,9 +700,11 @@ Schreibe jetzt den Fortsetzungstext (${continuationMin}–${continuationMax} Wö
       const lastSentences = this.getLastSentences(prevText, 3);
       
       // Um TPM-Limits bei Groq/Gemini zu vermeiden, senden wir nur die letzten ca. 150 Wörter
-      // der vorherigen Seite anstatt ganzer Seiten. Die grobe Struktur kennt die KI ohnehin über das CMIE Memory.
+      // (bzw. 70 Wörter für Groq) der vorherigen Seite anstatt ganzer Seiten.
+      const isGroq = this.getProvider() === 'groq';
+      const wordLimit = isGroq ? 70 : 150;
       const words = prevText.split(/\s+/);
-      const truncatedPrevText = words.length > 150 ? '... ' + words.slice(-150).join(' ') : prevText;
+      const truncatedPrevText = words.length > wordLimit ? '... ' + words.slice(-wordLimit).join(' ') : prevText;
 
       contextPrompt = `Bisheriger Buchtext zur Wahrung des Flusses:
 ---
@@ -704,44 +722,70 @@ Setze den Text absolut nahtlos fort. Der allererste Satz dieser neuen Seite ${pa
     let maxWords = 210;
 
     if (pageSize === '5x8') {
-      minWords = fontSize >= 12 ? 130 : 155;
-      maxWords = fontSize >= 12 ? 165 : 190;
+      minWords = fontSize >= 12 ? 145 : 170;
+      maxWords = fontSize >= 12 ? 180 : 210;
     } else if (pageSize === '5.5x8.5') {
-      minWords = fontSize >= 12 ? 160 : 195;
-      maxWords = fontSize >= 12 ? 205 : 240;
+      minWords = fontSize >= 12 ? 175 : 215;
+      maxWords = fontSize >= 12 ? 225 : 265;
     } else if (pageSize === '6x9') {
-      minWords = fontSize >= 12 ? 200 : 245;
-      maxWords = fontSize >= 12 ? 245 : 295;
+      minWords = fontSize >= 12 ? 220 : 270;
+      maxWords = fontSize >= 12 ? 270 : 325;
     } else if (pageSize === '8.5x11') {
-      minWords = fontSize >= 12 ? 390 : 460;
-      maxWords = fontSize >= 12 ? 460 : 530;
+      minWords = fontSize >= 12 ? 430 : 500;
+      maxWords = fontSize >= 12 ? 500 : 580;
     } else if (pageSize === 'a4') {
-      minWords = fontSize >= 12 ? 400 : 480;
-      maxWords = fontSize >= 12 ? 480 : 560;
+      minWords = fontSize >= 12 ? 440 : 520;
+      maxWords = fontSize >= 12 ? 520 : 610;
     } else if (pageSize === 'custom') {
-      minWords = fontSize >= 12 ? 170 : 210;
-      maxWords = fontSize >= 12 ? 210 : 260;
+      minWords = fontSize >= 12 ? 190 : 230;
+      maxWords = fontSize >= 12 ? 230 : 285;
     }
+
+    const isChapterOpening = pageNumber === 1 || (
+      pageNumber > 1 && 
+      outline.pages.find(p => p.page_number === pageNumber - 1)?.chapter_title !== currentPageInfo.chapter_title
+    );
+
+    const layoutTemplates = [
+      "Reines Text-Layout: Teile den Text in 3-4 flüssige Absätze auf. Verwende in diesem Layout KEINE Boxen, Listen oder Schreiblinien, sondern konzentriere dich auf reinen Fließtext.",
+      "Hervorhebungs-Layout: Schreibe 1-2 Absätze Fließtext, gefolgt von einer ':::callout [Titel]' Box (für einen wichtigen Tipp oder Experten-Hinweis) und beende die Seite mit 1 weiteren kurzen Absatz.",
+      "Aktions-Layout: Beginne mit 1 Absatz Einführung, gefolgt von einer nummerierten Liste (1., 2., 3.) mit Schritten für den Leser, und beende die Seite mit einer ':::action [Titel]' Box, die einen konkreten Aktionsschritt fordert.",
+      "Reflexions-Layout: Schreibe 2 tiefgründige Absätze Fließtext und platziere am Ende eine ':::reflection [Titel]' Box mit 2 konkreten Fragen zum Nachdenken für den Leser.",
+      "Checklisten-Layout: Beginne die Seite mit 1 Absatz Erklärung und einer Checkliste mit 3 Kontrollkästchen (eingeleitet mit '[ ] ') zum Abhaken.",
+      "Notizen-Layout: Schreibe 1-2 informative Absätze Fließtext und füge am Ende der Seite 3-4 gepunktete Schreiblinien (z. B. '........................................................') für persönliche Notizen des Lesers ein.",
+      "Tipp- & Notizen-Layout: Schreibe 1-2 informative Absätze, gefolgt von einer ':::callout [Titel]' Box und 2 gepunkteten Schreiblinien.",
+      "Umsetzungs-Layout: Schreibe 1 einleitenden Absatz, gefolgt von einer kurzen Checkliste mit 2 Punkten ('[ ] ') und einer ':::action [Titel]' Box mit einem klaren Ziel.",
+      "Tabellen-Layout: Schreibe 1 einleitenden Absatz, gefolgt von einer übersichtlichen Markdown-Tabelle mit 2 Spalten (z.B. Konzept vs. Praxis oder Vor- vs. Nachteile). Fülle diese Tabelle ZWINGEND mit 3-4 Zeilen an konkretem, inhaltlichem Text (lass sie nicht leer!). Beende die Seite mit 1 kurzen Absatz.",
+      "Doppel-Box-Layout: Beginne mit 1 Absatz Fließtext, platziere eine ':::callout [Hintergrund]' Box, gefolgt von 1 Absatz Übergangstext und einer abschließenden ':::action [Tagesaufgabe]' Box.",
+      "Phasen-Layout: Verwende eine nummerierte Liste (1., 2., 3., 4.) für ein Stufenmodell oder eine Schritt-für-Schritt-Entwicklung, gefolgt von einer ':::reflection [Deine Einschätzung]' Box.",
+      "Kombinations-Layout: Beginne mit 1 Absatz Fließtext, gefolgt von einer kurzen Checkliste ('[ ] ') mit 3 Elementen, 2 gepunkteten Schreiblinien zum Ergänzen und einer abschließenden ':::callout [Tipp]' Box."
+    ];
+
+    const templateIndex = (pageNumber + outline.title.length) % layoutTemplates.length;
+    const selectedTemplate = layoutTemplates[templateIndex];
 
     let systemPrompt = `Du bist ein professioneller Buchautor. Du schreibst im folgenden Stil: "${writingStyle}".
 Deine Sprache ist exakt: ${outline.language === 'de' ? 'Deutsch (korrekte Rechtschreibung und Grammatik)' : 'ENGLISH (CRITICAL: YOU MUST WRITE THE ENTIRE TEXT IN ENGLISH ONLY!)'}.
 Achte peinlich genau auf folgende Regeln:
-1. Verwende KEINE urheberrechtlich geschützten Inhalte oder geschützten Charaktere. Historische Zitate oder Zitate bekannter Persönlichkeiten sind zulässig, sofern sie gemeinfrei/legal sind. Setze Zitate sehr sparsam ein (maximal ein Zitat pro Kapitel). Jedes Zitat MUSS in einer eigenen Zeile stehen, eingeleitet mit "> ", und MUSS am Ende immer eine Autorenangabe enthalten (Format: — Vorname Nachname). Beispiele:
+1. ${isChapterOpening ? `Zitate sind auf dieser Seite (Beginn eines neuen Kapitels!) als feierlicher Einstieg sehr erwünscht. ABER ACHTUNG: Ein Zitat darf NIEMALS ganz oben am Anfang der Seite stehen! Beginne die Seite IMMER zuerst mit mindestens einem eleganten Absatz Fließtext als Einleitung in das Thema, bevor du weiter unten ein Zitat einfügst. Das Zitat muss gemeinfrei/legal sein, in einer eigenen Zeile stehen, eingeleitet mit "> ", und MUSS am Ende immer eine Autorenangabe enthalten (Format: — Vorname Nachname). Beispiel:
 > "Wissen ist Macht." — Francis Bacon
-> "Das Leben ist kurz, die Kunst ist lang." — Hippokrates
-EIN ZITAT OHNE — AUTORENANGABE AM ENDE IST VERBOTEN.
+EIN ZITAT OHNE — AUTORENANGABE AM ENDE IST STRENGSTENS VERBOTEN.` : `Es ist dir STRENGSTENS VERBOTEN, Zitate auf dieser Seite zu generieren! Verwende kein Zitat (keine Zeile mit "> "). Zitate dürfen ausschließlich auf der allerersten Seite eines Kapitels verwendet werden, dies ist jedoch eine normale Inhaltsseite.`}
 2. Vermeide jegliche Wiederholungen von Fakten, Ausdrücken oder Ideen, die bereits auf den vorherigen Seiten stehen.
-3. Formatiere den Text lesbar. Verwende Absätze. Verwende KEINE Markdown-Überschriften (wie # oder ##) oder Sternchen (wie **fett**). Einzige Ausnahme sind Zitate, die mit "> " beginnen. Überschriften werden vom Layout-System automatisch eingefügt.
-4. Generiere exakt die Länge für eine Buchseite (ca. ${minWords} bis ${maxWords} Wörter). Es ist EXTREM WICHTIG, dass du die Seite visuell fast vollständig mit Text ausfüllst. Schreibe lieber etwas mehr als zu wenig, aber bleibe knapp unter dem Limit, um Überläufe im KDP-Buchdruck zu vermeiden. Beende den Text nicht mitten im Satz, sondern führe den Gedanken auf dieser Seite zu Ende.
-6. Vermeide typische KI-Floskeln und künstliche Übergänge wie 'Zusammenfassend...', 'Es ist wichtig zu betonen...', 'Abschließend...', 'Nicht nur..., sondern auch...'. Schreibe stattdessen literarisch elegant, abwechslungsreich und organisch fließend.
-7. Falls die Seite Arbeitsbuch-, Übungs- oder Journal-Elemente enthalten soll (z. B. Checklisten, Schreiblinien, Boxen oder Tabellen):
-   - Für leere Kontrollkästchen/Checklisten schreibe am Zeilenanfang "[ ] ". Beispiel: "[ ] Erste Aufgabe"
-   - Für gepunktete Schreiblinien zum Ausfüllen schreibe eine Zeile mit nur Punkten (z. B. "........................................................").
-   - Für graue Boxen/Infokästen/Performance Prompts umschließe den Inhalt mit ":::box [Titel]" am Anfang und ":::" am Ende auf jeweils einer eigenen Zeile. Beispiel:
-     :::box Performance Prompts
-     1. Erste Frage: ...
+3. Formatiere den Text lesbar durch klare Absätze. Teile den Text unbedingt in mehrere Absätze (durch Zeilenumbrüche getrennt) auf, um das Lesen zu erleichtern! Ein einziger großer Textblock ist verboten. Verwende KEINE Markdown-Überschriften (wie # oder ##) oder Sternchen (wie **fett**). Einzige Ausnahme sind Zitate, die mit "> " beginnen. Überschriften werden vom Layout-System automatisch eingefügt.
+4. Generiere exakt die Länge für eine Buchseite (ca. ${minWords} bis ${maxWords} Wörter). Es ist EXTREM WICHTIG, dass du die Seite visuell bis GANZ NACH UNTEN mit Text ausfüllst. Generiere lieber etwas mehr Text, um die Seite perfekt zu füllen, und orientiere dich stark am oberen Limit von ${maxWords} Wörtern. Beende den Text nicht mitten im Satz, sondern führe den Gedanken auf dieser Seite sauber zu Ende.
+6. Vermeide typische KI-Floskeln und künstliche oder extrem repetitive Übergänge wie 'Zusammenfassend...', 'Es ist wichtig zu betonen...', 'Abschließend...', 'Nicht nur..., sondern auch...', 'Daher...', 'Deshalb...', 'Folglich...'. Es ist dir absolut VERBOTEN, Absätze oder Sätze mehrfach hintereinander mit den exakt selben Wörtern wie "Daher" oder "Deshalb" zu beginnen! Schreibe stattdessen literarisch elegant, extrem abwechslungsreich, mit sauberem Vokabular und organisch fließend.
+7. ZWINGENDE LAYOUT-STRUKTUR FÜR DIESE SEITE (Um das Buch abwechslungsreich und visuell einzigartig wie Handarbeit zu gestalten, MUSS diese Seite exakt folgendem Layout folgen):
+   👉 "${selectedTemplate}"
+
+   SYNTAX-REGELN FÜR DIE LAYOUT-ELEMENTE:
+   - Kontrollkästchen/Checklisten: Am Zeilenanfang "[ ] ". Beispiel: "[ ] Erste Aufgabe"
+   - Gepunktete Schreiblinien: Eine Zeile mit nur Punkten (z. B. "........................................................").
+   - Boxen: Umschließe den Inhalt mit ":::box [Titel]" (Standard gestrichelt), ":::callout [Titel]" (Wichtiger Hinweis, solide mit dickem Rand) oder ":::reflection [Titel]" (Reflexionsfragen) oder ":::action [Titel]" (Aktionsschritte mit Schatten) und beende mit ":::" auf einer eigenen Zeile. Beispiel:
+     :::callout Wichtiger Tipp
+     Das ist ein extrem wichtiger Hinweis.
      :::
-   - Für tabellarische Übersichten oder Raster nutze die Markdown-Tabellen-Syntax (z. B. "| Spalte 1 | Spalte 2 |" gefolgt von der Trennlinie "| :--- | :--- |").\n\n`;
+   - Nummerierte Listen: Beginne Zeilen mit "1. ", "2. " usw.
+   - Tabellen: Nutze Markdown-Tabellen ("| Spalte 1 | Spalte 2 |" gefolgt von "| :--- | :--- |").\n\n`;
 
     if (autoChapterGraphics) {
       systemPrompt += `8. Du darfst optional EINE thematisch extrem gut passende Grafik/Illustration einfügen, falls sie das Verständnis perfekt bereichert. Setze dazu den Platzhalter: [grafik: dein Bild-Prompt auf Englisch]. Füge maximal EIN Bild pro Seite ein und nur dann, wenn es massiven Mehrwert bietet. Wenn du dir unsicher bist, füge keine Grafik ein.\n\n`;
@@ -751,7 +795,12 @@ EIN ZITAT OHNE — AUTORENANGABE AM ENDE IST VERBOTEN.
 
     let finalSystemPrompt = systemPrompt;
     if (customGuidelines && customGuidelines.trim()) {
-      finalSystemPrompt += `\n7. Berücksichtige strikt diese Autoren-Richtlinien & Stil-Vorgaben des Nutzers:\n"${customGuidelines.trim()}"`;
+      const isGroq = this.getProvider() === 'groq';
+      let guidelines = customGuidelines.trim();
+      if (isGroq && guidelines.length > 1500) {
+        guidelines = guidelines.substring(0, 1500) + '... (Gekürzt für Groq)';
+      }
+      finalSystemPrompt += `\n7. Berücksichtige strikt diese Autoren-Richtlinien & Stil-Vorgaben des Nutzers:\n"${guidelines}"`;
     }
 
     // Varietät-System: Erfassung kürzlich genutzter Satzanfänge zur Erhöhung der Vielfalt
@@ -762,9 +811,10 @@ Folgende Satzanfänge sind für den ALLERERSTEN Satz dieser Seite STRENGSTENS VE
 - Formulierungen mit "Wenn..." (z. B. "Wenn du...", "Wenn Sie...", "Wenn...")
 - Formulierungen mit "Indem..." (z. B. "Indem du...", "Indem Sie...", "Indem...")
 - Formulierungen mit "Um..." (z. B. "Um deine...", "Um Ihre...", "Um...")
+- Formulierungen mit "Daher...", "Deshalb...", "Folglich..." oder "Somit..."
 ${recentOpeners.length > 0 ? recentOpeners.map(op => `- "${op}..."`).join('\n') : ''}
 
-Achte auf maximale sprachliche Vielfalt! Verwende kreative, abwechslungsreiche und elegante Einleitungen für den ersten Satz.`;
+Achte auf maximale sprachliche Vielfalt! Verwende kreative, abwechslungsreiche und elegante Einleitungen für den ersten Satz. Vermeide konsequent Satzanfang-Wiederholungen innerhalb der Seite!`;
 
     if (shorterRetry) {
       finalSystemPrompt += `\n\nACHTUNG: Dein vorheriger Entwurf war etwas zu lang und ist über das Buchseiten-Limit hinausgelaufen! Du MUSST diesen Entwurf jetzt um ca. 15% bis 20% kürzen (also ca. ${Math.round(minWords * 0.8)} bis ${Math.round(maxWords * 0.8)} Wörter), damit er exakt auf eine Seite passt, ohne abgeschnitten zu werden. Behalte alle wichtigen Informationen bei, aber schreibe kompakter.`;
@@ -813,28 +863,37 @@ Schreibe jetzt den vollständigen Fließtext für Seite ${pageNumber}. Verwende 
       return data.choices[0].message.content.trim();
     } else {
       // Gemini
-      data = await this.executeWithKeyRotation('gemini', (key) => 
-        fetch(`https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${key}`, {
+      data = await this.executeWithKeyRotation('gemini', async (key) => {
+        const cacheName = await this.getOrCreateCachedContent(key, this.model, finalSystemPrompt);
+        
+        const body: any = {
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: userPrompt }]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.65
+          }
+        };
+
+        if (cacheName) {
+          body.cachedContent = cacheName;
+        } else {
+          body.systemInstruction = {
+            parts: [{ text: finalSystemPrompt }]
+          };
+        }
+
+        return fetch(`https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${key}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            contents: [
-              {
-                role: 'user',
-                parts: [{ text: userPrompt }]
-              }
-            ],
-            systemInstruction: {
-              parts: [{ text: finalSystemPrompt }]
-            },
-            generationConfig: {
-              temperature: 0.65
-            }
-          })
-        })
-      );
+          body: JSON.stringify(body)
+        });
+      });
       if (!data.candidates || !data.candidates[0]?.content?.parts?.[0]?.text) {
         throw new Error(`Gemini hat keine Textantwort für Seite ${pageNumber} zurückgegeben.`);
       }
@@ -953,28 +1012,37 @@ Schreibe jetzt den vollständigen, verlängerten Fließtext für Seite ${pageNum
       return data.choices[0].message.content.trim();
     } else {
       // Gemini
-      data = await this.executeWithKeyRotation('gemini', (key) => 
-        fetch(`https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${key}`, {
+      data = await this.executeWithKeyRotation('gemini', async (key) => {
+        const cacheName = await this.getOrCreateCachedContent(key, this.model, finalSystemPrompt);
+        
+        const body: any = {
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: userPrompt }]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.65
+          }
+        };
+
+        if (cacheName) {
+          body.cachedContent = cacheName;
+        } else {
+          body.systemInstruction = {
+            parts: [{ text: finalSystemPrompt }]
+          };
+        }
+
+        return fetch(`https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${key}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            contents: [
-              {
-                role: 'user',
-                parts: [{ text: userPrompt }]
-              }
-            ],
-            systemInstruction: {
-              parts: [{ text: finalSystemPrompt }]
-            },
-            generationConfig: {
-              temperature: 0.65
-            }
-          })
-        })
-      );
+          body: JSON.stringify(body)
+        });
+      });
       if (!data.candidates || !data.candidates[0]?.content?.parts?.[0]?.text) {
         throw new Error(`Gemini hat keine Textantwort für Seite ${pageNumber} zurückgegeben.`);
       }
@@ -1318,34 +1386,98 @@ ORIGINAL PROMPT SPECIFICATION:
       );
       return data.choices[0].message.content;
     } else {
-      const data = await this.executeWithKeyRotation('gemini', (key) =>
-        fetch(`https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${key}`, {
+      const data = await this.executeWithKeyRotation('gemini', async (key) => {
+        const useCache = systemPrompt.length > 200;
+        const cacheName = useCache ? await this.getOrCreateCachedContent(key, this.model, systemPrompt) : null;
+        
+        const body: any = {
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: userPrompt }]
+            }
+          ],
+          generationConfig: {
+            ...(jsonFormat ? { responseMimeType: 'application/json' } : {}),
+            temperature: 0.7
+          }
+        };
+
+        if (cacheName) {
+          body.cachedContent = cacheName;
+        } else {
+          body.systemInstruction = {
+            parts: [{ text: systemPrompt }]
+          };
+        }
+
+        return fetch(`https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${key}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            contents: [
-              {
-                role: 'user',
-                parts: [{ text: userPrompt }]
-              }
-            ],
-            systemInstruction: {
-              parts: [{ text: systemPrompt }]
-            },
-            generationConfig: {
-              ...(jsonFormat ? { responseMimeType: 'application/json' } : {}),
-              temperature: 0.7
-            }
-          })
-        })
-      );
+          body: JSON.stringify(body)
+        });
+      });
       if (!data.candidates || !data.candidates[0]?.content?.parts?.[0]?.text) {
         throw new Error('Keine Antwort von der KI erhalten.');
       }
       return data.candidates[0].content.parts[0].text;
     }
+  }
+
+  async evaluateRawText(prompt: string): Promise<string> {
+    return this.askAI("Bewerte den Text kurz.", prompt, false);
+  }
+
+  private async getOrCreateCachedContent(
+    key: string,
+    modelName: string,
+    staticText: string
+  ): Promise<string | null> {
+    const cleanModel = modelName.startsWith('models/') ? modelName : `models/${modelName}`;
+    const cached = GeminiService.promptCache[staticText];
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.name;
+    }
+
+    try {
+      const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/cachedContents?key=${key}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: cleanModel,
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: staticText }]
+            }
+          ],
+          ttl: '600s'
+        })
+      });
+
+      if (!resp.ok) {
+        const errorText = await resp.text();
+        console.warn('Gemini prompt caching not supported or failed:', errorText);
+        return null;
+      }
+
+      const data = await resp.json();
+      if (data && data.name) {
+        GeminiService.promptCache[staticText] = {
+          name: data.name,
+          expiresAt: Date.now() + 580 * 1000
+        };
+        console.log('Successfully created Gemini prompt cache:', data.name);
+        return data.name;
+      }
+    } catch (e) {
+      console.warn('Failed to create Gemini prompt cache', e);
+    }
+    return null;
   }
 
   async generateAmazonDescription(title: string, subtitle: string, idea: string, language: string): Promise<string> {
@@ -1716,6 +1848,32 @@ Antworte AUSSCHLIESSLICH mit dem übersetzten JSON-Array. Verwende keine zusätz
     pages: BookOutlinePage[]
   ): Promise<BookOutlinePage[]> {
     return this.translateOutline(pages, 'en');
+  }
+
+  /**
+   * GIL 2.0: QualityScorer
+   * Bewertet den generierten Text auf einer Skala von 1-10 basierend auf Klarheit, Lesefluss und Mehrwert.
+   */
+  async scoreChapterQuality(text: string): Promise<number> {
+    const systemPrompt = `Du bist ein strenger Lektor. Bewerte den folgenden Text auf einer Skala von 1 bis 10.
+Kriterien:
+- Klarheit (Ist der Text verständlich?)
+- Lesefluss (Ist der Satzbau abwechslungsreich und fließend?)
+- Mehrwert (Bietet der Text echte Informationen oder nur Füllwörter?)
+
+Antworte AUSSCHLIESSLICH mit einer Zahl zwischen 1 und 10. Keine anderen Zeichen.`;
+    
+    const userPrompt = `Bewerte diesen Text:\n\n${text.substring(0, 2000)}`;
+    
+    try {
+      const result = await this.askAI(systemPrompt, userPrompt, false);
+      const score = parseInt(result.trim(), 10);
+      if (!isNaN(score) && score >= 1 && score <= 10) return score;
+      return 5; // Default/Fallback
+    } catch (e) {
+      console.error('QualityScorer failed:', e);
+      return 5;
+    }
   }
 }
 

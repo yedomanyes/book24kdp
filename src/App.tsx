@@ -22,12 +22,15 @@ import {
   Copy,
   User,
   Undo,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { GeminiService } from './services/GeminiService';
 import type { BookOutline, BookOutlinePage } from './services/GeminiService';
 import type { ChapterMemory, CmieConfig, CmiePageStatus } from './types/cmie';
 import { CmieOrchestrator } from './services/cmie/CmieOrchestrator';
+import Aurora from './components/Aurora';
 import { NecessityDetector } from './services/graphics/NecessityDetector';
 import { SvgGraphicRenderer } from './services/graphics/SvgGraphicRenderer';
 import type { GraphicDecision } from './types/graphics';
@@ -48,10 +51,15 @@ import { Auth } from './components/Auth';
 import { LandingPage } from './components/LandingPage';
 import { NicheFinderDashboard } from './components/NicheFinderDashboard';
 import { BrainDashboard } from './components/BrainDashboard';
+import { GilService } from './services/gil/GilService';
+import { GilInsightsPanel } from './components/GilInsightsPanel';
+import { TrendingUp } from 'lucide-react';
+
 import { SettingsModal } from './components/SettingsModal';
 import GooeyNav from './components/GooeyNav';
 import { searchNiche, type NicheResult } from './services/NicheService';
 import { BrainService } from './services/brain/BrainService';
+import { LayoutFixDB } from './services/brain/LayoutFixDB';
 import { ObsidianSyncService } from './services/brain/ObsidianSyncService';
 import { hasBrainAccess } from './config/brainAccess';
 
@@ -191,12 +199,14 @@ interface Book {
   pagesText: { [key: number]: string };
   pagesStatus: { [key: number]: 'idle' | 'generating' | 'completed' | 'failed' };
   pagesError: { [key: number]: string };
+  pagesReprompt?: { [key: number]: string };
   pagesOverflow?: { [key: number]: boolean };
   showRunningHeader?: boolean;
   showPageNumbers?: boolean;
   noQuotes?: boolean;
   showChapterTitles?: boolean;
   pagesHideChapter?: number[];
+  pagesHideRunningHeader?: number[];
   pagesInitial?: number[];
   pagesHideQuotes?: number[];          // pages where quotes are hidden
   titlePageEmblem?: 'geometric' | 'floral' | 'star' | 'book' | 'custom';
@@ -299,14 +309,85 @@ export type WorkbookBlock =
   | { type: 'checkbox'; text: string; checked: boolean }
   | { type: 'dotted_line' }
   | { type: 'table'; headers: string[]; rows: string[][] }
-  | { type: 'box'; title: string; children: WorkbookBlock[]; styleNum?: number }
+  | { type: 'box'; title: string; children: WorkbookBlock[]; styleNum?: number; boxType?: string }
   | { type: 'pagebreak' }
   | { type: 'ornament' }
   | { type: 'heading'; text: string }
   | { type: 'quote'; text: string }
   | { type: 'bullet'; text: string }
+  | { type: 'numbered'; text: string; num: string }
   | { type: 'image'; prompt: string; width?: number; float?: 'none' | 'left' | 'right' }
   | { type: 'custom_image'; id: string; width?: number; float?: 'none' | 'left' | 'right' };
+
+const PageGenerationProgress: React.FC<{ pageNum: number }> = ({ pageNum }) => {
+  const [elapsed, setElapsed] = useState(0);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setElapsed(prev => prev + 1);
+    }, 1000);
+
+    const progressTimer = setInterval(() => {
+      setProgress(prev => {
+        if (prev < 40) return prev + 8;
+        if (prev < 75) return prev + 4;
+        if (prev < 95) return prev + 1;
+        return prev;
+      });
+    }, 400);
+
+    return () => {
+      clearInterval(timer);
+      clearInterval(progressTimer);
+    };
+  }, []);
+
+  return (
+    <div style={{
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: '260px',
+      gap: '16px',
+      color: 'var(--text-main)',
+      padding: '24px',
+      backgroundColor: 'var(--bg-card)',
+      borderRadius: '8px',
+      border: '1px solid var(--border-color)',
+      maxWidth: '400px',
+      width: '100%',
+      margin: '40px auto',
+      boxShadow: '0 8px 30px rgba(0,0,0,0.12)'
+    }}>
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Loader2 className="spinner" style={{ width: '40px', height: '40px', color: 'var(--primary)' }} />
+        <span style={{ position: 'absolute', fontSize: '10px', fontWeight: 'bold', color: 'var(--text-main)' }}>{elapsed}s</span>
+      </div>
+      <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <span style={{ fontSize: '14px', fontWeight: 600 }}>Schreibe Seite {pageNum}...</span>
+        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Lese Outline & generiere Text</span>
+      </div>
+      
+      <div style={{ width: '100%', backgroundColor: 'var(--border-color)', borderRadius: '9999px', height: '6px', overflow: 'hidden' }}>
+        <div style={{
+          width: `${progress}%`,
+          backgroundColor: 'var(--primary)',
+          height: '100%',
+          borderRadius: '9999px',
+          transition: 'width 0.4s ease-out'
+        }} />
+      </div>
+      
+      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: '10px', color: 'var(--text-muted)' }}>
+        <span>Fortschritt: {progress}%</span>
+        <span>Dauer: {elapsed} Sek.</span>
+      </div>
+    </div>
+  );
+};
 
 export const parsePageLines = (rawLines: string[]): WorkbookBlock[] => {
   const blocks: WorkbookBlock[] = [];
@@ -317,10 +398,11 @@ export const parsePageLines = (rawLines: string[]): WorkbookBlock[] => {
     if (!trimmed) { i++; continue; }
 
     // :::box ... :::
-    if (/^:::box/i.test(trimmed)) {
-      const match = trimmed.match(/^:::box\s*(\d+)?\s*(.*)/i);
-      const styleNum = match && match[1] ? parseInt(match[1]) : 1;
-      const boxTitle = match && match[2] ? match[2].trim() : '';
+    if (/^:::(box|callout|reflection|action)/i.test(trimmed)) {
+      const match = trimmed.match(/^:::(box|callout|reflection|action)\s*(\d+)?\s*(.*)/i);
+      const boxType = match && match[1] ? match[1].toLowerCase() : 'box';
+      const styleNum = match && match[2] ? parseInt(match[2]) : 1;
+      const boxTitle = match && match[3] ? match[3].trim() : '';
       i++;
       const innerLines: string[] = [];
       while (i < rawLines.length && rawLines[i].trim() !== ':::') {
@@ -328,7 +410,7 @@ export const parsePageLines = (rawLines: string[]): WorkbookBlock[] => {
         i++;
       }
       i++; // skip closing :::
-      blocks.push({ type: 'box', title: boxTitle, children: parsePageLines(innerLines), styleNum });
+      blocks.push({ type: 'box', title: boxTitle, children: parsePageLines(innerLines), styleNum, boxType });
       continue;
     }
 
@@ -403,6 +485,16 @@ export const parsePageLines = (rawLines: string[]): WorkbookBlock[] => {
       blocks.push({ type: 'bullet', text });
       i++;
       continue;
+    }
+
+    // Numbered List
+    if (/^\d+\.\s/.test(trimmed)) {
+      const match = trimmed.match(/^(\d+\.)\s(.*)/);
+      if (match) {
+        blocks.push({ type: 'numbered', num: match[1], text: match[2] });
+        i++;
+        continue;
+      }
     }
 
     // Image placeholder new format: :::image PROMPT float:left width:50
@@ -771,6 +863,9 @@ export default function App() {
 
         // Load accounts from Firestore (source of truth — never use localStorage of another user)
         const cloudAccs = await loadAccountsFromCloud(user.uid);
+        if (user) {
+          BrainService.syncCloudState(user.uid).catch(console.error);
+        }
         if (cloudAccs && cloudAccs.length > 0) {
           setAccounts(cloudAccs);
         }
@@ -963,8 +1058,13 @@ export default function App() {
     measurer.style.fontFamily = resolvedFont;
     measurer.style.lineHeight = '1.5';
     measurer.style.textAlign = book.alignment === 'left' ? 'left' : 'justify';
+    measurer.style.textAlignLast = 'left';
     measurer.style.wordBreak = 'break-word';
+    (measurer.style as any).WebkitHyphens = 'auto';
+    (measurer.style as any).msHyphens = 'auto';
+    measurer.style.hyphens = 'auto';
     measurer.style.padding = '0';
+    measurer.style.paddingRight = '1px';
     measurer.style.margin = '0';
     measurer.style.overflow = 'hidden';
 
@@ -1121,6 +1221,32 @@ export default function App() {
           return p;
         }
 
+        case 'numbered': {
+          const p = document.createElement('p');
+          p.className = 'literary-paragraph';
+          p.style.margin = '0';
+          p.style.padding = '0';
+          p.style.lineHeight = '1.5';
+          p.style.textAlign = 'left';
+          
+          const spanContainer = document.createElement('span');
+          spanContainer.style.display = 'flex';
+          spanContainer.style.gap = '6px';
+          spanContainer.style.paddingLeft = '8px';
+          
+          const numSpan = document.createElement('span');
+          numSpan.style.fontWeight = 'bold';
+          numSpan.textContent = block.num;
+          
+          const textSpan = document.createElement('span');
+          textSpan.innerHTML = renderInlineHtml(block.text);
+          
+          spanContainer.appendChild(numSpan);
+          spanContainer.appendChild(textSpan);
+          p.appendChild(spanContainer);
+          return p;
+        }
+
         case 'checkbox': {
           const div = document.createElement('div');
           div.className = 'workbook-checkbox-container';
@@ -1221,13 +1347,30 @@ export default function App() {
         }
 
         case 'box': {
+          const boxType = block.boxType || 'box';
           const div = document.createElement('div');
-          div.className = 'workbook-box';
-          div.style.border = '1.5px dashed #475569';
+          div.className = `workbook-box type-${boxType}`;
           div.style.borderRadius = '4px';
-          div.style.padding = '10px 10px 8px';
           div.style.margin = '8px 0';
           div.style.position = 'relative';
+
+          if (boxType === 'callout') {
+            div.style.borderLeft = '3px solid #334155';
+            div.style.backgroundColor = '#f8fafc';
+            div.style.padding = '12px 14px 10px';
+          } else if (boxType === 'reflection') {
+            div.style.border = '1px solid #cbd5e1';
+            div.style.backgroundColor = '#fdfcfb';
+            div.style.padding = '12px 14px 10px';
+          } else if (boxType === 'action') {
+            div.style.border = '2px solid #0f172a';
+            div.style.padding = '12px 14px 10px';
+            div.style.boxShadow = '3px 3px 0px #0f172a';
+          } else {
+            // default box
+            div.style.border = '1.5px dashed #475569';
+            div.style.padding = '10px 10px 8px';
+          }
           
           if (block.title) {
             const titleSpan = document.createElement('span');
@@ -1533,9 +1676,12 @@ export default function App() {
 
   const refreshBrain = () => setBrainTick(t => t + 1);
 
-  const runBrainPageLearn = (book: Book, pageNum: number, memory: ChapterMemory, status: CmiePageStatus, text: string) => {
+  const runBrainPageLearn = async (book: Book, pageNum: number, memory: ChapterMemory, status: CmiePageStatus, text: string) => {
     if (!brainEnabled) return;
-    BrainService.learnFromPage(activeAccountIdRef.current, book, pageNum, memory, status, text);
+    const service = getServiceInstance();
+    const qualityScore = await service.scoreChapterQuality(text);
+    
+    BrainService.learnFromPage(activeAccountIdRef.current, book, pageNum, memory, status, text, qualityScore);
     if (pageNum === 1 || pageNum % 10 === 0) {
       BrainService.trackBook(activeAccountIdRef.current, book);
     }
@@ -1543,10 +1689,12 @@ export default function App() {
   };
 
   const buildBrainEnrichedPrompt = (book: Book, repromptInstruction?: string) => {
+    const isGroq = !selectedModel.startsWith('gemini-');
     const cmieCtx = CmieOrchestrator.enrichGenerationPrompt(
       book.cmieStore,
       book.cmieGlossary,
-      repromptInstruction
+      repromptInstruction,
+      isGroq
     );
     if (!brainEnabled) return cmieCtx;
     const brainCtx = BrainService.buildContextPrompt(activeAccountIdRef.current, book);
@@ -1564,6 +1712,9 @@ export default function App() {
   }, [brainEnabled, activeTab]);
 
   // Resizable Panes States
+  const [showGilInsights, setShowGilInsights] = useState(false);
+  const [gilRefreshKey, setGilRefreshKey] = useState(0);
+
   const [leftWidth, setLeftWidth] = useState<number>(() => {
     const saved = localStorage.getItem('b24studio_left_width');
     return saved ? parseInt(saved, 10) : 270;
@@ -2843,171 +2994,257 @@ export default function App() {
     setIsGenerating(true);
     cancelGenerationRef.current = false;
     const service = getServiceInstance();
-    const textAccumulator: { [key: number]: string } = {};
-    let hasGeneratedAny = false;
 
     const sortedPages = [...currentOutline.pages].sort((a, b) => Number(a.page_number) - Number(b.page_number));
+    
+    // Group pages by chapter title
+    const chaptersMap = new Map<string, BookOutlinePage[]>();
     for (const page of sortedPages) {
-      const pageNum = Number(page.page_number);
-      if (cancelGenerationRef.current) {
-        break;
+      if (!chaptersMap.has(page.chapter_title)) {
+        chaptersMap.set(page.chapter_title, []);
       }
-      // Find the absolute latest book state inside the loop
-      const currentBook = booksRef.current.find(b => b.id === targetBookId);
-      if (!currentBook) break;
+      chaptersMap.get(page.chapter_title)!.push(page);
+    }
 
-      const pagesStatus = currentBook.pagesStatus || {};
-      const pagesText = currentBook.pagesText || {};
+    const initialBook = booksRef.current.find(b => b.id === targetBookId);
+    if (!initialBook) {
+      setIsGenerating(false);
+      return;
+    }
 
-      // Skip already completed pages but store their text in the context accumulator
-      if (pagesStatus[pageNum] === 'completed') {
-        textAccumulator[pageNum] = pagesText[pageNum] || '';
-        continue;
-      }
+    const initialPagesStatus = initialBook.pagesStatus || {};
+    const initialPagesText = initialBook.pagesText || {};
 
-      if (hasGeneratedAny) {
-        const isGroq = !selectedModel.startsWith('gemini-');
-        const delayMs = isGroq ? 8500 : 4500;
-        await new Promise(resolve => setTimeout(resolve, delayMs));
-      }
-      hasGeneratedAny = true;
+    const pageTexts: { [key: number]: string } = { ...initialPagesText };
+    const pageStatuses: { [key: number]: string } = { ...initialPagesStatus };
 
-      setBooks(prev => prev.map(b => {
-        if (b.id === targetBookId) {
-          return {
-            ...b,
-            pagesStatus: { ...(b.pagesStatus || {}), [pageNum]: 'generating' }
-          };
-        }
-        return b;
-      }));
+    const finishedChapters = new Set<string>();
 
-      try {
-        const cmieEnrichment = buildBrainEnrichedPrompt(
-          currentBook,
-          currentBook.pagesError?.[pageNum]
-        );
-        let rawText = await service.generatePage(
-          currentOutline,
-          pageNum,
-          textAccumulator,
-          currentBook.writingStyle || 'Sachbuch / Informativ',
-          currentBook.pageSize,
-          currentBook.fontSize,
-          false,
-          getEffectiveGuidelines(currentBook),
-          (currentBook.autoChapterGraphics !== false) && !(currentBook.pagesGraphicDisabled?.[pageNum]),
-          cmieEnrichment
-        );
-        let text = cleanPageText(rawText);
-
-        // Check overflow and retry/truncate if needed
-        const hasOverflow = checkTextOverflow(text, currentBook, pageNum);
-        if (hasOverflow) {
-          console.log(`Page ${pageNum} overflows. Retrying with shorter generation...`);
-          try {
-            const retryRawText = await service.generatePage(
-              currentOutline,
-              pageNum,
-              textAccumulator,
-              currentBook.writingStyle || 'Sachbuch / Informativ',
-              currentBook.pageSize,
-              currentBook.fontSize,
-              true, // shorterRetry = true
-              getEffectiveGuidelines(currentBook),
-              currentBook.autoChapterGraphics || false,
-              cmieEnrichment
-            );
-            const retryText = cleanPageText(retryRawText);
-            if (checkTextOverflow(retryText, currentBook, pageNum)) {
-              console.log(`Page ${pageNum} STILL overflows. Applying truncateToFit fallback...`);
-              text = truncateToFit(retryText, currentBook, pageNum);
-            } else {
-              text = retryText;
-            }
-          } catch (retryErr) {
-            console.warn(`Shorter retry failed for page ${pageNum}, using truncated version of initial text:`, retryErr);
-            text = truncateToFit(text, currentBook, pageNum);
-          }
-        }
-
-        const finalOverflow = checkTextOverflow(text, currentBook, pageNum);
-        textAccumulator[pageNum] = text;
-
-        if (cancelGenerationRef.current) {
-          // Revert current page to idle if we canceled while writing was in-flight
-          setBooks(prev => prev.map(b => {
-            if (b.id === targetBookId) {
-              return {
-                ...b,
-                pagesStatus: { ...(b.pagesStatus || {}), [pageNum]: 'idle' }
-              };
-            }
-            return b;
-          }));
-          break;
-        }
-
-        const pageInfo = currentOutline.pages.find(p => p.page_number === pageNum);
-        const cmieRes = await CmieOrchestrator.inspectAndStorePage(
-          pageNum,
-          pageInfo?.chapter_title || `Seite ${pageNum}`,
-          text,
-          currentBook.extractedSourceText,
-          currentBook.cmieStore,
-          currentBook.cmieStatus,
-          currentBook.cmieGlossary,
-          currentBook.cmieConfig,
-          (pageInfo as any)?.chapter_scope
-        );
-
-        let graphicDecisionSingle: GraphicDecision = { grafik_sinnvoll: false };
-        if ((currentBook.autoChapterGraphics !== false) && !(currentBook.pagesGraphicDisabled?.[pageNum])) {
-          try {
-            const pagesSinceGraph = NecessityDetector.evaluateDensityPlacement(pageNum, currentBook.pagesGraphic);
-            const promptGraph = NecessityDetector.buildAnalysisPrompt(text, pagesSinceGraph, currentOutline?.language || 'de');
-            const rawJsonGraph = await service.evaluateRawJson(promptGraph, text);
-            graphicDecisionSingle = NecessityDetector.parseAndValidateDecision(rawJsonGraph, text);
-          } catch(eG) { console.warn("AGVE Error:", eG); }
-        }
-
-        setBooks(prev => prev.map(b => {
-          if (b.id === targetBookId) {
-            return {
-              ...b,
-              pagesText: { ...(b.pagesText || {}), [pageNum]: text },
-              pagesStatus: { ...(b.pagesStatus || {}), [pageNum]: cmieRes.passed ? 'completed' : 'failed' },
-              pagesError: cmieRes.warningMessage ? { ...(b.pagesError || {}), [pageNum]: cmieRes.warningMessage } : (b.pagesError || {}),
-              pagesOverflow: { ...(b.pagesOverflow || {}), [pageNum]: finalOverflow },
-              cmieStore: { ...(b.cmieStore || {}), [pageNum]: cmieRes.memory },
-              cmieStatus: { ...(b.cmieStatus || {}), [pageNum]: cmieRes.pageStatus },
-              cmieGlossary: cmieRes.updatedGlossary,
-              pagesGraphic: graphicDecisionSingle.grafik_sinnvoll ? { ...(b.pagesGraphic || {}), [pageNum]: graphicDecisionSingle } : (b.pagesGraphic || {})
-            };
-          }
-          return b;
-        }));
-
-        runBrainPageLearn(currentBook, pageNum, cmieRes.memory, cmieRes.pageStatus, text);
-
-        setSelectedPage(prev => prev === null ? pageNum : prev);
-
-      } catch (err: any) {
-        console.error(`Page ${pageNum} error:`, err);
-        setBooks(prev => prev.map(b => {
-          if (b.id === targetBookId) {
-            return {
-              ...b,
-              pagesStatus: { ...(b.pagesStatus || {}), [pageNum]: 'failed' },
-              pagesError: { ...(b.pagesError || {}), [pageNum]: err.message || 'API Fehler' }
-            };
-          }
-          return b;
-        }));
-        alert(`Fehler beim Schreiben von Seite ${pageNum}: ${err.message || err}`);
-        break; 
+    // Mark already completed chapters as finished
+    for (const [title, pages] of chaptersMap.entries()) {
+      const allCompleted = pages.every(p => pageStatuses[Number(p.page_number)] === 'completed');
+      if (allCompleted) {
+        finishedChapters.add(title);
       }
     }
+
+    const runQueue = async () => {
+      const allTitles = Array.from(chaptersMap.keys());
+      
+      for (const nextChapter of allTitles) {
+        if (cancelGenerationRef.current) break;
+        if (finishedChapters.has(nextChapter)) continue;
+
+        const batch = [nextChapter];
+        await Promise.all(batch.map(async (nextChapter) => {
+          try {
+            const pages = chaptersMap.get(nextChapter)!;
+            let isFirstPage = true;
+            for (const page of pages) {
+                if (cancelGenerationRef.current) break;
+
+                const pageNum = Number(page.page_number);
+                if (pageStatuses[pageNum] === 'completed' || pageStatuses[pageNum] === 'failed') {
+                  continue;
+                }
+
+                // Delay between pages in the same chapter to reduce rate limits
+                if (!isFirstPage) {
+                  const isGroq = !selectedModel.startsWith('gemini-');
+                  const delayMs = isGroq ? 8500 : 4500;
+                  await new Promise(resolve => setTimeout(resolve, delayMs));
+                }
+                isFirstPage = false;
+                if (cancelGenerationRef.current) break;
+
+                // Focus remains on the user's chosen page, just update UI state to generating
+                setBooks(prev => prev.map(b => {
+                  if (b.id === targetBookId) {
+                    return {
+                      ...b,
+                      pagesStatus: { ...(b.pagesStatus || {}), [pageNum]: 'generating' }
+                    };
+                  }
+                  return b;
+                }));
+
+                const currentBook = booksRef.current.find(b => b.id === targetBookId);
+                if (!currentBook) throw new Error('Buch wurde gelöscht.');
+
+                const cmieEnrichment = buildBrainEnrichedPrompt(
+                  currentBook,
+                  currentBook.pagesReprompt?.[pageNum]
+                );
+
+                const rawText = await service.generatePage(
+                  currentOutline,
+                  pageNum,
+                  pageTexts,
+                  currentBook.writingStyle || 'Sachbuch / Informativ',
+                  currentBook.pageSize,
+                  currentBook.fontSize,
+                  false,
+                  getEffectiveGuidelines(currentBook),
+                  (currentBook.autoChapterGraphics !== false) && !(currentBook.pagesGraphicDisabled?.[pageNum]),
+                  cmieEnrichment
+                );
+                let text = cleanPageText(rawText);
+
+                // Global diversity checks
+                if (pageNum === 1 || pageNum === 2) {
+                  const divCheck = await GilService.checkGlobalDiversity(text, targetBookId);
+                  if (divCheck.similarity > 0.6) {
+                    console.warn(`Global Diversity warning: Page ${pageNum} similarity is ${Math.round(divCheck.similarity * 100)}% with Book ${divCheck.matchesBookId}`);
+                    GilService.logLayoutWarning(
+                      targetBookId,
+                      pageNum,
+                      currentBook.pageSize,
+                      'GlobalDiversity',
+                      `Similarity of ${Math.round(divCheck.similarity * 100)}% with other book opening.`
+                    );
+                  }
+                }
+
+                // Overflow retry
+                const hasOverflow = checkTextOverflow(text, currentBook, pageNum);
+                if (hasOverflow) {
+                  GilService.logLayoutWarning(
+                    targetBookId,
+                    pageNum,
+                    currentBook.pageSize,
+                    'PageContent',
+                    'Text overflow in page generation. Retrying shorter.'
+                  );
+                  try {
+                    const retryRawText = await service.generatePage(
+                      currentOutline,
+                      pageNum,
+                      pageTexts,
+                      currentBook.writingStyle || 'Sachbuch / Informativ',
+                      currentBook.pageSize,
+                      currentBook.fontSize,
+                      true,
+                      getEffectiveGuidelines(currentBook),
+                      currentBook.autoChapterGraphics || false,
+                      cmieEnrichment
+                    );
+                    const retryText = cleanPageText(retryRawText);
+                    if (checkTextOverflow(retryText, currentBook, pageNum)) {
+                      text = truncateToFit(retryText, currentBook, pageNum);
+                    } else {
+                      text = retryText;
+                    }
+                  } catch (retryErr) {
+                    text = truncateToFit(text, currentBook, pageNum);
+                  }
+                }
+
+                const finalOverflow = checkTextOverflow(text, currentBook, pageNum);
+                pageTexts[pageNum] = text;
+
+                if (cancelGenerationRef.current) {
+                  setBooks(prev => prev.map(b => {
+                    if (b.id === targetBookId) {
+                      return {
+                        ...b,
+                        pagesStatus: { ...(b.pagesStatus || {}), [pageNum]: 'idle' }
+                      };
+                    }
+                    return b;
+                  }));
+                  break;
+                }
+
+                // Cmie checks
+                const cmieRes = await CmieOrchestrator.inspectAndStorePage(
+                  pageNum,
+                  page.chapter_title,
+                  text,
+                  currentBook.extractedSourceText,
+                  currentBook.cmieStore,
+                  currentBook.cmieStatus,
+                  currentBook.cmieGlossary,
+                  currentBook.cmieConfig,
+                  (page as any).chapter_scope
+                );
+
+                // Auto graphics decision
+                let graphicDecisionSingle: GraphicDecision = { grafik_sinnvoll: false };
+                if ((currentBook.autoChapterGraphics !== false) && !(currentBook.pagesGraphicDisabled?.[pageNum])) {
+                  try {
+                    const pagesSinceGraph = NecessityDetector.evaluateDensityPlacement(pageNum, currentBook.pagesGraphic);
+                    const promptGraph = NecessityDetector.buildAnalysisPrompt(text, pagesSinceGraph, currentOutline?.language || 'de');
+                    const rawJsonGraph = await service.evaluateRawJson(promptGraph, text);
+                    graphicDecisionSingle = NecessityDetector.parseAndValidateDecision(rawJsonGraph, text);
+                  } catch(eG) { console.warn("AGVE Error:", eG); }
+                }
+
+                // Update book pages state
+                setBooks(prev => prev.map(b => {
+                  if (b.id === targetBookId) {
+                    return {
+                      ...b,
+                      pagesText: { ...(b.pagesText || {}), [pageNum]: text },
+                      pagesStatus: { ...(b.pagesStatus || {}), [pageNum]: 'completed' },
+                      pagesError: cmieRes.warningMessage ? { ...(b.pagesError || {}), [pageNum]: cmieRes.warningMessage } : (b.pagesError || {}),
+                      pagesReprompt: cmieRes.repromptInstruction ? { ...(b.pagesReprompt || {}), [pageNum]: cmieRes.repromptInstruction } : (b.pagesReprompt || {}),
+                      pagesOverflow: { ...(b.pagesOverflow || {}), [pageNum]: finalOverflow },
+                      cmieStore: { ...(b.cmieStore || {}), [pageNum]: cmieRes.memory },
+                      cmieStatus: { ...(b.cmieStatus || {}), [pageNum]: cmieRes.pageStatus },
+                      cmieGlossary: cmieRes.updatedGlossary,
+                      pagesGraphic: graphicDecisionSingle.grafik_sinnvoll ? { ...(b.pagesGraphic || {}), [pageNum]: graphicDecisionSingle } : (b.pagesGraphic || {})
+                    };
+                  }
+                  return b;
+                }));
+
+                pageStatuses[pageNum] = 'completed';
+
+                await runBrainPageLearn(currentBook, pageNum, cmieRes.memory, cmieRes.pageStatus, text);
+
+                // Log to GIL System
+                const tokensCount = Math.ceil(text.length / 4);
+                void GilService.logGeneration(
+                  targetBookId,
+                  pageNum,
+                  currentBook.marketNiche || 'Allgemein',
+                  currentBook.writingStyle || 'Sachbuch / Informativ',
+                  text,
+                  hasOverflow ? 1 : 0,
+                  tokensCount,
+                  finalOverflow,
+                  hasKeysForModel(selectedModel),
+                  service
+                ).then(() => {
+                  setGilRefreshKey(prev => prev + 1);
+                });
+
+                setSelectedPage(prev => prev === null ? pageNum : prev);
+              }
+            } catch (err: any) {
+              console.error(`Chapter ${nextChapter} error:`, err);
+              const pages = chaptersMap.get(nextChapter)!;
+              pages.forEach(p => {
+                const pn = Number(p.page_number);
+                if (pageStatuses[pn] !== 'completed') {
+                  setBooks(prev => prev.map(b => {
+                    if (b.id === targetBookId) {
+                      return {
+                        ...b,
+                        pagesStatus: { ...(b.pagesStatus || {}), [pn]: 'failed' },
+                        pagesError: { ...(b.pagesError || {}), [pn]: err.message || 'API Fehler' }
+                      };
+                    }
+                    return b;
+                  }));
+                }
+              });
+            }
+        }));
+      }
+    };
+
+    await runQueue();
     setIsGenerating(false);
   };
 
@@ -3039,7 +3276,7 @@ export default function App() {
       const service = getServiceInstance();
       const cmieEnrichmentBulk = buildBrainEnrichedPrompt(
         currentBook,
-        currentBook.pagesError?.[pageNum]
+        currentBook.pagesReprompt?.[pageNum]
       );
       let rawText = await service.generatePage(
         outline,
@@ -3059,6 +3296,7 @@ export default function App() {
       const hasOverflow = checkTextOverflow(text, currentBook, pageNum);
       if (hasOverflow) {
         console.log(`Page ${pageNum} overflows. Retrying with shorter generation...`);
+        LayoutFixDB.logWarning(currentBook.pageSize || '6x9', 'chapter_page', 'Text overflow in page generation. Retrying shorter.');
         try {
           const retryRawText = await service.generatePage(
             outline,
@@ -3075,6 +3313,7 @@ export default function App() {
           const retryText = cleanPageText(retryRawText);
           if (checkTextOverflow(retryText, currentBook, pageNum)) {
             console.log(`Page ${pageNum} STILL overflows. Applying truncateToFit fallback...`);
+            LayoutFixDB.logWarning(currentBook.pageSize || '6x9', 'chapter_page', 'Text overflow even after retry. Truncating.');
             text = truncateToFit(retryText, currentBook, pageNum);
           } else {
             text = retryText;
@@ -3115,8 +3354,9 @@ export default function App() {
           return {
             ...b,
             pagesText: { ...(b.pagesText || {}), [pageNum]: text },
-            pagesStatus: { ...(b.pagesStatus || {}), [pageNum]: cmieResBulk.passed ? 'completed' : 'failed' },
+            pagesStatus: { ...(b.pagesStatus || {}), [pageNum]: 'completed' },
             pagesError: cmieResBulk.warningMessage ? { ...(b.pagesError || {}), [pageNum]: cmieResBulk.warningMessage } : (b.pagesError || {}),
+            pagesReprompt: cmieResBulk.repromptInstruction ? { ...(b.pagesReprompt || {}), [pageNum]: cmieResBulk.repromptInstruction } : (b.pagesReprompt || {}),
             pagesOverflow: { ...(b.pagesOverflow || {}), [pageNum]: finalOverflow },
             cmieStore: { ...(b.cmieStore || {}), [pageNum]: cmieResBulk.memory },
             cmieStatus: { ...(b.cmieStatus || {}), [pageNum]: cmieResBulk.pageStatus },
@@ -3126,7 +3366,7 @@ export default function App() {
         }
         return b;
       }));
-      runBrainPageLearn(currentBook, pageNum, cmieResBulk.memory, cmieResBulk.pageStatus, text);
+      await runBrainPageLearn(currentBook, pageNum, cmieResBulk.memory, cmieResBulk.pageStatus, text);
       setSelectedPage(pageNum);
 
       const pagesStatus = currentBook.pagesStatus || {};
@@ -3193,6 +3433,7 @@ export default function App() {
       const hasOverflow = checkTextOverflow(text, currentBook, pageNum);
       if (hasOverflow) {
         console.log(`Lengthened text overflows page ${pageNum}. Truncating to fit...`);
+        LayoutFixDB.logWarning(currentBook.pageSize || '6x9', 'chapter_page', 'Overflow on user-triggered lengthening.');
         text = truncateToFit(text, currentBook, pageNum);
       }
 
@@ -3569,6 +3810,7 @@ export default function App() {
     if (!activeBook || !activeBook.outline) return;
     try {
       const config: PdfConfig = {
+        bookId: activeBook.id,
         fontFamily: activeBook.fontFamily,
         fontSize: activeBook.fontSize,
         lineHeightMultiplier: 1.4,
@@ -5389,7 +5631,11 @@ export default function App() {
   if (!currentUser) {
     return (
       <>
-        <LandingPage onLoginClick={() => setShowAuthModal(true)} />
+        <LandingPage 
+          onLoginClick={() => setShowAuthModal(true)} 
+          theme={theme}
+          setTheme={setTheme}
+        />
         {showAuthModal && (
           <Auth 
             onAuthSuccess={() => setShowAuthModal(false)} 
@@ -5560,6 +5806,16 @@ export default function App() {
 
           <button
             type="button"
+            className="header-icon-btn"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            title={theme === 'dark' ? 'Light Mode aktivieren' : 'Dark Mode aktivieren'}
+            style={{ marginRight: '8px' }}
+          >
+            {theme === 'dark' ? <Sun style={{ width: '16px', height: '16px' }} /> : <Moon style={{ width: '16px', height: '16px' }} />}
+          </button>
+
+          <button
+            type="button"
             className={`header-icon-btn${settingsNeedAttention ? ' has-alert' : ''}`}
             onClick={openSettings}
             title="Einstellungen"
@@ -5602,8 +5858,18 @@ export default function App() {
         
         {/* Tab 1: Projects Mediathek Grid view */}
         {activeTab === 'projects' && (
-          <div className="mediathek-container">
-            <div className="mediathek-header">
+          <>
+            {theme === 'light' && (
+              <div style={{ position: 'fixed', inset: 0, zIndex: -1, overflow: 'hidden' }}>
+                <Aurora
+                  colorStops={["#e0e0e0","#ffffff","#ffffff"]}
+                  amplitude={1}
+                  blend={0.5}
+                />
+              </div>
+            )}
+            <div className="mediathek-container" style={{ position: 'relative', zIndex: 1 }}>
+              <div className="mediathek-header">
               <div>
                 <h2 className="mediathek-title">Meine Buchprojekte</h2>
                 <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>
@@ -5736,6 +6002,7 @@ export default function App() {
               </div>
             )}
           </div>
+          </>
         )}
 
 
@@ -5746,6 +6013,7 @@ export default function App() {
             books={books}
             refreshKey={brainTick}
             onBrainUpdate={refreshBrain}
+            theme={theme}
           />
         )}
 
@@ -6528,6 +6796,33 @@ export default function App() {
                     </button>
                   )}
                   <div className="pane-title">Schreibstudio</div>
+                  {outline && (
+                    <button
+                      onClick={() => setShowGilInsights(prev => !prev)}
+                      style={{
+                        background: showGilInsights ? 'rgba(201, 150, 62, 0.15)' : 'rgba(255, 255, 255, 0.03)',
+                        border: showGilInsights ? '1px solid #C9963E' : '1px solid rgba(140, 138, 130, 0.25)',
+                        color: showGilInsights ? '#C9963E' : '#8C8A82',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        gap: '4px',
+                        marginLeft: '8px',
+                        outline: 'none',
+                        transition: 'all 0.2s ease-in-out'
+                      }}
+                      title="GIL Insights Panel ein-/ausblenden"
+                      className="gil-insights-toggle-btn"
+                    >
+                      <TrendingUp style={{ width: '13px', height: '13px' }} />
+                      <span>Insights</span>
+                    </button>
+                  )}
                 </div>
                 {outline && completedPagesCount > 0 && (
                   <button onClick={handleDownloadPdf} className="btn btn-success" style={{ padding: '2px 8px', fontSize: '9px' }}>
@@ -6963,7 +7258,7 @@ export default function App() {
                         
                         let statusClass = '';
                         if (status === 'generating') statusClass = 'generating';
-                        else if (status === 'completed') statusClass = 'completed';
+                        else if (status === 'completed') statusClass = hasOverflow ? 'failed' : 'completed';
                         else if (status === 'failed') statusClass = 'failed';
 
                         return (
@@ -7969,10 +8264,7 @@ max="250"
                     </div>
 
                     {(activeBook.pagesStatus || {})[selectedPage as number] === 'generating' ? (
-                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', minHeight: '220px', gap: '6px', color: 'var(--text-muted)' }}>
-                        <Loader2 className="spinner" style={{ width: '20px', height: '20px' }} />
-                        <span>Book24 schreibt Seite {selectedPage}...</span>
-                      </div>
+                      <PageGenerationProgress pageNum={selectedPage as number} />
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
                         <div style={{ 
@@ -8376,6 +8668,30 @@ max="250"
                               Kapitel auf S. {selectedPage} {!(activeBook.pagesHideChapter || []).includes(selectedPage) ? 'AN' : 'AUS'}
                             </button>
                           )}
+                          {/* Running Header Toggle for current page */}
+                          {!isFirstPageOfChapter && (
+                            <button
+                              onClick={() => {
+                                const current = activeBook.pagesHideRunningHeader || [];
+                                const next = current.includes(selectedPage)
+                                  ? current.filter(n => n !== selectedPage)
+                                  : [...current, selectedPage];
+                                updateActiveBookConfig('pagesHideRunningHeader', next);
+                              }}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: '5px',
+                                padding: '4px 10px', borderRadius: '8px', fontSize: '10px', fontWeight: 600,
+                                border: '1px solid var(--border-color)', cursor: 'pointer',
+                                backgroundColor: !(activeBook.pagesHideRunningHeader || []).includes(selectedPage) ? 'var(--accent)' : 'var(--bg-card)',
+                                color: !(activeBook.pagesHideRunningHeader || []).includes(selectedPage) ? '#ffffff' : 'var(--text-muted)',
+                                transition: 'all 0.2s',
+                              }}
+                              title={!(activeBook.pagesHideRunningHeader || []).includes(selectedPage) ? 'Kopfzeile für diese Seite ausblenden' : 'Kopfzeile für diese Seite anzeigen'}
+                            >
+                              {!(activeBook.pagesHideRunningHeader || []).includes(selectedPage) ? <Eye style={{ width: '11px', height: '11px' }} /> : <EyeOff style={{ width: '11px', height: '11px' }} />}
+                              Kopfzeile auf S. {selectedPage} {!(activeBook.pagesHideRunningHeader || []).includes(selectedPage) ? 'AN' : 'AUS'}
+                            </button>
+                          )}
                           {/* Initiale (Drop Cap) Toggle for current page */}
                           <button
                             onClick={() => {
@@ -8576,11 +8892,11 @@ max="250"
                               }}
                             >
                               {/* Header Line */}
-                              {typeof selectedPage === 'number' && !isFirstPageOfChapter && activeBook.showRunningHeader !== false ? (
+                              {typeof selectedPage === 'number' && !isFirstPageOfChapter && activeBook.showRunningHeader !== false && !(activeBook.pagesHideRunningHeader || []).includes(selectedPage) ? (
                                 <div style={{ fontSize: '5.5px', color: '#94a3b8', display: 'flex', justifyContent: 'space-between', borderBottom: '0.5px solid #e2e8f0', paddingBottom: '1px', marginBottom: '4px' }}>
                                   <span 
                                     className="truncate" 
-                                    style={{ maxWidth: '100%', outline: 'none', cursor: 'text' }}
+                                    style={{ maxWidth: '100%', outline: 'none', cursor: 'text', padding: '2px', minWidth: '30px', display: 'inline-block' }}
                                     contentEditable={true}
                                     suppressContentEditableWarning={true}
                                     onBlur={e => {
@@ -8605,13 +8921,13 @@ max="250"
                               {/* Chapter title header */}
                               {typeof selectedPage === 'number' && (
                                 <>
-                                  {isFirstPageOfChapter && (
+                                  {isFirstPageOfChapter && !globalOff && (
                                     <button
                                       onClick={() => {
                                         const current = activeBook.pagesHideChapter || [];
-                                        const next = current.includes(selectedPage)
-                                          ? current.filter(n => n !== selectedPage)
-                                          : [...current, selectedPage];
+                                        const next = current.includes(selectedPage as number)
+                                          ? current.filter((n: number) => n !== selectedPage)
+                                          : [...current, selectedPage as number];
                                         updateActiveBookConfig('pagesHideChapter', next);
                                       }}
                                       style={{
@@ -8776,7 +9092,7 @@ max="250"
                             disabled={isGenerating || isPlanning || isGeneratingStyleOptions || isGeneratingStructureOptions}
                             title="Generiert den Inhalt dieser Seite komplett neu basierend auf der Gliederung"
                           >
-                            <RotateCw style={{ width: '13px', height: '13px' }} /> Seite neu generieren
+                            <RotateCw style={{ width: '13px', height: '13px' }} /> {!(activeBook.pagesText || {})[selectedPage as number] ? 'Diese einzelne Seite generieren' : 'Seite neu generieren'}
                           </button>
                           
                           {(activeBook?.autoChapterGraphics !== false) && (
@@ -8827,6 +9143,15 @@ max="250"
                 </div>
               </div>
             </div>
+
+            <GilInsightsPanel
+              isOpen={showGilInsights}
+              onClose={() => setShowGilInsights(false)}
+              bookId={activeBook.id}
+              niche={activeBook.marketNiche || 'Allgemein'}
+              currentStyle={activeBook.writingStyle || 'Sachbuch / Informativ'}
+              refreshKey={gilRefreshKey}
+            />
 
           </div>
         )}
