@@ -1,7 +1,9 @@
 import { jsPDF } from 'jspdf';
 import type { BookOutline } from '../services/GeminiService';
+import { GilService } from '../services/gil/GilService';
 
 export interface PdfConfig {
+  bookId?: string;
   title?: string;
   subtitle?: string;
   fontFamily: 'times' | 'helvetica' | 'courier' | 'arial' | 'playfair' | 'inter';
@@ -18,6 +20,7 @@ export interface PdfConfig {
   showPageNumbers?: boolean;           // toggle page number footer
   showChapterTitles?: boolean;         // global chapter heading toggle
   pagesHideChapter?: number[];         // per-page chapter heading hide list
+  pagesHideRunningHeader?: number[];   // per-page running header hide list
   pagesInitial?: number[];             // pages that get a drop cap / Initiale
   titlePageEmblem?: 'geometric' | 'floral' | 'star' | 'book' | 'custom';
   titlePageImage?: string;
@@ -246,8 +249,8 @@ export function generateBookPdf(
     return pageWidth / 2 + offsetPt; // center
   }
 
-  // Use a wider width (20pt margins) for the Title Page to fit more text on one line
-  const titleMargin = 20;
+  // Use a wider width (10pt margins) for the Title Page to prevent premature wrapping due to PDF font metric differences compared to web fonts
+  const titleMargin = 10;
   const titleWritableWidth = pageWidth - (titleMargin * 2);
 
   // Render Title
@@ -400,12 +403,30 @@ export function generateBookPdf(
     tocPagesCount = 1;
     let simY = topMargin + 36;
     const tocSpacing = config.tocLineSpacing || 18;
+    
+    let chaptersRenderedOnPage = 0;
+    const outlineChapterCount = Object.keys(chapterStarts).length;
+    let usePreventativePageBreak = false;
+    let maxChaptersPerPage = 10;
+    
+    if (config.bookId) {
+      const rules = GilService.getPreventativeRules(config.bookId, 'TOC', outlineChapterCount);
+      const pageBreakRule = rules.find(r => r.action === 'autoPageBreakAfterChapters');
+      if (pageBreakRule) {
+        usePreventativePageBreak = true;
+        maxChaptersPerPage = pageBreakRule.value;
+      }
+    }
+
     Object.keys(chapterStarts).forEach(() => {
-      if (simY + tocSpacing > pageHeight - bottomMargin) {
+      const forceBreak = usePreventativePageBreak && chaptersRenderedOnPage >= maxChaptersPerPage;
+      if (simY + tocSpacing > pageHeight - bottomMargin || forceBreak) {
         tocPagesCount++;
         simY = topMargin + 36;
+        chaptersRenderedOnPage = 0;
       }
       simY += tocSpacing;
+      chaptersRenderedOnPage++;
     });
   }
 
@@ -465,6 +486,19 @@ export function generateBookPdf(
     doc.text(getTOCHeader(currentTOCPageIndex), tocX, topMargin + 10);
     
     let tocY = topMargin + 36;
+    let chaptersRenderedOnPage = 0;
+    const outlineChapterCount = chaptersList.length;
+    let usePreventativePageBreak = false;
+    let maxChaptersPerPage = 10;
+    
+    if (config.bookId) {
+      const rules = GilService.getPreventativeRules(config.bookId, 'TOC', outlineChapterCount);
+      const pageBreakRule = rules.find(r => r.action === 'autoPageBreakAfterChapters');
+      if (pageBreakRule) {
+        usePreventativePageBreak = true;
+        maxChaptersPerPage = pageBreakRule.value;
+      }
+    }
 
     chaptersList.forEach(([chapterTitle, pageNum]) => {
       doc.setTextColor(0);
@@ -479,8 +513,10 @@ export function generateBookPdf(
       }
       doc.setFontSize(fontSize);
 
+      const forceBreak = usePreventativePageBreak && chaptersRenderedOnPage >= maxChaptersPerPage;
+
       // Overflow check
-      if (tocY + tocSpacing > pageHeight - bottomMargin) {
+      if (tocY + tocSpacing > pageHeight - bottomMargin || forceBreak) {
         // Draw footer (Roman numeral) for the current TOC page
         doc.setFont(tocFont, fontStyleRegular);
         doc.setFontSize(9);
@@ -501,6 +537,7 @@ export function generateBookPdf(
         doc.text(getTOCHeader(currentTOCPageIndex), tocX, topMargin + 10);
         
         tocY = topMargin + 36;
+        chaptersRenderedOnPage = 0;
       }
 
       // Render the single line
@@ -522,6 +559,7 @@ export function generateBookPdf(
       doc.setFont(tocFont, fontStyleBold);
       doc.text(pageNum.toString(), tocX + writableWidth - 5, tocY, { align: 'right' });
       tocY += tocSpacing;
+      chaptersRenderedOnPage++;
     });
 
     // Draw footer for the last TOC page
@@ -559,8 +597,8 @@ export function generateBookPdf(
       const isFirstPageOfChapter = firstOfChapter?.page_number === i;
       const isFirstPartOfPage = partIndex === 0;
 
-      // Header formatting (skip on first page of a chapter, and only on the first part of that page)
-      if (!(isFirstPageOfChapter && isFirstPartOfPage) && config.showRunningHeader !== false) {
+      // Header formatting
+      if (!(isFirstPageOfChapter && isFirstPartOfPage) && config.showRunningHeader !== false && !(config.pagesHideRunningHeader || []).includes(i)) {
         doc.setFont(fontFamily, fontStyleItalic);
         doc.setFontSize(8);
         doc.setTextColor(120);
@@ -608,13 +646,14 @@ export function generateBookPdf(
         | { kind: 'checkbox'; text: string; checked: boolean }
         | { kind: 'dotted_line' }
         | { kind: 'table'; headers: string[]; rows: string[][] }
-        | { kind: 'box'; title: string; children: PdfBlock[]; boxStyle?: number }
+        | { kind: 'box'; title: string; children: PdfBlock[]; boxStyle?: number; boxType?: string }
         | { kind: 'pagebreak' }
         | { kind: 'ornament' }
         | { kind: 'heading'; text: string }
         | { kind: 'quote'; text: string }
         | { kind: 'bullet'; text: string }
-        | { kind: 'image'; text: string; float?: 'left' | 'right' | 'none'; width?: number }
+        | { kind: 'numbered'; num: string; text: string }
+        | { kind: 'image'; text: string; float?: 'none' | 'left' | 'right'; width?: number }
         | { kind: 'custom_image'; id: string; float: 'left' | 'right' | 'none'; width: number };
 
       function parseBookLines(rawLines: string[]): PdfBlock[] {
@@ -659,17 +698,18 @@ export function generateBookPdf(
           }
 
           // :::box
-          if (/^:::box([123]?)/i.test(tr)) {
-            const tm = tr.match(/^:::box([123]?)\s*(.*)/i);
-            const boxStyle = tm && tm[1] ? parseInt(tm[1], 10) : 1;
-            const boxTitle = tm ? tm[2].trim() : '';
+          if (/^:::(box|callout|reflection|action)/i.test(tr)) {
+            const tm = tr.match(/^:::(box|callout|reflection|action)([123]?)\s*(.*)/i);
+            const boxType = tm && tm[1] ? tm[1].toLowerCase() : 'box';
+            const boxStyle = tm && tm[2] ? parseInt(tm[2], 10) : 1;
+            const boxTitle = tm ? tm[3].trim() : '';
             bi++;
             const inner: string[] = [];
             while (bi < rawLines.length && rawLines[bi].trim() !== ':::') {
               inner.push(rawLines[bi]); bi++;
             }
             bi++; // skip :::
-            blks.push({ kind: 'box', title: boxTitle, children: parseBookLines(inner), boxStyle });
+            blks.push({ kind: 'box', title: boxTitle, children: parseBookLines(inner), boxStyle, boxType });
             continue;
           }
 
@@ -732,6 +772,15 @@ export function generateBookPdf(
             bi++; continue;
           }
 
+          // Numbered
+          if (/^\d+\.\s/.test(tr)) {
+            const match = tr.match(/^(\d+\.)\s(.*)/);
+            if (match) {
+              blks.push({ kind: 'numbered', num: match[1], text: match[2] });
+              bi++; continue;
+            }
+          }
+
           blks.push({ kind: 'paragraph', text: tr });
           bi++;
         }
@@ -759,6 +808,11 @@ export function generateBookPdf(
             doc.setFont(fontFamily, fontStyleRegular);
             doc.setFontSize(fontSize);
             return doc.splitTextToSize('• ' + block.text.replace(/\*\*/g, ''), drawWidth - 10).length * lh;
+          }
+          case 'numbered': {
+            doc.setFont(fontFamily, fontStyleRegular);
+            doc.setFontSize(fontSize);
+            return doc.splitTextToSize(block.num + ' ' + block.text.replace(/\*\*/g, ''), drawWidth - 14).length * lh;
           }
           case 'checkbox': {
             doc.setFont(fontFamily, fontStyleRegular);
@@ -904,6 +958,30 @@ export function generateBookPdf(
             return;
           }
 
+          case 'numbered': {
+            const prefix = block.num + ' ';
+            const txt = block.text.replace(/\*\*/g, '');
+            doc.setFont(fontFamily, fontStyleRegular);
+            doc.setFontSize(fontSize);
+            doc.setTextColor(0);
+            const nLines = doc.splitTextToSize(txt, drawWidth - 14);
+            nLines.forEach((ln: string, li: number) => {
+              const isLast = li === nLines.length - 1;
+              const bAlign = config.alignment === 'left' || isLast
+                ? { align: 'left' as const }
+                : { align: 'justify' as const, maxWidth: drawWidth - 14 };
+              
+              if (li === 0) {
+                doc.setFont(fontFamily, fontStyleBold);
+                doc.text(prefix, blockX + 4, contentY);
+                doc.setFont(fontFamily, fontStyleRegular);
+              }
+              doc.text(ln, blockX + 14, contentY, bAlign);
+              contentY += lh;
+            });
+            return;
+          }
+
           case 'checkbox': {
             const boxSize = fontSize * 0.85;
             const boxY = contentY - fontSize * 0.75;
@@ -1001,39 +1079,79 @@ export function generateBookPdf(
             contentY += 12;
 
             const design = getBoxDesign(block.boxStyle || 1);
-            const borderRGB = parseHexColor(design.borderColor);
-            const isTransparent = design.backgroundColor === 'transparent';
-            const bgRGB = parseHexColor(isTransparent ? '#ffffff' : design.backgroundColor);
+            let borderRGB = parseHexColor(design.borderColor);
+            let isTransparent = design.backgroundColor === 'transparent';
+            let bgRGB = parseHexColor(isTransparent ? '#ffffff' : design.backgroundColor);
 
             const innerW = drawWidth - 24;
             const innerX = blockX + 12;
             const boxH = measureBlock(block, drawWidth);
             const boxY = contentY - fontSize * 0.75;
 
+            const boxType = block.boxType || 'box';
+            let borderThickness = 1.5;
+            let isSolidBorder = false;
+            let hasShadow = false;
+
+            if (boxType === 'callout') {
+              bgRGB = [248, 250, 252]; // Slate 50
+              borderRGB = [51, 65, 85]; // Slate 700
+              isSolidBorder = true;
+              borderThickness = 2.5; 
+            } else if (boxType === 'reflection') {
+              bgRGB = [253, 252, 251];
+              borderRGB = [203, 213, 225]; // Slate 300
+              isSolidBorder = true;
+              borderThickness = 1;
+            } else if (boxType === 'action') {
+              isTransparent = true;
+              borderRGB = [15, 23, 42]; // Slate 900
+              isSolidBorder = true;
+              borderThickness = 2;
+              hasShadow = true;
+            } else {
+              // default box
+              isTransparent = true;
+              borderRGB = [71, 85, 105];
+            }
+
             // Fill / Draw colors
             doc.setDrawColor(borderRGB[0], borderRGB[1], borderRGB[2]);
             if (!isTransparent) {
               doc.setFillColor(bgRGB[0], bgRGB[1], bgRGB[2]);
             }
-            doc.setLineWidth(design.borderThickness);
-            
-            // Set dash pattern
-            if (design.borderStyle === 'dashed') {
-              doc.setLineDashPattern([3, 2], 0);
-            } else if (design.borderStyle === 'dotted') {
-              doc.setLineDashPattern([1, 1.5], 0);
-            } else {
+            doc.setLineWidth(borderThickness * 0.35);
+
+            if (isSolidBorder) {
               doc.setLineDashPattern([], 0);
+            } else {
+              doc.setLineDashPattern([3, 2], 0);
             }
 
             const drawStyle = isTransparent ? 'S' : 'FD';
-            const rx = design.borderRadius;
-            const ry = design.borderRadius;
             
-            if (rx > 0) {
-              doc.roundedRect(boxY < 0 ? 0 : blockX, boxY < 0 ? 0 : boxY, drawWidth, boxH, rx, ry, drawStyle);
+            if (boxType === 'callout') {
+              // Draw filled background
+              if (!isTransparent) doc.rect(blockX, boxY, drawWidth, boxH, 'F');
+              // Draw only left border
+              doc.line(blockX, boxY, blockX, boxY + boxH);
             } else {
-              doc.rect(boxY < 0 ? 0 : blockX, boxY < 0 ? 0 : boxY, drawWidth, boxH, drawStyle);
+              if (hasShadow) {
+                // Shadow
+                doc.setFillColor(borderRGB[0], borderRGB[1], borderRGB[2]);
+                doc.rect(blockX + 4, boxY + 4, drawWidth, boxH, 'F');
+                // Redraw main rect with white bg
+                doc.setFillColor(255, 255, 255);
+                doc.rect(blockX, boxY, drawWidth, boxH, 'FD');
+              } else {
+                const rx = design.borderRadius;
+                const ry = design.borderRadius;
+                if (rx > 0) {
+                  doc.roundedRect(boxY < 0 ? 0 : blockX, boxY < 0 ? 0 : boxY, drawWidth, boxH, rx, ry, drawStyle);
+                } else {
+                  doc.rect(boxY < 0 ? 0 : blockX, boxY < 0 ? 0 : boxY, drawWidth, boxH, drawStyle);
+                }
+              }
             }
             
             // Restore dash pattern & line width
@@ -1358,6 +1476,19 @@ export function generateBookPdf(
         const prevBlock = blockIdx > 0 ? pageBlocks[blockIdx - 1] : null;
         drawPdfBlock(block, pageX, writableWidth, pageStyle, isDropCapPage, dropCapDone, blockIdx, prevBlock);
       });
+
+      if (contentY > pageHeight - bottomMargin) {
+        console.warn(`Layout Engine Warning: Content overflow detected on page ${i} (physical page ${pdfPageCounter})!`);
+        if (config.bookId) {
+          GilService.logLayoutWarning(
+            config.bookId,
+            i,
+            config.pageSize,
+            'PageContent',
+            `Content overflow on page ${i}. Y coordinate reached ${Math.round(contentY)}pt (max ${Math.round(pageHeight - bottomMargin)}pt).`
+          );
+        }
+      }
 
 
 
