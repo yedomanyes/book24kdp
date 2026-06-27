@@ -24,7 +24,8 @@ import {
   Undo,
   Image as ImageIcon,
   Sun,
-  Moon
+  Moon,
+  Pencil
 } from 'lucide-react';
 import { GeminiService } from './services/GeminiService';
 import type { BookOutline, BookOutlinePage } from './services/GeminiService';
@@ -4357,6 +4358,16 @@ export default function App() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
+                        setEditingField('title');
+                        setEditingValue(activeBook.title || '');
+                      }}
+                      style={{ background: 'none', border: 'none', color: '#60a5fa', cursor: 'pointer', padding: '2px 4px', display: 'flex', alignItems: 'center' }}
+                      title="Titel bearbeiten"
+                    ><Pencil size={11} /></button>
+                    <div style={{ width: '1px', height: '12px', backgroundColor: '#475569', margin: '0 4px' }} />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
                         updateActiveBookConfig('titlePageTitleSize', undefined);
                         updateActiveBookConfig('titlePageTitleX', undefined);
                         updateActiveBookConfig('titlePageTitleY', undefined);
@@ -4495,6 +4506,15 @@ export default function App() {
                       onClick={(e) => { e.stopPropagation(); updateActiveBookConfig('titlePageSubtitleSize', Math.min(36, (activeBook.titlePageSubtitleSize || 12) + 1)); }}
                       style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '2px 6px', fontSize: '11px', fontWeight: 'bold' }}
                     >+</button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingField('subtitle');
+                        setEditingValue(activeBook.subtitle || '');
+                      }}
+                      style={{ background: 'none', border: 'none', color: '#60a5fa', cursor: 'pointer', padding: '2px 4px', display: 'flex', alignItems: 'center' }}
+                      title="Untertitel bearbeiten"
+                    ><Pencil size={11} /></button>
                     <div style={{ width: '1px', height: '12px', backgroundColor: '#475569', margin: '0 4px' }} />
                     <button
                       onClick={(e) => {
@@ -4813,6 +4833,15 @@ export default function App() {
                       onClick={(e) => { e.stopPropagation(); updateActiveBookConfig('titlePageAuthorSize', Math.min(36, (activeBook.titlePageAuthorSize || 14) + 1)); }}
                       style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '2px 6px', fontSize: '11px', fontWeight: 'bold' }}
                     >+</button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingField('author');
+                        setEditingValue(activeBook.authorName || '');
+                      }}
+                      style={{ background: 'none', border: 'none', color: '#60a5fa', cursor: 'pointer', padding: '2px 4px', display: 'flex', alignItems: 'center' }}
+                      title="Autor bearbeiten"
+                    ><Pencil size={11} /></button>
                     <div style={{ width: '1px', height: '12px', backgroundColor: '#475569', margin: '0 4px' }} />
                     <button
                       onClick={(e) => {
@@ -4929,6 +4958,15 @@ export default function App() {
                       onClick={(e) => { e.stopPropagation(); updateActiveBookConfig('titlePagePublisherSize', Math.min(24, (activeBook.titlePagePublisherSize || 10) + 1)); }}
                       style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '2px 6px', fontSize: '11px', fontWeight: 'bold' }}
                     >+</button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingField('publisher');
+                        setEditingValue(activeBook.publisherName || '');
+                      }}
+                      style={{ background: 'none', border: 'none', color: '#60a5fa', cursor: 'pointer', padding: '2px 4px', display: 'flex', alignItems: 'center' }}
+                      title="Verlag bearbeiten"
+                    ><Pencil size={11} /></button>
                     <div style={{ width: '1px', height: '12px', backgroundColor: '#475569', margin: '0 4px' }} />
                     <button
                       onClick={(e) => {
