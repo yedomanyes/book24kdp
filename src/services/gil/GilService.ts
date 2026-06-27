@@ -308,12 +308,12 @@ export class GilService {
   }
 
   // Returns preventative layout actions
-  public static getPreventativeRules(_bookId: string, contentType: string, outlineChapterCount: number): { action: string; value: any }[] {
-    const state = this.loadState();
+  public static getPreventativeRules(_bookId: string, contentType: string, _outlineChapterCount: number): { action: string; value: any }[] {
     const rules: { action: string; value: any }[] = [];
 
-    // Analyze historical warning occurrences for this content type
-    const history = state.layoutFixes.filter(w => w.contentType === contentType);
+    // Context from Brain
+    const state = GilService.getBrainContext();
+    // const history = state.layoutFixes.filter(w => w.contentType === contentType);
     
     if (contentType === 'TOC') {
       // Preventative rule for TOC was removed because PdfGenerator handles physical Y-axis bounds perfectly.
