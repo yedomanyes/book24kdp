@@ -58,6 +58,7 @@ export interface PdfConfig {
   titlePagePublisherFont?: string;
   titlePagePublisherX?: number;
   titlePagePublisherY?: number;
+  titlePageCustomTexts?: import('../App').TitlePageCustomText[];
   
   chapterTopPadding?: number;
   autoChapterDropCaps?: boolean;
@@ -374,7 +375,33 @@ export function generateBookPdf(
     }
   }
 
-
+  // Render Custom Text Fields
+  if (config.titlePageCustomTexts && config.titlePageCustomTexts.length > 0) {
+    config.titlePageCustomTexts.forEach(textObj => {
+      const customFont = resolvePdfFont(textObj.font);
+      doc.setFont(customFont, fontStyleRegular);
+      doc.setFontSize(textObj.size || 16);
+      
+      const hardLines = (textObj.text || '').split('\n');
+      const textLines: string[] = [];
+      hardLines.forEach(hLine => {
+        textLines.push(...doc.splitTextToSize(hLine, 10000));
+      });
+      
+      const baseX = pageWidth / 2 + (textObj.x || 0);
+      const totalHeight = textLines.length * (textObj.size || 16) * 1.2;
+      let currentY = pageHeight / 2 + (textObj.y || 0) - (totalHeight / 2);
+      
+      textLines.forEach((line: string) => {
+        let alignX = baseX;
+        if (textObj.align === 'left') alignX = baseX - (pageWidth * 0.4);
+        if (textObj.align === 'right') alignX = baseX + (pageWidth * 0.4);
+        
+        doc.text(line, alignX, currentY, { align: textObj.align, baseline: 'top' });
+        currentY += (textObj.size || 16) * 1.2;
+      });
+    });
+  }
 
   doc.setTextColor(0);
 

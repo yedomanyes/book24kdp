@@ -170,6 +170,16 @@ interface Account {
   username: string;
 }
 
+export interface TitlePageCustomText {
+  id: string;
+  text: string;
+  x: number;
+  y: number;
+  size: number;
+  font: 'times' | 'helvetica' | 'courier' | 'arial' | 'playfair' | 'inter';
+  align: 'left' | 'center' | 'right';
+}
+
 interface Book {
   id: string;
   title: string;
@@ -246,6 +256,7 @@ interface Book {
   titlePagePublisherFont?: string;
   titlePagePublisherX?: number;
   titlePagePublisherY?: number;
+  titlePageCustomTexts?: TitlePageCustomText[];
   autoChapterDropCaps?: boolean;
   autoChapterGraphics?: boolean;
   autoChapterRecto?: boolean;
@@ -1846,12 +1857,12 @@ export default function App() {
   };
 
   // Title Page dragging / editing states
-  const [draggingItem, setDraggingItem] = useState<'emblem' | 'title' | 'subtitle' | 'author' | 'publisher' | null>(null);
-  const [hoveredField, setHoveredField] = useState<'title' | 'subtitle' | 'author' | 'publisher' | null>(null);
+  const [draggingItem, setDraggingItem] = useState<'emblem' | 'title' | 'subtitle' | 'author' | 'publisher' | string | null>(null);
+  const [hoveredField, setHoveredField] = useState<'title' | 'subtitle' | 'author' | 'publisher' | string | null>(null);
 
 
 
-  const [editingField, setEditingField] = useState<'title' | 'subtitle' | 'author' | 'publisher' | null>(null);
+  const [editingField, setEditingField] = useState<'title' | 'subtitle' | 'author' | 'publisher' | string | null>(null);
   const [editingValue, setEditingValue] = useState<string>('');
   const [activeCoverEditField, setActiveCoverEditField] = useState<'title' | 'subtitle' | 'author' | 'publisher' | null>(null);
   const [isTranslating, setIsTranslating] = useState<boolean>(false);
@@ -2125,10 +2136,51 @@ export default function App() {
       titlePageTitleAlign: undefined,
       titlePageSubtitleAlign: undefined,
       titlePageAuthorAlign: undefined,
-      titlePagePublisherAlign: undefined
+      titlePagePublisherAlign: undefined,
+      titlePageCustomTexts: undefined
     };
 
     setBooks(prev => prev.map(b => b.id === activeBookId ? { ...b, ...updates } as Book : b));
+  };
+
+  const addTitlePageCustomText = () => {
+    if (!activeBookId || !activeBook) return;
+    const newText: TitlePageCustomText = {
+      id: `custom-text-${Date.now()}`,
+      text: "Neuer Text",
+      x: 0,
+      y: 0,
+      size: 16,
+      font: 'playfair',
+      align: 'center'
+    };
+    setBooks(prev => prev.map(b => b.id === activeBookId ? {
+      ...b,
+      titlePageCustomTexts: [...(b.titlePageCustomTexts || []), newText]
+    } : b));
+  };
+
+  const updateTitlePageCustomText = (id: string, updates: Partial<TitlePageCustomText>) => {
+    if (!activeBookId) return;
+    setBooks(prev => prev.map(b => {
+      if (b.id !== activeBookId) return b;
+      const texts = b.titlePageCustomTexts || [];
+      return {
+        ...b,
+        titlePageCustomTexts: texts.map(t => t.id === id ? { ...t, ...updates } : t)
+      };
+    }));
+  };
+
+  const deleteTitlePageCustomText = (id: string) => {
+    if (!activeBookId) return;
+    setBooks(prev => prev.map(b => {
+      if (b.id !== activeBookId) return b;
+      return {
+        ...b,
+        titlePageCustomTexts: (b.titlePageCustomTexts || []).filter(t => t.id !== id)
+      };
+    }));
   };
 
   const handleSaveChapterTitle = (pageNum: number, newTitle: string) => {
@@ -4193,8 +4245,12 @@ export default function App() {
         const clampedY = Math.max(-300, Math.min(300, newShiftY));
         updateActiveBookConfig('titlePageSubtitleX', clampedX);
         updateActiveBookConfig('titlePageSubtitleY', clampedY);
-      } else if (draggingItem === 'author') {
+      } else if (draggingItem === 'author' || draggingItem === 'publisher') {
         // Author and Publisher are always fixed at the bottom — no dragging
+      } else if (typeof draggingItem === 'string' && draggingItem.startsWith('custom-text-')) {
+        const newShiftX = Math.round(dragStart.shiftX + dx / previewScaleX);
+        const newShiftY = Math.round(dragStart.shiftY + dy / previewScaleY);
+        updateTitlePageCustomText(draggingItem, { x: newShiftX, y: newShiftY });
       }
     };
     
@@ -4241,33 +4297,61 @@ export default function App() {
           overflow: 'hidden',
           cursor: 'text'
       }}>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            resetTitlePage();
-          }}
-          style={{
-            position: 'absolute',
-            top: '8px',
-            right: '8px',
-            zIndex: 50,
-            background: 'rgba(239, 68, 68, 0.9)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            padding: '4px 8px',
-            fontSize: '11px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-          }}
-          title="Titelseite komplett auf Standard zurücksetzen"
-        >
-          <Undo size={12} />
-          Reset
-        </button>
+        <div style={{
+          position: 'absolute',
+          top: '8px',
+          right: '8px',
+          zIndex: 50,
+          display: 'flex',
+          gap: '8px'
+        }}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              addTitlePageCustomText();
+            }}
+            style={{
+              background: 'rgba(59, 130, 246, 0.9)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              padding: '4px 8px',
+              fontSize: '11px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+            }}
+            title="Neues Textfeld hinzufügen"
+          >
+            <Plus size={12} />
+            + Text
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              resetTitlePage();
+            }}
+            style={{
+              background: 'rgba(239, 68, 68, 0.9)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              padding: '4px 8px',
+              fontSize: '11px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+            }}
+            title="Titelseite komplett auf Standard zurücksetzen"
+          >
+            <Undo size={12} />
+            Reset
+          </button>
+        </div>
 
         {/* Decorative double border */}
         {activeBook.titlePageShowBorders !== false && (
@@ -5050,6 +5134,126 @@ export default function App() {
             </div>
           )}
         </div>
+
+        {/* Custom Text Fields */}
+        {activeBook.titlePageCustomTexts?.map((textObj) => (
+          <div
+            key={textObj.id}
+            onMouseEnter={() => setHoveredField(textObj.id)}
+            onMouseLeave={() => setHoveredField(null)}
+            onMouseDown={(e) => {
+              if (editingField === textObj.id) return;
+              e.stopPropagation();
+              e.preventDefault();
+              setDraggingItem(textObj.id);
+              setDragStart({ x: e.clientX, y: e.clientY, shiftX: textObj.x || 0, shiftY: textObj.y || 0 });
+            }}
+            style={{
+              position: 'absolute',
+              left: '50%',
+              top: '50%',
+              transform: `translate(calc(-50% + ${(textObj.x || 0) * previewScaleX}px), calc(-50% + ${(textObj.y || 0) * previewScaleY}px))`,
+              textAlign: textObj.align,
+              width: '80%',
+              cursor: draggingItem === textObj.id ? 'grabbing' : 'grab',
+              padding: '4px',
+              border: hoveredField === textObj.id ? '1px dashed #94a3b8' : '1px dashed transparent',
+              zIndex: 20
+            }}
+          >
+            {editingField === textObj.id ? (
+              <textarea
+                value={editingValue}
+                onChange={(e) => setEditingValue(e.target.value)}
+                onBlur={() => {
+                  setEditingField(null);
+                  updateTitlePageCustomText(textObj.id, { text: editingValue });
+                }}
+                autoFocus
+                style={{
+                  width: '100%',
+                  background: 'transparent',
+                  border: '1px solid #3b82f6',
+                  outline: 'none',
+                  fontSize: `${(textObj.size || 16) * previewScaleY}px`,
+                  fontFamily: getCssFontFamily(textObj.font, 'playfair'),
+                  textAlign: textObj.align,
+                  color: '#000000',
+                  resize: 'none',
+                  overflow: 'hidden',
+                  whiteSpace: 'break-spaces',
+                  lineHeight: '1.2'
+                }}
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement;
+                  target.style.height = 'auto';
+                  target.style.height = target.scrollHeight + 'px';
+                }}
+              />
+            ) : (
+              <>
+                <div style={{
+                  fontSize: `${(textObj.size || 16) * previewScaleY}px`,
+                  fontFamily: getCssFontFamily(textObj.font, 'playfair'),
+                  color: '#000000',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                  lineHeight: '1.2'
+                }}>
+                  {(textObj.text || '').split('\n').map((line, i) => (
+                    <span key={i}>
+                      {line}
+                      {i < ((textObj.text || '').split('\n').length - 1) && <br />}
+                    </span>
+                  ))}
+                </div>
+                {hoveredField === textObj.id && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '-24px',
+                    right: 0,
+                    background: '#1e293b',
+                    borderRadius: '4px',
+                    padding: '2px',
+                    display: 'flex',
+                    gap: '2px',
+                    zIndex: 30,
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                  }}>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); updateTitlePageCustomText(textObj.id, { size: Math.max(8, (textObj.size || 16) - 1) }); }}
+                      style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '2px 6px', fontSize: '11px', fontWeight: 'bold' }}
+                    >-</button>
+                    <span style={{ color: '#94a3b8', fontSize: '9px', padding: '0 2px', display: 'flex', alignItems: 'center' }}>{textObj.size || 16}pt</span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); updateTitlePageCustomText(textObj.id, { size: Math.min(100, (textObj.size || 16) + 1) }); }}
+                      style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '2px 6px', fontSize: '11px', fontWeight: 'bold' }}
+                    >+</button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingField(textObj.id);
+                        setEditingValue(textObj.text || '');
+                      }}
+                      style={{ background: 'none', border: 'none', color: '#60a5fa', cursor: 'pointer', padding: '2px 4px', display: 'flex', alignItems: 'center' }}
+                      title="Text bearbeiten"
+                    ><Pencil size={11} /></button>
+                    <div style={{ width: '1px', height: '12px', backgroundColor: '#475569', margin: '0 4px', alignSelf: 'center' }} />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteTitlePageCustomText(textObj.id);
+                      }}
+                      style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', padding: '2px 4px', display: 'flex', alignItems: 'center' }}
+                      title="Textfeld löschen"
+                    ><Trash2 size={11} /></button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        ))}
+
       </div>
     );
   };
