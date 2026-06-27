@@ -2093,6 +2093,48 @@ export default function App() {
     }));
   };
 
+  const resetTitlePage = () => {
+    if (!activeBookId || !activeBook) return;
+    const db = new LayoutFixDB();
+    const updates: Partial<Book> = {
+      title: undefined,
+      subtitle: undefined,
+      authorName: undefined,
+      publisherLine: undefined,
+      titlePageTitleSize: undefined,
+      titlePageTitleX: undefined,
+      titlePageTitleY: undefined,
+      titlePageSubtitleSize: undefined,
+      titlePageSubtitleX: undefined,
+      titlePageSubtitleY: undefined,
+      titlePageAuthorSize: undefined,
+      titlePageAuthorX: undefined,
+      titlePageAuthorY: undefined,
+      titlePagePublisherSize: undefined,
+      titlePagePublisherX: undefined,
+      titlePagePublisherY: undefined,
+      titlePageImageScale: undefined,
+      titlePageImageX: undefined,
+      titlePageImageY: undefined,
+      titlePageLayout: undefined,
+      titlePageEmblem: undefined,
+      titlePageShowBorders: undefined,
+      titlePageTitleFont: undefined,
+      titlePageSubtitleFont: undefined,
+      titlePageAuthorFont: undefined,
+      titlePagePublisherFont: undefined,
+      titlePageTitleAlign: undefined,
+      titlePageSubtitleAlign: undefined,
+      titlePageAuthorAlign: undefined,
+      titlePagePublisherAlign: undefined
+    };
+
+    setBooks(prev => prev.map(b => b.id === activeBookId ? { ...b, ...updates } as Book : b));
+    db.updateBook(activeBookId, updates).catch(err => {
+      console.error("Fehler beim Zurücksetzen der Titelseite in DB:", err);
+    });
+  };
+
   const handleSaveChapterTitle = (pageNum: number, newTitle: string) => {
     if (!activeBook || !activeBook.outline) return;
     const oldTitle = activeBook.outline.pages[pageNum - 1]?.chapter_title;
@@ -4203,6 +4245,34 @@ export default function App() {
           overflow: 'hidden',
           cursor: 'text'
       }}>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            resetTitlePage();
+          }}
+          style={{
+            position: 'absolute',
+            top: '8px',
+            right: '8px',
+            zIndex: 50,
+            background: 'rgba(239, 68, 68, 0.9)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            padding: '4px 8px',
+            fontSize: '11px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+          }}
+          title="Titelseite komplett auf Standard zurücksetzen"
+        >
+          <Undo size={12} />
+          Reset
+        </button>
+
         {/* Decorative double border */}
         {activeBook.titlePageShowBorders !== false && (
           <>
