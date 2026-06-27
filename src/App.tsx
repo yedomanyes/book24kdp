@@ -4226,8 +4226,8 @@ export default function App() {
         {/* Title & Subtitle centered at top (layout depending) */}
         <div style={{ 
           position: 'absolute',
-          left: `${20 * previewScaleX}px`,
-          right: `${20 * previewScaleX}px`,
+          left: `0px`,
+          right: `0px`,
           top: `${(layout === 'top_centered' ? 0.14 : 0.25) * previewHeight}px`,
           transition: 'top 0.2s ease',
           zIndex: 2
@@ -4962,7 +4962,7 @@ export default function App() {
                       onClick={(e) => {
                         e.stopPropagation();
                         setEditingField('publisher');
-                        setEditingValue(activeBook.publisherName || '');
+                        setEditingValue(activeBook.publisherLine || '');
                       }}
                       style={{ background: 'none', border: 'none', color: '#60a5fa', cursor: 'pointer', padding: '2px 4px', display: 'flex', alignItems: 'center' }}
                       title="Verlag bearbeiten"
