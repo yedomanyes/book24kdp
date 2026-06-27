@@ -2095,7 +2095,6 @@ export default function App() {
 
   const resetTitlePage = () => {
     if (!activeBookId || !activeBook) return;
-    const db = new LayoutFixDB();
     const updates: Partial<Book> = {
       title: undefined,
       subtitle: undefined,
@@ -2130,9 +2129,6 @@ export default function App() {
     };
 
     setBooks(prev => prev.map(b => b.id === activeBookId ? { ...b, ...updates } as Book : b));
-    db.updateBook(activeBookId, updates).catch(err => {
-      console.error("Fehler beim Zurücksetzen der Titelseite in DB:", err);
-    });
   };
 
   const handleSaveChapterTitle = (pageNum: number, newTitle: string) => {
