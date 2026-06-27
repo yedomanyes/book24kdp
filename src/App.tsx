@@ -4353,6 +4353,17 @@ export default function App() {
                       onClick={(e) => { e.stopPropagation(); updateActiveBookConfig('titlePageTitleSize', Math.min(60, (activeBook.titlePageTitleSize || 28) + 2)); }}
                       style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '2px 6px', fontSize: '11px', fontWeight: 'bold' }}
                     >+</button>
+                    <div style={{ width: '1px', height: '12px', backgroundColor: '#475569', margin: '0 4px' }} />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        updateActiveBookConfig('titlePageTitleSize', undefined);
+                        updateActiveBookConfig('titlePageTitleX', undefined);
+                        updateActiveBookConfig('titlePageTitleY', undefined);
+                      }}
+                      style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', padding: '2px 4px', display: 'flex', alignItems: 'center' }}
+                      title="Größe und Position zurücksetzen"
+                    ><Undo size={11} /></button>
                   </div>
                 </>
               )}
@@ -4484,6 +4495,17 @@ export default function App() {
                       onClick={(e) => { e.stopPropagation(); updateActiveBookConfig('titlePageSubtitleSize', Math.min(36, (activeBook.titlePageSubtitleSize || 12) + 1)); }}
                       style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '2px 6px', fontSize: '11px', fontWeight: 'bold' }}
                     >+</button>
+                    <div style={{ width: '1px', height: '12px', backgroundColor: '#475569', margin: '0 4px' }} />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        updateActiveBookConfig('titlePageSubtitleSize', undefined);
+                        updateActiveBookConfig('titlePageSubtitleX', undefined);
+                        updateActiveBookConfig('titlePageSubtitleY', undefined);
+                      }}
+                      style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', padding: '2px 4px', display: 'flex', alignItems: 'center' }}
+                      title="Größe und Position zurücksetzen"
+                    ><Undo size={11} /></button>
                   </div>
                 </>
               )}
@@ -4791,6 +4813,17 @@ export default function App() {
                       onClick={(e) => { e.stopPropagation(); updateActiveBookConfig('titlePageAuthorSize', Math.min(36, (activeBook.titlePageAuthorSize || 14) + 1)); }}
                       style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '2px 6px', fontSize: '11px', fontWeight: 'bold' }}
                     >+</button>
+                    <div style={{ width: '1px', height: '12px', backgroundColor: '#475569', margin: '0 4px' }} />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        updateActiveBookConfig('titlePageAuthorSize', undefined);
+                        updateActiveBookConfig('titlePageAuthorX', undefined);
+                        updateActiveBookConfig('titlePageAuthorY', undefined);
+                      }}
+                      style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', padding: '2px 4px', display: 'flex', alignItems: 'center' }}
+                      title="Größe und Position zurücksetzen"
+                    ><Undo size={11} /></button>
                   </div>
                 </>
               )}
@@ -4896,6 +4929,17 @@ export default function App() {
                       onClick={(e) => { e.stopPropagation(); updateActiveBookConfig('titlePagePublisherSize', Math.min(24, (activeBook.titlePagePublisherSize || 10) + 1)); }}
                       style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '2px 6px', fontSize: '11px', fontWeight: 'bold' }}
                     >+</button>
+                    <div style={{ width: '1px', height: '12px', backgroundColor: '#475569', margin: '0 4px' }} />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        updateActiveBookConfig('titlePagePublisherSize', undefined);
+                        updateActiveBookConfig('titlePagePublisherX', undefined);
+                        updateActiveBookConfig('titlePagePublisherY', undefined);
+                      }}
+                      style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', padding: '2px 4px', display: 'flex', alignItems: 'center' }}
+                      title="Größe und Position zurücksetzen"
+                    ><Undo size={11} /></button>
                   </div>
                 </>
               )}
