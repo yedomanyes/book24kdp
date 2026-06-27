@@ -249,11 +249,12 @@ export function generateBookPdf(
     return pageWidth / 2 + offsetPt; // center
   }
 
-  // Use a much wider virtual width for Title Page text wrapping calculation
-  // This compensates for jsPDF's standard fonts (like Times) being wider than web fonts (like Playfair)
-  // so that text doesn't wrap in the PDF if it didn't wrap in the live preview.
+  // Use a practically infinite width (10000) for Title Page text wrapping calculation.
+  // This completely disables automatic text wrapping by jsPDF.
+  // The text will now only wrap if the user explicitly presses 'Enter' to insert a manual newline,
+  // guaranteeing that the PDF matches the user's intentional formatting.
   const titleMargin = 10;
-  const titleWritableWidth = pageWidth + 50;
+  const titleWritableWidth = 10000;
 
   // Render Title
   const titleFont = resolvePdfFont(config.titlePageTitleFont || 'playfair');
@@ -281,7 +282,7 @@ export function generateBookPdf(
   titleLines.forEach((line: string) => {
     const tx = getTitleElemX(titleAlign, titleOffsetPt, titleMargin);
     doc.text(line, tx, titleY, { align: titleAlign, baseline: 'top' });
-    titleY += titleSize * 1.2;
+    titleY += titleSize * 1.4;
   });
 
   // Subtitle: positioned right below the last title line (with 8pt margin)
