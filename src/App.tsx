@@ -8599,7 +8599,7 @@ max="250"
                     {/* Preview toolbar: Kopfzeile + Kein Zitat + Kapitelüberschriften */}
                     <div style={{ display: 'flex', gap: '6px', marginBottom: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                       <button
-                        onClick={() => updateActiveBookConfig('showRunningHeader', activeBook.showRunningHeader !== false)}
+                        onClick={() => updateActiveBookConfig('showRunningHeader', activeBook.showRunningHeader === false)}
                         style={{
                           display: 'flex', alignItems: 'center', gap: '5px',
                           padding: '4px 10px', borderRadius: '8px', fontSize: '10px', fontWeight: 600,
