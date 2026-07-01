@@ -6724,19 +6724,59 @@ export default function App() {
 
   if (authLoading) {
     return (
-      <div style={{ display: 'flex', minHeight: '100vh', width: '100vw', backgroundColor: '#121212', alignItems: 'center', justifyContent: 'center', color: '#ffffff', fontFamily: "'Poppins', sans-serif", flexDirection: 'column', gap: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
-          <Loader2 className="spinner" style={{ width: '18px', height: '18px' }} />
-          <span>Lade Book24 Studio...</span>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', overflow: 'hidden' }}>
+        {/* Header Skeleton */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', height: '64px', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-dashboard)', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div className="skeleton-block skeleton-shimmer" style={{ width: '32px', height: '32px', borderRadius: '8px' }} />
+            <div className="skeleton-block skeleton-shimmer" style={{ width: '100px', height: '18px' }} />
+          </div>
+          <div style={{ display: 'flex', gap: '8px', padding: '4px', background: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
+            {[1, 2, 3, 4, 5].map(i => (
+              <div key={i} className="skeleton-block skeleton-shimmer" style={{ width: '85px', height: '28px', borderRadius: '6px' }} />
+            ))}
+          </div>
+          <div className="skeleton-block skeleton-shimmer" style={{ width: '110px', height: '30px', borderRadius: '99px' }} />
         </div>
-        <button
-          onClick={() => window.location.reload()}
-          style={{ marginTop: '8px', padding: '8px 20px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', color: '#aaa', fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s' }}
-          onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; e.currentTarget.style.color = '#fff'; }}
-          onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#aaa'; }}
-        >
-          Seite neu laden
-        </button>
+
+        {/* Content Area Skeleton */}
+        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+          {/* Left Panel Sidebar Skeleton */}
+          <div style={{ width: '270px', borderRight: '1px solid var(--border-color)', backgroundColor: 'var(--bg-dashboard)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px', flexShrink: 0 }}>
+            <div className="skeleton-block skeleton-shimmer" style={{ width: '100%', height: '36px', borderRadius: '8px' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+              {[1, 2, 3, 4, 5, 6, 7].map(i => (
+                <div key={i} className="skeleton-block skeleton-shimmer" style={{ width: '100%', height: '44px', borderRadius: '8px' }} />
+              ))}
+            </div>
+          </div>
+
+          {/* Main Editor Panel Skeleton */}
+          <div style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: 'var(--bg-main)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="skeleton-block skeleton-shimmer" style={{ width: '250px', height: '28px' }} />
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <div className="skeleton-block skeleton-shimmer" style={{ width: '120px', height: '36px', borderRadius: '8px' }} />
+                <div className="skeleton-block skeleton-shimmer" style={{ width: '90px', height: '36px', borderRadius: '8px' }} />
+              </div>
+            </div>
+            <div className="skeleton-block skeleton-shimmer" style={{ width: '100%', height: '40px', borderRadius: '8px' }} />
+            <div className="skeleton-block skeleton-shimmer" style={{ width: '100%', flex: 1, borderRadius: '10px' }} />
+          </div>
+
+          {/* Right Live Preview Panel Skeleton */}
+          <div style={{ width: '360px', borderLeft: '1px solid var(--border-color)', backgroundColor: '#070d19', padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <div className="skeleton-block skeleton-shimmer" style={{ width: '220px', height: '300px', borderRadius: '8px', boxShadow: '0 12px 30px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', padding: '30px 20px', justifyContent: 'space-between', backgroundColor: '#0f172a' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div className="skeleton-block skeleton-shimmer" style={{ width: '80%', height: '14px', backgroundColor: 'rgba(255,255,255,0.06)' }} />
+                <div className="skeleton-block skeleton-shimmer" style={{ width: '95%', height: '10px', backgroundColor: 'rgba(255,255,255,0.04)' }} />
+                <div className="skeleton-block skeleton-shimmer" style={{ width: '90%', height: '10px', backgroundColor: 'rgba(255,255,255,0.04)' }} />
+                <div className="skeleton-block skeleton-shimmer" style={{ width: '40%', height: '10px', backgroundColor: 'rgba(255,255,255,0.04)' }} />
+              </div>
+              <div className="skeleton-block skeleton-shimmer" style={{ width: '20px', height: '10px', alignSelf: 'center', backgroundColor: 'rgba(255,255,255,0.06)' }} />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
