@@ -925,6 +925,7 @@ export default function App() {
   // Supabase Auth states
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState<boolean>(true);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [userHasValidLicense, setUserHasValidLicense] = useState<boolean | null>(null);
   const [maintenanceInfo, setMaintenanceInfo] = useState<{ active: boolean; message: string | null; endsAt: string | null }>({ active: false, message: null, endsAt: null });
   const [activeModules, setActiveModules] = useState<Record<string, any>>({ brain: true, dashboard: true, calculator: true, studio: true });
@@ -934,6 +935,17 @@ export default function App() {
   // Prevents onAuthStateChange re-runs (e.g. token refresh) from overwriting books.
   const booksLoadedForUidRef = React.useRef<string | null>(null);
   const isCheckingRef = React.useRef<boolean>(false);
+
+  // Parse URL error on mount
+  useEffect(() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const err = urlParams.get('error') || urlParams.get('error_description');
+      if (err) {
+        setAuthError(decodeURIComponent(err));
+      }
+    } catch (e) {}
+  }, []);
 
   // Sync state with Supabase auth status
   useEffect(() => {
@@ -956,8 +968,11 @@ export default function App() {
         // ── FAST PATH: check session FIRST so the user is never stuck on a black screen ──
         // getSession() is near-instant (reads from storage). We show the user immediately,
         // then load maintenance/modules in background.
-        const { data: { session } } = await supabase.auth.getSession();
-      const user = toAppUser(session?.user ?? null);
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) {
+          setAuthError(sessionError.message);
+        }
+        const user = toAppUser(session?.user ?? null);
       if (user) {
         // Wichtig: eingeloggte Nutzer nicht auf einem schwarzen Bootstrap-Screen festhalten,
         // während Profil/Cloud-Daten im Hintergrund geladen werden.
@@ -6559,6 +6574,18 @@ export default function App() {
   if (!currentUser) {
     return (
       <>
+        {authError && (
+          <div style={{
+            position: 'fixed', top: '16px', left: '50%', transform: 'translateX(-50%)',
+            backgroundColor: '#fce8e6', color: '#a8201a', border: '1px solid rgba(217, 48, 37, 0.3)',
+            padding: '12px 20px', borderRadius: '8px', zIndex: 9999999, boxShadow: '0 8px 16px rgba(0,0,0,0.15)',
+            display: 'flex', alignItems: 'center', gap: '12px', fontFamily: 'sans-serif', fontSize: '13px',
+            maxWidth: '90vw', width: '400px', justifyContent: 'space-between', boxSizing: 'border-box'
+          }}>
+            <span style={{ textAlign: 'left' }}><strong>Anmelde-Fehler:</strong> {authError}</span>
+            <button onClick={() => setAuthError(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#a8201a', fontWeight: 'bold', fontSize: '16px', padding: '0 4px' }}>✕</button>
+          </div>
+        )}
         <LandingPage 
           onLoginClick={() => setShowAuthModal(true)} 
           theme={theme}
@@ -6576,6 +6603,18 @@ export default function App() {
 
   return (
     <>
+      {authError && (
+        <div style={{
+          position: 'fixed', top: '16px', left: '50%', transform: 'translateX(-50%)',
+          backgroundColor: '#fce8e6', color: '#a8201a', border: '1px solid rgba(217, 48, 37, 0.3)',
+          padding: '12px 20px', borderRadius: '8px', zIndex: 9999999, boxShadow: '0 8px 16px rgba(0,0,0,0.15)',
+          display: 'flex', alignItems: 'center', gap: '12px', fontFamily: 'sans-serif', fontSize: '13px',
+          maxWidth: '90vw', width: '400px', justifyContent: 'space-between', boxSizing: 'border-box'
+        }}>
+          <span style={{ textAlign: 'left' }}><strong>Anmelde-Fehler:</strong> {authError}</span>
+          <button onClick={() => setAuthError(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#a8201a', fontWeight: 'bold', fontSize: '16px', padding: '0 4px' }}>✕</button>
+        </div>
+      )}
       {/* 🚫 Account Banned Modal */}
       {showBanModal && (
         <div style={{
