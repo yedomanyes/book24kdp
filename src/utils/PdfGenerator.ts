@@ -6,6 +6,7 @@ export interface PdfConfig {
   bookId?: string;
   title?: string;
   subtitle?: string;
+  hideTitlePage?: boolean;
   fontFamily: 'times' | 'helvetica' | 'courier' | 'arial' | 'playfair' | 'inter';
   fontSize: number; // in pt
   lineHeightMultiplier: number;
@@ -40,24 +41,28 @@ export interface PdfConfig {
   titlePageTitleFont?: string;
   titlePageTitleX?: number;
   titlePageTitleY?: number;
+  titlePageTitleBold?: boolean;
   
   titlePageSubtitleAlign?: 'left' | 'center' | 'right';
   titlePageSubtitleSize?: number;
   titlePageSubtitleFont?: string;
   titlePageSubtitleX?: number;
   titlePageSubtitleY?: number;
+  titlePageSubtitleBold?: boolean;
 
   titlePageAuthorAlign?: 'left' | 'center' | 'right';
   titlePageAuthorSize?: number;
   titlePageAuthorFont?: string;
   titlePageAuthorX?: number;
   titlePageAuthorY?: number;
+  titlePageAuthorBold?: boolean;
 
   titlePagePublisherAlign?: 'left' | 'center' | 'right';
   titlePagePublisherSize?: number;
   titlePagePublisherFont?: string;
   titlePagePublisherX?: number;
   titlePagePublisherY?: number;
+  titlePagePublisherBold?: boolean;
   titlePageCustomTexts?: import('../App').TitlePageCustomText[];
   
   chapterTopPadding?: number;
@@ -234,6 +239,7 @@ export function generateBookPdf(
   }
 
   // --- 1. TITLE PAGE ---
+  if (!config.hideTitlePage) {
   // Premium double borders
   if (config.titlePageShowBorders !== false) {
     doc.setLineWidth(1.5);
@@ -247,25 +253,21 @@ export function generateBookPdf(
   function getTitleElemX(align: 'left' | 'center' | 'right', offsetPt: number, leftM: number): number {
     if (align === 'left') return leftM + offsetPt;
     if (align === 'right') return pageWidth - leftM + offsetPt;
-    return pageWidth / 2 + offsetPt; // center
+    return pageWidth / 2 + offsetPt; // center relative to physical page
   }
 
-  // Use a practically infinite width (10000) for Title Page text wrapping calculation.
-  // This completely disables automatic text wrapping by jsPDF.
-  // The text will now only wrap if the user explicitly presses 'Enter' to insert a manual newline,
-  // guaranteeing that the PDF matches the user's intentional formatting.
-  const titleMargin = 10;
-  const titleWritableWidth = 10000;
+  // Use the actual writable width for wrapping title page text
+  const titleWritableWidth = writableWidth;
 
   // Render Title
   const titleFont = resolvePdfFont(config.titlePageTitleFont || 'playfair');
   const titleAlign: 'left' | 'center' | 'right' = config.titlePageTitleAlign || 'center';
-  const titleSize = config.titlePageTitleSize || (pageWidth < 400 ? 22 : 28);
+  const titleSize = config.titlePageTitleSize || 28;
   const titleOffsetPt = Number(config.titlePageTitleX || 0);
   const titleUserOffsetY = Number(config.titlePageTitleY || 0);
-  doc.setFont(titleFont, fontStyleBold);
+  doc.setFont(titleFont, config.titlePageTitleBold ? 'bold' : fontStyleRegular);
   doc.setFontSize(titleSize);
-  const rawTitle = config.title || outline.title || '';
+  const rawTitle = config.title !== undefined ? config.title : (outline.title || '');
   const hardLines = rawTitle.split('\n');
   const titleLines: string[] = [];
   hardLines.forEach(hLine => {
@@ -273,15 +275,15 @@ export function generateBookPdf(
   });
   const layout = config.titlePageLayout || 'centered';
 
-  // The Live Preview title starts at 14% or 25% of the page height
-  const titleBaseY = (layout === 'top_centered' ? pageHeight * 0.14 : pageHeight * 0.25);
+  // The Live Preview title starts at 14% or 35% of the page height
+  const titleBaseY = (layout === 'top_centered' ? pageHeight * 0.14 : pageHeight * 0.35);
   // Apply user Y-offset to titleBaseY
   let titleY = titleBaseY + titleUserOffsetY;
   // Clamp: never render above top margin
   titleY = Math.max(topMargin, titleY);
 
   titleLines.forEach((line: string) => {
-    const tx = getTitleElemX(titleAlign, titleOffsetPt, titleMargin);
+    const tx = getTitleElemX(titleAlign, titleOffsetPt, insideMargin);
     doc.text(line, tx, titleY, { align: titleAlign, baseline: 'top' });
     titleY += titleSize * 1.4;
   });
@@ -289,13 +291,13 @@ export function generateBookPdf(
   // Subtitle: positioned right below the last title line (with 8pt margin)
   const subtitleUserOffsetY = Number(config.titlePageSubtitleY || 0);
   let subtitleY = titleY + 8 + subtitleUserOffsetY;
-  const finalSubtitle = config.subtitle || outline.subtitle;
+  const finalSubtitle = config.subtitle !== undefined ? config.subtitle : (outline.subtitle || '');
   if (finalSubtitle) {
     const subtitleFont = resolvePdfFont(config.titlePageSubtitleFont || 'times');
     const subtitleAlign: 'left' | 'center' | 'right' = config.titlePageSubtitleAlign || 'center';
     const subtitleSize = config.titlePageSubtitleSize || 12;
     const subtitleOffsetPt = Number(config.titlePageSubtitleX || 0);
-    doc.setFont(subtitleFont, fontStyleItalic);
+    doc.setFont(subtitleFont, config.titlePageSubtitleBold ? 'bolditalic' : fontStyleItalic);
     doc.setFontSize(subtitleSize);
     
     const hardSubLines = finalSubtitle.split('\n');
@@ -305,7 +307,7 @@ export function generateBookPdf(
     });
     
     subtitleLines.forEach((line: string) => {
-      const sx = getTitleElemX(subtitleAlign, subtitleOffsetPt, titleMargin);
+      const sx = getTitleElemX(subtitleAlign, subtitleOffsetPt, insideMargin);
       doc.text(line, sx, subtitleY, { align: subtitleAlign, baseline: 'top' });
       subtitleY += subtitleSize * 1.4;
     });
@@ -320,14 +322,14 @@ export function generateBookPdf(
 
   if (config.authorName) {
     const authorFont = resolvePdfFont(config.titlePageAuthorFont || 'times');
-    doc.setFont(authorFont, fontStyleRegular);
+    doc.setFont(authorFont, config.titlePageAuthorBold ? 'bold' : fontStyleRegular);
     doc.setFontSize(authorSize);
     doc.text(config.authorName, pageWidth / 2, authorY, { align: 'center', baseline: 'top' });
   }
 
   if (config.publisherLine) {
     const pubFont = resolvePdfFont(config.titlePagePublisherFont || 'times');
-    doc.setFont(pubFont, fontStyleRegular);
+    doc.setFont(pubFont, config.titlePagePublisherBold ? 'bold' : fontStyleRegular);
     doc.setFontSize(pubSize);
     doc.setTextColor(80);
     doc.text(config.publisherLine, pageWidth / 2, pubY, { align: 'center', baseline: 'top' });
@@ -345,7 +347,8 @@ export function generateBookPdf(
   const baseEmblemY = defaultEmblemY + shiftY;
   const emblemY = baseEmblemY;
   const emblemSize = scale;
-  const emblemX = (pageWidth - emblemSize) / 2 + shiftX;
+  const emblemCenterX = pageWidth / 2 + shiftX;
+  const emblemX = emblemCenterX - (emblemSize / 2);
 
   if (config.titlePageEmblem === 'custom' && config.titlePageImage) {
     try {
@@ -357,10 +360,10 @@ export function generateBookPdf(
       doc.addImage(config.titlePageImage, format, emblemX, emblemY - emblemSize/2, emblemSize, emblemSize);
     } catch (e) {
       console.warn("Failed to add image to PDF", e);
-      drawGeometricEmblem(doc, pageWidth / 2 + shiftX, emblemY, emblemSize);
+      drawGeometricEmblem(doc, emblemCenterX, emblemY, emblemSize);
     }
   } else if (config.titlePageEmblem) {
-    const cx = pageWidth / 2 + shiftX;
+    const cx = emblemCenterX;
     const cy = emblemY;
     const size = emblemSize;
 
@@ -379,7 +382,7 @@ export function generateBookPdf(
   if (config.titlePageCustomTexts && config.titlePageCustomTexts.length > 0) {
     config.titlePageCustomTexts.forEach(textObj => {
       const customFont = resolvePdfFont(textObj.font);
-      doc.setFont(customFont, fontStyleRegular);
+      doc.setFont(customFont, textObj.isBold ? 'bold' : fontStyleRegular);
       doc.setFontSize(textObj.size || 16);
       
       const hardLines = (textObj.text || '').split('\n');
@@ -387,15 +390,14 @@ export function generateBookPdf(
       hardLines.forEach(hLine => {
         textLines.push(...doc.splitTextToSize(hLine, 10000));
       });
-      
       const baseX = pageWidth / 2 + (textObj.x || 0);
       const totalHeight = textLines.length * (textObj.size || 16) * 1.2;
       let currentY = pageHeight / 2 + (textObj.y || 0) - (totalHeight / 2);
       
       textLines.forEach((line: string) => {
         let alignX = baseX;
-        if (textObj.align === 'left') alignX = baseX - (pageWidth * 0.4);
-        if (textObj.align === 'right') alignX = baseX + (pageWidth * 0.4);
+        if (textObj.align === 'left') alignX = baseX - (writableWidth * 0.4);
+        if (textObj.align === 'right') alignX = baseX + (writableWidth * 0.4);
         
         doc.text(line, alignX, currentY, { align: textObj.align, baseline: 'top' });
         currentY += (textObj.size || 16) * 1.2;
@@ -404,6 +406,7 @@ export function generateBookPdf(
   }
 
   doc.setTextColor(0);
+  }
 
   // --- PRE-CALCULATE PAGE PHYSICAL PLACEMENTS ---
   const splitPageText = (text: string): string[] => {
@@ -448,20 +451,34 @@ export function generateBookPdf(
       }
     }
 
-    Object.keys(chapterStarts).forEach(() => {
+    const tocFont = resolvePdfFont(config.tocFontFamily || config.fontFamily);
+    const baseFontSize = config.tocFontSize || 10;
+    doc.setFont(tocFont, fontStyleBold);
+    doc.setFontSize(baseFontSize);
+    const maxTitleWidth = writableWidth - 45;
+
+    Object.keys(chapterStarts).forEach((chapterTitle) => {
       const forceBreak = usePreventativePageBreak && chaptersRenderedOnPage >= maxChaptersPerPage;
-      if (simY + tocSpacing > pageHeight - bottomMargin || forceBreak) {
+      
+      const lines = doc.splitTextToSize(chapterTitle, maxTitleWidth);
+      const lineSpacing = baseFontSize * 1.2;
+      const entryHeight = (lines.length - 1) * lineSpacing + tocSpacing;
+
+      if (simY + entryHeight - tocSpacing > pageHeight - bottomMargin || forceBreak) {
         tocPagesCount++;
         simY = topMargin + 36;
         chaptersRenderedOnPage = 0;
       }
-      simY += tocSpacing;
+      simY += entryHeight;
       chaptersRenderedOnPage++;
     });
   }
 
   // 3. Map pages to physical pages and printed page numbers
-  const firstContentPhysicalPage = config.generateTOC === false ? 2 : (2 + tocPagesCount);
+  let firstContentPhysicalPage = 2;
+  if (config.hideTitlePage && config.generateTOC === false) firstContentPhysicalPage = 1;
+  else if (config.hideTitlePage) firstContentPhysicalPage = 1 + tocPagesCount;
+  else if (config.generateTOC !== false) firstContentPhysicalPage = 2 + tocPagesCount;
   let currentPhysicalPage = firstContentPhysicalPage;
 
   const pagePhysicalMap: { [pageNum: number]: number } = {};
@@ -490,30 +507,31 @@ export function generateBookPdf(
   });
 
   // --- 2. TABLE OF CONTENTS (Render only if enabled) ---
-  let pdfPageCounter = 1; // page 1 is title page
+  let pdfPageCounter = config.hideTitlePage ? 0 : 1; // page 1 is title page
   
   if (config.generateTOC !== false) {
     const chaptersList = Object.entries(chapterToPageMap);
-    const totalTOCPagesCount = tocPagesCount;
+    // removed totalTOCPagesCount
     
     const tocFont = resolvePdfFont(config.tocFontFamily || config.fontFamily);
     const baseFontSize = config.tocFontSize || 10;
     const headerFontSize = baseFontSize + 4;
     const tocSpacing = config.tocLineSpacing || 18;
 
-    doc.addPage();
-    pdfPageCounter++; // now at page 2
+    if (pdfPageCounter > 0) {
+      doc.addPage();
+    }
+    pdfPageCounter++;
     
     let currentTOCPageIndex = 1;
     doc.setFont(tocFont, fontStyleBold);
     doc.setFontSize(headerFontSize);
     doc.setTextColor(0);
     let tocX = getLeftMarginX(pdfPageCounter);
-    const getTOCHeader = (idx: number) => {
-      const suffix = totalTOCPagesCount > 1 ? ` (${idx}/${totalTOCPagesCount})` : '';
-      return (outline.language === 'de' ? 'Inhaltsverzeichnis' : 'Table of Contents') + suffix;
+    const getTOCHeader = () => {
+      return (outline.language === 'de' ? 'Inhaltsverzeichnis' : 'Table of Contents');
     };
-    doc.text(getTOCHeader(currentTOCPageIndex), tocX, topMargin + 10);
+    doc.text(getTOCHeader(), tocX + writableWidth / 2, topMargin + 10, { align: 'center' });
     
     let tocY = topMargin + 36;
     let chaptersRenderedOnPage = 0;
@@ -535,18 +553,15 @@ export function generateBookPdf(
       doc.setFont(tocFont, fontStyleBold);
       doc.setFontSize(baseFontSize);
       
-      const maxTitleWidth = writableWidth - 35; // reserve 35pt for space + page number
-      const textWidth = doc.getTextWidth(chapterTitle);
-      let fontSize = baseFontSize;
-      if (textWidth > maxTitleWidth) {
-        fontSize = Math.max(6.5, (maxTitleWidth / textWidth) * baseFontSize);
-      }
-      doc.setFontSize(fontSize);
+      const maxTitleWidth = writableWidth - 45; // reserve space for dots + page number
+      const lines: string[] = doc.splitTextToSize(chapterTitle, maxTitleWidth);
+      const lineSpacing = baseFontSize * 1.2;
+      const entryHeight = (lines.length - 1) * lineSpacing + tocSpacing;
 
       const forceBreak = usePreventativePageBreak && chaptersRenderedOnPage >= maxChaptersPerPage;
 
       // Overflow check
-      if (tocY + tocSpacing > pageHeight - bottomMargin || forceBreak) {
+      if (tocY + entryHeight - tocSpacing > pageHeight - bottomMargin || forceBreak) {
         // Draw footer (Roman numeral) for the current TOC page
         doc.setFont(tocFont, fontStyleRegular);
         doc.setFontSize(9);
@@ -564,31 +579,42 @@ export function generateBookPdf(
         doc.setFont(tocFont, fontStyleBold);
         doc.setFontSize(headerFontSize);
         tocX = getLeftMarginX(pdfPageCounter);
-        doc.text(getTOCHeader(currentTOCPageIndex), tocX, topMargin + 10);
+        doc.text(getTOCHeader(), tocX + writableWidth / 2, topMargin + 10, { align: 'center' });
         
         tocY = topMargin + 36;
         chaptersRenderedOnPage = 0;
       }
 
-      // Render the single line
+      // Render the entry (potentially multiple lines)
       doc.setTextColor(0);
       doc.setFont(tocFont, fontStyleBold);
-      doc.setFontSize(fontSize);
-      doc.text(chapterTitle, tocX, tocY);
+      doc.setFontSize(baseFontSize);
       
-      const lineWidth = doc.getTextWidth(chapterTitle);
-      const dotsWidth = writableWidth - lineWidth - 20;
+      lines.forEach((line, index) => {
+        doc.text(line, tocX, tocY);
+        
+        if (index === lines.length - 1) {
+          // Last line of the entry: draw dots and page number
+          const lineWidth = doc.getTextWidth(line);
+          const dotsWidth = writableWidth - lineWidth - 25;
+          
+          doc.setFont(tocFont, fontStyleRegular);
+          if (dotsWidth >= 8) {
+            const dotString = '.'.repeat(Math.floor(dotsWidth / doc.getTextWidth('.')));
+            doc.text(dotString, tocX + lineWidth + 4, tocY);
+          }
+          
+          doc.setFont(tocFont, fontStyleBold);
+          doc.text(pageNum.toString(), tocX + writableWidth - 5, tocY, { align: 'right' });
+        }
+        
+        if (index < lines.length - 1) {
+          tocY += lineSpacing;
+        } else {
+          tocY += tocSpacing;
+        }
+      });
       
-      doc.setFont(tocFont, fontStyleRegular);
-      doc.setFontSize(fontSize);
-      if (dotsWidth >= 8) {
-        const dotString = '.'.repeat(Math.floor(dotsWidth / doc.getTextWidth('.')));
-        doc.text(dotString, tocX + lineWidth + 4, tocY);
-      }
-      
-      doc.setFont(tocFont, fontStyleBold);
-      doc.text(pageNum.toString(), tocX + writableWidth - 5, tocY, { align: 'right' });
-      tocY += tocSpacing;
       chaptersRenderedOnPage++;
     });
 
@@ -607,7 +633,7 @@ export function generateBookPdf(
     
     // Add blank pages if we skipped physical page numbers (recto alignment)
     while (pdfPageCounter < targetPhysicalPage - 1) {
-      doc.addPage();
+      if (pdfPageCounter > 0) doc.addPage();
       pdfPageCounter++;
       // Blank page is left completely empty (no header/footer)
     }
@@ -616,7 +642,7 @@ export function generateBookPdf(
     const parts = splitPageText(pageText);
 
     parts.forEach((partText, partIndex) => {
-      doc.addPage();
+      if (pdfPageCounter > 0) doc.addPage();
       pdfPageCounter++;
 
       const pageX = getLeftMarginX(pdfPageCounter);
@@ -632,7 +658,7 @@ export function generateBookPdf(
         doc.setFont(fontFamily, fontStyleItalic);
         doc.setFontSize(8);
         doc.setTextColor(120);
-        const headerText = pdfPageCounter % 2 === 0 ? outline.title : (pageInfo?.chapter_title || '');
+        const headerText = pdfPageCounter % 2 === 0 ? (config.title !== undefined ? config.title : outline.title) : (pageInfo?.chapter_title || '');
         const headerAlign = pdfPageCounter % 2 === 0 ? 'left' : 'right';
         const headerX = pdfPageCounter % 2 === 0 ? pageX : pageX + writableWidth;
         doc.text(headerText, headerX, topMargin - 15, { align: headerAlign });
@@ -689,6 +715,18 @@ export function generateBookPdf(
       function parseBookLines(rawLines: string[]): PdfBlock[] {
         const blks: PdfBlock[] = [];
         let bi = 0;
+
+        // Strip all markdown formatting characters from display text
+        const cleanMarkdown = (s: string): string =>
+          s
+            .replace(/\*\*([^*]+)\*\*/g, '$1') // **bold** → bold
+            .replace(/\*([^*]+)\*/g, '$1')      // *italic* → italic
+            .replace(/_{2}([^_]+)_{2}/g, '$1')  // __bold__ → bold
+            .replace(/`([^`]+)`/g, '$1')         // `code` → code
+            .replace(/\*\*/g, '')                // leftover **
+            .replace(/\*/g, '')                  // leftover *
+            .trim();
+
         while (bi < rawLines.length) {
           const raw = rawLines[bi];
           const tr = raw.trim().replace(/ {2,}/g, ' ');
@@ -728,8 +766,8 @@ export function generateBookPdf(
           }
 
           // :::box
-          if (/^:::(box|callout|reflection|action)/i.test(tr)) {
-            const tm = tr.match(/^:::(box|callout|reflection|action)([123]?)\s*(.*)/i);
+          if (/^:::\s*(box|callout|reflection|action)/i.test(tr)) {
+            const tm = tr.match(/^:::\s*(box|callout|reflection|action)([123]?)\s*(.*)/i);
             const boxType = tm && tm[1] ? tm[1].toLowerCase() : 'box';
             const boxStyle = tm && tm[2] ? parseInt(tm[2], 10) : 1;
             const boxTitle = tm ? tm[3].trim() : '';
@@ -790,15 +828,25 @@ export function generateBookPdf(
           }
 
           // Quote
-          if (tr.startsWith('> ')) {
-            blks.push({ kind: 'quote', text: tr.slice(2) });
+          if (tr.startsWith('>')) {
+            blks.push({ kind: 'quote', text: tr.replace(/^>\s*/, '') });
+            bi++; continue;
+          }
+
+          if (tr.startsWith('"') && /"\s*[-—]\s*.+$/.test(tr)) {
+            blks.push({ kind: 'quote', text: tr });
+            bi++; continue;
+          }
+
+          if (tr.startsWith('"""') && tr.endsWith('"""') && tr.length >= 6) {
+            blks.push({ kind: 'quote', text: tr.slice(3, -3).trim() });
             bi++; continue;
           }
 
           // Bullet
           if (tr.startsWith('- ') || tr.startsWith('* ') || tr.startsWith('• ')) {
-            const bText = tr.startsWith('• ') ? tr.slice(2) : tr.slice(2);
-            blks.push({ kind: 'bullet', text: bText });
+            const bText = cleanMarkdown(tr.startsWith('• ') ? tr.slice(2) : tr.slice(2));
+            if (bText) blks.push({ kind: 'bullet', text: bText });
             bi++; continue;
           }
 
@@ -806,12 +854,17 @@ export function generateBookPdf(
           if (/^\d+\.\s/.test(tr)) {
             const match = tr.match(/^(\d+\.)\s(.*)/);
             if (match) {
-              blks.push({ kind: 'numbered', num: match[1], text: match[2] });
+              const nText = cleanMarkdown(match[2]);
+              // Skip lone numbers with no text (stray number bug)
+              if (nText.trim()) blks.push({ kind: 'numbered', num: match[1], text: nText });
               bi++; continue;
             }
           }
 
-          blks.push({ kind: 'paragraph', text: tr });
+          // Skip lines that are ONLY markdown symbols (pure ** or *** lines not caught above)
+          if (/^[*_`#]{1,6}$/.test(tr)) { bi++; continue; }
+
+          blks.push({ kind: 'paragraph', text: cleanMarkdown(tr) });
           bi++;
         }
         return blks;
@@ -1063,15 +1116,21 @@ export function generateBookPdf(
             doc.setFont(fontFamily, fontStyleBold);
             doc.setFontSize(tableFontSize);
             doc.setFillColor(240, 240, 240);
-            doc.rect(blockX, contentY - tableFontSize * 0.75, drawWidth, tableLH + cellPad * 2, 'FD');
+
+            // Consistent Y anchor: contentY is the text baseline for the first row
+            const headerBoxY = contentY - tableFontSize * 0.85;
+            const headerBoxH = tableLH + cellPad * 2;
+            doc.rect(blockX, headerBoxY, drawWidth, headerBoxH, 'FD');
 
             block.headers.forEach((h, ci) => {
-              const hLines = doc.splitTextToSize(h, colW - cellPad * 2);
+              // Strip markdown ** from headers
+              const cleanH = h.replace(/\*\*/g, '').trim();
+              const hLines = doc.splitTextToSize(cleanH, colW - cellPad * 2);
               hLines.forEach((ln: string, li: number) => {
-                doc.text(ln, blockX + ci * colW + cellPad, contentY + li * tableLH - tableFontSize * 0.1);
+                doc.text(ln, blockX + ci * colW + cellPad, contentY + li * tableLH);
               });
             });
-            contentY += tableLH + cellPad * 2;
+            contentY += headerBoxH;
 
             // Draw data rows
             doc.setFont(fontFamily, fontStyleRegular);
@@ -1080,21 +1139,27 @@ export function generateBookPdf(
               const rowCellLines: string[][] = [];
               row.forEach((cell, ci) => {
                 if (ci < colCount) {
-                  const cLines = doc.splitTextToSize(cell, colW - cellPad * 2);
+                  // Strip ** markdown from cell text
+                  const cleanCell = cell.replace(/\*\*/g, '').trim();
+                  const cLines = doc.splitTextToSize(cleanCell, colW - cellPad * 2);
                   rowCellLines.push(cLines);
                   if (cLines.length > maxLines) maxLines = cLines.length;
                 }
               });
               const rowH = maxLines * tableLH + cellPad * 2;
-              doc.rect(blockX, contentY - tableFontSize * 0.75, drawWidth, rowH, 'D');
+              // Consistent Y anchor for row box
+              const rowBoxY = contentY - tableFontSize * 0.85;
+              doc.rect(blockX, rowBoxY, drawWidth, rowH, 'D');
               rowCellLines.forEach((cLines, ci) => {
                 cLines.forEach((ln: string, li: number) => {
-                  doc.text(ln, blockX + ci * colW + cellPad, contentY + li * tableLH - tableFontSize * 0.1);
+                  doc.text(ln, blockX + ci * colW + cellPad, contentY + li * tableLH);
                 });
                 // Draw vertical dividers
                 if (ci < colCount - 1) {
-                  doc.line(blockX + (ci + 1) * colW, contentY - tableFontSize * 0.75,
-                    blockX + (ci + 1) * colW, contentY - tableFontSize * 0.75 + rowH);
+                  doc.line(
+                    blockX + (ci + 1) * colW, rowBoxY,
+                    blockX + (ci + 1) * colW, rowBoxY + rowH
+                  );
                 }
               });
               contentY += rowH;

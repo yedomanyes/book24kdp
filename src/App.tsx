@@ -5049,11 +5049,12 @@ export default function App() {
         {/* Title & Subtitle centered at top (layout depending) */}
         <div style={{ 
           position: 'absolute',
-          left: `0px`,
-          right: `0px`,
-          top: `${(layout === 'top_centered' ? 0.14 : 0.25) * previewHeight}px`,
+          left: `${54 * previewScaleX}px`,
+          right: `${45 * previewScaleX}px`,
+          top: `${(layout === 'top_centered' ? 0.14 : 0.35) * previewHeight}px`,
           transition: 'top 0.2s ease',
-          zIndex: 2
+          zIndex: 2,
+          boxSizing: 'border-box'
         }}>
           {editingField === 'title' ? (
             <textarea
