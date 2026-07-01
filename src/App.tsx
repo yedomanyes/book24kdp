@@ -6803,6 +6803,33 @@ export default function App() {
                 }
               }}
             />
+            <button
+              onClick={async () => {
+                if (supabase) {
+                  await supabase.auth.signOut();
+                }
+                setCurrentUser(null);
+                setUserHasValidLicense(null);
+              }}
+              style={{
+                marginTop: '16px',
+                width: '100%',
+                padding: '10px',
+                background: '#f1f3f4',
+                color: '#5f6368',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'background 0.2s',
+                fontFamily: 'inherit'
+              }}
+              onMouseOver={e => e.currentTarget.style.background = '#e8eaed'}
+              onMouseOut={e => e.currentTarget.style.background = '#f1f3f4'}
+            >
+              Abbrechen & Abmelden
+            </button>
           </div>
         </div>
       )}
