@@ -2196,21 +2196,27 @@ export default function App() {
 
   // Automatically restore/resolve activeBookId when books load or change
   useEffect(() => {
-    if (books.length === 0) return;
+    if (books.length === 0) {
+      setActiveBookId(null);
+      return;
+    }
+
+    // If we already have a valid activeBookId, do NOT override it (prevents state-sync race conditions)
+    if (activeBookId && books.some(b => b.id === activeBookId)) {
+      return;
+    }
 
     const savedScopedId = localStorage.getItem(getScopedActiveBookStorageKey(activeAccountId));
     const savedGlobalId = localStorage.getItem('b24studio_activeBookId');
     const savedId = savedScopedId || savedGlobalId;
 
     if (savedId && books.some(b => b.id === savedId)) {
-      if (activeBookId !== savedId) {
-        setActiveBookId(savedId);
-      }
-    } else if (!activeBookId || !books.some(b => b.id === activeBookId)) {
+      setActiveBookId(savedId);
+    } else {
       // Fallback: select the first book if none selected or the selected one is gone
       setActiveBookId(books[0].id);
     }
-  }, [books, activeAccountId, activeBookId]);
+  }, [books, activeAccountId]);
 
   const activeBook = books.find(b => b.id === activeBookId) || null;
   const brainEnabled = hasBrainAccess(currentUser?.email) || currentUser?.plan === 'staff';
