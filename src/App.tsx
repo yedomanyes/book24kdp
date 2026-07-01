@@ -6660,17 +6660,6 @@ export default function App() {
             <button onClick={() => setAuthError(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#a8201a', fontWeight: 'bold', fontSize: '16px', padding: '0 4px' }}>✕</button>
           </div>
         )}
-        {authDebugLogs.length > 0 && (
-          <div style={{
-            position:'fixed',bottom:'16px',left:'16px',right:'16px',zIndex:9999999,
-            backgroundColor:'rgba(0,0,0,0.92)',color:'#0f0',padding:'14px',
-            borderRadius:'10px',fontFamily:'monospace',fontSize:'11px',
-            maxHeight:'45vh',overflowY:'auto',border:'1px solid #0f0'
-          }}>
-            <div style={{marginBottom:'6px',color:'#fff',fontWeight:'bold'}}>Auth Debug Log</div>
-            {authDebugLogs.map((log, i) => <div key={i} style={{marginBottom:'3px',wordBreak:'break-all'}}>{log}</div>)}
-          </div>
-        )}
         <LandingPage 
           onLoginClick={() => setShowAuthModal(true)} 
           theme={theme}
