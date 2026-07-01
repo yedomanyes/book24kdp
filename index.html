@@ -6,6 +6,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Book24 Studio – KI-gestütztes Buch-Schreibwerkzeug für KDP und Self-Publishing." />
     <title>Book24 Studio</title>
+    <script>
+      // Global Safari Private Mode & QuotaExceededError protection
+      try {
+        var origSetItem = Storage.prototype.setItem;
+        Storage.prototype.setItem = function(key, value) {
+          try {
+            origSetItem.call(this, key, value);
+          } catch (e) {
+            console.warn('Storage.setItem failed (blocked or quota exceeded):', e);
+          }
+        };
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="error-fallback" style="display:none; position:fixed; inset:0; z-index:99999999; background:#900; color:#fff; padding:20px; font-family:monospace; font-size:14px; overflow:auto;">
