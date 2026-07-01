@@ -2369,6 +2369,8 @@ export default function App() {
     }
   }, [selectedPage, activeBookId, activeAccountId]);
   const [editorText, setEditorText] = useState<string>('');
+  const isTypingRef = React.useRef(false);
+  const editorSaveTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const [styleOptions, setStyleOptions] = useState<{ 
     version_1: string; style_1_name: string;
     version_2: string; style_2_name: string;
@@ -2611,29 +2613,42 @@ export default function App() {
 
 
 
-  // Sync editor field
+  // Sync editor field — only when NOT actively typing (prevents cursor jump / flicker)
   useEffect(() => {
+    if (isTypingRef.current) return; // user is typing — don't overwrite
     if (activeBook && selectedPage !== null && typeof selectedPage === 'number') {
       setEditorText((activeBook.pagesText || {})[selectedPage] || '');
     }
   }, [selectedPage, activeBookId, activeBook?.pagesText]);
 
-  // Handle manual edits
+  // Handle manual edits — debounced save to prevent re-render flicker on every keystroke
   const handleEditorChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value;
     setEditorText(text);
+
+    // Mark as typing so the pagesText useEffect doesn't overwrite the textarea
+    isTypingRef.current = true;
+    if (editorSaveTimerRef.current) clearTimeout(editorSaveTimerRef.current);
+    editorSaveTimerRef.current = setTimeout(() => {
+      isTypingRef.current = false;
+    }, 1000);
+
     if (activeBookId && selectedPage !== null && typeof selectedPage === 'number') {
-      setBooks(prev => prev.map(b => {
-        if (b.id === activeBookId) {
-          const hasOverflow = checkTextOverflow(text, b, selectedPage);
-          return {
-            ...b,
-            pagesText: { ...(b.pagesText || {}), [selectedPage]: text },
-            pagesOverflow: { ...(b.pagesOverflow || {}), [selectedPage]: hasOverflow }
-          };
-        }
-        return b;
-      }));
+      // Debounce the expensive setBooks call (300ms) so we don't re-render on every keystroke
+      if ((handleEditorChange as any)._saveTimer) clearTimeout((handleEditorChange as any)._saveTimer);
+      (handleEditorChange as any)._saveTimer = setTimeout(() => {
+        setBooks(prev => prev.map(b => {
+          if (b.id === activeBookId) {
+            const hasOverflow = checkTextOverflow(text, b, selectedPage as number);
+            return {
+              ...b,
+              pagesText: { ...(b.pagesText || {}), [selectedPage as number]: text },
+              pagesOverflow: { ...(b.pagesOverflow || {}), [selectedPage as number]: hasOverflow }
+            };
+          }
+          return b;
+        }));
+      }, 300);
     }
   };
 
