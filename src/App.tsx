@@ -1100,7 +1100,22 @@ export default function App() {
             // Do not wipe local storage. Existing data will be automatically synced to the new account.
             console.log('Migrating local data from Firebase to Supabase for user', user.uid);
           } else {
-            // Different user logged in — wipe all local caches
+            // Different user logged in — FIRST save current local books to cloud for the OLD user,
+            // then clear local caches so the new user starts fresh from their cloud data.
+            // This ensures books are NEVER lost on account switch.
+            try {
+              const prevAccId = safeLocalStorage.getItem(KEYS.activeAccount) || 'default';
+              const prevLibRaw = localStorage.getItem(KEYS.library(prevAccId));
+              if (prevLibRaw && lastUid) {
+                const prevBooks = JSON.parse(prevLibRaw);
+                if (Array.isArray(prevBooks) && prevBooks.length > 0) {
+                  // Push previous user's books to cloud before wiping
+                  forcePushBooksToCloud(lastUid, prevBooks).catch(console.error);
+                }
+              }
+            } catch (e) {}
+
+            // Now wipe local caches for the previous user
             try {
               const keysToRemove: string[] = [];
               for (let i = 0; i < localStorage.length; i++) {
@@ -6842,58 +6857,6 @@ export default function App() {
         overflow: userHasValidLicense === false ? 'hidden' : 'auto'
       }}>
 
-      {/* Custom Confirm Dialog */}
-      {confirmDialog && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 9999,
-          backgroundColor: 'rgba(0,0,0,0.65)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center'
-        }}>
-          <div style={{
-            backgroundColor: 'var(--sidebar-bg)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '12px',
-            padding: '28px 32px',
-            maxWidth: '420px',
-            width: '90%',
-            boxShadow: '0 24px 60px rgba(0,0,0,0.6)',
-            display: 'flex', flexDirection: 'column', gap: '16px'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              {confirmDialog.danger && (
-                <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(239,68,68,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                </div>
-              )}
-              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-main)' }}>{confirmDialog.title}</h3>
-            </div>
-            <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.6' }}>{confirmDialog.message}</p>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              {confirmDialog.cancelLabel !== 'none' && (
-                <button
-                  onClick={() => { confirmDialog.onCancel?.(); setConfirmDialog(null); }}
-                  className="btn"
-                  style={{ padding: '8px 18px', fontSize: '13px', backgroundColor: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-muted)' }}
-                >
-                  {confirmDialog.cancelLabel || 'Abbrechen'}
-                </button>
-              )}
-              <button
-                onClick={() => { setConfirmDialog(null); confirmDialog.onConfirm(); }}
-                className="btn"
-                style={{
-                  padding: '8px 18px', fontSize: '13px', fontWeight: 600,
-                  backgroundColor: confirmDialog.danger ? '#dc2626' : 'var(--primary)',
-                  color: '#fff', border: 'none'
-                }}
-              >
-                {confirmDialog.confirmLabel || 'Bestätigen'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
 
 
@@ -11134,6 +11097,59 @@ max="250"
         <MaintenanceOverlay message={maintenanceInfo.message} endsAt={maintenanceInfo.endsAt} />
       )}
     </div>
+
+      {/* Custom Confirm Dialog — OUTSIDE app-container so it works even when pointerEvents:none */}
+      {confirmDialog && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9999999,
+          backgroundColor: 'rgba(0,0,0,0.65)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}>
+          <div style={{
+            backgroundColor: 'var(--sidebar-bg)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '12px',
+            padding: '28px 32px',
+            maxWidth: '420px',
+            width: '90%',
+            boxShadow: '0 24px 60px rgba(0,0,0,0.6)',
+            display: 'flex', flexDirection: 'column', gap: '16px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {confirmDialog.danger && (
+                <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(239,68,68,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+              )}
+              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-main)' }}>{confirmDialog.title}</h3>
+            </div>
+            <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.6' }}>{confirmDialog.message}</p>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              {confirmDialog.cancelLabel !== 'none' && (
+                <button
+                  onClick={() => { confirmDialog.onCancel?.(); setConfirmDialog(null); }}
+                  className="btn"
+                  style={{ padding: '8px 18px', fontSize: '13px', backgroundColor: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-muted)' }}
+                >
+                  {confirmDialog.cancelLabel || 'Abbrechen'}
+                </button>
+              )}
+              <button
+                onClick={() => { setConfirmDialog(null); confirmDialog.onConfirm(); }}
+                className="btn"
+                style={{
+                  padding: '8px 18px', fontSize: '13px', fontWeight: 600,
+                  backgroundColor: confirmDialog.danger ? '#dc2626' : 'var(--primary)',
+                  color: '#fff', border: 'none'
+                }}
+              >
+                {confirmDialog.confirmLabel || 'Bestätigen'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
