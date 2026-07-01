@@ -7,29 +7,59 @@ export const isSupabaseConfigured = (): boolean => {
   return Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 };
 
-// Safe storage wrapper for Safari's private mode / third-party context restrictions
-const memoryStorage: Record<string, string> = {};
+// Safe cookie helper functions for Safari's private mode and OAuth redirects
+const getCookie = (name: string): string | null => {
+  if (typeof document === 'undefined') return null;
+  try {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) {
+      return decodeURIComponent(parts.pop()!.split(';').shift()!);
+    }
+  } catch (e) {
+    console.error('Failed to get cookie:', e);
+  }
+  return null;
+};
+
+const setCookie = (name: string, value: string): void => {
+  if (typeof document === 'undefined') return;
+  try {
+    // Set cookie with 1 year expiration, SameSite=Lax, and Secure
+    document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=31536000; SameSite=Lax; Secure`;
+  } catch (e) {
+    console.error('Failed to set cookie:', e);
+  }
+};
+
+const removeCookie = (name: string): void => {
+  if (typeof document === 'undefined') return;
+  try {
+    document.cookie = `${name}=; path=/; max-age=0; SameSite=Lax; Secure`;
+  } catch (e) {
+    console.error('Failed to remove cookie:', e);
+  }
+};
+
 const safeStorage = {
   getItem(key: string): string | null {
     try {
-      return window.localStorage.getItem(key);
-    } catch (e) {
-      return memoryStorage[key] || null;
-    }
+      const localValue = window.localStorage.getItem(key);
+      if (localValue) return localValue;
+    } catch (e) {}
+    return getCookie(key);
   },
   setItem(key: string, value: string): void {
     try {
       window.localStorage.setItem(key, value);
-    } catch (e) {
-      memoryStorage[key] = value;
-    }
+    } catch (e) {}
+    setCookie(key, value);
   },
   removeItem(key: string): void {
     try {
       window.localStorage.removeItem(key);
-    } catch (e) {
-      delete memoryStorage[key];
-    }
+    } catch (e) {}
+    removeCookie(key);
   }
 };
 
@@ -39,11 +69,11 @@ export const supabase = isSupabaseConfigured()
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
-        // Using implicit flow (not PKCE) for Safari compatibility.
-        // Safari's ITP clears localStorage during cross-site OAuth redirects,
-        // which destroys the PKCE code_verifier and breaks the auth exchange.
-        // Implicit flow puts the token directly in the URL hash — no stored state needed.
-        flowType: 'implicit',
+        // Using standard PKCE flow.
+        // Safari's ITP / Private Mode restrictions are bypassed by backing up
+        // the PKCE code_verifier and auth sessions in cookies, which survive
+        // the cross-domain redirect.
+        flowType: 'pkce',
         storage: safeStorage,
       },
     })
