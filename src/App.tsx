@@ -6750,22 +6750,29 @@ export default function App() {
       {/* Header Bar */}
       <header className="header">
         <div className="header-left">
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-            <span style={{
-              fontFamily: "'Poppins', 'Roboto', sans-serif",
-              fontWeight: 700,
-              fontSize: '18px',
-              letterSpacing: '-0.01em',
-              color: 'var(--text-main)',
-              lineHeight: 1,
-            }}>Book24</span>
-            <span style={{
-              fontFamily: "'Poppins', 'Roboto', sans-serif",
-              fontWeight: 300,
-              fontSize: '15px',
-              color: 'var(--text-muted)',
-              lineHeight: 1,
-            }}>Studio</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <img 
+              src="/logokdpbook24studio.png" 
+              alt="Book24 Studio Logo" 
+              style={{ height: '28px', width: 'auto', display: 'block' }} 
+            />
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+              <span style={{
+                fontFamily: "'Poppins', 'Roboto', sans-serif",
+                fontWeight: 700,
+                fontSize: '18px',
+                letterSpacing: '-0.01em',
+                color: 'var(--text-main)',
+                lineHeight: 1,
+              }}>Book24</span>
+              <span style={{
+                fontFamily: "'Poppins', 'Roboto', sans-serif",
+                fontWeight: 300,
+                fontSize: '15px',
+                color: 'var(--text-muted)',
+                lineHeight: 1,
+              }}>Studio</span>
+            </div>
           </div>
         </div>
 
