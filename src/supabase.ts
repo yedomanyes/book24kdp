@@ -71,11 +71,13 @@ export const supabase = isSupabaseConfigured()
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
-        // Using standard PKCE flow.
-        // Safari's ITP / Private Mode restrictions are bypassed by backing up
-        // the PKCE code_verifier and auth sessions in cookies, which survive
-        // the cross-domain redirect.
-        flowType: 'pkce',
+        // IMPORTANT: Implicit flow is required for Safari + Safari Private Mode compatibility.
+        // With PKCE, Supabase stores a `code_verifier` in localStorage before the Google redirect.
+        // Safari's ITP deletes localStorage during cross-site redirects (google.com → book24kdp.vercel.app),
+        // making the code exchange fail silently — user lands back on landing page.
+        // With implicit flow, the access_token is embedded directly in the URL hash (#access_token=...),
+        // so NO localStorage read is needed during the callback. The token is immediately available.
+        flowType: 'implicit',
         storage: safeStorage,
       },
     })

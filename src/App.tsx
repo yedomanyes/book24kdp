@@ -1202,7 +1202,22 @@ export default function App() {
       }
     };
 
-    void checkUser();
+    // Detect OAuth callback: implicit flow puts token in URL hash.
+    // If we're in a callback, DON'T run checkUser() yet — wait for SIGNED_IN to fire first.
+    // Running checkUser() immediately on callback pages causes a race where getSession() returns
+    // null (token not yet processed from hash) and the user is briefly shown the landing page.
+    const isOAuthCallback = typeof window !== 'undefined' && (
+      window.location.hash.includes('access_token') ||
+      window.location.search.includes('code=')
+    );
+
+    if (!isOAuthCallback) {
+      void checkUser();
+    } else {
+      // On OAuth callback, let onAuthStateChange handle everything.
+      // Still clear loading after safety timeout.
+      console.log('[Auth] OAuth callback detected, waiting for SIGNED_IN event...');
+    }
 
     const { data: { subscription } } = supabase!.auth.onAuthStateChange((event, session) => {
       const user = toAppUser(session?.user ?? null);
@@ -1232,6 +1247,8 @@ export default function App() {
           try {
             safeLocalStorage.setItem('b24studio_activeTab', 'projects');
           } catch (e) {}
+          // Reset lock so checkUser() can run fresh (to load books, license, profile)
+          isCheckingRef.current = false;
         }
         // Run full checkUser() in background for books, license, profile etc.
         void checkUser();
