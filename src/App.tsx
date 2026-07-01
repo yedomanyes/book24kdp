@@ -6814,21 +6814,21 @@ export default function App() {
               style={{
                 marginTop: '16px',
                 width: '100%',
-                padding: '10px',
+                padding: '12px',
                 background: '#f1f3f4',
-                color: '#5f6368',
+                color: '#3c4043',
                 border: 'none',
                 borderRadius: '8px',
                 fontSize: '14px',
                 fontWeight: '600',
                 cursor: 'pointer',
-                transition: 'background 0.2s',
+                transition: 'background 0.2s, color 0.2s',
                 fontFamily: 'inherit'
               }}
-              onMouseOver={e => e.currentTarget.style.background = '#e8eaed'}
-              onMouseOut={e => e.currentTarget.style.background = '#f1f3f4'}
+              onMouseOver={e => { e.currentTarget.style.background = '#e8eaed'; e.currentTarget.style.color = '#202124'; }}
+              onMouseOut={e => { e.currentTarget.style.background = '#f1f3f4'; e.currentTarget.style.color = '#3c4043'; }}
             >
-              Abbrechen & Abmelden
+              Zurück zur Startseite
             </button>
           </div>
         </div>
