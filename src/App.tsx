@@ -966,14 +966,14 @@ export default function App() {
         clearTimeout(safetyTimeoutId);
 
         // Background: fetch maintenance/module state (non-blocking)
-        supabase.rpc('get_maintenance_mode').then(({ data: mmData }) => {
+        Promise.resolve(supabase.rpc('get_maintenance_mode')).then(({ data: mmData }) => {
           if (mmData && typeof mmData === 'object') {
             setMaintenanceInfo({ active: Boolean(mmData.active), message: mmData.message, endsAt: mmData.ends_at });
           } else if (typeof mmData === 'boolean') {
             setMaintenanceInfo(prev => ({ ...prev, active: mmData }));
           }
         }).catch(() => {});
-        supabase.rpc('get_system_modules').then(({ data: modData }) => {
+        Promise.resolve(supabase.rpc('get_system_modules')).then(({ data: modData }) => {
           if (modData && typeof modData === 'object') setActiveModules(modData);
         }).catch(() => {});
 
