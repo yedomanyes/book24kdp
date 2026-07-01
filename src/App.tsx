@@ -1502,11 +1502,12 @@ export default function App() {
 
     const topMarginPx = 54 * previewScaleY;
     const bottomMarginPx = 54 * previewScaleY;
-    const insideMarginPx = 54 * previewScaleX;
-    const outsideMarginPx = 36 * previewScaleX;
+    const insideMarginPx = 54 * previewScaleX;  // matches PDF: 45pt base (can be up to 72pt for thick books, 54 is safe average)
+    const outsideMarginPx = 45 * previewScaleX; // matches PDF: outsideMargin = 45pt
 
     const contentWidth = previewWidth - (insideMarginPx + outsideMarginPx);
-    const contentHeight = previewHeight - (topMarginPx + bottomMarginPx) - 18; // safe margin
+    // Use a generous safety margin (36px) to account for page numbers, font rounding, and PDF vs browser metric differences
+    const contentHeight = previewHeight - (topMarginPx + bottomMarginPx) - 36;
     const previewFontSize = book.fontSize * previewScaleY;
 
     measurer.style.width = `${contentWidth}px`;
@@ -2186,7 +2187,7 @@ export default function App() {
 
   const handleSelectNavTab = (tab: NavTabId) => {
     if (tab === 'brain' && !brainEnabled) return;
-    if (tab === 'studio' && !activeBook) return;
+    // Note: allow switching to studio even without active book — it shows the "no project" empty state
     if (tab === 'owner') {
       if (!isOwnerClient) return;
       navigateToPath('/owner');
