@@ -977,26 +977,36 @@ export default function App() {
         if (sessionError) {
           setAuthError(sessionError.message);
         }
-        // Safari ITP workaround: if no session in storage, try restoring via small refresh_token cookie
+        // Safari ITP workaround: robust restore of session via multiple storage backups (sessionStorage, localStorage, cookies)
         if (!session) {
           try {
-            const cookies = document.cookie.split(';');
             let rt: string | null = null;
-            for (const c of cookies) {
-              const trimmed = c.trim();
-              if (trimmed.startsWith('b24_rt=')) {
-                rt = decodeURIComponent(trimmed.slice(7));
-                break;
+            try { rt = window.sessionStorage.getItem('b24_rt'); } catch (e) {}
+            if (!rt) {
+              try { rt = window.localStorage.getItem('b24_rt'); } catch (e) {}
+            }
+            if (!rt) {
+              const cookies = document.cookie.split(';');
+              for (const c of cookies) {
+                const trimmed = c.trim();
+                if (trimmed.startsWith('b24_rt=')) {
+                  rt = decodeURIComponent(trimmed.slice(7));
+                  break;
+                }
               }
             }
             if (rt) {
               const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession({ refresh_token: rt });
               if (!refreshError && refreshData.session) {
                 session = refreshData.session;
-                // Update cookie with new refresh token
-                document.cookie = 'b24_rt=' + encodeURIComponent(refreshData.session.refresh_token) + '; path=/; max-age=31536000; SameSite=Lax; Secure';
+                const newRt = refreshData.session.refresh_token;
+                try { window.sessionStorage.setItem('b24_rt', newRt); } catch (e) {}
+                try { window.localStorage.setItem('b24_rt', newRt); } catch (e) {}
+                document.cookie = 'b24_rt=' + encodeURIComponent(newRt) + '; path=/; max-age=31536000; SameSite=Lax; Secure';
               } else {
-                // Clear invalid/expired cookie
+                // Clear invalid/expired tokens
+                try { window.sessionStorage.removeItem('b24_rt'); } catch (e) {}
+                try { window.localStorage.removeItem('b24_rt'); } catch (e) {}
                 document.cookie = 'b24_rt=; path=/; max-age=0';
               }
             }
@@ -1252,12 +1262,23 @@ export default function App() {
 
     const { data: { subscription } } = supabase!.auth.onAuthStateChange((event, session) => {
       addDebugLog(`Auth event fired: ${event}. Session exists: ${!!session}`);
+      // Update refresh token backups whenever session is active
+      if (session?.refresh_token) {
+        try {
+          const rt = session.refresh_token;
+          window.sessionStorage.setItem('b24_rt', rt);
+          window.localStorage.setItem('b24_rt', rt);
+          document.cookie = 'b24_rt=' + encodeURIComponent(rt) + '; path=/; max-age=31536000; SameSite=Lax; Secure';
+        } catch (e) {}
+      }
       const user = toAppUser(session?.user ?? null);
       if (!user) {
         // Only clear user state for explicit sign-out events, not for INITIAL_SESSION
         // which can fire with null before getSession() resolves in checkUser.
         if (event === 'SIGNED_OUT') {
           addDebugLog('SIGNED_OUT: Clearing user state');
+          try { window.sessionStorage.removeItem('b24_rt'); } catch(e) {}
+          try { window.localStorage.removeItem('b24_rt'); } catch(e) {}
           try { document.cookie = 'b24_rt=; path=/; max-age=0'; } catch(e) {}
           setCurrentUser(null);
           booksLoadedForUidRef.current = null;
