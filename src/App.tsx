@@ -9,6 +9,7 @@ import {
   FileDown,
   Plus,
   Trash2,
+  Bold,
   Settings,
   ChevronDown,
   ChevronLeft,
@@ -44,12 +45,13 @@ import {
   deleteBookFromCloud,
   loadBooksFromCloud,
   loadAccountsFromCloud,
-  syncLocalLibraryToCloud
+  syncLocalLibraryToCloud,
+  forcePushBooksToCloud
 } from './services/StorageService';
-import { auth } from './firebase';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { supabase, toAppUser } from './supabase';
 import { Auth } from './components/Auth';
 import { LandingPage } from './components/LandingPage';
+import { LicensePrompt } from './components/LicensePrompt';
 import { NicheFinderDashboard } from './components/NicheFinderDashboard';
 import { BrainDashboard } from './components/BrainDashboard';
 import { GilService } from './services/gil/GilService';
@@ -57,17 +59,23 @@ import { GilInsightsPanel } from './components/GilInsightsPanel';
 import { TrendingUp } from 'lucide-react';
 
 import { SettingsModal } from './components/SettingsModal';
+import KdpCalculator from './components/KdpCalculator';
+import MaintenanceView from './components/MaintenanceView';
 import GooeyNav from './components/GooeyNav';
 import { searchNiche, type NicheResult } from './services/NicheService';
 import { BrainService } from './services/brain/BrainService';
 import { LayoutFixDB } from './services/brain/LayoutFixDB';
 import { ObsidianSyncService } from './services/brain/ObsidianSyncService';
+import { CloudQueueService } from './services/brain/CloudQueueService';
 import { hasBrainAccess } from './config/brainAccess';
+import { OwnerPanel } from './components/OwnerPanel';
+import { isOwnerEmail, isOwnerRoute } from './lib/owner';
+import { syncUserProfile } from './services/userProfileService';
 
 // Run migration once at module load (before any state is initialized)
 migrateOldKeys();
 
-const NAV_TABS = ['projects', 'dashboard', 'brain', 'studio'] as const;
+const NAV_TABS = ['projects', 'dashboard', 'brain', 'studio', 'calculator', 'owner'] as const;
 type NavTabId = typeof NAV_TABS[number];
 
 const NAV_TAB_PARTICLE_COLORS: Record<NavTabId, number[]> = {
@@ -75,7 +83,12 @@ const NAV_TAB_PARTICLE_COLORS: Record<NavTabId, number[]> = {
   dashboard: [1, 2, 3, 4],
   brain: [1, 2, 3, 4],
   studio: [1, 2, 3, 4],
+  calculator: [1, 2, 3, 4],
+  owner: [1, 2, 3, 4],
 };
+
+const getScopedActiveBookStorageKey = (accountId: string) => `b24studio_activeBookId_${accountId}`;
+const getScopedSelectedPageStorageKey = (accountId: string, bookId: string) => `b24studio_selectedPage_${accountId}_${bookId}`;
 
 const COVER_FONTS = [
   { value: 'playfair', label: 'Playfair Display (Serif)' },
@@ -178,12 +191,14 @@ export interface TitlePageCustomText {
   size: number;
   font: 'times' | 'helvetica' | 'courier' | 'arial' | 'playfair' | 'inter';
   align: 'left' | 'center' | 'right';
+  isBold?: boolean;
 }
 
 interface Book {
   id: string;
   title: string;
   subtitle: string;
+  hideTitlePage?: boolean;
   box1Design?: BoxDesign;
   box2Design?: BoxDesign;
   box3Design?: BoxDesign;
@@ -210,6 +225,8 @@ interface Book {
   pagesText: { [key: number]: string };
   pagesStatus: { [key: number]: 'idle' | 'generating' | 'completed' | 'failed' };
   pagesError: { [key: number]: string };
+  pagesGenerationTime?: { [key: number]: number }; // tracking generation duration in milliseconds
+  generationQueue?: number[];
   pagesReprompt?: { [key: number]: string };
   pagesOverflow?: { [key: number]: boolean };
   showRunningHeader?: boolean;
@@ -238,24 +255,29 @@ interface Book {
   titlePageTitleFont?: string;
   titlePageTitleX?: number;
   titlePageTitleY?: number;
+  titlePageTitleBold?: boolean;
   
   titlePageSubtitleAlign?: 'left' | 'center' | 'right';
   titlePageSubtitleSize?: number;
   titlePageSubtitleFont?: string;
   titlePageSubtitleX?: number;
   titlePageSubtitleY?: number;
+  titlePageSubtitleBold?: boolean;
 
   titlePageAuthorAlign?: 'left' | 'center' | 'right';
   titlePageAuthorSize?: number;
   titlePageAuthorFont?: string;
   titlePageAuthorX?: number;
   titlePageAuthorY?: number;
+  titlePageAuthorBold?: boolean;
 
   titlePagePublisherAlign?: 'left' | 'center' | 'right';
   titlePagePublisherSize?: number;
   titlePagePublisherFont?: string;
   titlePagePublisherX?: number;
   titlePagePublisherY?: number;
+  titlePagePublisherBold?: boolean;
+  
   titlePageCustomTexts?: TitlePageCustomText[];
   autoChapterDropCaps?: boolean;
   autoChapterGraphics?: boolean;
@@ -302,7 +324,7 @@ const getProjectFormattedDate = (book: Book): string => {
     if (!isNaN(timestamp) && timestamp > 0) {
       date = new Date(timestamp);
     } else {
-      date = new Date(); // Fallback
+      return "Unbekannt"; // Fallback so it doesn't change on every render
     }
   }
   
@@ -410,8 +432,8 @@ export const parsePageLines = (rawLines: string[]): WorkbookBlock[] => {
     if (!trimmed) { i++; continue; }
 
     // :::box ... :::
-    if (/^:::(box|callout|reflection|action)/i.test(trimmed)) {
-      const match = trimmed.match(/^:::(box|callout|reflection|action)\s*(\d+)?\s*(.*)/i);
+    if (/^:::\s*(box|callout|reflection|action)/i.test(trimmed)) {
+      const match = trimmed.match(/^:::\s*(box|callout|reflection|action)\s*(\d+)?\s*(.*)/i);
       const boxType = match && match[1] ? match[1].toLowerCase() : 'box';
       const styleNum = match && match[2] ? parseInt(match[2]) : 1;
       const boxTitle = match && match[3] ? match[3].trim() : '';
@@ -485,8 +507,22 @@ export const parsePageLines = (rawLines: string[]): WorkbookBlock[] => {
     }
 
     // Quote
-    if (trimmed.startsWith('> ')) {
-      blocks.push({ type: 'quote', text: trimmed.slice(2) });
+    if (trimmed.startsWith('>')) {
+      blocks.push({ type: 'quote', text: trimmed.replace(/^>\s*/, '') });
+      i++;
+      continue;
+    }
+    
+    // Fallback if AI writes: "Zitat" - Autor
+    if (trimmed.startsWith('"') && /"\s*[-—]\s*.+$/.test(trimmed)) {
+      blocks.push({ type: 'quote', text: trimmed });
+      i++;
+      continue;
+    }
+    
+    // Fallback if AI writes: """Zitat"""
+    if (trimmed.startsWith('"""') && trimmed.endsWith('"""') && trimmed.length >= 6) {
+      blocks.push({ type: 'quote', text: trimmed.slice(3, -3).trim() });
       i++;
       continue;
     }
@@ -845,67 +881,236 @@ const PreviewGraphicBox: React.FC<{
   );
 };
 
+const MaintenanceOverlay = ({ message, endsAt }: { message: string | null; endsAt: string | null }) => {
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)', zIndex: 999999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff', fontFamily: 'Inter, system-ui, sans-serif' }}>
+      <div style={{ backgroundColor: '#141414', padding: '40px', borderRadius: '16px', border: '1px solid #262626', maxWidth: '500px', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
+        <h1 style={{ fontSize: '24px', fontWeight: 700, margin: '0 0 16px 0', color: '#f5f5f5' }}>Wartungsarbeiten</h1>
+        <p style={{ fontSize: '15px', color: '#a3a3a3', lineHeight: 1.5, margin: '0 0 24px 0' }}>
+          {message || 'Book24 Studio wird gerade gewartet. Bitte versuche es später wieder.'}
+        </p>
+        {endsAt && (
+          <div style={{ backgroundColor: '#1a1a1a', padding: '12px', borderRadius: '8px', border: '1px solid #262626', fontSize: '14px', color: '#e5e5e5' }}>
+            Voraussichtlich wieder online am:<br/>
+            <strong style={{ color: '#38bdf8' }}>{new Date(endsAt).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' })} Uhr</strong>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Safe localStorage wrapper to prevent Safari SecurityError in private/third-party contexts
+const safeLocalStorage = {
+  getItem(key: string): string | null {
+    try {
+      return window.localStorage.getItem(key);
+    } catch (e) {
+      return null;
+    }
+  },
+  setItem(key: string, value: string): void {
+    try {
+      window.localStorage.setItem(key, value);
+    } catch (e) {}
+  },
+  removeItem(key: string): void {
+    try {
+      window.localStorage.removeItem(key);
+    } catch (e) {}
+  }
+};
+
 export default function App() {
-  // Firebase Auth states
+  // Supabase Auth states
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState<boolean>(true);
+  const [userHasValidLicense, setUserHasValidLicense] = useState<boolean | null>(null);
+  const [maintenanceInfo, setMaintenanceInfo] = useState<{ active: boolean; message: string | null; endsAt: string | null }>({ active: false, message: null, endsAt: null });
+  const [activeModules, setActiveModules] = useState<Record<string, any>>({ brain: true, dashboard: true, calculator: true, studio: true });
+  const [showBanModal, setShowBanModal] = useState(false);
 
-  // Sync state with Firebase auth status
+  // Tracks whether books were already loaded for the current user session.
+  // Prevents onAuthStateChange re-runs (e.g. token refresh) from overwriting books.
+  const booksLoadedForUidRef = React.useRef<string | null>(null);
+  const isCheckingRef = React.useRef<boolean>(false);
+
+  // Sync state with Supabase auth status
   useEffect(() => {
-    if (!auth) {
+    if (!supabase) {
       setAuthLoading(false);
       return;
     }
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+
+    // Safety net: force authLoading=false after 3s max — keeps UI responsive even on slow networks.
+    const safetyTimeoutId = setTimeout(() => {
+      setAuthLoading(false);
+    }, 3000);
+
+    const checkUser = async () => {
+      if (!supabase) return;
+      if (isCheckingRef.current) return;
+      isCheckingRef.current = true;
+
+      try {
+        // ── FAST PATH: check session FIRST so the user is never stuck on a black screen ──
+        // getSession() is near-instant (reads from storage). We show the user immediately,
+        // then load maintenance/modules in background.
+        const { data: { session } } = await supabase.auth.getSession();
+      const user = toAppUser(session?.user ?? null);
       if (user) {
+        // Wichtig: eingeloggte Nutzer nicht auf einem schwarzen Bootstrap-Screen festhalten,
+        // während Profil/Cloud-Daten im Hintergrund geladen werden.
+        setCurrentUser(user);
+        setAuthLoading(false);
+        clearTimeout(safetyTimeoutId);
+
+        // Background: fetch maintenance/module state (non-blocking)
+        supabase.rpc('get_maintenance_mode').then(({ data: mmData }) => {
+          if (mmData && typeof mmData === 'object') {
+            setMaintenanceInfo({ active: Boolean(mmData.active), message: mmData.message, endsAt: mmData.ends_at });
+          } else if (typeof mmData === 'boolean') {
+            setMaintenanceInfo(prev => ({ ...prev, active: mmData }));
+          }
+        }).catch(() => {});
+        supabase.rpc('get_system_modules').then(({ data: modData }) => {
+          if (modData && typeof modData === 'object') setActiveModules(modData);
+        }).catch(() => {});
+
+        // Fetch profile status and license
+        let profileStatus = null;
+        let hasLicense = false;
+        try {
+          const { data: profile } = await supabase.from('profiles').select('status, license_key').eq('id', user.uid).single();
+          profileStatus = profile?.status;
+          if (profile?.license_key) {
+            hasLicense = true;
+          }
+        } catch (err) {
+          // ignore
+        }
+        
+        if (profileStatus === 'banned') {
+          await supabase.auth.signOut();
+          setCurrentUser(null);
+          setShowBanModal(true);
+          return;
+        }
+
+        // Mark user as returning so they bypass LicensePrompt in the future on this browser
+        safeLocalStorage.setItem('b24_returning_user', 'true');
+
+        // Check for Gumroad License in localStorage
+        const savedLicense = safeLocalStorage.getItem('b24_valid_license_key');
+        if (savedLicense && !hasLicense) {
+          try {
+            await supabase.rpc('claim_license_key', { key_to_claim: savedLicense });
+            hasLicense = true;
+            safeLocalStorage.removeItem('b24_valid_license_key'); // clear after claim
+          } catch (e) {
+            console.error('Failed to claim license:', e);
+          }
+        }
+
+        // Owner Bypass
+        if (isOwnerEmail(user.email)) {
+          hasLicense = true;
+        }
+
+        // NOTE: Grandfather clause removed — all new accounts must enter a valid license key.
+        // Existing users with a license_key stored in their Supabase profile are already covered above.
+
+        setUserHasValidLicense(hasLicense);
         setCurrentUser(user);
 
-        // Clear any cached data from a previous (different) user to prevent data leakage
-        const lastUid = localStorage.getItem('b24studio_last_uid');
-        if (lastUid && lastUid !== user.uid) {
-          // Different user logged in — wipe all local caches
-          const keysToRemove: string[] = [];
-          for (let i = 0; i < localStorage.length; i++) {
-            const k = localStorage.key(i);
-            if (k && k.startsWith('b24studio_v1')) keysToRemove.push(k);
-          }
-          keysToRemove.forEach(k => localStorage.removeItem(k));
-        }
-        localStorage.setItem('b24studio_last_uid', user.uid);
 
-        // Load accounts from Firestore (source of truth — never use localStorage of another user)
-        const cloudAccs = await loadAccountsFromCloud(user.uid);
-        if (user) {
-          BrainService.syncCloudState(user.uid).catch(console.error);
+        // Clear any cached data from a previous (different) user to prevent data leakage
+        const lastUid = safeLocalStorage.getItem('b24studio_last_uid');
+        const isSupabaseUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+        
+        if (lastUid && lastUid !== user.uid) {
+          if (!isSupabaseUuid(lastUid) && isSupabaseUuid(user.uid)) {
+            // Migration scenario: Old Firebase UID to New Supabase UUID
+            // Do not wipe local storage. Existing data will be automatically synced to the new account.
+            console.log('Migrating local data from Firebase to Supabase for user', user.uid);
+          } else {
+            // Different user logged in — wipe all local caches
+            try {
+              const keysToRemove: string[] = [];
+              for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && k.startsWith('b24studio_v1')) keysToRemove.push(k);
+              }
+              for (const k of keysToRemove) localStorage.removeItem(k);
+            } catch (e) {}
+          }
         }
+        safeLocalStorage.setItem('b24studio_last_uid', user.uid);
+
+        // Load accounts from Supabase (source of truth — never use localStorage of another user)
+        const cloudAccs = await loadAccountsFromCloud(user.uid);
         if (cloudAccs && cloudAccs.length > 0) {
           setAccounts(cloudAccs);
         }
 
         // Load books
-        const activeAcc = localStorage.getItem(KEYS.activeAccount) || 'default';
-        const localBooksStr = localStorage.getItem(KEYS.library(activeAcc));
-        let localBooks = null;
+        const activeAcc = safeLocalStorage.getItem(KEYS.activeAccount) || 'default';
+        BrainService.syncCloudState(activeAcc).then(() => {
+          if (lastUid && !isSupabaseUuid(lastUid) && isSupabaseUuid(user.uid)) {
+            // Force push local BrainState to Supabase during migration
+            const localBrain = BrainService.loadState(activeAcc);
+            BrainService.saveState(activeAcc, localBrain);
+          }
+        }).catch(console.error);
+        // ── SKIP BOOK LOAD if already loaded for this user (e.g. token refresh) ──
+        // This prevents onAuthStateChange from overwriting books the user just created.
+        if (booksLoadedForUidRef.current === user.uid) {
+          setAuthLoading(false);
+          return;
+        }
+
+        // ── RESCUE SCAN: lese ALLE b24studio_v1_library_* Keys, nicht nur den aktiven ──
+        // Das verhindert Datenverlust wenn activeAcc sich geändert hat
+        let localBooks: any[] | null = null;
         try {
-          if (localBooksStr) localBooks = JSON.parse(localBooksStr);
+          const allLibraryBooks: any[] = [];
+          const seenIds = new Set<string>();
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('b24studio_v1_library_')) {
+              try {
+                const raw = localStorage.getItem(key);
+                if (raw) {
+                  const parsed = JSON.parse(raw);
+                  if (Array.isArray(parsed)) {
+                    parsed.forEach((b: any) => {
+                      if (b?.id && !seenIds.has(b.id)) {
+                        seenIds.add(b.id);
+                        allLibraryBooks.push(b);
+                      }
+                    });
+                  }
+                }
+              } catch { /* skip corrupt key */ }
+            }
+          }
+          if (allLibraryBooks.length > 0) localBooks = allLibraryBooks;
         } catch (e) {}
 
         const cloudBooks = await loadBooksFromCloud(user.uid);
-        
-        let finalBooks = cloudBooks;
 
-        // If localBooks exist and have content, we prefer localBooks to prevent data loss on refresh 
-        // (because cloud saves are debounced and might have been killed during F5).
-        // We do a simple merge: if localBook has more pages or outline, we keep it.
-        if (localBooks && localBooks.length > 0) {
+        let finalBooks: any[];
+        const isSameUser = lastUid === user.uid;
+
+        if (isSameUser && localBooks && localBooks.length > 0) {
           if (!cloudBooks || cloudBooks.length === 0) {
+            // Same user, cloud empty — use local as source of truth
             finalBooks = localBooks;
           } else {
-            finalBooks = localBooks.map((localBook: any) => {
+            // Merge: local wins for content, cloud fills in missing books
+            const merged = localBooks.map((localBook: any) => {
               const cloudBook = cloudBooks.find((cb: any) => cb.id === localBook.id);
               if (!cloudBook) return localBook;
-              
-              // Smart deep merge: always preserve all local images, transforms, and text edits
               return {
                 ...cloudBook,
                 ...localBook,
@@ -915,53 +1120,184 @@ export default function App() {
                 pagesOverflow: { ...(cloudBook.pagesOverflow || {}), ...(localBook.pagesOverflow || {}) }
               };
             });
-            // Add any cloud books that aren't in local
             cloudBooks.forEach((cb: any) => {
-              if (!finalBooks.find((fb: any) => fb.id === cb.id)) {
-                finalBooks.push(cb);
-              }
+              if (!merged.find((fb: any) => fb.id === cb.id)) merged.push(cb);
             });
+            finalBooks = merged;
           }
-          
-          // Sync the merged finalBooks back to the cloud to ensure cloud has the latest local changes
-          syncLocalLibraryToCloud(user.uid, finalBooks);
+        } else if (!isSameUser) {
+          // Different user — cloud is the ONLY source of truth (security: no cross-account leak)
+          finalBooks = cloudBooks || [];
+        } else {
+          finalBooks = cloudBooks || [];
         }
 
+        // ── BULLETPROOF SYNC: Always push ALL books to cloud on login ──
+        // This guarantees that localStorage books are never lost even if
+        // the previous session failed to save.
+        if (finalBooks.length > 0) {
+          forcePushBooksToCloud(user.uid, finalBooks).then(result => {
+            console.log(`[Login Sync] Books pushed to cloud:`, result);
+          });
+        }
+
+        // Determine final books to show
+        let booksToSet: any[] = [];
         if (finalBooks && finalBooks.length > 0) {
-          // Reset any 'generating' status stuck from previous session
-          const cleanBooks = finalBooks.map((b: any) => ({
+          booksToSet = finalBooks;
+        } else {
+          // Last resort: if cloud AND finalBooks both empty, check localStorage directly
+          const localFallback = safeLocalStorage.getItem(KEYS.library(activeAcc));
+          if (localFallback) {
+            try {
+              const parsed = JSON.parse(localFallback);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                booksToSet = parsed;
+                forcePushBooksToCloud(user.uid, parsed); // rescue sync
+              }
+            } catch { /* invalid JSON */ }
+          }
+        }
+
+        if (booksToSet.length > 0) {
+          const cleanBooks = booksToSet.map((b: any) => ({
             ...b,
             pagesStatus: Object.fromEntries(
               Object.entries(b.pagesStatus || {}).map(([k, v]) => [k, v === 'generating' ? 'idle' : v])
             )
           }));
           setBooksState(cleanBooks);
-          localStorage.setItem(KEYS.library(activeAcc), JSON.stringify(cleanBooks));
+          safeLocalStorage.setItem(KEYS.library(activeAcc), JSON.stringify(cleanBooks));
         } else {
           setBooksState([]);
         }
+
+        // Mark books as loaded for this user — prevents future re-runs from overwriting
+        booksLoadedForUidRef.current = user.uid;
       } else {
         setCurrentUser(null);
+        booksLoadedForUidRef.current = null;
         // Do not wipe localStorage on null auth emission (prevents localhost F5 race condition data loss)
       }
-      setAuthLoading(false);
+      } catch (err) {
+        console.error("Error during checkUser:", err);
+      } finally {
+        isCheckingRef.current = false;
+        setAuthLoading(false);
+      }
+    };
+
+    void checkUser();
+
+    const { data: { subscription } } = supabase!.auth.onAuthStateChange((event, session) => {
+      const user = toAppUser(session?.user ?? null);
+      if (!user) {
+        // Only clear user state for explicit sign-out events, not for INITIAL_SESSION
+        // which can fire with null before getSession() resolves in checkUser.
+        if (event === 'SIGNED_OUT') {
+          setCurrentUser(null);
+          booksLoadedForUidRef.current = null;
+          setAuthLoading(false);
+        } else if (event !== 'INITIAL_SESSION') {
+          // For TOKEN_REFRESHED, USER_UPDATED etc. with null user — treat as sign out
+          setCurrentUser(null);
+          booksLoadedForUidRef.current = null;
+          setAuthLoading(false);
+        }
+        // For INITIAL_SESSION with null: do nothing — checkUser() is already running
+        // and will call setAuthLoading(false) in its finally block.
+      } else {
+        if (event === 'SIGNED_IN') {
+          // ── INSTANT SIGN-IN: show app immediately from the session data we already have ──
+          // This fires right after OAuth redirect — no need to wait for checkUser().
+          setCurrentUser(user);
+          setAuthLoading(false);
+          clearTimeout(safetyTimeoutId);
+          setActiveTab('projects');
+          try {
+            safeLocalStorage.setItem('b24studio_activeTab', 'projects');
+          } catch (e) {}
+        }
+        // Run full checkUser() in background for books, license, profile etc.
+        void checkUser();
+      }
     });
 
-    return () => unsubscribe();
+    // Setup Maintenance Polling every 15 seconds
+    const intervalId = setInterval(async () => {
+      if (!supabase) return;
+      try {
+        const { data: mmData } = await supabase.rpc('get_maintenance_mode');
+        if (mmData && typeof mmData === 'object') {
+          setMaintenanceInfo({ 
+            active: Boolean(mmData.active), 
+            message: mmData.message, 
+            endsAt: mmData.ends_at 
+          });
+        }
+      } catch (err) {
+        // silent
+      }
+    }, 15000);
+
+    const settingsSub = supabase.channel('system-settings-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'system_settings' }, (payload: any) => {
+        const newRow = payload.new as any;
+        if (newRow && newRow.key === 'active_modules') {
+          setActiveModules(newRow.value);
+        }
+      }).subscribe();
+
+    // ── AUTO-SYNC: Push alle Bücher alle 2 Minuten zur Cloud ──
+    const autoSyncId = setInterval(() => {
+      // Read current user UID from global ref (avoids stale closure)
+      const uid = (window as any).__b24_uid__;
+      if (!uid) return;
+      const activeAcc = safeLocalStorage.getItem(KEYS.activeAccount) || 'default';
+      const booksStr = safeLocalStorage.getItem(KEYS.library(activeAcc));
+      if (!booksStr) return;
+      try {
+        const localBooks = JSON.parse(booksStr);
+        if (Array.isArray(localBooks) && localBooks.length > 0) {
+          syncLocalLibraryToCloud(uid, localBooks);
+        }
+      } catch { /* silent */ }
+    }, 2 * 60 * 1000); // every 2 minutes
+
+    return () => {
+      subscription.unsubscribe();
+      clearInterval(intervalId);
+      clearInterval(autoSyncId);
+      clearTimeout(safetyTimeoutId);
+      settingsSub.unsubscribe();
+    };
   }, []);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    syncUserProfile(currentUser).catch(console.error);
+    // Store UID globally so the auto-sync interval can access it
+    (window as any).__b24_uid__ = currentUser.uid;
+    return () => { (window as any).__b24_uid__ = null; };
+  }, [currentUser]);
+
 
   // Theme Manager
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    return (localStorage.getItem(KEYS.theme) as 'dark' | 'light') || 'dark';
+    return (safeLocalStorage.getItem(KEYS.theme) as 'dark' | 'light') || 'dark';
   });
 
   // Account System
   const [accounts, setAccounts] = useState<Account[]>(() => {
-    const saved = localStorage.getItem(KEYS.accounts);
-    return saved ? JSON.parse(saved) : [{ id: 'default', username: 'Haupt-Bibliothekar' }];
+    try {
+      const saved = safeLocalStorage.getItem(KEYS.accounts);
+      return saved ? JSON.parse(saved) : [{ id: 'default', username: 'Haupt-Bibliothekar' }];
+    } catch (e) {
+      return [{ id: 'default', username: 'Haupt-Bibliothekar' }];
+    }
   });
   const [activeAccountId, setActiveAccountIdState] = useState<string>(() => {
-    return localStorage.getItem(KEYS.activeAccount) || 'default';
+    return safeLocalStorage.getItem(KEYS.activeAccount) || 'default';
   });
   const activeAccountIdRef = React.useRef<string>(activeAccountId);
   const setActiveAccountId = (id: string) => {
@@ -971,21 +1307,22 @@ export default function App() {
   const [showAccountModal, setShowAccountModal] = useState<boolean>(false);
   const [newUsernameInput, setNewUsernameInput] = useState<string>('');
 
+
   // Multi-Provider API Keys (Groq & Google Gemini)
   const [groqKeysInput, setGroqKeysInput] = useState<string>(() => {
-    return localStorage.getItem('groq_api_keys') || localStorage.getItem('groq_api_key') || '';
+    return safeLocalStorage.getItem('groq_api_keys') || safeLocalStorage.getItem('groq_api_key') || '';
   });
   const [geminiKeysInput, setGeminiKeysInput] = useState<string>(() => {
-    return localStorage.getItem('gemini_api_keys') || '';
+    return safeLocalStorage.getItem('gemini_api_keys') || '';
   });
   const [showSettings, setShowSettings] = useState<boolean>(() => {
-    const groqEmpty = !(localStorage.getItem('groq_api_keys') || localStorage.getItem('groq_api_key'));
-    const geminiEmpty = !localStorage.getItem('gemini_api_keys');
+    const groqEmpty = !(safeLocalStorage.getItem('groq_api_keys') || safeLocalStorage.getItem('groq_api_key'));
+    const geminiEmpty = !safeLocalStorage.getItem('gemini_api_keys');
     return groqEmpty && geminiEmpty;
   });
 
   const [selectedModel, setSelectedModel] = useState<string>(() => {
-    return localStorage.getItem(KEYS.selectedModel) || 'llama-3.3-70b-versatile';
+    return safeLocalStorage.getItem(KEYS.selectedModel) || 'llama-3.3-70b-versatile';
   });
 
   useEffect(() => {
@@ -1570,6 +1907,15 @@ export default function App() {
     booksRef.current = books;
   }, [books]);
 
+  // ── BOOKS CHANGE SYNC: Jede Änderung → Cloud (debounced 5s) ──
+  useEffect(() => {
+    if (!currentUser?.uid || books.length === 0) return;
+    const timer = setTimeout(() => {
+      syncLocalLibraryToCloud(currentUser.uid, books);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [books, currentUser?.uid]);
+
   const cloudSaveTimeoutRef = useRef<any>(null);
   const pendingCloudSavesRef = useRef<Record<string, Book>>({});
 
@@ -1667,26 +2013,78 @@ export default function App() {
   }, [currentUser]);
 
   const [activeBookId, setActiveBookId] = useState<string | null>(() => {
-    const savedId = localStorage.getItem('b24studio_activeBookId');
-    if (savedId) return savedId;
-    const activeAcc = localStorage.getItem(KEYS.activeAccount) || 'default';
-    const saved = localStorage.getItem(KEYS.library(activeAcc));
-    if (saved) {
-      const parsed = JSON.parse(saved) as Book[];
-      return parsed.length > 0 ? parsed[0].id : null;
+    try {
+      const activeAcc = safeLocalStorage.getItem(KEYS.activeAccount) || 'default';
+      const savedScopedId = safeLocalStorage.getItem(getScopedActiveBookStorageKey(activeAcc));
+      const savedGlobalId = safeLocalStorage.getItem('b24studio_activeBookId');
+      const savedId = savedScopedId || savedGlobalId;
+      if (savedId) return savedId;
+      const saved = safeLocalStorage.getItem(KEYS.library(activeAcc));
+      if (saved) {
+        const parsed = JSON.parse(saved) as Book[];
+        return parsed.length > 0 ? parsed[0].id : null;
+      }
+    } catch (e) {
+      console.error('Error loading activeBookId:', e);
     }
     return null;
   });
+
+  // Automatically restore/resolve activeBookId when books load or change
+  useEffect(() => {
+    if (books.length === 0) return;
+
+    const savedScopedId = localStorage.getItem(getScopedActiveBookStorageKey(activeAccountId));
+    const savedGlobalId = localStorage.getItem('b24studio_activeBookId');
+    const savedId = savedScopedId || savedGlobalId;
+
+    if (savedId && books.some(b => b.id === savedId)) {
+      if (activeBookId !== savedId) {
+        setActiveBookId(savedId);
+      }
+    } else if (!activeBookId || !books.some(b => b.id === activeBookId)) {
+      // Fallback: select the first book if none selected or the selected one is gone
+      setActiveBookId(books[0].id);
+    }
+  }, [books, activeAccountId, activeBookId]);
+
   const activeBook = books.find(b => b.id === activeBookId) || null;
-  const brainEnabled = hasBrainAccess(currentUser?.email);
+  const brainEnabled = hasBrainAccess(currentUser?.email) || currentUser?.plan === 'staff';
+  const isOwnerClient = isOwnerEmail(currentUser?.email);
+  const [currentPath, setCurrentPath] = useState<string>(() => window.location.pathname || '/');
+  const ownerRouteActive = isOwnerRoute(currentPath);
 
   // Layout Tab Manager
-  const [activeTab, setActiveTab] = useState<'projects' | 'studio' | 'dashboard' | 'brain'>(() => {
-    return (localStorage.getItem('b24studio_activeTab') as any) || 'projects';
+  const [activeTab, setActiveTab] = useState<NavTabId>(() => {
+    return (safeLocalStorage.getItem('b24studio_activeTab') as NavTabId) || 'projects';
   });
   const [brainTick, setBrainTick] = useState(0);
+  const activeNavKey: NavTabId = ownerRouteActive && isOwnerClient ? 'owner' : activeTab;
 
   const refreshBrain = () => setBrainTick(t => t + 1);
+
+  const navigateToPath = (path: string) => {
+    if (window.location.pathname !== path) {
+      window.history.pushState({}, '', path);
+    }
+    setCurrentPath(path);
+  };
+
+  const handleSelectNavTab = (tab: NavTabId) => {
+    if (tab === 'brain' && !brainEnabled) return;
+    if (tab === 'studio' && !activeBook) return;
+    if (tab === 'owner') {
+      if (!isOwnerClient) return;
+      navigateToPath('/owner');
+      return;
+    }
+
+    if (ownerRouteActive) {
+      navigateToPath('/');
+    }
+
+    setActiveTab(tab);
+  };
 
   const runBrainPageLearn = async (book: Book, pageNum: number, memory: ChapterMemory, status: CmiePageStatus, text: string) => {
     if (!brainEnabled) return;
@@ -1718,6 +2116,42 @@ export default function App() {
   }, [brainEnabled]);
 
   useEffect(() => {
+    if (!brainEnabled) return;
+
+    let cancelled = false;
+    let intervalId: number | null = null;
+
+    const syncWorkspace = async () => {
+      if (!ObsidianSyncService.isConnected()) return;
+      const liveAccountId = activeAccountIdRef.current || activeAccountId;
+      const liveState = BrainService.getState(liveAccountId);
+      await ObsidianSyncService.syncWorkspaceSnapshot(liveAccountId, liveState, books);
+      await CloudQueueService.processQueue(liveAccountId);
+    };
+
+    void ObsidianSyncService.init().then(() => {
+      if (cancelled) return;
+      void syncWorkspace();
+      intervalId = window.setInterval(() => {
+        void syncWorkspace();
+      }, 45000);
+    });
+
+    return () => {
+      cancelled = true;
+      if (intervalId != null) {
+        window.clearInterval(intervalId);
+      }
+    };
+  }, [brainEnabled, books, activeAccountId]);
+
+  useEffect(() => {
+    const handlePopState = () => setCurrentPath(window.location.pathname || '/');
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  useEffect(() => {
     if (!brainEnabled && activeTab === 'brain') {
       setActiveTab('projects');
     }
@@ -1728,11 +2162,11 @@ export default function App() {
   const [gilRefreshKey, setGilRefreshKey] = useState(0);
 
   const [leftWidth, setLeftWidth] = useState<number>(() => {
-    const saved = localStorage.getItem('b24studio_left_width');
+    const saved = safeLocalStorage.getItem('b24studio_left_width');
     return saved ? parseInt(saved, 10) : 270;
   });
   const [rightWidth, setRightWidth] = useState<number>(() => {
-    const saved = localStorage.getItem('b24studio_right_width');
+    const saved = safeLocalStorage.getItem('b24studio_right_width');
     return saved ? parseInt(saved, 10) : 360;
   });
 
@@ -1781,7 +2215,9 @@ export default function App() {
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const cancelGenerationRef = useRef<boolean>(false);
   const [selectedPage, setSelectedPage] = useState<number | string | null>(() => {
-    const saved = localStorage.getItem('b24studio_selectedPage');
+    const activeAcc = localStorage.getItem(KEYS.activeAccount) || 'default';
+    const scopedKey = activeBookId ? getScopedSelectedPageStorageKey(activeAcc, activeBookId) : null;
+    const saved = (scopedKey ? localStorage.getItem(scopedKey) : null) || localStorage.getItem('b24studio_selectedPage');
     if (!saved) return null;
     try {
       return JSON.parse(saved);
@@ -1795,14 +2231,29 @@ export default function App() {
   }, [activeTab]);
 
   useEffect(() => {
-    if (activeBookId) localStorage.setItem('b24studio_activeBookId', activeBookId);
-    else localStorage.removeItem('b24studio_activeBookId');
-  }, [activeBookId]);
+    if (activeBookId) {
+      localStorage.setItem('b24studio_activeBookId', activeBookId);
+      localStorage.setItem(getScopedActiveBookStorageKey(activeAccountId), activeBookId);
+    } else {
+      localStorage.removeItem('b24studio_activeBookId');
+      localStorage.removeItem(getScopedActiveBookStorageKey(activeAccountId));
+    }
+  }, [activeBookId, activeAccountId]);
 
   useEffect(() => {
-    if (selectedPage !== null) localStorage.setItem('b24studio_selectedPage', JSON.stringify(selectedPage));
-    else localStorage.removeItem('b24studio_selectedPage');
-  }, [selectedPage]);
+    if (selectedPage !== null) {
+      const serializedPage = JSON.stringify(selectedPage);
+      localStorage.setItem('b24studio_selectedPage', serializedPage);
+      if (activeBookId) {
+        localStorage.setItem(getScopedSelectedPageStorageKey(activeAccountId, activeBookId), serializedPage);
+      }
+    } else {
+      localStorage.removeItem('b24studio_selectedPage');
+      if (activeBookId) {
+        localStorage.removeItem(getScopedSelectedPageStorageKey(activeAccountId, activeBookId));
+      }
+    }
+  }, [selectedPage, activeBookId, activeAccountId]);
   const [editorText, setEditorText] = useState<string>('');
   const [styleOptions, setStyleOptions] = useState<{ 
     version_1: string; style_1_name: string;
@@ -1825,6 +2276,7 @@ export default function App() {
     return saved === 'true';
   });
   const [editingChapterTitle, setEditingChapterTitle] = useState<string | null>(null);
+  const [editingPageFocus, setEditingPageFocus] = useState<{ pageNum: number; text: string } | null>(null);
   const [bulkChapterTitle, setBulkChapterTitle] = useState<string>('');
   const [dragStart, setDragStart] = useState<{ x: number; y: number; shiftX: number; shiftY: number }>({ x: 0, y: 0, shiftX: 0, shiftY: 0 });
   const [isHoveringEmblem, setIsHoveringEmblem] = useState<boolean>(false);
@@ -1989,16 +2441,39 @@ export default function App() {
       }));
       setBooks(cleaned);
       if (parsed.length > 0) {
-        setActiveBookId(parsed[0].id);
+        const savedBookId = localStorage.getItem(getScopedActiveBookStorageKey(activeAccountId));
+        const resolvedBookId = savedBookId && parsed.some(b => b.id == savedBookId) ? savedBookId : parsed[0].id;
+        setActiveBookId(resolvedBookId);
       } else {
         setActiveBookId(null);
+        setSelectedPage(null);
       }
     } else {
       setBooks([]);
       setActiveBookId(null);
+      setSelectedPage(null);
     }
-    setSelectedPage('title');
   }, [activeAccountId]);
+
+  useEffect(() => {
+    if (!activeBookId) {
+      setSelectedPage(null);
+      return;
+    }
+
+    const scopedPageKey = getScopedSelectedPageStorageKey(activeAccountId, activeBookId);
+    const savedPage = localStorage.getItem(scopedPageKey) || localStorage.getItem('b24studio_selectedPage');
+    if (!savedPage) {
+      setSelectedPage('title');
+      return;
+    }
+
+    try {
+      setSelectedPage(JSON.parse(savedPage));
+    } catch {
+      setSelectedPage('title');
+    }
+  }, [activeBookId, activeAccountId]);
 
   // Reset title page states when active book changes
   useEffect(() => {
@@ -2200,6 +2675,23 @@ export default function App() {
     };
     updateActiveBookConfig('outline', updatedOutline);
     setEditingChapterTitle(null);
+  };
+
+  const handleSavePageFocus = (pageNum: number, newFocus: string) => {
+    if (!activeBook || !activeBook.outline) return;
+    const cleanFocus = newFocus.trim();
+    const updatedPages = activeBook.outline.pages.map(p => {
+      if (p.page_number === pageNum) {
+        return { ...p, focus: cleanFocus };
+      }
+      return p;
+    });
+    const updatedOutline = {
+      ...activeBook.outline,
+      pages: updatedPages
+    };
+    updateActiveBookConfig('outline', updatedOutline);
+    setEditingPageFocus(null);
   };
 
   const handleApplyBulkChapterTitle = () => {
@@ -2429,8 +2921,11 @@ export default function App() {
   const getEffectiveGuidelines = (book: Book) => {
     let g = book.customGuidelines || '';
     if (book.noQuotes) {
-      const noQuoteRule = 'ABSOLUTE REGEL: Verwende KEINE urheberrechtlich geschützten Inhalte oder geschützten Charaktere. Historische Zitate oder Zitate bekannter Persönlichkeiten sind zulässig, sofern sie gemeinfrei/legal sind. Setze Zitate sehr sparsam ein (maximal ein Zitat pro Kapitel). Jedes Zitat MUSS zwingend folgendes Format haben – auf einer eigenen Zeile, eingeleitet mit "> ", dann das Zitat in Anführungszeichen, dann IMMER ein Gedankenstrich und der echte Autor-Name, OHNE AUSNAHME. Beispiele:\n> "Wissen ist Macht." — Francis Bacon\n> "Das Leben ist kurz, die Kunst ist lang." — Hippokrates\nEIN ZITAT OHNE AUTORENANGABE IST VERBOTEN. Format: > "[Zitat]" — [Vorname Nachname]';
+      const noQuoteRule = 'ABSOLUTE REGEL: Verwende KEINERLEI Zitate, Blockquotes oder Zitat-Formatierungen (kein "> ...", keine Anführungszeichen-Absätze). Schreibe ausschließlich in Fließtext. Zitate sind in diesem Buch vollständig verboten.';
       g = g ? `${g}\n${noQuoteRule}` : noQuoteRule;
+    } else {
+      const quoteRule = 'Setze Zitate sehr sparsam ein (maximal ein Zitat pro Kapitel). Jedes Zitat MUSS folgendes Format haben – auf einer eigenen Zeile, eingeleitet mit "> ", dann das Zitat in Anführungszeichen, dann IMMER ein Gedankenstrich und der echte Autor-Name. Beispiele:\n> "Wissen ist Macht." — Francis Bacon\nEIN ZITAT OHNE AUTORENANGABE IST VERBOTEN. Format: > "[Zitat]" — [Vorname Nachname]';
+      g = g ? `${g}\n${quoteRule}` : quoteRule;
     }
     if (book.extractedSourceText) {
       let safeSourceText = book.extractedSourceText;
@@ -2624,8 +3119,14 @@ export default function App() {
           return b;
         }));
         showConfirm({
-          title: 'Fehler',
-          message: 'Fehler bei der Inhaltsplanung: ' + (err.message || err),
+          title: 'Fehler bei der Inhaltsplanung',
+          message: (() => {
+            const msg = err.message || String(err);
+            if (msg.toLowerCase().includes('quota') || msg.includes('429') || msg.toLowerCase().includes('rate')) {
+              return '⚠️ KI-Kontingent erschöpft (Rate Limit).\n\nBitte wechsle das KI-Modell unter PARAMETER → KI-Modell zu einem anderen Modell und versuche es erneut. Falls das Problem anhält, kurz warten (ca. 1 Minute).';
+            }
+            return 'Fehler bei der Inhaltsplanung: ' + msg;
+          })(),
           confirmLabel: 'Ok',
           cancelLabel: 'none',
           onConfirm: () => {}
@@ -3088,15 +3589,6 @@ export default function App() {
 
     const sortedPages = [...currentOutline.pages].sort((a, b) => Number(a.page_number) - Number(b.page_number));
     
-    // Group pages by chapter title
-    const chaptersMap = new Map<string, BookOutlinePage[]>();
-    for (const page of sortedPages) {
-      if (!chaptersMap.has(page.chapter_title)) {
-        chaptersMap.set(page.chapter_title, []);
-      }
-      chaptersMap.get(page.chapter_title)!.push(page);
-    }
-
     const initialBook = booksRef.current.find(b => b.id === targetBookId);
     if (!initialBook) {
       setIsGenerating(false);
@@ -3109,44 +3601,29 @@ export default function App() {
     const pageTexts: { [key: number]: string } = { ...initialPagesText };
     const pageStatuses: { [key: number]: string } = { ...initialPagesStatus };
 
-    const finishedChapters = new Set<string>();
-
-    // Mark already completed chapters as finished
-    for (const [title, pages] of chaptersMap.entries()) {
-      const allCompleted = pages.every(p => pageStatuses[Number(p.page_number)] === 'completed');
-      if (allCompleted) {
-        finishedChapters.add(title);
-      }
-    }
-
     const runQueue = async () => {
-      const allTitles = Array.from(chaptersMap.keys());
+      let lastChapter = '';
       
-      for (const nextChapter of allTitles) {
+      for (const page of sortedPages) {
         if (cancelGenerationRef.current) break;
-        if (finishedChapters.has(nextChapter)) continue;
 
-        const batch = [nextChapter];
-        await Promise.all(batch.map(async (nextChapter) => {
-          try {
-            const pages = chaptersMap.get(nextChapter)!;
-            let isFirstPage = true;
-            for (const page of pages) {
-                if (cancelGenerationRef.current) break;
+        const pageNum = Number(page.page_number);
+        if (pageStatuses[pageNum] === 'completed' || pageStatuses[pageNum] === 'failed') {
+          continue;
+        }
 
-                const pageNum = Number(page.page_number);
-                if (pageStatuses[pageNum] === 'completed' || pageStatuses[pageNum] === 'failed') {
-                  continue;
-                }
-
-                // Delay between pages in the same chapter to reduce rate limits
-                if (!isFirstPage) {
-                  const isGroq = !selectedModel.startsWith('gemini-');
-                  const delayMs = isGroq ? 8500 : 4500;
-                  await new Promise(resolve => setTimeout(resolve, delayMs));
-                }
-                isFirstPage = false;
-                if (cancelGenerationRef.current) break;
+        try {
+          // Delay to reduce rate limits (only if it's not the very first page of a chapter, or minimal delay)
+          if (lastChapter === page.chapter_title) {
+            const isGroq = !selectedModel.startsWith('gemini-');
+            const delayMs = isGroq ? 8500 : 4500;
+            await new Promise(resolve => setTimeout(resolve, delayMs));
+          } else if (lastChapter !== '') {
+            await new Promise(resolve => setTimeout(resolve, 1500));
+          }
+          lastChapter = page.chapter_title;
+          
+          if (cancelGenerationRef.current) break;
 
                 // Focus remains on the user's chosen page, just update UI state to generating
                 setBooks(prev => prev.map(b => {
@@ -3167,6 +3644,7 @@ export default function App() {
                   currentBook.pagesReprompt?.[pageNum]
                 );
 
+                const startTime = Date.now();
                 const rawText = await service.generatePage(
                   currentOutline,
                   pageNum,
@@ -3277,6 +3755,7 @@ export default function App() {
                       ...b,
                       pagesText: { ...(b.pagesText || {}), [pageNum]: text },
                       pagesStatus: { ...(b.pagesStatus || {}), [pageNum]: 'completed' },
+                      pagesGenerationTime: { ...(b.pagesGenerationTime || {}), [pageNum]: Date.now() - startTime },
                       pagesError: cmieRes.warningMessage ? { ...(b.pagesError || {}), [pageNum]: cmieRes.warningMessage } : (b.pagesError || {}),
                       pagesReprompt: cmieRes.repromptInstruction ? { ...(b.pagesReprompt || {}), [pageNum]: cmieRes.repromptInstruction } : (b.pagesReprompt || {}),
                       pagesOverflow: { ...(b.pagesOverflow || {}), [pageNum]: finalOverflow },
@@ -3310,28 +3789,22 @@ export default function App() {
                   setGilRefreshKey(prev => prev + 1);
                 });
 
-                setSelectedPage(prev => prev === null ? pageNum : prev);
-              }
+                setSelectedPage(pageNum);
             } catch (err: any) {
-              console.error(`Chapter ${nextChapter} error:`, err);
-              const pages = chaptersMap.get(nextChapter)!;
-              pages.forEach(p => {
-                const pn = Number(p.page_number);
-                if (pageStatuses[pn] !== 'completed') {
-                  setBooks(prev => prev.map(b => {
-                    if (b.id === targetBookId) {
-                      return {
-                        ...b,
-                        pagesStatus: { ...(b.pagesStatus || {}), [pn]: 'failed' },
-                        pagesError: { ...(b.pagesError || {}), [pn]: err.message || 'API Fehler' }
-                      };
-                    }
-                    return b;
-                  }));
-                }
-              });
+              console.error(`Page ${pageNum} error:`, err);
+              if (pageStatuses[pageNum] !== 'completed') {
+                setBooks(prev => prev.map(b => {
+                  if (b.id === targetBookId) {
+                    return {
+                      ...b,
+                      pagesStatus: { ...(b.pagesStatus || {}), [pageNum]: 'failed' },
+                      pagesError: { ...(b.pagesError || {}), [pageNum]: err.message || 'API Fehler' }
+                    };
+                  }
+                  return b;
+                }));
+              }
             }
-        }));
       }
     };
 
@@ -3369,6 +3842,7 @@ export default function App() {
         currentBook,
         currentBook.pagesReprompt?.[pageNum]
       );
+      const startTime = Date.now();
       let rawText = await service.generatePage(
         outline,
         pageNum,
@@ -3446,6 +3920,7 @@ export default function App() {
             ...b,
             pagesText: { ...(b.pagesText || {}), [pageNum]: text },
             pagesStatus: { ...(b.pagesStatus || {}), [pageNum]: 'completed' },
+            pagesGenerationTime: { ...(b.pagesGenerationTime || {}), [pageNum]: Date.now() - startTime },
             pagesError: cmieResBulk.warningMessage ? { ...(b.pagesError || {}), [pageNum]: cmieResBulk.warningMessage } : (b.pagesError || {}),
             pagesReprompt: cmieResBulk.repromptInstruction ? { ...(b.pagesReprompt || {}), [pageNum]: cmieResBulk.repromptInstruction } : (b.pagesReprompt || {}),
             pagesOverflow: { ...(b.pagesOverflow || {}), [pageNum]: finalOverflow },
@@ -3902,6 +4377,9 @@ export default function App() {
     try {
       const config: PdfConfig = {
         bookId: activeBook.id,
+        title: activeBook.title,
+        subtitle: activeBook.subtitle,
+        hideTitlePage: activeBook.hideTitlePage,
         fontFamily: activeBook.fontFamily,
         fontSize: activeBook.fontSize,
         lineHeightMultiplier: 1.4,
@@ -3935,21 +4413,25 @@ export default function App() {
         titlePageTitleFont: activeBook.titlePageTitleFont || 'playfair',
         titlePageTitleX: activeBook.titlePageTitleX || 0,
         titlePageTitleY: activeBook.titlePageTitleY || 0,
+        titlePageTitleBold: activeBook.titlePageTitleBold === true,
         titlePageSubtitleAlign: activeBook.titlePageSubtitleAlign || 'center',
         titlePageSubtitleSize: activeBook.titlePageSubtitleSize || 12,
         titlePageSubtitleFont: activeBook.titlePageSubtitleFont || 'times',
         titlePageSubtitleX: activeBook.titlePageSubtitleX || 0,
         titlePageSubtitleY: activeBook.titlePageSubtitleY || 0,
+        titlePageSubtitleBold: activeBook.titlePageSubtitleBold === true,
         titlePageAuthorAlign: activeBook.titlePageAuthorAlign || 'center',
         titlePageAuthorSize: activeBook.titlePageAuthorSize || 14,
         titlePageAuthorFont: activeBook.titlePageAuthorFont || 'times',
         titlePageAuthorX: activeBook.titlePageAuthorX || 0,
         titlePageAuthorY: activeBook.titlePageAuthorY || 0,
+        titlePageAuthorBold: activeBook.titlePageAuthorBold === true,
         titlePagePublisherAlign: activeBook.titlePagePublisherAlign || 'center',
         titlePagePublisherSize: activeBook.titlePagePublisherSize || 10,
         titlePagePublisherFont: activeBook.titlePagePublisherFont || 'times',
         titlePagePublisherX: activeBook.titlePagePublisherX || 0,
         titlePagePublisherY: activeBook.titlePagePublisherY || 0,
+        titlePagePublisherBold: activeBook.titlePagePublisherBold === true,
       };
       const pdfBlob = generateBookPdf(activeBook.outline, activeBook.pagesText || {}, config);
       const url = URL.createObjectURL(pdfBlob);
@@ -4144,7 +4626,6 @@ export default function App() {
             lineHeight: 1
           }}>
             {outline?.language === 'de' ? 'Inhaltsverzeichnis' : 'Table of Contents'}
-            {tocPages.length > 1 && ` (${pageIndex + 1}/${tocPages.length})`}
           </h3>
         </div>
 
@@ -4268,6 +4749,13 @@ export default function App() {
 
   const renderTitlePagePreview = () => {
     if (!activeBook) return null;
+    if (activeBook.hideTitlePage) {
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', backgroundColor: 'var(--bg-main)', color: 'var(--text-muted)' }}>
+          Titelblatt ist deaktiviert
+        </div>
+      );
+    }
     
     // Determine which emblem to draw
     const emblem = activeBook.titlePageEmblem || 'geometric';
@@ -4402,7 +4890,7 @@ export default function App() {
               autoFocus
               style={{
                 fontSize: `${(activeBook.titlePageTitleSize || 28) * previewScaleY}px`,
-                fontWeight: 'bold',
+                fontWeight: activeBook.titlePageTitleBold ? 'bold' : 'normal',
                 fontFamily: getCssFontFamily(activeBook.titlePageTitleFont, 'playfair'),
                 color: '#000000',
                 lineHeight: '1.2',
@@ -4444,7 +4932,7 @@ export default function App() {
               title="Doppelklick zum Bearbeiten / Ziehen zum Verschieben"
               style={{
                 fontSize: `${(activeBook.titlePageTitleSize || 28) * previewScaleY}px`,
-                fontWeight: 'bold',
+                fontWeight: activeBook.titlePageTitleBold ? 'bold' : 'normal',
                 fontFamily: getCssFontFamily(activeBook.titlePageTitleFont, 'playfair'),
                 color: '#000000',
                 lineHeight: '1.2',
@@ -4506,6 +4994,12 @@ export default function App() {
                     >+</button>
                     <div style={{ width: '1px', height: '12px', backgroundColor: '#475569', margin: '0 4px' }} />
                     <button
+                      onClick={(e) => { e.stopPropagation(); updateActiveBookConfig('titlePageTitleBold', !activeBook.titlePageTitleBold); }}
+                      style={{ background: activeBook.titlePageTitleBold ? '#38bdf8' : 'none', border: 'none', color: activeBook.titlePageTitleBold ? '#0f172a' : '#ffffff', cursor: 'pointer', padding: '2px 4px', display: 'flex', alignItems: 'center', borderRadius: '2px' }}
+                      title="Fett"
+                    ><Bold size={11} /></button>
+                    <div style={{ width: '1px', height: '12px', backgroundColor: '#475569', margin: '0 4px' }} />
+                    <button
                       onClick={(e) => {
                         e.stopPropagation();
                         setEditingField('title');
@@ -4553,7 +5047,7 @@ export default function App() {
               style={{
                 fontSize: `${(activeBook.titlePageSubtitleSize || 12) * previewScaleY}px`,
                 fontStyle: 'italic',
-                fontWeight: 'normal',
+                fontWeight: activeBook.titlePageSubtitleBold ? 'bold' : 'normal',
                 color: '#475569',
                 margin: '4px 0 0 0',
                 padding: '4px',
@@ -4596,7 +5090,7 @@ export default function App() {
               style={{
                 fontSize: `${(activeBook.titlePageSubtitleSize || 12) * previewScaleY}px`,
                 fontStyle: 'italic',
-                fontWeight: 'normal',
+                fontWeight: activeBook.titlePageSubtitleBold ? 'bold' : 'normal',
                 color: activeBook.subtitle ? '#475569' : '#cbd5e1',
                 margin: '4px 0 0 0',
                 padding: '4px',
@@ -4656,6 +5150,13 @@ export default function App() {
                       onClick={(e) => { e.stopPropagation(); updateActiveBookConfig('titlePageSubtitleSize', Math.min(36, (activeBook.titlePageSubtitleSize || 12) + 1)); }}
                       style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '2px 6px', fontSize: '11px', fontWeight: 'bold' }}
                     >+</button>
+                    <div style={{ width: '1px', height: '12px', backgroundColor: '#475569', margin: '0 4px' }} />
+                    <button
+                      onClick={(e) => { e.stopPropagation(); updateActiveBookConfig('titlePageSubtitleBold', !activeBook.titlePageSubtitleBold); }}
+                      style={{ background: activeBook.titlePageSubtitleBold ? '#38bdf8' : 'none', border: 'none', color: activeBook.titlePageSubtitleBold ? '#0f172a' : '#ffffff', cursor: 'pointer', padding: '2px 4px', display: 'flex', alignItems: 'center', borderRadius: '2px' }}
+                      title="Fett"
+                    ><Bold size={11} /></button>
+                    <div style={{ width: '1px', height: '12px', backgroundColor: '#475569', margin: '0 4px' }} />
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -4905,6 +5406,7 @@ export default function App() {
               autoFocus
               style={{
                 fontSize: `${(activeBook.titlePageAuthorSize || 14) * previewScaleY}px`,
+                fontWeight: activeBook.titlePageAuthorBold ? 'bold' : 'normal',
                 fontFamily: getCssFontFamily(activeBook.titlePageAuthorFont, 'times'),
                 color: '#0f172a',
                 lineHeight: '1.2',
@@ -4929,6 +5431,7 @@ export default function App() {
               style={{
                 position: 'relative',
                 fontSize: `${(activeBook.titlePageAuthorSize || 14) * previewScaleY}px`,
+                fontWeight: activeBook.titlePageAuthorBold ? 'bold' : 'normal',
                 fontFamily: getCssFontFamily(activeBook.titlePageAuthorFont, 'times'),
                 color: '#0f172a',
                 lineHeight: '1.2',
@@ -4983,6 +5486,13 @@ export default function App() {
                       onClick={(e) => { e.stopPropagation(); updateActiveBookConfig('titlePageAuthorSize', Math.min(36, (activeBook.titlePageAuthorSize || 14) + 1)); }}
                       style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '2px 6px', fontSize: '11px', fontWeight: 'bold' }}
                     >+</button>
+                    <div style={{ width: '1px', height: '12px', backgroundColor: '#475569', margin: '0 4px' }} />
+                    <button
+                      onClick={(e) => { e.stopPropagation(); updateActiveBookConfig('titlePageAuthorBold', !activeBook.titlePageAuthorBold); }}
+                      style={{ background: activeBook.titlePageAuthorBold ? '#38bdf8' : 'none', border: 'none', color: activeBook.titlePageAuthorBold ? '#0f172a' : '#ffffff', cursor: 'pointer', padding: '2px 4px', display: 'flex', alignItems: 'center', borderRadius: '2px' }}
+                      title="Fett"
+                    ><Bold size={11} /></button>
+                    <div style={{ width: '1px', height: '12px', backgroundColor: '#475569', margin: '0 4px' }} />
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -5030,6 +5540,7 @@ export default function App() {
               autoFocus
               style={{
                 fontSize: `${(activeBook.titlePagePublisherSize || 10) * previewScaleY}px`,
+                fontWeight: activeBook.titlePagePublisherBold ? 'bold' : 'normal',
                 fontFamily: getCssFontFamily(activeBook.titlePagePublisherFont, 'times'),
                 color: '#475569',
                 lineHeight: '1.2',
@@ -5054,6 +5565,7 @@ export default function App() {
               style={{
                 position: 'relative',
                 fontSize: `${(activeBook.titlePagePublisherSize || 10) * previewScaleY}px`,
+                fontWeight: activeBook.titlePagePublisherBold ? 'bold' : 'normal',
                 fontFamily: getCssFontFamily(activeBook.titlePagePublisherFont, 'times'),
                 color: '#475569',
                 lineHeight: '1.2',
@@ -5108,6 +5620,13 @@ export default function App() {
                       onClick={(e) => { e.stopPropagation(); updateActiveBookConfig('titlePagePublisherSize', Math.min(24, (activeBook.titlePagePublisherSize || 10) + 1)); }}
                       style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '2px 6px', fontSize: '11px', fontWeight: 'bold' }}
                     >+</button>
+                    <div style={{ width: '1px', height: '12px', backgroundColor: '#475569', margin: '0 4px' }} />
+                    <button
+                      onClick={(e) => { e.stopPropagation(); updateActiveBookConfig('titlePagePublisherBold', !activeBook.titlePagePublisherBold); }}
+                      style={{ background: activeBook.titlePagePublisherBold ? '#38bdf8' : 'none', border: 'none', color: activeBook.titlePagePublisherBold ? '#0f172a' : '#ffffff', cursor: 'pointer', padding: '2px 4px', display: 'flex', alignItems: 'center', borderRadius: '2px' }}
+                      title="Fett"
+                    ><Bold size={11} /></button>
+                    <div style={{ width: '1px', height: '12px', backgroundColor: '#475569', margin: '0 4px' }} />
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -5177,6 +5696,7 @@ export default function App() {
                   outline: 'none',
                   fontSize: `${(textObj.size || 16) * previewScaleY}px`,
                   fontFamily: getCssFontFamily(textObj.font, 'playfair'),
+                  fontWeight: textObj.isBold ? 'bold' : 'normal',
                   textAlign: textObj.align,
                   color: '#000000',
                   resize: 'none',
@@ -5195,6 +5715,7 @@ export default function App() {
                 <div style={{
                   fontSize: `${(textObj.size || 16) * previewScaleY}px`,
                   fontFamily: getCssFontFamily(textObj.font, 'playfair'),
+                  fontWeight: textObj.isBold ? 'bold' : 'normal',
                   color: '#000000',
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-word',
@@ -5210,25 +5731,53 @@ export default function App() {
                 {hoveredField === textObj.id && (
                   <div style={{
                     position: 'absolute',
-                    top: '-24px',
+                    top: '-32px',
                     right: 0,
                     background: '#1e293b',
                     borderRadius: '4px',
-                    padding: '2px',
+                    padding: '4px',
                     display: 'flex',
-                    gap: '2px',
+                    gap: '4px',
                     zIndex: 30,
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                  }}>
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                    alignItems: 'center'
+                  }}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  >
+                    <select
+                      value={textObj.font}
+                      onChange={(e) => updateTitlePageCustomText(textObj.id, { font: e.target.value as any })}
+                      style={{ padding: '2px 4px', border: '1px solid #475569', borderRadius: '4px', fontSize: '10px', backgroundColor: '#0f172a', color: '#f1f5f9', outline: 'none', cursor: 'pointer' }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <option value="playfair">Playfair</option>
+                      <option value="times">Times</option>
+                      <option value="helvetica">Helvetica</option>
+                      <option value="arial">Arial</option>
+                      <option value="courier">Courier</option>
+                      <option value="inter">Inter</option>
+                    </select>
+
+                    <button
+                      onClick={(e) => { e.stopPropagation(); updateTitlePageCustomText(textObj.id, { isBold: !textObj.isBold }); }}
+                      style={{ background: textObj.isBold ? '#38bdf8' : 'none', border: 'none', color: textObj.isBold ? '#0f172a' : '#ffffff', cursor: 'pointer', padding: '2px 4px', display: 'flex', alignItems: 'center', borderRadius: '2px' }}
+                      title="Fett"
+                    ><Bold size={11} /></button>
+                    
+                    <div style={{ width: '1px', height: '14px', backgroundColor: '#475569', margin: '0 2px' }} />
+
                     <button
                       onClick={(e) => { e.stopPropagation(); updateTitlePageCustomText(textObj.id, { size: Math.max(8, (textObj.size || 16) - 1) }); }}
-                      style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '2px 6px', fontSize: '11px', fontWeight: 'bold' }}
+                      style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '2px 4px', fontSize: '12px', fontWeight: 'bold' }}
                     >-</button>
-                    <span style={{ color: '#94a3b8', fontSize: '9px', padding: '0 2px', display: 'flex', alignItems: 'center' }}>{textObj.size || 16}pt</span>
+                    <span style={{ color: '#94a3b8', fontSize: '10px', minWidth: '24px', textAlign: 'center' }}>{textObj.size || 16}pt</span>
                     <button
                       onClick={(e) => { e.stopPropagation(); updateTitlePageCustomText(textObj.id, { size: Math.min(100, (textObj.size || 16) + 1) }); }}
-                      style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '2px 6px', fontSize: '11px', fontWeight: 'bold' }}
+                      style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '2px 4px', fontSize: '12px', fontWeight: 'bold' }}
                     >+</button>
+
+                    <div style={{ width: '1px', height: '14px', backgroundColor: '#475569', margin: '0 2px' }} />
+
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -5238,7 +5787,6 @@ export default function App() {
                       style={{ background: 'none', border: 'none', color: '#60a5fa', cursor: 'pointer', padding: '2px 4px', display: 'flex', alignItems: 'center' }}
                       title="Text bearbeiten"
                     ><Pencil size={11} /></button>
-                    <div style={{ width: '1px', height: '12px', backgroundColor: '#475569', margin: '0 4px', alignSelf: 'center' }} />
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -5508,18 +6056,36 @@ export default function App() {
       switch (block.type) {
         case 'pagebreak':
           return (
-            <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '12px 0', width: '100%' }}>
+            <div key={key} className="group" style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '12px 0', width: '100%', position: 'relative' }}>
               <div style={{ flex: 1, borderTop: '1px dashed #cbd5e1' }} />
               <span style={{ fontSize: '7px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>Seitenumbruch (PDF)</span>
               <div style={{ flex: 1, borderTop: '1px dashed #cbd5e1' }} />
+              <button
+                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={(e) => { e.stopPropagation(); handleDeleteBlock(path); }}
+                style={{ position: 'absolute', right: '0', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '4px', padding: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                title="Umbruch entfernen"
+              >
+                <Trash2 size={12} />
+              </button>
             </div>
           );
 
         case 'ornament':
           return (
-            <p key={key} style={{ textAlign: 'center', fontSize: '10px', margin: '8px 0', color: '#64748b' }}>
-              {activeBook.chapterOrnament || '\u2767'}
-            </p>
+            <div key={key} className="group" style={{ position: 'relative', textAlign: 'center', margin: '8px 0' }}>
+              <p style={{ fontSize: '10px', color: '#64748b', margin: 0 }}>
+                {activeBook.chapterOrnament || '\u2767'}
+              </p>
+              <button
+                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={(e) => { e.stopPropagation(); handleDeleteBlock(path); }}
+                style={{ position: 'absolute', right: '0', top: '50%', transform: 'translateY(-50%)', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '4px', padding: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                title="Ornament entfernen"
+              >
+                <Trash2 size={12} />
+              </button>
+            </div>
           );
 
         case 'heading':
@@ -5973,9 +6539,19 @@ export default function App() {
 
   if (authLoading) {
     return (
-      <div style={{ display: 'flex', minHeight: '100vh', width: '100vw', backgroundColor: '#121212', alignItems: 'center', justifyContent: 'center', color: '#ffffff', fontFamily: "'Poppins', sans-serif", fontSize: '13px', gap: '8px' }}>
-        <Loader2 className="spinner" style={{ width: '18px', height: '18px' }} />
-        <span>Lade Book24 Studio...</span>
+      <div style={{ display: 'flex', minHeight: '100vh', width: '100vw', backgroundColor: '#121212', alignItems: 'center', justifyContent: 'center', color: '#ffffff', fontFamily: "'Poppins', sans-serif", flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
+          <Loader2 className="spinner" style={{ width: '18px', height: '18px' }} />
+          <span>Lade Book24 Studio...</span>
+        </div>
+        <button
+          onClick={() => window.location.reload()}
+          style={{ marginTop: '8px', padding: '8px 20px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', color: '#aaa', fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s' }}
+          onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; e.currentTarget.style.color = '#fff'; }}
+          onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#aaa'; }}
+        >
+          Seite neu laden
+        </button>
       </div>
     );
   }
@@ -5999,7 +6575,122 @@ export default function App() {
   }
 
   return (
-    <div className="app-container">
+    <>
+      {/* 🚫 Account Banned Modal */}
+      {showBanModal && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 999999,
+          backgroundColor: 'rgba(0,0,0,0.92)',
+          backdropFilter: 'blur(12px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '24px'
+        }}>
+          <div style={{
+            background: 'linear-gradient(145deg, #1a0a0a 0%, #2d0a0a 50%, #1a0a0a 100%)',
+            border: '1px solid rgba(239,68,68,0.4)',
+            borderRadius: '20px',
+            padding: '40px 36px',
+            maxWidth: '460px',
+            width: '100%',
+            boxShadow: '0 0 60px rgba(239,68,68,0.2), 0 24px 60px rgba(0,0,0,0.8)',
+            textAlign: 'center',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px'
+          }}>
+            {/* Icon */}
+            <div style={{
+              width: '72px', height: '72px', borderRadius: '50%',
+              background: 'linear-gradient(135deg, #7f1d1d, #dc2626)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '36px', boxShadow: '0 0 32px rgba(220,38,38,0.5)'
+            }}>🚫</div>
+            {/* Title */}
+            <div>
+              <h2 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: 800, color: '#fca5a5', letterSpacing: '-0.02em' }}>
+                Konto gesperrt
+              </h2>
+              <p style={{ margin: 0, fontSize: '15px', color: '#fecaca', lineHeight: 1.6 }}>
+                Dein Konto wurde vorübergehend eingefroren oder dauerhaft gesperrt.
+              </p>
+            </div>
+            {/* Divider */}
+            <div style={{ width: '100%', height: '1px', background: 'rgba(239,68,68,0.2)' }} />
+            {/* Support info */}
+            <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '12px', padding: '16px 20px', width: '100%' }}>
+              <p style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 700, color: '#fca5a5', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Support kontaktieren</p>
+              <p style={{ margin: 0, fontSize: '14px', color: '#f87171', lineHeight: 1.6 }}>
+                Wenn du glaubst, dass dies ein Fehler ist oder mehr Informationen benötigst, wende dich bitte an unseren Support.
+              </p>
+            </div>
+            {/* Buttons */}
+            <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
+              <a
+                href="mailto:support@book24.studio"
+                style={{
+                  flex: 1, padding: '12px', borderRadius: '10px', textDecoration: 'none',
+                  background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
+                  color: '#fff', fontSize: '14px', fontWeight: 700, textAlign: 'center',
+                  display: 'block', boxShadow: '0 4px 16px rgba(220,38,38,0.4)'
+                }}
+              >
+                ✉️ Support schreiben
+              </a>
+              <button
+                onClick={() => setShowBanModal(false)}
+                style={{
+                  flex: 1, padding: '12px', borderRadius: '10px', border: '1px solid rgba(239,68,68,0.3)',
+                  background: 'transparent', color: '#f87171', fontSize: '14px', fontWeight: 600, cursor: 'pointer'
+                }}
+              >
+                Schließen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* License Enforcement Overlay */}
+      {userHasValidLicense === false && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 99999,
+          backgroundColor: 'rgba(0,0,0,0.85)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          pointerEvents: 'auto',
+          padding: '24px'
+        }}>
+          <div style={{
+            backgroundColor: '#ffffff',
+            padding: '32px 40px',
+            borderRadius: '12px',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2)',
+            maxWidth: '450px',
+            width: '100%',
+            boxSizing: 'border-box',
+            color: '#202124',
+            fontFamily: 'Inter, system-ui, sans-serif'
+          }}>
+            <LicensePrompt 
+              onValidLicense={async (key) => {
+                try {
+                  await supabase!.rpc('claim_license_key', { key_to_claim: key });
+                  setUserHasValidLicense(true);
+                } catch (e) {
+                  console.error('Failed to claim license:', e);
+                  setUserHasValidLicense(true);
+                }
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="app-container" style={{ 
+        pointerEvents: userHasValidLicense === false ? 'none' : 'auto',
+        filter: userHasValidLicense === false ? 'grayscale(80%) brightness(0.4) blur(1px)' : 'none',
+        userSelect: userHasValidLicense === false ? 'none' : 'auto',
+        height: '100vh',
+        overflow: userHasValidLicense === false ? 'hidden' : 'auto'
+      }}>
 
       {/* Custom Confirm Dialog */}
       {confirmDialog && (
@@ -6054,6 +6745,8 @@ export default function App() {
         </div>
       )}
 
+
+
       {/* Header Bar */}
       <header className="header">
         <div className="header-left">
@@ -6077,27 +6770,52 @@ export default function App() {
         </div>
 
         <div className="header-nav-wrap">
-          <GooeyNav
-            items={[
-              { label: 'Mediathek' },
-              { label: 'Nischen-Finder' },
-              { label: 'Brain', disabled: !brainEnabled },
-              { label: 'Schreibstudio', disabled: !activeBook },
-            ]}
-            activeIndex={Math.max(0, NAV_TABS.indexOf(activeTab as NavTabId))}
-            themeClassName={`gooey-tab-${activeTab}`}
-            colorsByIndex={NAV_TABS.map(tab => NAV_TAB_PARTICLE_COLORS[tab])}
-            onSelect={(index) => {
-              const tab = NAV_TABS[index];
-              if (tab === 'brain' && !brainEnabled) return;
-              if (tab === 'studio' && !activeBook) return;
-              setActiveTab(tab);
-            }}
-            particleCount={12}
-            particleDistances={[70, 8]}
-            particleR={80}
-            animationTime={550}
-          />
+          {(() => {
+            const getModuleStatus = (tab: string): string => {
+              if (isOwnerClient) return 'active';
+              return activeModules[tab] || 'active';
+            };
+
+            const currentNavTabs = NAV_TABS.filter(tab => {
+              if (isOwnerClient) return true; // Owner sees all tabs
+              if (tab === 'owner') return false; // Non-owner never sees owner tab
+              
+              const status = getModuleStatus(tab);
+              if (status === 'hidden') return false;
+              
+              if (tab === 'brain') return brainEnabled;
+              return true;
+            });
+            const navItems = currentNavTabs.map(tab => {
+              const status = getModuleStatus(tab);
+              const isMaintenance = status === 'maintenance';
+
+              if (tab === 'projects') return { label: 'Mediathek' };
+              if (tab === 'dashboard') return { label: 'Nischen-Finder', maintenance: isMaintenance };
+              if (tab === 'brain') return { label: 'Brain', disabled: !brainEnabled && !isMaintenance, maintenance: isMaintenance };
+              if (tab === 'studio') return { label: 'Schreibstudio', maintenance: isMaintenance };
+              if (tab === 'calculator') return { label: 'Rechner', maintenance: isMaintenance };
+              if (tab === 'owner') return { label: 'Owner Panel' };
+              return { label: '' };
+            });
+
+            return (
+              <GooeyNav
+                items={navItems}
+                activeIndex={Math.max(0, currentNavTabs.indexOf(activeNavKey))}
+                themeClassName={`gooey-tab-${activeNavKey}`}
+                colorsByIndex={currentNavTabs.map(tab => NAV_TAB_PARTICLE_COLORS[tab])}
+                onSelect={(index) => {
+                  const tab = currentNavTabs[index];
+                  handleSelectNavTab(tab);
+                }}
+                particleCount={12}
+                particleDistances={[70, 8]}
+                particleR={80}
+                animationTime={550}
+              />
+            );
+          })()}
         </div>
 
         <div className="header-right">
@@ -6192,7 +6910,7 @@ export default function App() {
                     message: 'Möchtest du dich wirklich abmelden?',
                     confirmLabel: 'Abmelden',
                     danger: true,
-                    onConfirm: () => signOut(auth)
+                    onConfirm: () => supabase?.auth.signOut()
                   });
                 }}
                 className="btn btn-danger"
@@ -6207,7 +6925,20 @@ export default function App() {
 
       {/* Workspace Area */}
       <div className="workspace-content">
-        
+        {ownerRouteActive ? (
+          <div
+            style={{
+              padding: '10px',
+              height: 'calc(100vh - 110px)',
+              width: '100%',
+              overflowY: 'auto',
+              background: theme === 'dark' ? '#070b11' : '#f4f7fb'
+            }}
+          >
+            <OwnerPanel currentUser={currentUser} theme={theme} />
+          </div>
+        ) : (
+        <>
         {/* Tab 1: Projects Mediathek Grid view */}
         {activeTab === 'projects' && (
           <>
@@ -6302,29 +7033,60 @@ export default function App() {
                       </div>
 
                       {/* Creation Date and Time Badge */}
-                      <div
-                        style={{
-                          marginTop: '10px',
-                          padding: '8px 10px',
-                          background: 'rgba(255,255,255,0.03)',
-                          borderRadius: '6px',
-                          border: '1px solid var(--border-color)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          fontSize: '11px',
-                          color: 'var(--text-muted)'
-                        }}
-                      >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, color: 'var(--primary)' }}>
-                          <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
-                          <line x1="16" x2="16" y1="2" y2="6"/>
-                          <line x1="8" x2="8" y1="2" y2="6"/>
-                          <line x1="3" x2="21" y1="10" y2="10"/>
-                        </svg>
-                        <span>
-                          Erstellt: {getProjectFormattedDate(b)}
-                        </span>
+                      <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <div
+                          style={{
+                            padding: '8px 10px',
+                            background: 'rgba(255,255,255,0.03)',
+                            borderRadius: '6px',
+                            border: '1px solid var(--border-color)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            fontSize: '11px',
+                            color: 'var(--text-muted)'
+                          }}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, color: 'var(--primary)' }}>
+                            <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                            <line x1="16" x2="16" y1="2" y2="6"/>
+                            <line x1="8" x2="8" y1="2" y2="6"/>
+                            <line x1="3" x2="21" y1="10" y2="10"/>
+                          </svg>
+                          <span>
+                            Erstellt: {getProjectFormattedDate(b)}
+                          </span>
+                        </div>
+                        
+                        {b.pagesGenerationTime && Object.keys(b.pagesGenerationTime).length > 0 && (() => {
+                          const totalMs = Object.values(b.pagesGenerationTime!).reduce((a, val) => a + val, 0);
+                          const totalSec = Math.floor(totalMs / 1000);
+                          const m = Math.floor(totalSec / 60);
+                          const s = totalSec % 60;
+                          return (
+                            <div
+                              style={{
+                                padding: '8px 10px',
+                                background: 'rgba(201,150,62,0.08)',
+                                borderRadius: '6px',
+                                border: '1px solid rgba(201,150,62,0.3)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                fontSize: '11px',
+                                color: '#C9963E'
+                              }}
+                            >
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 14"/>
+                              </svg>
+                              <span>
+                                Generierungszeit: {m}:{s.toString().padStart(2, '0')}
+                              </span>
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       <button 
@@ -6360,44 +7122,114 @@ export default function App() {
 
         {/* Tab: Brain Dashboard (beta — allowlist only) */}
         {activeTab === 'brain' && brainEnabled && (
-          <BrainDashboard
-            accountId={activeAccountId}
-            books={books}
-            refreshKey={brainTick}
-            onBrainUpdate={refreshBrain}
-            theme={theme}
-          />
+          !isOwnerClient && activeModules.brain === 'maintenance' ? (
+            <MaintenanceView name="Das Brain" theme={theme} onBack={() => setActiveTab('projects')} />
+          ) : (
+            <BrainDashboard
+              accountId={activeAccountId}
+              books={books}
+              refreshKey={brainTick}
+              onBrainUpdate={refreshBrain}
+              theme={theme}
+              currentUser={currentUser}
+            />
+          )
         )}
 
         {/* Tab: Dashboard (Nischen-Finder) */}
         {activeTab === 'dashboard' && (
-          <div style={{ padding: '32px 40px', overflowY: 'auto', height: 'calc(100vh - 110px)', display: 'flex', flexDirection: 'column', flex: 1, width: '100%', alignItems: 'center', background: 'var(--bg-main)' }}>
-            <div style={{ width: '100%', maxWidth: '1200px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+          !isOwnerClient && activeModules.dashboard === 'maintenance' ? (
+            <MaintenanceView name="Nischenfinder" theme={theme} onBack={() => setActiveTab('projects')} />
+          ) : (
+            <div style={{ padding: '32px 40px', overflowY: 'auto', height: 'calc(100vh - 110px)', display: 'flex', flexDirection: 'column', flex: 1, width: '100%', alignItems: 'center', background: 'var(--bg-main)' }}>
+              <div style={{ width: '100%', maxWidth: '1200px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
 
-            {/* TOP BAR */}
-            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-              <div>
-                <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '6px' }}>KDP Publishing</div>
-                <h1 style={{ margin: 0, fontSize: '32px', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.03em', lineHeight: 1 }}>Nischen-Finder</h1>
+              {/* TOP BAR */}
+              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '6px' }}>KDP Publishing</div>
+                  <h1 style={{ margin: 0, fontSize: '32px', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.03em', lineHeight: 1 }}>Nischen-Finder</h1>
+                </div>
+              </div>
+
+              <NicheFinderDashboard 
+                nicheQuery={nicheQuery}
+                setNicheQuery={setNicheQuery}
+                isSearchingNiche={isSearchingNiche}
+                handleSearchNiche={handleSearchNiche}
+                nicheResult={nicheResult}
+                nicheAnalysisLoading={nicheAnalysisLoading}
+                handleAnalyzeNicheAI={handleAnalyzeNicheAI}
+              />
               </div>
             </div>
+          )
+        )}
 
-            <NicheFinderDashboard 
-              nicheQuery={nicheQuery}
-              setNicheQuery={setNicheQuery}
-              isSearchingNiche={isSearchingNiche}
-              handleSearchNiche={handleSearchNiche}
-              nicheResult={nicheResult}
-              nicheAnalysisLoading={nicheAnalysisLoading}
-              handleAnalyzeNicheAI={handleAnalyzeNicheAI}
-            />
+        {/* Tab 4: Calculator */}
+        {activeTab === 'calculator' && (
+          !isOwnerClient && activeModules.calculator === 'maintenance' ? (
+            <MaintenanceView name="KDP Rechner" theme={theme} onBack={() => setActiveTab('projects')} />
+          ) : (
+            <div style={{ height: 'calc(100vh - 110px)', overflowY: 'auto', background: theme === 'dark' ? '#0f172a' : '#f8fafc', padding: '20px' }}>
+              <KdpCalculator theme={theme} />
             </div>
-          </div>
+          )
         )}
 
         {/* Tab 2: Studio Layout Panel Grid */}
-        {activeTab === 'studio' && activeBook && (
-          <div className="studio-grid" style={{ display: 'flex', width: '100%', height: 'calc(100vh - 110px)', gap: '0px', position: 'relative' }}>
+        {activeTab === 'studio' && (
+          !isOwnerClient && activeModules.studio === 'maintenance' ? (
+            <MaintenanceView name="Buch Studio" theme={theme} onBack={() => setActiveTab('projects')} />
+          ) : (
+            !activeBook ? (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: 'calc(100vh - 110px)',
+                width: '100%',
+                background: 'var(--bg-main)',
+                color: 'var(--text-main)',
+                fontFamily: "'Outfit', sans-serif",
+                padding: '24px',
+                textAlign: 'center',
+                boxSizing: 'border-box'
+              }}>
+                <div style={{
+                  backgroundColor: 'var(--bg-card)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '16px',
+                  padding: '40px',
+                  maxWidth: '480px',
+                  width: '100%',
+                  boxShadow: '0 20px 40px rgba(0,0,0,0.06)',
+                  boxSizing: 'border-box'
+                }}>
+                  <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '12px', color: 'var(--text-main)' }}>Kein Projekt ausgewählt</h2>
+                  <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: '1.6', marginBottom: '24px' }}>
+                    Bitte wähle zuerst in der Mediathek ein Buchprojekt aus oder erstelle ein neues Projekt, um das Schreibstudio zu öffnen.
+                  </p>
+                  <button
+                    onClick={() => setActiveTab('projects')}
+                    style={{
+                      padding: '10px 20px',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      backgroundColor: 'var(--primary)',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Zur Mediathek gehen
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="studio-grid" style={{ display: 'flex', width: '100%', height: 'calc(100vh - 110px)', gap: '0px', position: 'relative' }}>
             {/* Left Panel: Library & Settings — Redesigned */}
             <div
               className="ex-pane"
@@ -6554,6 +7386,7 @@ export default function App() {
                             type="number"
                             min={5} max={200}
                             value={activeBook.targetPages}
+                            onFocus={e => e.target.select()}
                             onChange={e => updateActiveBookConfig('targetPages', Math.max(5, Math.min(200, Number(e.target.value))))}
                             disabled={isPlanning || isGenerating}
                           />
@@ -6582,6 +7415,7 @@ export default function App() {
                           disabled={isPlanning || isGenerating}
                         >
                           <option value="Sachbuch / Informativ">Sachbuch / Informativ</option>
+                          <option value="Sachbuch / Theorien">Sachbuch / Theorien</option>
                           <option value="Kreatives Storytelling">Kreatives Storytelling</option>
                           <option value="Akademisch / Wissenschaftlich">Akademisch / Wissenschaftlich</option>
                           <option value="Einfache Sprache">Einfache Sprache</option>
@@ -6598,6 +7432,32 @@ export default function App() {
                           rows={3}
                           disabled={isPlanning || isGenerating}
                         />
+                      </div>
+
+                      <div className="ex-field">
+                        <label className="ex-label">Zitate-Einstellung</label>
+                        <button
+                          onClick={() => updateActiveBookConfig('noQuotes', !activeBook.noQuotes)}
+                          disabled={isPlanning || isGenerating}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px 14px',
+                            borderRadius: '8px',
+                            border: `1.5px solid ${activeBook.noQuotes ? '#ef4444' : 'var(--border)'}`,
+                            background: activeBook.noQuotes ? 'rgba(239,68,68,0.12)' : 'var(--bg-card)',
+                            color: activeBook.noQuotes ? '#ef4444' : 'var(--text-muted)',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            cursor: isPlanning || isGenerating ? 'not-allowed' : 'pointer',
+                            transition: 'all 0.2s',
+                            width: '100%',
+                          }}
+                          title={activeBook.noQuotes ? 'Zitate sind deaktiviert — klicken zum Aktivieren' : 'Zitate sind aktiv — klicken zum Deaktivieren'}
+                        >
+                          {activeBook.noQuotes ? 'Zitate deaktiviert (kein > "..." in allen Seiten)' : 'Zitate aktiv (max. 1 pro Kapitel)'}
+                        </button>
                       </div>
 
                       <div className="ex-field">
@@ -7118,7 +7978,7 @@ export default function App() {
 
             {/* Center Panel: Status & Text Editor */}
             <div className="pane" style={{ flex: 1, minWidth: '300px' }}>
-              <div className="pane-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div className="pane-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   {isExplorerCollapsed && (
                     <button
@@ -7176,11 +8036,20 @@ export default function App() {
                     </button>
                   )}
                 </div>
-                {outline && completedPagesCount > 0 && (
-                  <button onClick={handleDownloadPdf} className="btn btn-success" style={{ padding: '2px 8px', fontSize: '9px' }}>
-                    <FileDown style={{ width: '11px', height: '11px' }} /> PDF herunterladen
-                  </button>
-                )}
+                <button 
+                  onClick={handleDownloadPdf} 
+                  disabled={!outline || (completedPagesCount === 0 && Object.keys(activeBook.pagesText || {}).length === 0)}
+                  className="btn btn-success" 
+                  style={{ 
+                    padding: '4px 10px', 
+                    fontSize: '10px',
+                    opacity: (!outline || (completedPagesCount === 0 && Object.keys(activeBook.pagesText || {}).length === 0)) ? 0.5 : 1,
+                    cursor: (!outline || (completedPagesCount === 0 && Object.keys(activeBook.pagesText || {}).length === 0)) ? 'not-allowed' : 'pointer',
+                    flexShrink: 0
+                  }}
+                >
+                  <FileDown style={{ width: '12px', height: '12px' }} /> PDF Download
+                </button>
               </div>
 
               <div className="pane-content">
@@ -7369,6 +8238,30 @@ export default function App() {
                           </button>
                           <button
                             onClick={() => {
+                              const current = activeBook.pagesHideRunningHeader || [];
+                              const next = Array.from(new Set([...current, ...selectedPages]));
+                              updateActiveBookConfig('pagesHideRunningHeader', next);
+                            }}
+                            className="btn"
+                            style={{ padding: '2px 8px', fontSize: '9.5px', height: '22px', backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
+                            title="Kopfzeilen für ausgewählte Seiten ausblenden"
+                          >
+                            <EyeOff style={{ width: '10px', height: '10px' }} /> Kopfzeile aus
+                          </button>
+                          <button
+                            onClick={() => {
+                              const current = activeBook.pagesHideRunningHeader || [];
+                              const next = current.filter(n => !selectedPages.includes(n));
+                              updateActiveBookConfig('pagesHideRunningHeader', next);
+                            }}
+                            className="btn"
+                            style={{ padding: '2px 8px', fontSize: '9.5px', height: '22px', backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
+                            title="Kopfzeilen für ausgewählte Seiten einblenden"
+                          >
+                            <Eye style={{ width: '10px', height: '10px' }} /> Kopfzeile ein
+                          </button>
+                          <button
+                            onClick={() => {
                               const current = activeBook.pagesInitial || [];
                               const next = Array.from(new Set([...current, ...selectedPages]));
                               updateActiveBookConfig('pagesInitial', next);
@@ -7486,15 +8379,15 @@ export default function App() {
                       
                       <button
                         onClick={handleCondenseOutline}
-                        disabled={isPlanning || isGenerating || !activeBook.outline}
+                        title="Verkürzt das Inhaltsverzeichnis (z.B. wenn es zu lang ist)."
                         style={{
                           width: '100%',
-                          fontSize: '10px',
+                          fontSize: '9.5px',
                           fontWeight: 600,
-                          padding: '6px 10px',
+                          padding: '5px 8px',
                           borderRadius: '6px',
-                          background: 'rgba(56, 189, 248, 0.08)',
-                          color: 'var(--text-main)',
+                          backgroundColor: 'rgba(56, 189, 248, 0.08)',
+                          color: '#38bdf8',
                           border: '1px solid rgba(56, 189, 248, 0.25)',
                           cursor: 'pointer',
                           display: 'flex',
@@ -7647,7 +8540,38 @@ export default function App() {
 
                 {selectedPage === 'title' ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1, padding: '16px 20px', border: '1px dashed var(--border-color)', borderRadius: '8px', backgroundColor: 'var(--bg-card)' }}>
-                    <h3 style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-main)', margin: 0 }}>Titelblatt konfigurieren</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
+                      <h3 style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-main)', margin: 0 }}>Titelblatt konfigurieren</h3>
+                      <button
+                        onClick={() => updateActiveBookConfig('hideTitlePage', !activeBook.hideTitlePage)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '10px',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px',
+                          color: activeBook.hideTitlePage ? 'var(--text-danger)' : 'var(--text-muted)',
+                          padding: 0,
+                          opacity: 0.8,
+                          transition: 'opacity 0.2s'
+                        }}
+                        onMouseOver={e => e.currentTarget.style.opacity = '1'}
+                        onMouseOut={e => e.currentTarget.style.opacity = '0.8'}
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter">
+                          {activeBook.hideTitlePage ? (
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22" />
+                          ) : (
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" />
+                          )}
+                        </svg>
+                        <span>{activeBook.hideTitlePage ? 'AUSGEBLENDET' : 'SICHTBAR'}</span>
+                      </button>
+                    </div>
                     
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       <label style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-muted)' }}>Buchtitel</label>
@@ -8385,6 +9309,15 @@ max="250"
                             >
                               Neu generieren
                             </button>
+
+                            {activeBook.pagesGenerationTime?.[selectedPage as number] && (
+                              <>
+                                <div style={{ width: '1px', height: '10px', backgroundColor: 'var(--border-color)' }}></div>
+                                <span style={{ fontSize: '8.5px', color: 'var(--text-muted)', padding: '0 6px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center' }} title={`Generierungszeit: ${activeBook.pagesGenerationTime[selectedPage as number]}ms`}>
+                                  ⏱ {(activeBook.pagesGenerationTime[selectedPage as number] / 1000).toFixed(1)}s
+                                </span>
+                              </>
+                            )}
                           </div>
                         )}
 
@@ -8431,9 +9364,30 @@ max="250"
                             }
                           }}
                         />
-                        <div style={{ color: 'var(--text-muted)', fontSize: '10px', display: 'flex', alignItems: 'baseline', gap: '5px', marginTop: '2px' }}>
-                          <span style={{ color: '#60a5fa', fontWeight: '700', fontSize: '8.5px', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>Fokus:</span>
-                          <span style={{ lineHeight: '1.4', color: 'var(--text-main)' }}>{outline?.pages[(selectedPage as number) - 1]?.focus}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '4px' }}>
+                          <span style={{ fontSize: '8.5px', fontWeight: 800, color: '#60a5fa', letterSpacing: '0.08em', textTransform: 'uppercase' }}>SEITEN-FOKUS / IDEEN</span>
+                          <textarea 
+                            value={editingPageFocus !== null && editingPageFocus.pageNum === selectedPage ? editingPageFocus.text : (outline?.pages[(selectedPage as number) - 1]?.focus || '')}
+                            placeholder="Worum soll es auf dieser Seite grob gehen? Schreibe deine Stichpunkte rein..."
+                            onChange={(e) => setEditingPageFocus({ pageNum: selectedPage as number, text: e.target.value })}
+                            className="ex-input-sleek"
+                            style={{ 
+                              width: '100%', 
+                              fontSize: '11px', 
+                              lineHeight: '1.4', 
+                              minHeight: '48px',
+                              maxHeight: '120px',
+                              resize: 'vertical',
+                              color: 'var(--text-main)',
+                              padding: '6px',
+                              border: '1px solid rgba(56,189,248,0.15)'
+                            }}
+                            onBlur={() => {
+                              if (editingPageFocus !== null && editingPageFocus.pageNum === selectedPage) {
+                                handleSavePageFocus(editingPageFocus.pageNum, editingPageFocus.text);
+                              }
+                            }}
+                          />
                         </div>
                       </div>
                     </div>
@@ -9506,6 +10460,10 @@ max="250"
             />
 
           </div>
+            )
+          )
+        )}
+        </>
         )}
 
       </div>
@@ -9758,6 +10716,7 @@ max="250"
         groqConnected={groqConnected}
         geminiConnected={geminiConnected}
         userEmail={currentUser?.email}
+        userId={currentUser?.uid}
       />
       <div 
         id="book24-measurer" 
@@ -10012,7 +10971,13 @@ max="250"
           />
         </div>
       )}
+      
+      {/* Maintenance Overlay */}
+      {maintenanceInfo.active && (!currentUser || (currentUser.email ?? '').toLowerCase() !== (import.meta.env.VITE_OWNER_EMAIL || '').toLowerCase()) && (
+        <MaintenanceOverlay message={maintenanceInfo.message} endsAt={maintenanceInfo.endsAt} />
+      )}
     </div>
+    </>
   );
 }
 
