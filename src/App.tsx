@@ -1506,8 +1506,8 @@ export default function App() {
     const outsideMarginPx = 45 * previewScaleX; // matches PDF: outsideMargin = 45pt
 
     const contentWidth = previewWidth - (insideMarginPx + outsideMarginPx);
-    // Use a generous safety margin (36px) to account for page numbers, font rounding, and PDF vs browser metric differences
-    const contentHeight = previewHeight - (topMarginPx + bottomMarginPx) - 36;
+    // Use a precise safety margin (12px) to account for footer page numbers and minor font rendering differences
+    const contentHeight = previewHeight - (topMarginPx + bottomMarginPx) - 12;
     const previewFontSize = book.fontSize * previewScaleY;
 
     measurer.style.width = `${contentWidth}px`;
@@ -1520,7 +1520,7 @@ export default function App() {
         : 'Arial, Helvetica, sans-serif';
 
     measurer.style.fontFamily = resolvedFont;
-    measurer.style.lineHeight = '1.5';
+    measurer.style.lineHeight = String(book.lineHeightMultiplier || 1.4);
     measurer.style.textAlign = book.alignment === 'left' ? 'left' : 'justify';
     measurer.style.textAlignLast = 'left';
     measurer.style.wordBreak = 'break-word';
