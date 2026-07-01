@@ -1520,7 +1520,7 @@ export default function App() {
         : 'Arial, Helvetica, sans-serif';
 
     measurer.style.fontFamily = resolvedFont;
-    measurer.style.lineHeight = String(book.lineHeightMultiplier || 1.4);
+    measurer.style.lineHeight = String((book as any).lineHeightMultiplier || 1.4);
     measurer.style.textAlign = book.alignment === 'left' ? 'left' : 'justify';
     measurer.style.textAlignLast = 'left';
     measurer.style.wordBreak = 'break-word';
