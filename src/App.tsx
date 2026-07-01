@@ -973,9 +973,34 @@ export default function App() {
         // ── FAST PATH: check session FIRST so the user is never stuck on a black screen ──
         // getSession() is near-instant (reads from storage). We show the user immediately,
         // then load maintenance/modules in background.
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        let { data: { session }, error: sessionError } = await supabase.auth.getSession();
         if (sessionError) {
           setAuthError(sessionError.message);
+        }
+        // Safari ITP workaround: if no session in storage, try restoring via small refresh_token cookie
+        if (!session) {
+          try {
+            const cookies = document.cookie.split(';');
+            let rt: string | null = null;
+            for (const c of cookies) {
+              const trimmed = c.trim();
+              if (trimmed.startsWith('b24_rt=')) {
+                rt = decodeURIComponent(trimmed.slice(7));
+                break;
+              }
+            }
+            if (rt) {
+              const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession({ refresh_token: rt });
+              if (!refreshError && refreshData.session) {
+                session = refreshData.session;
+                // Update cookie with new refresh token
+                document.cookie = 'b24_rt=' + encodeURIComponent(refreshData.session.refresh_token) + '; path=/; max-age=31536000; SameSite=Lax; Secure';
+              } else {
+                // Clear invalid/expired cookie
+                document.cookie = 'b24_rt=; path=/; max-age=0';
+              }
+            }
+          } catch (e) {}
         }
         const user = toAppUser(session?.user ?? null);
       if (user) {
@@ -1233,6 +1258,7 @@ export default function App() {
         // which can fire with null before getSession() resolves in checkUser.
         if (event === 'SIGNED_OUT') {
           addDebugLog('SIGNED_OUT: Clearing user state');
+          try { document.cookie = 'b24_rt=; path=/; max-age=0'; } catch(e) {}
           setCurrentUser(null);
           booksLoadedForUidRef.current = null;
           setAuthLoading(false);
