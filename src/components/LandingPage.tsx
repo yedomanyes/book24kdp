@@ -226,8 +226,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
             textTransform: 'uppercase'
           }}
         >
-          Ein echtes Buch <br/>
-          in <span className="slogan-accent">3 Minuten</span>
+          {isDe ? <>Ein echtes Buch <br/> in <span className="slogan-accent">3 Minuten</span></> : <>A real book <br/> in <span className="slogan-accent">3 Minutes</span></>}
         </motion.h1>
 
 
@@ -267,7 +266,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
             }}
           >
             <span style={{ fontSize: '18px', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.01em' }}>
-              Studio-Pass sichern
+              {isDe ? 'Studio-Pass sichern' : 'Get Studio Pass'}
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(0, 0, 0, 0.25)', padding: '4px 10px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.15)' }}>
               <span style={{ fontSize: '13px', textDecoration: 'line-through', color: 'rgba(255, 255, 255, 0.7)' }}>300$</span>
@@ -328,7 +327,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
               ))}
             </div>
             <span style={{ fontSize: '13px', fontWeight: 600, color: theme === 'dark' ? '#a3a3a3' : '#4b5563', lineHeight: 1.2 }}>
-              Bereits <strong style={{ color: theme === 'dark' ? '#fff' : '#1a1a1a', fontWeight: 800 }}>1.350+</strong> Bücher erfolgreich veröffentlicht
+              {isDe ? <>Bereits <strong style={{ color: theme === 'dark' ? '#fff' : '#1a1a1a', fontWeight: 800 }}>1.350+</strong> Bücher erfolgreich veröffentlicht</> : <><strong style={{ color: theme === 'dark' ? '#fff' : '#1a1a1a', fontWeight: 800 }}>1,350+</strong> books successfully published</>}
             </span>
           </div>
         </motion.div>
@@ -391,7 +390,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
                   paddingBottom: '8px'
                 }}
               >
-                <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tantiemen</div>
+                <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{isDe ? 'Tantiemen' : 'Royalties'}</div>
                 <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#4ade80' }}>{item.revenue}</div>
               </div>
             </div>
@@ -417,18 +416,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
             style={{ textAlign: 'center', marginBottom: '60px' }}
           >
             <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, letterSpacing: '-0.02em', margin: '0', color: '#1a1a1a' }}>
-              Du kennst das:
+              {isDe ? 'Du kennst das:' : 'You know this:'}
             </h2>
           </motion.div>
           
           <div className="slop-comparison-container">
             {/* Left Column */}
             <div className="slop-col slop-left">
-              {[
+              {(isDe ? [
                 'Verzerrte KI-Bilder & minderwertige Cover',
                 'Formatierungsfehler & zerschossenes Layout',
                 'Roboterhafte Texte voller ChatGPT-Phrasen'
-              ].map((text, i) => (
+              ] : [
+                'Distorted AI images & low-quality covers',
+                'Formatting errors & broken layouts',
+                'Robotic text full of ChatGPT phrases'
+              ]).map((text, i) => (
                 <motion.div 
                   key={i}
                   initial={{ opacity: 0, x: -20 }}
@@ -459,11 +462,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
             
             {/* Right Column */}
             <div className="slop-col slop-right">
-              {[
+              {(isDe ? [
                 'Unlogische Handlungsstränge & Fehler',
                 'KDP-Fehler & gesperrte Amazon-Accounts',
                 'Frustrierte Kunden & schlechte Rezensionen'
-              ].map((text, i) => (
+              ] : [
+                'Illogical plot lines & errors',
+                'KDP errors & suspended Amazon accounts',
+                'Frustrated customers & bad reviews'
+              ]).map((text, i) => (
                 <motion.div 
                   key={i}
                   initial={{ opacity: 0, x: 20 }}
@@ -493,7 +500,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
           style={{ textAlign: 'center', marginBottom: '40px' }}
         >
           <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, letterSpacing: '-0.03em', margin: '0', color: theme === 'dark' ? '#fff' : '#1a1a1a' }}>
-            Das könntest DU sein!
+            {isDe ? 'Das könntest DU sein!' : 'This could be YOU!'}
           </h2>
         </motion.div>
         
@@ -512,7 +519,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
           style={{ textAlign: 'center' }}
         >
           <h2 style={{ fontSize: 'clamp(32px, 5vw, 48px)', fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 40px', color: theme === 'dark' ? '#fff' : '#1a1a1a' }}>
-            KDP war bisher ein Albtraum.
+            {isDe ? 'KDP war bisher ein Albtraum.' : 'KDP used to be a nightmare.'}
           </h2>
           
           <div style={{ 
@@ -526,37 +533,30 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: theme === 'dark' ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid rgba(0, 0, 0, 0.05)' }}>
               <div style={{ padding: '24px', textAlign: 'center', background: theme === 'dark' ? 'rgba(239, 68, 68, 0.05)' : 'rgba(239, 68, 68, 0.02)' }}>
                 <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#ef4444', margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                  <X size={20} strokeWidth={3} /> Ohne Book24 Studio
+                  <X size={20} strokeWidth={3} /> {isDe ? 'Ohne Book24 Studio' : 'Without Book24 Studio'}
                 </h3>
               </div>
               <div style={{ padding: '24px', textAlign: 'center', background: theme === 'dark' ? 'rgba(34, 197, 94, 0.05)' : 'rgba(34, 197, 94, 0.02)', position: 'relative' }}>
                 <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '1px', background: theme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)' }} />
                 <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#22c55e', margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                  <Check size={20} strokeWidth={3} /> Mit Book24 Studio
+                  <Check size={20} strokeWidth={3} /> {isDe ? 'Mit Book24 Studio' : 'With Book24 Studio'}
                 </h3>
               </div>
             </div>
 
             {/* Rows */}
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {[
-                { 
-                  bad: 'Stundenlanges Scrollen durch Amazon ohne verlässliche Daten', 
-                  good: 'Profitable Nischen in Sekunden durch KI-Analyse finden' 
-                },
-                { 
-                  bad: 'Hunderte Euros für Ghostwriter & wochenlanges Warten', 
-                  good: 'Hochwertige Bücher in 3 Minuten generieren lassen' 
-                },
-                { 
-                  bad: 'Kaputte Ränder und ständige KDP-Fehlermeldungen', 
-                  good: 'Perfektes Print-Layout per Klick (KDP-kompatibel)' 
-                },
-                { 
-                  bad: 'Teure Designer bezahlen oder stundenlanger Canva-Frust', 
-                  good: 'Professionelle, verkaufspsychologische Cover sofort erstellt' 
-                }
-              ].map((row, i, arr) => (
+              {(isDe ? [
+                { bad: 'Stundenlanges Scrollen durch Amazon ohne verlässliche Daten', good: 'Profitable Nischen in Sekunden durch KI-Analyse finden' },
+                { bad: 'Hunderte Euros für Ghostwriter & wochenlanges Warten', good: 'Hochwertige Bücher in 3 Minuten generieren lassen' },
+                { bad: 'Kaputte Ränder und ständige KDP-Fehlermeldungen', good: 'Perfektes Print-Layout per Klick (KDP-kompatibel)' },
+                { bad: 'Teure Designer bezahlen oder stundenlanger Canva-Frust', good: 'Professionelle, verkaufspsychologische Cover sofort erstellt' }
+              ] : [
+                { bad: 'Hours of scrolling Amazon without reliable data', good: 'Find profitable niches in seconds with AI analysis' },
+                { bad: 'Hundreds of dollars for ghostwriters & weeks of waiting', good: 'Generate high-quality books in 3 minutes' },
+                { bad: 'Broken margins and constant KDP error messages', good: 'Perfect print layout with one click (KDP-compatible)' },
+                { bad: 'Pay expensive designers or hours of Canva frustration', good: 'Professional, sales-optimized covers created instantly' }
+              ]).map((row, i, arr) => (
                 <div key={i} style={{ 
                   display: 'grid', 
                   gridTemplateColumns: '1fr 1fr', 
@@ -591,13 +591,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
           style={{ textAlign: 'center', marginBottom: '48px' }}
         >
           <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: theme === 'dark' ? '#737373' : '#666', marginBottom: '10px' }}>
-            So sieht dein Buch aus
+            {isDe ? 'So sieht dein Buch aus' : 'See what your book looks like'}
           </div>
           <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 12px', color: theme === 'dark' ? '#fff' : '#1a1a1a' }}>
-            KI-Content, der wie ein echtes Buch wirkt
+            {isDe ? 'KI-Content, der wie ein echtes Buch wirkt' : 'AI content that reads like a real book'}
           </h2>
           <p style={{ color: '#a3a3a3', fontSize: '16px', margin: '0 auto', lineHeight: 1.6, maxWidth: '560px' }}>
-            Roher KI-Text vs. professionelles Buchlayout — der Unterschied auf einen Blick.
+            {isDe ? 'Roher KI-Text vs. professionelles Buchlayout — der Unterschied auf einen Blick.' : 'Raw AI text vs. professional book layout — the difference at a glance.'}
           </p>
         </motion.div>
 
@@ -628,7 +628,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
             >
               <LandingBadPagePreview />
             </TiltedCard>
-            <span className="landing-compare-label bad">So nicht</span>
+            <span className="landing-compare-label bad">{isDe ? 'So nicht' : 'Not like this'}</span>
           </motion.div>
 
           <motion.div
@@ -657,7 +657,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
             >
               <LandingBookPagePreview />
             </TiltedCard>
-            <span className="landing-compare-label good">So soll es sein</span>
+            <span className="landing-compare-label good">{isDe ? 'So soll es sein' : 'This is the way'}</span>
           </motion.div>
         </div>
       </section>
@@ -724,7 +724,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
 
                   {/* Footer: Price */}
                   <div style={{ marginTop: '24px', display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                    <span className="roadmap-price-label">Wert:</span>
+                    <span className="roadmap-price-label">{isDe ? 'Wert:' : 'Value:'}</span>
                     <span className="roadmap-price-value">{phase.price}</span>
                   </div>
                 </div>
@@ -747,7 +747,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
             Leadership
           </div>
           <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 12px', color: '#fff' }}>
-            Das Team hinter Book24 Studio
+            {isDe ? 'Das Team hinter Book24 Studio' : 'The Team behind Book24 Studio'}
           </h2>
 
         </motion.div>
@@ -804,7 +804,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
             {isDe ? 'Häufig gestellte Fragen' : 'Frequently Asked Questions'}
           </h2>
           <p style={{ color: theme === 'dark' ? '#a3a3a3' : '#666', fontSize: '16px', margin: '0 auto', lineHeight: 1.6, maxWidth: '560px' }}>
-            Alles, was du über Book24 Studio und die Veröffentlichung wissen musst.
+            {isDe ? 'Alles, was du über Book24 Studio und die Veröffentlichung wissen musst.' : 'Everything you need to know about Book24 Studio and publishing.'}
           </p>
         </motion.div>
 
@@ -863,10 +863,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
             color: theme === 'dark' ? '#ffffff' : '#1a1a1a',
             display: 'inline-block'
           }}>
-            Bereit für deinen KDP-Erfolg?
+            {isDe ? 'Bereit für deinen KDP-Erfolg?' : 'Ready for your KDP success?'}
           </h2>
           <p style={{ color: '#a3a3a3', fontSize: '20px', margin: '0 auto 56px auto', lineHeight: 1.6, maxWidth: '640px' }}>
-            Erhalte sofortigen, lebenslangen Zugriff auf den Schreibwerkzeug Generator. Keine monatlichen Kosten.
+            {isDe ? 'Erhalte sofortigen, lebenslangen Zugriff auf den Schreibwerkzeug Generator. Keine monatlichen Kosten.' : 'Get instant, lifetime access to the Book Writing Generator. No monthly fees.'}
           </p>
 
           <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
@@ -900,7 +900,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
               }}
             >
               <span style={{ fontSize: '18px', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.01em' }}>
-                Studio-Pass sichern
+                {isDe ? 'Studio-Pass sichern' : 'Get Studio Pass'}
               </span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(0, 0, 0, 0.25)', padding: '4px 10px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.15)' }}>
                 <span style={{ fontSize: '13px', textDecoration: 'line-through', color: 'rgba(255, 255, 255, 0.7)' }}>300$</span>
@@ -935,25 +935,25 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
               Book24 <span style={{ fontWeight: 300, color: theme === 'dark' ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)' }}>Studio</span>
             </span>
             <p style={{ color: theme === 'dark' ? '#737373' : '#666', fontSize: '14px', lineHeight: 1.6, maxWidth: '320px' }}>
-              Die führende All-in-One Plattform für Amazon KDP Publisher. Gestalte Bestseller in Rekordzeit mit hochentwickelter KI.
+              {isDe ? 'Die führende All-in-One Plattform für Amazon KDP Publisher. Gestalte Bestseller in Rekordzeit mit hochentwickelter KI.' : 'The leading all-in-one platform for Amazon KDP publishers. Create bestsellers in record time with advanced AI.'}
             </p>
           </div>
 
           {/* Links 1 */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <h4 style={{ color: theme === 'dark' ? '#ffffff' : '#1a1a1a', fontSize: '14px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Produkt</h4>
+            <h4 style={{ color: theme === 'dark' ? '#ffffff' : '#1a1a1a', fontSize: '14px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>{isDe ? 'Produkt' : 'Product'}</h4>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <li><a href="#produkt" style={{ color: theme === 'dark' ? '#737373' : '#666', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = theme === 'dark' ? '#fff' : '#000'} onMouseLeave={e => e.currentTarget.style.color = theme === 'dark' ? '#737373' : '#666'}>Features</a></li>
-              <li><a href="#produkt" style={{ color: theme === 'dark' ? '#737373' : '#666', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = theme === 'dark' ? '#fff' : '#000'} onMouseLeave={e => e.currentTarget.style.color = theme === 'dark' ? '#737373' : '#666'}>Buch-Vorschau</a></li>
-              <li><button onClick={onLoginClick} style={{ background: 'none', border: 'none', padding: 0, color: theme === 'dark' ? '#737373' : '#666', fontSize: '14px', cursor: 'pointer', textAlign: 'left', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = theme === 'dark' ? '#fff' : '#000'} onMouseLeave={e => e.currentTarget.style.color = theme === 'dark' ? '#737373' : '#666'}>Jetzt Starten</button></li>
+              <li><a href="#produkt" style={{ color: theme === 'dark' ? '#737373' : '#666', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = theme === 'dark' ? '#fff' : '#000'} onMouseLeave={e => e.currentTarget.style.color = theme === 'dark' ? '#737373' : '#666'}>{isDe ? 'Buch-Vorschau' : 'Book Preview'}</a></li>
+              <li><button onClick={onLoginClick} style={{ background: 'none', border: 'none', padding: 0, color: theme === 'dark' ? '#737373' : '#666', fontSize: '14px', cursor: 'pointer', textAlign: 'left', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = theme === 'dark' ? '#fff' : '#000'} onMouseLeave={e => e.currentTarget.style.color = theme === 'dark' ? '#737373' : '#666'}>{isDe ? 'Jetzt Starten' : 'Get Started'}</button></li>
             </ul>
           </div>
 
           {/* Links 2 */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <h4 style={{ color: theme === 'dark' ? '#ffffff' : '#1a1a1a', fontSize: '14px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Unternehmen</h4>
+            <h4 style={{ color: theme === 'dark' ? '#ffffff' : '#1a1a1a', fontSize: '14px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>{isDe ? 'Unternehmen' : 'Company'}</h4>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <li><a href="#team" style={{ color: theme === 'dark' ? '#737373' : '#666', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = theme === 'dark' ? '#fff' : '#000'} onMouseLeave={e => e.currentTarget.style.color = theme === 'dark' ? '#737373' : '#666'}>Über uns</a></li>
+              <li><a href="#team" style={{ color: theme === 'dark' ? '#737373' : '#666', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = theme === 'dark' ? '#fff' : '#000'} onMouseLeave={e => e.currentTarget.style.color = theme === 'dark' ? '#737373' : '#666'}>{isDe ? 'Über uns' : 'About us'}</a></li>
               <li><a href="#team" style={{ color: theme === 'dark' ? '#737373' : '#666', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = theme === 'dark' ? '#fff' : '#000'} onMouseLeave={e => e.currentTarget.style.color = theme === 'dark' ? '#737373' : '#666'}>Leadership</a></li>
               <li><a href="mailto:support@book24.studio" style={{ color: theme === 'dark' ? '#737373' : '#666', textDecoration: 'none', fontSize: '14px', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = theme === 'dark' ? '#fff' : '#000'} onMouseLeave={e => e.currentTarget.style.color = theme === 'dark' ? '#737373' : '#666'}>Support</a></li>
             </ul>
@@ -977,7 +977,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
           color: '#525252',
         }}>
           <div>
-            &copy; {new Date().getFullYear()} Book24 Studio. Alle Rechte vorbehalten.
+            &copy; {new Date().getFullYear()} Book24 Studio. {isDe ? 'Alle Rechte vorbehalten.' : 'All rights reserved.'}
           </div>
           <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
             {(['datenschutz', 'privacy', 'terms', 'impressum'] as LegalPage[]).map((p) => (
@@ -1024,10 +1024,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
           >
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: '1', minWidth: '280px' }}>
               <h4 style={{ fontSize: '14px', fontWeight: 700, margin: 0, color: theme === 'dark' ? '#fff' : '#1a1a1a' }}>
-                Cookie-Hinweis
+                {isDe ? 'Cookie-Hinweis' : 'Cookie Notice'}
               </h4>
               <p style={{ fontSize: '13px', lineHeight: 1.5, margin: 0, color: theme === 'dark' ? '#a3a3a3' : '#666' }}>
-                Wir nutzen Cookies, um unsere Website optimal zu gestalten. Mit dem Klick auf "Akzeptieren" stimmst du der Verwendung zu.
+                {isDe ? 'Wir nutzen Cookies, um unsere Website optimal zu gestalten. Mit dem Klick auf "Akzeptieren" stimmst du der Verwendung zu.' : 'We use cookies to optimize our website. By clicking "Accept" you agree to their use.'}
               </p>
             </div>
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', flexShrink: 0 }}>
@@ -1049,7 +1049,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
                   borderRadius: '8px'
                 }}
               >
-                Ablehnen
+                {isDe ? 'Ablehnen' : 'Decline'}
               </button>
               <button
                 onClick={() => {
@@ -1070,7 +1070,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
                   boxShadow: '0 4px 12px rgba(234, 88, 12, 0.2)'
                 }}
               >
-                Akzeptieren
+                {isDe ? 'Akzeptieren' : 'Accept'}
               </button>
             </div>
           </motion.div>
