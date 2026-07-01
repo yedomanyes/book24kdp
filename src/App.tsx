@@ -2002,6 +2002,55 @@ export default function App() {
     return result.trim();
   };
 
+  /**
+   * Splits text so that the fitting part stays on pageNum, and the overflow
+   * remainder is prepended to the NEXT page's existing text.
+   * Returns the text that fits on the current page.
+   */
+  const spillOverflowToNextPage = (
+    text: string,
+    book: Book,
+    pageNum: number,
+    setBooksFn: typeof setBooks
+  ): string => {
+    if (!text) return '';
+    const sentences = text.match(/[^.!?]+[.!?]+(\s|$)/g) || [text];
+    let fitsText = '';
+    let spillText = '';
+
+    for (let i = 0; i < sentences.length; i++) {
+      const testText = fitsText + sentences[i];
+      if (checkTextOverflow(testText, book, pageNum)) {
+        // Everything from sentence i onwards goes to the next page
+        spillText = sentences.slice(i).join('').trim();
+        break;
+      }
+      fitsText = testText;
+    }
+
+    if (!fitsText.trim() && text) {
+      // Nothing fits at all — keep it all (edge case)
+      return text;
+    }
+
+    if (spillText) {
+      const nextPage = pageNum + 1;
+      setBooksFn(prev => prev.map(b => {
+        if (b.id !== book.id) return b;
+        const existingNext = (b.pagesText || {})[nextPage] || '';
+        const newNextText = spillText + (existingNext ? '\n\n' + existingNext : '');
+        return {
+          ...b,
+          pagesText: { ...(b.pagesText || {}), [nextPage]: newNextText }
+        };
+      }));
+      console.log(`[Spill] Page ${pageNum}: ${spillText.length} chars moved to page ${nextPage}`);
+    }
+
+    return fitsText.trim();
+  };
+
+
   const recalculateBookOverflows = (book: Book, updatedFields?: Partial<Book>): { [key: number]: boolean } => {
     const tempBook = { ...book, ...updatedFields };
     const overflows: { [key: number]: boolean } = {};
@@ -3829,12 +3878,12 @@ export default function App() {
                     );
                     const retryText = cleanPageText(retryRawText);
                     if (checkTextOverflow(retryText, currentBook, pageNum)) {
-                      text = truncateToFit(retryText, currentBook, pageNum);
+                      text = spillOverflowToNextPage(retryText, currentBook, pageNum, setBooks);
                     } else {
                       text = retryText;
                     }
                   } catch (retryErr) {
-                    text = truncateToFit(text, currentBook, pageNum);
+                    text = spillOverflowToNextPage(text, currentBook, pageNum, setBooks);
                   }
                 }
 
@@ -4007,15 +4056,15 @@ export default function App() {
           );
           const retryText = cleanPageText(retryRawText);
           if (checkTextOverflow(retryText, currentBook, pageNum)) {
-            console.log(`Page ${pageNum} STILL overflows. Applying truncateToFit fallback...`);
-            LayoutFixDB.logWarning(currentBook.pageSize || '6x9', 'chapter_page', 'Text overflow even after retry. Truncating.');
-            text = truncateToFit(retryText, currentBook, pageNum);
+            console.log(`Page ${pageNum} STILL overflows. Spilling remainder to next page...`);
+            LayoutFixDB.logWarning(currentBook.pageSize || '6x9', 'chapter_page', 'Text overflow even after retry. Spilling to next page.');
+            text = spillOverflowToNextPage(retryText, currentBook, pageNum, setBooks);
           } else {
             text = retryText;
           }
         } catch (retryErr) {
-          console.warn(`Shorter retry failed for page ${pageNum}, using truncated version of initial text:`, retryErr);
-          text = truncateToFit(text, currentBook, pageNum);
+          console.warn(`Shorter retry failed for page ${pageNum}, spilling overflow to next page:`, retryErr);
+          text = spillOverflowToNextPage(text, currentBook, pageNum, setBooks);
         }
       }
 
@@ -4125,12 +4174,12 @@ export default function App() {
       );
       let text = cleanPageText(rawText);
 
-      // Check overflow and truncate if needed
+      // Check overflow: spill remainder to next page instead of truncating
       const hasOverflow = checkTextOverflow(text, currentBook, pageNum);
       if (hasOverflow) {
-        console.log(`Lengthened text overflows page ${pageNum}. Truncating to fit...`);
-        LayoutFixDB.logWarning(currentBook.pageSize || '6x9', 'chapter_page', 'Overflow on user-triggered lengthening.');
-        text = truncateToFit(text, currentBook, pageNum);
+        console.log(`Lengthened text overflows page ${pageNum}. Spilling to next page...`);
+        LayoutFixDB.logWarning(currentBook.pageSize || '6x9', 'chapter_page', 'Overflow on user-triggered lengthening — spilling to next page.');
+        text = spillOverflowToNextPage(text, currentBook, pageNum, setBooks);
       }
 
       const finalOverflow = checkTextOverflow(text, currentBook, pageNum);
