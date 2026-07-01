@@ -1039,6 +1039,22 @@ export default function App() {
         } catch (err) {
           // ignore
         }
+
+        // Auto-claim existing license by email (e.g., if switching from email/password to Google)
+        if (!hasLicense && user.email) {
+          try {
+            const { data: autoClaimed } = await supabase.rpc('auto_claim_license_by_email', {
+              p_user_id: user.uid,
+              p_email: user.email
+            });
+            if (autoClaimed) {
+              hasLicense = true;
+              console.log('Successfully auto-claimed existing license key by email');
+            }
+          } catch (e) {
+            // function might not be deployed yet, fail silently
+          }
+        }
         
         if (profileStatus === 'banned') {
           await supabase.auth.signOut();
