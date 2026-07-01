@@ -7124,13 +7124,13 @@ export default function App() {
                       style={{ cursor: 'pointer' }}
                     >
                       <div className="flex-space" style={{ alignItems: 'start' }}>
-                        <div style={{ flex: 1, paddingRight: '10px' }}>
-                          <h3 className="project-title">{b.title || 'Unbenanntes Buch'}</h3>
-                          <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px', lineBreak: 'anywhere' }} className="truncate">
+                        <div style={{ flex: 1, minWidth: 0, paddingRight: '8px', overflow: 'hidden' }}>
+                          <h3 className="project-title" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.title || 'Unbenanntes Buch'}</h3>
+                          <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} className="truncate">
                             {b.subtitle || 'Kein Untertitel'}
                           </p>
                         </div>
-                        <div style={{ display: 'flex', gap: '4px' }}>
+                        <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
                           <button 
                             onClick={(e) => handleCopyBook(b.id, e)} 
                             className="btn"
