@@ -926,6 +926,11 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState<boolean>(true);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [authDebugLogs, setAuthDebugLogs] = useState<string[]>([]);
+  const addDebugLog = React.useCallback((msg: string) => {
+    const t = new Date().toISOString().split('T')[1].split('.')[0];
+    setAuthDebugLogs(prev => [...prev.slice(-30), t + ': ' + msg]);
+  }, []);
   const [userHasValidLicense, setUserHasValidLicense] = useState<boolean | null>(null);
   const [maintenanceInfo, setMaintenanceInfo] = useState<{ active: boolean; message: string | null; endsAt: string | null }>({ active: false, message: null, endsAt: null });
   const [activeModules, setActiveModules] = useState<Record<string, any>>({ brain: true, dashboard: true, calculator: true, studio: true });
@@ -1208,28 +1213,31 @@ export default function App() {
     // null (token not yet processed from hash) and the user is briefly shown the landing page.
     const isOAuthCallback = typeof window !== 'undefined' && (
       window.location.hash.includes('access_token') ||
-      window.location.search.includes('code=')
+      window.location.hash.includes('error') ||
+      window.location.search.includes('code=') ||
+      window.location.search.includes('error=')
     );
 
     if (!isOAuthCallback) {
       void checkUser();
     } else {
-      // On OAuth callback, let onAuthStateChange handle everything.
-      // Still clear loading after safety timeout.
       console.log('[Auth] OAuth callback detected, waiting for SIGNED_IN event...');
+      addDebugLog('Skipped initial checkUser, waiting for SIGNED_IN event or timeout');
     }
 
     const { data: { subscription } } = supabase!.auth.onAuthStateChange((event, session) => {
+      addDebugLog(`Auth event fired: ${event}. Session exists: ${!!session}`);
       const user = toAppUser(session?.user ?? null);
       if (!user) {
         // Only clear user state for explicit sign-out events, not for INITIAL_SESSION
         // which can fire with null before getSession() resolves in checkUser.
         if (event === 'SIGNED_OUT') {
+          addDebugLog('SIGNED_OUT: Clearing user state');
           setCurrentUser(null);
           booksLoadedForUidRef.current = null;
           setAuthLoading(false);
         } else if (event !== 'INITIAL_SESSION') {
-          // For TOKEN_REFRESHED, USER_UPDATED etc. with null user — treat as sign out
+          addDebugLog(`Other event (${event}) without user: Clearing user state`);
           setCurrentUser(null);
           booksLoadedForUidRef.current = null;
           setAuthLoading(false);
@@ -1237,9 +1245,11 @@ export default function App() {
         // For INITIAL_SESSION with null: do nothing — checkUser() is already running
         // and will call setAuthLoading(false) in its finally block.
       } else {
+        addDebugLog(`User found for event: ${event}`);
         if (event === 'SIGNED_IN') {
           // ── INSTANT SIGN-IN: show app immediately from the session data we already have ──
           // This fires right after OAuth redirect — no need to wait for checkUser().
+          addDebugLog('SIGNED_IN: Setting current user instantly');
           setCurrentUser(user);
           setAuthLoading(false);
           clearTimeout(safetyTimeoutId);
@@ -6601,6 +6611,17 @@ export default function App() {
           }}>
             <span style={{ textAlign: 'left' }}><strong>Anmelde-Fehler:</strong> {authError}</span>
             <button onClick={() => setAuthError(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#a8201a', fontWeight: 'bold', fontSize: '16px', padding: '0 4px' }}>✕</button>
+          </div>
+        )}
+        {authDebugLogs.length > 0 && (
+          <div style={{
+            position:'fixed',bottom:'16px',left:'16px',right:'16px',zIndex:9999999,
+            backgroundColor:'rgba(0,0,0,0.92)',color:'#0f0',padding:'14px',
+            borderRadius:'10px',fontFamily:'monospace',fontSize:'11px',
+            maxHeight:'45vh',overflowY:'auto',border:'1px solid #0f0'
+          }}>
+            <div style={{marginBottom:'6px',color:'#fff',fontWeight:'bold'}}>Auth Debug Log</div>
+            {authDebugLogs.map((log, i) => <div key={i} style={{marginBottom:'3px',wordBreak:'break-all'}}>{log}</div>)}
           </div>
         )}
         <LandingPage 
