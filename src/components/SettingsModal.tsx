@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { X, Key, Sun, Moon, Cpu, Settings, CheckCircle2, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Key, Sun, Moon, Cpu, Settings, CheckCircle2, AlertCircle, Eye, EyeOff, Copy, Check } from 'lucide-react';
+import { supabase } from '../supabase';
 
 export const AI_MODEL_OPTIONS = [
   { group: 'Groq API', models: [
@@ -21,6 +22,8 @@ interface SettingsModalProps {
   onClose: () => void;
   theme: 'dark' | 'light';
   onThemeChange: (theme: 'dark' | 'light') => void;
+  language?: 'de' | 'en';
+  onLanguageChange?: (lang: 'de' | 'en') => void;
   groqKeys: string;
   onGroqKeysChange: (value: string) => void;
   geminiKeys: string;
@@ -30,6 +33,7 @@ interface SettingsModalProps {
   groqConnected: boolean;
   geminiConnected: boolean;
   userEmail?: string | null;
+  userId?: string | null;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -37,6 +41,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onClose,
   theme,
   onThemeChange,
+  language = 'de',
+  onLanguageChange,
   groqKeys,
   onGroqKeysChange,
   geminiKeys,
@@ -46,8 +52,79 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   groqConnected,
   geminiConnected,
   userEmail,
+  userId,
 }) => {
   const [tab, setTab] = useState<SettingsTab>('general');
+  const [username, setUsername] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [showUserId, setShowUserId] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  // Load username
+  useEffect(() => {
+    if (!open || !userId || !supabase) return;
+    const loadProfile = async () => {
+      try {
+        const { data } = await supabase!
+          .from('profiles')
+          .select('username')
+          .eq('id', userId)
+          .single();
+        if (data && 'username' in data && data.username) {
+          setUsername(data.username);
+        } else {
+          setUsername('');
+        }
+      } catch (e) {
+        console.error('Failed to load profile:', e);
+      }
+    };
+    loadProfile();
+  }, [open, userId]);
+
+  // Save username
+  const handleSaveUsername = async () => {
+    if (!userId || !supabase) return;
+    
+    const trimmed = username.trim();
+    if (trimmed.length > 0 && trimmed.length < 3) {
+      setSaveMessage('Fehler: Der Name muss mindestens 3 Zeichen lang sein.');
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveMessage(null);
+    try {
+      const { error } = await supabase!
+        .from('profiles')
+        .update({ username: trimmed === '' ? null : trimmed })
+        .eq('id', userId);
+      if (error) throw error;
+      setSaveMessage('Name erfolgreich gespeichert!');
+      setTimeout(() => setSaveMessage(null), 3000);
+    } catch (e: any) {
+      console.error(e);
+      let errMsg = 'Speichern fehlgeschlagen';
+      if (e.message && (e.message.includes('unique_username') || e.message.includes('duplicate key'))) {
+        errMsg = 'Dieser Benutzername ist bereits vergeben.';
+      } else if (e.code === '23505') {
+        errMsg = 'Dieser Benutzername ist bereits vergeben.';
+      } else {
+        errMsg = e.message || errMsg;
+      }
+      setSaveMessage(`Fehler: ${errMsg}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCopyId = () => {
+    if (!userId) return;
+    navigator.clipboard.writeText(userId);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   if (!open) return null;
 
@@ -93,7 +170,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <>
                 <SectionTitle>Erscheinungsbild</SectionTitle>
                 <p className="settings-hint">Wähle zwischen hellem und dunklem Interface.</p>
-                <div className="theme-switch">
+                <div className="theme-switch" style={{ marginBottom: '24px' }}>
                   <button
                     type="button"
                     className={`theme-switch-btn${theme === 'light' ? ' active' : ''}`}
@@ -109,6 +186,120 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   >
                     <Moon style={{ width: 16, height: 16 }} />
                     Dunkel
+                  </button>
+                </div>
+
+                <SectionTitle>Sprache / Language</SectionTitle>
+                <p className="settings-hint">Wähle die Sprache der Benutzeroberfläche.</p>
+                <div className="theme-switch" style={{ marginBottom: '24px' }}>
+                  <button
+                    type="button"
+                    className={`theme-switch-btn${language === 'de' ? ' active' : ''}`}
+                    onClick={() => onLanguageChange?.('de')}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    🇩🇪 Deutsch
+                  </button>
+                  <button
+                    type="button"
+                    className={`theme-switch-btn${language === 'en' ? ' active' : ''}`}
+                    onClick={() => onLanguageChange?.('en')}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    🇬🇧 English
+                  </button>
+                </div>
+
+                <SectionTitle>Profilname</SectionTitle>
+                <p className="settings-hint">Ändere deinen Namen, der in der Bibliothek angezeigt wird.</p>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                  <input
+                    type="text"
+                    style={{
+                      flex: 1,
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      border: '1px solid var(--border-color)',
+                      backgroundColor: 'var(--bg-card)',
+                      color: 'var(--text-main)',
+                      fontSize: '14px',
+                      outline: 'none',
+                    }}
+                    placeholder="Dein Profilname"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    disabled={isSaving}
+                    onClick={handleSaveUsername}
+                    style={{
+                      padding: '8px 16px',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      backgroundColor: 'var(--primary)',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {isSaving ? 'Speichert...' : 'Speichern'}
+                  </button>
+                </div>
+                {saveMessage && (
+                  <p style={{
+                    margin: '0 0 24px 0',
+                    fontSize: '12px',
+                    color: saveMessage.includes('Fehler') ? '#dc2626' : '#10b981',
+                    fontWeight: 500
+                  }}>
+                    {saveMessage}
+                  </p>
+                )}
+
+                <div style={{ height: '16px' }} />
+
+                <SectionTitle>Benutzer-ID (UUID)</SectionTitle>
+                <p className="settings-hint">Deine eindeutige System-Identifikationsnummer.</p>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '8px', 
+                  backgroundColor: theme === 'dark' ? '#0f172a' : '#f1f5f9', 
+                  border: '1px solid var(--border-color)', 
+                  borderRadius: '6px', 
+                  padding: '8px 12px', 
+                  marginBottom: '16px' 
+                }}>
+                  <span style={{
+                    fontFamily: 'monospace',
+                    fontSize: '12px',
+                    color: 'var(--text-main)',
+                    flex: 1,
+                    letterSpacing: '0.02em',
+                    wordBreak: 'break-all',
+                    userSelect: showUserId ? 'all' : 'none'
+                  }}>
+                    {showUserId ? userId : '••••••••-••••-••••-••••-••••••••••••'}
+                  </span>
+                  
+                  <button
+                    type="button"
+                    onClick={() => setShowUserId(!showUserId)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px', display: 'flex', alignItems: 'center' }}
+                    title={showUserId ? 'Verbergen' : 'Anzeigen'}
+                  >
+                    {showUserId ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCopyId}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px', display: 'flex', alignItems: 'center' }}
+                    title="Kopieren"
+                  >
+                    {copied ? <Check size={16} style={{ color: '#10b981' }} /> : <Copy size={16} />}
                   </button>
                 </div>
               </>

@@ -1,23 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Menu, X, Sun, Moon } from 'lucide-react';
+import { ArrowRight, Menu, X, Sun, Moon, Globe } from 'lucide-react';
 import './LandingNavbar.css';
 import RotatingText from './RotatingText';
-
-const NAV_ITEMS = [
-  { label: 'Produkt', target: 'produkt' },
-  { label: 'Team', target: 'team' },
-] as const;
 
 interface LandingNavbarProps {
   onLoginClick: () => void;
   theme: 'dark' | 'light';
   setTheme: (t: 'dark' | 'light') => void;
+  language: 'de' | 'en';
+  onLanguageChange: (lang: 'de' | 'en') => void;
 }
 
-export const LandingNavbar: React.FC<LandingNavbarProps> = ({ onLoginClick, theme, setTheme }) => {
+export const LandingNavbar: React.FC<LandingNavbarProps> = ({ 
+  onLoginClick, 
+  theme, 
+  setTheme,
+  language,
+  onLanguageChange
+}) => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const isDe = language === 'de';
+  const navItems = [
+    { label: isDe ? 'Produkt' : 'Product', target: 'produkt' },
+    { label: 'Team', target: 'team' },
+  ];
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -60,10 +68,10 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({ onLoginClick, them
           </span>
         </button>
 
-        {/* Extra Container: Rotating Text Pill */}
+        {/* Extra Container: Static Text Pill */}
         <div className="landing-nav-promo-badge">
           <RotatingText
-            texts={['Jetzt starten', 'Buch erstellen']}
+            texts={isDe ? ['Jetzt starten', 'Buch erstellen'] : ['Start Now', 'Create Book']}
             staggerFrom="last"
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
@@ -79,7 +87,7 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({ onLoginClick, them
         </div>
 
         <div className="landing-nav-links">
-          {NAV_ITEMS.map(item => (
+          {navItems.map(item => (
             <button
               key={item.target}
               type="button"
@@ -91,7 +99,31 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({ onLoginClick, them
           ))}
         </div>
 
-        <div className="landing-nav-actions">
+        <div className="landing-nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* Language Toggle Button */}
+          <button
+            type="button"
+            className="landing-nav-link"
+            onClick={() => onLanguageChange(language === 'de' ? 'en' : 'de')}
+            title={isDe ? 'Switch to English' : 'Auf Deutsch wechseln'}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              gap: '4px',
+              height: '36px', 
+              padding: '0 8px',
+              fontSize: '11px',
+              fontWeight: 700,
+              border: '1px solid var(--border-color)',
+              borderRadius: '8px',
+              backgroundColor: 'rgba(255,255,255,0.02)'
+            }}
+          >
+            <Globe size={13} style={{ color: 'var(--text-muted)' }} />
+            <span>{language.toUpperCase()}</span>
+          </button>
+
           <button
             type="button"
             className="landing-nav-link"
@@ -102,7 +134,7 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({ onLoginClick, them
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
           </button>
           <button type="button" className="landing-nav-cta" onClick={onLoginClick}>
-            Anmelden
+            {isDe ? 'Anmelden' : 'Sign In'}
           </button>
           <button
             type="button"
@@ -126,7 +158,7 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({ onLoginClick, them
           >
             <div className="landing-nav-mobile-promo-badge">
               <RotatingText
-                texts={['Jetzt starten', 'Buch erstellen']}
+                texts={isDe ? ['Jetzt starten', 'Buch erstellen'] : ['Start Now', 'Create Book']}
                 staggerFrom="last"
                 initial={{ y: "100%" }}
                 animate={{ y: 0 }}
@@ -140,7 +172,7 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({ onLoginClick, them
                 loop
               />
             </div>
-            {NAV_ITEMS.map(item => (
+            {navItems.map(item => (
               <button
                 key={item.target}
                 type="button"
@@ -151,6 +183,19 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({ onLoginClick, them
                 <ArrowRight size={16} />
               </button>
             ))}
+            {/* Language switcher in mobile menu */}
+            <button
+              type="button"
+              className="landing-nav-mobile-link"
+              onClick={() => onLanguageChange(language === 'de' ? 'en' : 'de')}
+              style={{ justifyContent: 'space-between' }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Globe size={16} />
+                {isDe ? 'Sprache: Deutsch' : 'Language: English'}
+              </span>
+              <span style={{ fontSize: '11px', opacity: 0.6 }}>{isDe ? '→ EN' : '→ DE'}</span>
+            </button>
             <button
               type="button"
               className="landing-nav-cta landing-nav-mobile-cta"
@@ -159,7 +204,7 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({ onLoginClick, them
                 onLoginClick();
               }}
             >
-              Anmelden
+              {isDe ? 'Anmelden' : 'Sign In'}
             </button>
           </motion.div>
         )}

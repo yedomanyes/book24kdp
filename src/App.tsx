@@ -1401,6 +1401,17 @@ export default function App() {
     return (safeLocalStorage.getItem(KEYS.theme) as 'dark' | 'light') || 'dark';
   });
 
+  const [language, setLanguageState] = useState<'de' | 'en'>(() => {
+    const saved = safeLocalStorage.getItem('b24studio_language') as 'de' | 'en' | null;
+    if (saved === 'de' || saved === 'en') return saved;
+    // Auto-detect from browser
+    return (typeof navigator !== 'undefined' && navigator.language.startsWith('de')) ? 'de' : 'en';
+  });
+  const setLanguage = (lang: 'de' | 'en') => {
+    setLanguageState(lang);
+    safeLocalStorage.setItem('b24studio_language', lang);
+  };
+
   // Account System
   const [accounts, setAccounts] = useState<Account[]>(() => {
     try {
@@ -6801,6 +6812,8 @@ export default function App() {
           onLoginClick={() => setShowAuthModal(true)} 
           theme={theme}
           setTheme={setTheme}
+          language={language}
+          onLanguageChange={setLanguage}
         />
         {showAuthModal && (
           <Auth 
@@ -10939,6 +10952,8 @@ max="250"
         onClose={() => setShowSettings(false)}
         theme={theme}
         onThemeChange={setTheme}
+        language={language}
+        onLanguageChange={setLanguage}
         groqKeys={groqKeysInput}
         onGroqKeysChange={handleGroqKeysChange}
         geminiKeys={geminiKeysInput}
