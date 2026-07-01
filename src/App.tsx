@@ -926,11 +926,6 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState<boolean>(true);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [authDebugLogs, setAuthDebugLogs] = useState<string[]>([]);
-  const addDebugLog = React.useCallback((msg: string) => {
-    const t = new Date().toISOString().split('T')[1].split('.')[0];
-    setAuthDebugLogs(prev => [...prev.slice(-30), t + ': ' + msg]);
-  }, []);
   const [userHasValidLicense, setUserHasValidLicense] = useState<boolean | null>(null);
   const [maintenanceInfo, setMaintenanceInfo] = useState<{ active: boolean; message: string | null; endsAt: string | null }>({ active: false, message: null, endsAt: null });
   const [activeModules, setActiveModules] = useState<Record<string, any>>({ brain: true, dashboard: true, calculator: true, studio: true });
@@ -1257,11 +1252,9 @@ export default function App() {
       void checkUser();
     } else {
       console.log('[Auth] OAuth callback detected, waiting for SIGNED_IN event...');
-      addDebugLog('Skipped initial checkUser, waiting for SIGNED_IN event or timeout');
     }
 
     const { data: { subscription } } = supabase!.auth.onAuthStateChange((event, session) => {
-      addDebugLog(`Auth event fired: ${event}. Session exists: ${!!session}`);
       // Update refresh token backups whenever session is active
       if (session?.refresh_token) {
         try {
@@ -1276,15 +1269,15 @@ export default function App() {
         // Only clear user state for explicit sign-out events, not for INITIAL_SESSION
         // which can fire with null before getSession() resolves in checkUser.
         if (event === 'SIGNED_OUT') {
-          addDebugLog('SIGNED_OUT: Clearing user state');
           try { window.sessionStorage.removeItem('b24_rt'); } catch(e) {}
           try { window.localStorage.removeItem('b24_rt'); } catch(e) {}
           try { document.cookie = 'b24_rt=; path=/; max-age=0'; } catch(e) {}
+          // Reset active tab in storage to projects on logout
+          try { safeLocalStorage.setItem('b24studio_activeTab', 'projects'); } catch(e) {}
           setCurrentUser(null);
           booksLoadedForUidRef.current = null;
           setAuthLoading(false);
         } else if (event !== 'INITIAL_SESSION') {
-          addDebugLog(`Other event (${event}) without user: Clearing user state`);
           setCurrentUser(null);
           booksLoadedForUidRef.current = null;
           setAuthLoading(false);
@@ -1292,18 +1285,19 @@ export default function App() {
         // For INITIAL_SESSION with null: do nothing — checkUser() is already running
         // and will call setAuthLoading(false) in its finally block.
       } else {
-        addDebugLog(`User found for event: ${event}`);
         if (event === 'SIGNED_IN') {
           // ── INSTANT SIGN-IN: show app immediately from the session data we already have ──
           // This fires right after OAuth redirect — no need to wait for checkUser().
-          addDebugLog('SIGNED_IN: Setting current user instantly');
           setCurrentUser(user);
           setAuthLoading(false);
           clearTimeout(safetyTimeoutId);
-          setActiveTab('projects');
-          try {
-            safeLocalStorage.setItem('b24studio_activeTab', 'projects');
-          } catch (e) {}
+          // Only redirect to 'projects' on the initial OAuth callback, not during regular page reloads or refreshes!
+          if (isOAuthCallback) {
+            setActiveTab('projects');
+            try {
+              safeLocalStorage.setItem('b24studio_activeTab', 'projects');
+            } catch (e) {}
+          }
           // Reset lock so checkUser() can run fresh (to load books, license, profile)
           isCheckingRef.current = false;
         }
