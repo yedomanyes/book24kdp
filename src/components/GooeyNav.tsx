@@ -137,7 +137,11 @@ const GooeyNav = ({
 
       const particles = filterRef.current.querySelectorAll('.particle');
       particles.forEach(p => filterRef.current!.removeChild(p));
-      makeParticles(filterRef.current, palette);
+      
+      const isLightTheme = document.body.classList.contains('light-theme');
+      if (!isLightTheme) {
+        makeParticles(filterRef.current, palette);
+      }
     }
 
     if (textRef.current) {
