@@ -866,7 +866,7 @@ const MaintenanceOverlay = ({ message, endsAt }: { message: string | null; endsA
       <div style={{ backgroundColor: '#141414', padding: '40px', borderRadius: '16px', border: '1px solid #262626', maxWidth: '500px', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
         <h1 style={{ fontSize: '24px', fontWeight: 700, margin: '0 0 16px 0', color: '#f5f5f5' }}>Wartungsarbeiten</h1>
         <p style={{ fontSize: '15px', color: '#a3a3a3', lineHeight: 1.5, margin: '0 0 24px 0' }}>
-          {message || 'Book24 Studio wird gerade gewartet. Bitte versuche es später wieder.'}
+          {message || 'BookLab Studio wird gerade gewartet. Bitte versuche es später wieder.'}
         </p>
         {endsAt && (
           <div style={{ backgroundColor: '#1a1a1a', padding: '12px', borderRadius: '8px', border: '1px solid #262626', fontSize: '14px', color: '#e5e5e5' }}>
@@ -4644,7 +4644,7 @@ export default function App() {
         pagesInitial: activeBook.pagesInitial || [],
         titlePageEmblem: activeBook.titlePageEmblem || 'geometric',
         titlePageImage: activeBook.titlePageImage || '',
-        publisherLine: activeBook.publisherLine !== undefined && activeBook.publisherLine !== '' ? activeBook.publisherLine : 'Book24 Studio',
+        publisherLine: activeBook.publisherLine !== undefined && activeBook.publisherLine !== '' ? activeBook.publisherLine : 'BookLab Studio',
         generateTOC: activeBook.generateTOC !== false,
         titlePageImageScale: activeBook.titlePageImageScale !== undefined ? activeBook.titlePageImageScale : 60,
         titlePageImageX: activeBook.titlePageImageX !== undefined ? activeBook.titlePageImageX : 0,
@@ -5008,7 +5008,7 @@ export default function App() {
     
     // Determine which emblem to draw
     const emblem = activeBook.titlePageEmblem || 'geometric';
-    const publisherLine = activeBook.publisherLine !== undefined && activeBook.publisherLine !== '' ? activeBook.publisherLine : 'Book24 Studio';
+    const publisherLine = activeBook.publisherLine !== undefined && activeBook.publisherLine !== '' ? activeBook.publisherLine : 'BookLab Studio';
     const layout = activeBook.titlePageLayout || 'centered';
     const scale = activeBook.titlePageImageScale !== undefined ? activeBook.titlePageImageScale : 60;
     const shiftX = activeBook.titlePageImageX !== undefined ? activeBook.titlePageImageX : 0;
@@ -7063,7 +7063,7 @@ export default function App() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <img 
               src="/logokdpbook24studio.png" 
-              alt="Book24 Studio Logo" 
+              alt="BookLab Studio Logo" 
               style={{ height: '28px', width: 'auto', display: 'block' }} 
             />
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>

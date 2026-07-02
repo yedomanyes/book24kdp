@@ -56,7 +56,7 @@ export function OwnerPanel({ currentUser, theme }: Props) {
   
   const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
   const [maintenanceEndsAtInput, setMaintenanceEndsAtInput] = useState('');
-  const [maintenanceMessage, setMaintenanceMessage] = useState('Book24 Studio wird gerade gewartet. Bitte versuche es später wieder.');
+  const [maintenanceMessage, setMaintenanceMessage] = useState('BookLab Studio wird gerade gewartet. Bitte versuche es später wieder.');
 
   const [gumroadPermalink, setGumroadPermalink] = useState('');
   const [isSavingGumroad, setIsSavingGumroad] = useState(false);
@@ -353,7 +353,7 @@ export function OwnerPanel({ currentUser, theme }: Props) {
     } else {
       // Open modal to turn on
       setMaintenanceEndsAtInput('');
-      setMaintenanceMessage('Book24 Studio wird gerade gewartet. Bitte versuche es später wieder.');
+      setMaintenanceMessage('BookLab Studio wird gerade gewartet. Bitte versuche es später wieder.');
       setShowMaintenanceModal(true);
     }
   };

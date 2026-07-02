@@ -237,7 +237,7 @@
       "label": "cleanPageText()",
       "file_type": "code",
       "source_file": "src/App.tsx",
-      "source_location": "L11317",
+      "source_location": "L11338",
       "_origin": "ast",
       "id": "src_app_cleanpagetext",
       "community": 11,
@@ -247,7 +247,7 @@
       "label": "generateStructureVariationsLocal()",
       "file_type": "code",
       "source_file": "src/App.tsx",
-      "source_location": "L11372",
+      "source_location": "L11393",
       "_origin": "ast",
       "id": "src_app_generatestructurevariationslocal",
       "community": 11,
@@ -257,7 +257,7 @@
       "label": "ImageInsertModalInnerProps",
       "file_type": "code",
       "source_file": "src/App.tsx",
-      "source_location": "L11447",
+      "source_location": "L11468",
       "_origin": "ast",
       "id": "src_app_imageinsertmodalinnerprops",
       "community": 11,
@@ -267,11 +267,101 @@
       "label": "ImageInsertModalInner()",
       "file_type": "code",
       "source_file": "src/App.tsx",
-      "source_location": "L11452",
+      "source_location": "L11473",
       "_origin": "ast",
       "id": "src_app_imageinsertmodalinner",
       "community": 11,
       "norm_label": "imageinsertmodalinner()"
+    },
+    {
+      "label": "PdfGenerator.ts",
+      "file_type": "code",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "utils_pdfgenerator",
+      "community": 48,
+      "norm_label": "pdfgenerator.ts"
+    },
+    {
+      "label": "PdfConfig",
+      "file_type": "code",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L5",
+      "_origin": "ast",
+      "id": "utils_pdfgenerator_pdfconfig",
+      "community": 48,
+      "norm_label": "pdfconfig"
+    },
+    {
+      "label": "BoxDesign",
+      "file_type": "code",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L78",
+      "_origin": "ast",
+      "id": "utils_pdfgenerator_boxdesign",
+      "community": 48,
+      "norm_label": "boxdesign"
+    },
+    {
+      "label": "generateBookPdf()",
+      "file_type": "code",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L88",
+      "_origin": "ast",
+      "id": "utils_pdfgenerator_generatebookpdf",
+      "community": 48,
+      "norm_label": "generatebookpdf()"
+    },
+    {
+      "label": "toRoman()",
+      "file_type": "code",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L1691",
+      "_origin": "ast",
+      "id": "utils_pdfgenerator_toroman",
+      "community": 48,
+      "norm_label": "toroman()"
+    },
+    {
+      "label": "drawGeometricEmblem()",
+      "file_type": "code",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L1708",
+      "_origin": "ast",
+      "id": "utils_pdfgenerator_drawgeometricemblem",
+      "community": 48,
+      "norm_label": "drawgeometricemblem()"
+    },
+    {
+      "label": "drawFloralEmblem()",
+      "file_type": "code",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L1722",
+      "_origin": "ast",
+      "id": "utils_pdfgenerator_drawfloralemblem",
+      "community": 48,
+      "norm_label": "drawfloralemblem()"
+    },
+    {
+      "label": "drawStarEmblem()",
+      "file_type": "code",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L1735",
+      "_origin": "ast",
+      "id": "utils_pdfgenerator_drawstaremblem",
+      "community": 48,
+      "norm_label": "drawstaremblem()"
+    },
+    {
+      "label": "drawBookEmblem()",
+      "file_type": "code",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L1755",
+      "_origin": "ast",
+      "id": "utils_pdfgenerator_drawbookemblem",
+      "community": 48,
+      "norm_label": "drawbookemblem()"
     },
     {
       "label": "OwnerPanel.tsx",
@@ -13924,96 +14014,6 @@
       "id": "vercel_rewrites"
     },
     {
-      "label": "PdfGenerator.ts",
-      "file_type": "code",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 48,
-      "norm_label": "pdfgenerator.ts",
-      "id": "utils_pdfgenerator"
-    },
-    {
-      "label": "PdfConfig",
-      "file_type": "code",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L5",
-      "_origin": "ast",
-      "community": 48,
-      "norm_label": "pdfconfig",
-      "id": "utils_pdfgenerator_pdfconfig"
-    },
-    {
-      "label": "BoxDesign",
-      "file_type": "code",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L78",
-      "_origin": "ast",
-      "community": 48,
-      "norm_label": "boxdesign",
-      "id": "utils_pdfgenerator_boxdesign"
-    },
-    {
-      "label": "generateBookPdf()",
-      "file_type": "code",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L88",
-      "_origin": "ast",
-      "community": 48,
-      "norm_label": "generatebookpdf()",
-      "id": "utils_pdfgenerator_generatebookpdf"
-    },
-    {
-      "label": "toRoman()",
-      "file_type": "code",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L1651",
-      "_origin": "ast",
-      "community": 48,
-      "norm_label": "toroman()",
-      "id": "utils_pdfgenerator_toroman"
-    },
-    {
-      "label": "drawGeometricEmblem()",
-      "file_type": "code",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L1668",
-      "_origin": "ast",
-      "community": 48,
-      "norm_label": "drawgeometricemblem()",
-      "id": "utils_pdfgenerator_drawgeometricemblem"
-    },
-    {
-      "label": "drawFloralEmblem()",
-      "file_type": "code",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L1682",
-      "_origin": "ast",
-      "community": 48,
-      "norm_label": "drawfloralemblem()",
-      "id": "utils_pdfgenerator_drawfloralemblem"
-    },
-    {
-      "label": "drawStarEmblem()",
-      "file_type": "code",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L1695",
-      "_origin": "ast",
-      "community": 48,
-      "norm_label": "drawstaremblem()",
-      "id": "utils_pdfgenerator_drawstaremblem"
-    },
-    {
-      "label": "drawBookEmblem()",
-      "file_type": "code",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L1715",
-      "_origin": "ast",
-      "community": 48,
-      "norm_label": "drawbookemblem()",
-      "id": "utils_pdfgenerator_drawbookemblem"
-    },
-    {
       "label": "dump-localstorage.js",
       "file_type": "code",
       "source_file": "dump-localstorage.js",
@@ -17827,6 +17827,207 @@
       "weight": 1.0,
       "source": "src_app_app",
       "target": "lib_owner_isownerroute"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "test-pdf-gen.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "test_pdf_gen",
+      "target": "utils_pdfgenerator"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator",
+      "target": "gil_gilservice"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator",
+      "target": "gil_gilservice_gilservice"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator",
+      "target": "services_geminiservice"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator",
+      "target": "services_geminiservice_bookoutline"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L77",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator",
+      "target": "utils_pdfgenerator_boxdesign"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L1645",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator",
+      "target": "utils_pdfgenerator_drawbookemblem"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L1612",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator",
+      "target": "utils_pdfgenerator_drawfloralemblem"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L1598",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator",
+      "target": "utils_pdfgenerator_drawgeometricemblem"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L1625",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator",
+      "target": "utils_pdfgenerator_drawstaremblem"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L87",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator",
+      "target": "utils_pdfgenerator_generatebookpdf"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator",
+      "target": "utils_pdfgenerator_pdfconfig"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L1581",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator",
+      "target": "utils_pdfgenerator_toroman"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "test-pdf-gen.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "test_pdf_gen",
+      "target": "utils_pdfgenerator_generatebookpdf"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L380",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator_generatebookpdf",
+      "target": "utils_pdfgenerator_drawbookemblem"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L376",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator_generatebookpdf",
+      "target": "utils_pdfgenerator_drawfloralemblem"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L366",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator_generatebookpdf",
+      "target": "utils_pdfgenerator_drawgeometricemblem"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L378",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator_generatebookpdf",
+      "target": "utils_pdfgenerator_drawstaremblem"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L630",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator_generatebookpdf",
+      "target": "utils_pdfgenerator_toroman"
     },
     {
       "relation": "contains",
@@ -46056,17 +46257,6 @@
       "target": "services_geminiservice_geminiservice"
     },
     {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L2",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator",
-      "target": "services_geminiservice"
-    },
-    {
       "relation": "imports",
       "context": "import",
       "confidence": "EXTRACTED",
@@ -46086,17 +46276,6 @@
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "cmie_outlineplanner_outlineplanner_validateandfixscopes",
-      "target": "services_geminiservice_bookoutline"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L2",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator",
       "target": "services_geminiservice_bookoutline"
     },
     {
@@ -51502,17 +51681,6 @@
       "target": "src_supabase_getcurrentappuser"
     },
     {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator",
-      "target": "gil_gilservice"
-    },
-    {
       "relation": "imports",
       "context": "import",
       "confidence": "EXTRACTED",
@@ -51652,17 +51820,6 @@
       "confidence_score": 1.0,
       "source": "gil_gilservice_gilservice",
       "target": "gil_gilservice_gilservice_syncvectortofirestore"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator",
-      "target": "gil_gilservice_gilservice"
     },
     {
       "relation": "calls",
@@ -51981,163 +52138,6 @@
       "confidence_score": 1.0,
       "source": "vercel",
       "target": "vercel_rewrites"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "test-pdf-gen.ts",
-      "source_location": "L1",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "test_pdf_gen",
-      "target": "utils_pdfgenerator"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L77",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator",
-      "target": "utils_pdfgenerator_boxdesign"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L1645",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator",
-      "target": "utils_pdfgenerator_drawbookemblem"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L1612",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator",
-      "target": "utils_pdfgenerator_drawfloralemblem"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L1598",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator",
-      "target": "utils_pdfgenerator_drawgeometricemblem"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L1625",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator",
-      "target": "utils_pdfgenerator_drawstaremblem"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L87",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator",
-      "target": "utils_pdfgenerator_generatebookpdf"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L5",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator",
-      "target": "utils_pdfgenerator_pdfconfig"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L1581",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator",
-      "target": "utils_pdfgenerator_toroman"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "test-pdf-gen.ts",
-      "source_location": "L1",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "test_pdf_gen",
-      "target": "utils_pdfgenerator_generatebookpdf"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L380",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator_generatebookpdf",
-      "target": "utils_pdfgenerator_drawbookemblem"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L376",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator_generatebookpdf",
-      "target": "utils_pdfgenerator_drawfloralemblem"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L366",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator_generatebookpdf",
-      "target": "utils_pdfgenerator_drawgeometricemblem"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L378",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator_generatebookpdf",
-      "target": "utils_pdfgenerator_drawstaremblem"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L630",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator_generatebookpdf",
-      "target": "utils_pdfgenerator_toroman"
     },
     {
       "relation": "contains",
@@ -54846,5 +54846,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "4ff32367ea38775e6339f3d1b40ebe3fec3273ed"
+  "built_at_commit": "346b36a4504f8f6319fd3ffccfefb1611f9e44a8"
 }

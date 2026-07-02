@@ -102,7 +102,7 @@ const getFaqs = (isDe: boolean) => [
   },
   {
     q: 'Wird der Preis in Zukunft steigen?',
-    a: isDe ? 'Ja! Wir entwickeln Book24 Studio kontinuierlich weiter. Mit jedem großen Update kommen neue, mächtige Funktionen hinzu. Daher wird der Preis des Produkts stetig steigen. Wer sich den Zugang jetzt sichert, erhält alle künftigen Erweiterungen kostenlos – ohne Aufpreis!' : 'Yes! We are continuously developing Book24 Studio. With every major update, new powerful features are added. Therefore, the price of the product will steadily increase. Those who secure access now will receive all future expansions for free - at no extra cost!'
+    a: isDe ? 'Ja! Wir entwickeln BookLab Studio kontinuierlich weiter. Mit jedem großen Update kommen neue, mächtige Funktionen hinzu. Daher wird der Preis des Produkts stetig steigen. Wer sich den Zugang jetzt sichert, erhält alle künftigen Erweiterungen kostenlos – ohne Aufpreis!' : 'Yes! We are continuously developing BookLab Studio. With every major update, new powerful features are added. Therefore, the price of the product will steadily increase. Those who secure access now will receive all future expansions for free - at no extra cost!'
   },
   {
     q: 'Benötige ich Vorkenntnisse im Buch-Layouting?',
@@ -254,7 +254,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
           style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}
         >
           <button 
-            onClick={() => window.location.href = 'https://book24studio.gumroad.com/l/howtbr'}
+            onClick={() => window.location.href = 'https://book24studio.gumroad.com/l/booklabstudio'}
             style={{
               background: theme === 'dark'
                 ? 'linear-gradient(180deg, #0b57d0 0%, #0842a0 100%)'
@@ -585,13 +585,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: theme === 'dark' ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid rgba(0, 0, 0, 0.05)' }}>
               <div style={{ padding: '24px', textAlign: 'center', background: theme === 'dark' ? 'rgba(239, 68, 68, 0.05)' : 'rgba(239, 68, 68, 0.02)' }}>
                 <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#ef4444', margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                  <X size={20} strokeWidth={3} /> {isDe ? 'Ohne Book24 Studio' : 'Without Book24 Studio'}
+                  <X size={20} strokeWidth={3} /> {isDe ? 'Ohne BookLab Studio' : 'Without BookLab Studio'}
                 </h3>
               </div>
               <div style={{ padding: '24px', textAlign: 'center', background: theme === 'dark' ? 'rgba(34, 197, 94, 0.05)' : 'rgba(34, 197, 94, 0.02)', position: 'relative' }}>
                 <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '1px', background: theme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)' }} />
                 <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#22c55e', margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                  <Check size={20} strokeWidth={3} /> {isDe ? 'Mit Book24 Studio' : 'With Book24 Studio'}
+                  <Check size={20} strokeWidth={3} /> {isDe ? 'Mit BookLab Studio' : 'With BookLab Studio'}
                 </h3>
               </div>
             </div>
@@ -691,7 +691,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           >
             <TiltedCard
-              captionText="Book24 Studio · KDP-ready"
+              captionText="BookLab Studio · KDP-ready"
               containerHeight={CARD_SIZE}
               containerWidth={CARD_SIZE}
               imageHeight={CARD_SIZE}
@@ -842,7 +842,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
             Leadership
           </div>
           <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 12px', color: theme === 'dark' ? '#fff' : '#1a1a2e' }}>
-            {isDe ? 'Das Team hinter Book24 Studio' : 'The Team behind Book24 Studio'}
+            {isDe ? 'Das Team hinter BookLab Studio' : 'The Team behind BookLab Studio'}
           </h2>
 
         </motion.div>
@@ -899,7 +899,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
             {isDe ? 'Häufig gestellte Fragen' : 'Frequently Asked Questions'}
           </h2>
           <p style={{ color: theme === 'dark' ? '#a3a3a3' : '#666', fontSize: '16px', margin: '0 auto', lineHeight: 1.6, maxWidth: '560px' }}>
-            {isDe ? 'Alles, was du über Book24 Studio und die Veröffentlichung wissen musst.' : 'Everything you need to know about Book24 Studio and publishing.'}
+            {isDe ? 'Alles, was du über BookLab Studio und die Veröffentlichung wissen musst.' : 'Everything you need to know about BookLab Studio and publishing.'}
           </p>
         </motion.div>
 
@@ -967,7 +967,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
           <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
             {/* Primary Button */}
             <button 
-              onClick={() => window.location.href = 'https://book24studio.gumroad.com/l/howtbr'}
+              onClick={() => window.location.href = 'https://book24studio.gumroad.com/l/booklabstudio'}
               style={{
                 background: theme === 'dark'
                   ? 'linear-gradient(180deg, #0b57d0 0%, #0842a0 100%)'
@@ -1202,7 +1202,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
           color: theme === 'dark' ? '#737373' : '#666',
         }}>
           <div>
-            &copy; {new Date().getFullYear()} Book24 Studio. {isDe ? 'Alle Rechte vorbehalten.' : 'All rights reserved.'}
+            &copy; {new Date().getFullYear()} BookLab Studio. {isDe ? 'Alle Rechte vorbehalten.' : 'All rights reserved.'}
           </div>
           <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: theme === 'dark' ? '#525252' : '#888' }}>

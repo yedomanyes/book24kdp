@@ -93,7 +93,7 @@ function ImpressumContent({ dark }: { dark: boolean }) {
 
       <h2 style={s.h2(dark)}>Anbieter</h2>
       <p style={s.p}>
-        Book24 Studio<br />
+        BookLab Studio<br />
         E-Mail: support@book24.studio
       </p>
 
@@ -113,7 +113,7 @@ function ImpressumContent({ dark }: { dark: boolean }) {
 
       <h2 style={s.h2(dark)}>Urheberrecht</h2>
       <p style={s.p}>
-        Book24 Studio ist ein KI-gestütztes Werkzeug zur Buchgenerierung. Wir übernehmen
+        BookLab Studio ist ein KI-gestütztes Werkzeug zur Buchgenerierung. Wir übernehmen
         ausdrücklich keine Garantie dafür, dass die generierten Inhalte urheberrechtsfrei sind.
         Die Verantwortung für die Prüfung und Einhaltung von Urheberrechten liegt vollständig
         beim Nutzer.
@@ -131,7 +131,7 @@ function DatenschutzContent({ dark }: { dark: boolean }) {
       </p>
 
       <h2 style={s.h2(dark)}>Verantwortliche Stelle</h2>
-      <p style={s.p}>Book24 Studio · support@book24.studio</p>
+      <p style={s.p}>BookLab Studio · support@book24.studio</p>
 
       <h2 style={s.h2(dark)}>Erhobene Daten</h2>
       <p style={s.p}>
@@ -177,20 +177,20 @@ function TermsContent({ dark }: { dark: boolean }) {
   return (
     <>
       <div style={s.warn(dark)}>
-        ⚠️ Durch die Nutzung von Book24 Studio stimmen Sie diesen Nutzungsbedingungen zu.
+        ⚠️ Durch die Nutzung von BookLab Studio stimmen Sie diesen Nutzungsbedingungen zu.
         Bitte lesen Sie diese sorgfältig durch.
       </div>
 
       <h2 style={s.h2(dark)}>1. Leistungsumfang</h2>
       <p style={s.p}>
-        Book24 Studio ist eine KI-gestützte Plattform zur automatisierten Erstellung von
+        BookLab Studio ist eine KI-gestützte Plattform zur automatisierten Erstellung von
         Buchinhalten für Amazon KDP und ähnliche Plattformen. Die Plattform wird "wie sie ist"
         bereitgestellt, ohne Gewährleistung der ununterbrochenen Verfügbarkeit oder Fehlerfreiheit.
       </p>
 
       <h2 style={s.h2(dark)}>2. Haftungsausschluss — Urheberrecht</h2>
       <p style={s.p}>
-        Book24 Studio generiert Inhalte mittels KI-Technologie. Wir übernehmen <strong>keinerlei
+        BookLab Studio generiert Inhalte mittels KI-Technologie. Wir übernehmen <strong>keinerlei
         Garantie oder Haftung</strong> dafür, dass die generierten Inhalte (Texte, Bilder, Layouts)
         vollständig frei von Urheberrechten Dritter sind. Die vollständige Verantwortung für
         die Prüfung, Nutzung und Veröffentlichung der generierten Inhalte liegt beim Nutzer.
@@ -198,7 +198,7 @@ function TermsContent({ dark }: { dark: boolean }) {
 
       <h2 style={s.h2(dark)}>3. Haftungsausschluss — Plattform-Sanktionen</h2>
       <p style={s.p}>
-        Book24 Studio trägt keine Verantwortung und haftet nicht für Maßnahmen Dritter gegen
+        BookLab Studio trägt keine Verantwortung und haftet nicht für Maßnahmen Dritter gegen
         den Nutzer, einschließlich — aber nicht beschränkt auf — Sperrungen, Verwarnungen,
         Banns oder rechtliche Schritte durch Amazon KDP, andere Vertriebsplattformen, Behörden
         oder Dritte. Dies gilt auch für Maßnahmen, die sich aus der Nutzung der über unsere
@@ -244,7 +244,7 @@ function PrivacyContent({ dark }: { dark: boolean }) {
   return (
     <>
       <p style={s.p}>
-        This Privacy Policy explains how Book24 Studio ("we", "our", "us") collects, uses,
+        This Privacy Policy explains how BookLab Studio ("we", "our", "us") collects, uses,
         and protects your personal data when you use our platform.
       </p>
 
@@ -278,7 +278,7 @@ function PrivacyContent({ dark }: { dark: boolean }) {
 
       <h2 style={s.h2(dark)}>5. No Liability for Platform Bans</h2>
       <p style={s.p}>
-        Book24 Studio is not responsible for any bans, account suspensions, legal actions, or
+        BookLab Studio is not responsible for any bans, account suspensions, legal actions, or
         penalties imposed by Amazon KDP, any distribution platform, government authority, or third
         party as a result of content generated using our platform. Users accept full responsibility
         for compliance with all applicable platform policies and laws.

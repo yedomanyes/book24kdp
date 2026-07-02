@@ -28,7 +28,7 @@ export const LandingBookPagePreview: React.FC = () => (
       <p className="literary-paragraph landing-mock-dropcap">
         <span className="drop-cap-letter">D</span>
         ie Kunst des Fokus beginnt nicht mit mehr Disziplin, sondern mit klaren
-        Systemen. Book24 Studio strukturiert jedes Kapitel automatisch — von der
+        Systemen. BookLab Studio strukturiert jedes Kapitel automatisch — von der
         Gliederung bis zum literarischen Fluss.
       </p>
       <p className="literary-paragraph">
@@ -56,7 +56,7 @@ export const LandingTitlePagePreview: React.FC = () => (
       <div className="landing-mock-emblem">✦</div>
       <h3 className="landing-mock-book-title">Produktivität meistern</h3>
       <p className="landing-mock-book-subtitle">Der KDP-Leitfaden für skalierbare Bücher</p>
-      <p className="landing-mock-book-author">von Book24 Studio</p>
+      <p className="landing-mock-book-author">von BookLab Studio</p>
       <div className="landing-mock-publisher">Veröffentlicht via Amazon KDP</div>
     </div>
   </div>
