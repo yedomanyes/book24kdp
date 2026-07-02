@@ -116,6 +116,22 @@ interface LandingPageProps {
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, setTheme, language, onLanguageChange }) => {
   const isDe = language === 'de';
+
+  const covers = [
+    { src: '/cover1.jpg', revenueEur: 854.81 },
+    { src: '/cover2.jpg', revenueEur: 139.06 },
+    { src: '/nahrungsluegecover.jpg', revenueEur: 326.00 },
+    { src: '/cover4.jpg', revenueEur: 89.98 }
+  ];
+
+  const formatRevenue = (valEur: number) => {
+    if (isDe) {
+      return valEur.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+    } else {
+      const valUsd = valEur * 1.10;
+      return '$' + valUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+  };
   const [openFaq, setOpenFaq] = React.useState<number | null>(null);
   const [legalPage, setLegalPage] = React.useState<LegalPage>(null);
   const [cookieConsent, setCookieConsent] = React.useState<boolean>(() => {
@@ -357,62 +373,61 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
           transition={{ duration: 0.7, delay: 0.7 }}
           style={{ marginTop: '32px', display: 'flex', gap: '16px', justifyContent: 'center' }}
         >
-          {[
-            { src: '/cover1.jpg', revenue: '854,81 €' },
-            { src: '/cover2.jpg', revenue: '139,06 €' },
-            { src: '/cover4.jpg', revenue: '89,98 €' }
-          ].map((item, i) => (
-            <div 
-              key={i}
-              style={{ position: 'relative', height: '180px', borderRadius: '4px', overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.3s ease', transform: 'translateY(0px)' }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-10px)';
-                const overlay = e.currentTarget.querySelector('.cover-overlay') as HTMLDivElement;
-                if (overlay) overlay.style.opacity = '1';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0px)';
-                const overlay = e.currentTarget.querySelector('.cover-overlay') as HTMLDivElement;
-                if (overlay) overlay.style.opacity = '0';
-              }}
-            >
-              <img 
-                src={item.src} 
-                alt={`Cover ${i+1}`}
-                style={{ 
-                  height: '180px', 
-                  width: 'auto', 
-                  boxShadow: theme === 'dark' ? '0 8px 24px rgba(0,0,0,0.6)' : '0 8px 24px rgba(0,0,0,0.15)',
-                  border: theme === 'dark' ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)',
-                  objectFit: 'cover',
-                  display: 'block'
-                }} 
-              />
+          {covers.map((item, i) => {
+
+            return (
               <div 
-                className="cover-overlay"
-                style={{
-                  position: 'absolute',
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  height: '60px',
-                  background: 'linear-gradient(to top, rgba(0,0,0,0.95), transparent)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'flex-end',
-                  opacity: 0,
-                  transition: 'opacity 0.3s ease',
-                  color: 'white',
-                  textAlign: 'center',
-                  paddingBottom: '8px'
+                key={i}
+                style={{ position: 'relative', height: '180px', width: '120px', borderRadius: '4px', overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.3s ease', transform: 'translateY(0px)' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-10px)';
+                  const overlay = e.currentTarget.querySelector('.cover-overlay') as HTMLDivElement;
+                  if (overlay) overlay.style.opacity = '1';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0px)';
+                  const overlay = e.currentTarget.querySelector('.cover-overlay') as HTMLDivElement;
+                  if (overlay) overlay.style.opacity = '0';
                 }}
               >
-                <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{isDe ? 'Tantiemen' : 'Royalties'}</div>
-                <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#4ade80' }}>{item.revenue}</div>
+                <img 
+                  src={item.src} 
+                  alt={`Cover ${i+1}`}
+                  style={{ 
+                    height: '180px', 
+                    width: '120px', 
+                    boxShadow: theme === 'dark' ? '0 8px 24px rgba(0,0,0,0.6)' : '0 8px 24px rgba(0,0,0,0.15)',
+                    border: theme === 'dark' ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)',
+                    objectFit: 'cover',
+                    display: 'block'
+                  }} 
+                />
+                <div 
+                  className="cover-overlay"
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    height: '60px',
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.95), transparent)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'flex-end',
+                    opacity: 0,
+                    transition: 'opacity 0.3s ease',
+                    color: 'white',
+                    textAlign: 'center',
+                    paddingBottom: '8px'
+                  }}
+                >
+                  <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{isDe ? 'Tantiemen' : 'Royalties'}</div>
+                  <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#4ade80' }}>{formatRevenue(item.revenueEur)}</div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </motion.div>
       </main>
 
