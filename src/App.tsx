@@ -7050,6 +7050,11 @@ export default function App() {
       <header className="header">
         <div className="header-left">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <img 
+              src="/logokdpbook24studio.png" 
+              alt="Book24 Studio Logo" 
+              style={{ height: '28px', width: 'auto', display: 'block' }} 
+            />
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
               <span style={{
                 fontFamily: "'Poppins', 'Roboto', sans-serif",
