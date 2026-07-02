@@ -765,7 +765,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
               >
                 {/* Accent line top */}
                 {isActive && (
-                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: `linear-gradient(90deg, #7c3aed, ${colorSets.glow})` }} />
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, #3b82f6, #4169e1)' }} />
                 )}
 
                 {/* Header row */}
