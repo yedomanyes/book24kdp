@@ -7203,9 +7203,9 @@ export default function App() {
           {currentUser && (
             <div className="header-user-chip" style={{ borderRadius: '8px', padding: '4px 6px 4px 8px' }}>
               {currentUser.photoURL ? (
-                <img src={currentUser.photoURL} alt="" className="header-user-avatar" style={{ borderRadius: '4px' }} />
+                <img src={currentUser.photoURL} alt="" className="header-user-avatar" style={{ borderRadius: '50%' }} />
               ) : (
-                <div className="header-user-avatar-fallback" style={{ borderRadius: '4px' }}>
+                <div className="header-user-avatar-fallback" style={{ borderRadius: '50%' }}>
                   {currentUser.displayName ? currentUser.displayName[0] : (currentUser.email ? currentUser.email[0].toUpperCase() : 'U')}
                 </div>
               )}
@@ -7226,7 +7226,7 @@ export default function App() {
                   fontWeight: 600,
                   height: '26px',
                   borderRadius: '6px',
-                  backgroundColor: '#ef4444',
+                  backgroundColor: '#2563eb',
                   color: '#ffffff',
                   border: 'none',
                   cursor: 'pointer',
@@ -7235,8 +7235,8 @@ export default function App() {
                   justifyContent: 'center',
                   transition: 'background-color 0.15s ease',
                 }}
-                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#dc2626'}
-                onMouseLeave={e => e.currentTarget.style.backgroundColor = '#ef4444'}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1d4ed8'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = '#2563eb'}
               >
                 {isDe ? 'Abmelden' : 'Sign Out'}
               </button>
