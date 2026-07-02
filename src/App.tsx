@@ -7171,40 +7171,41 @@ export default function App() {
             )}
           </div>
 
-          <button
-            type="button"
-            className="header-icon-btn"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            title={theme === 'dark' ? (isDe ? 'Light Mode aktivieren' : 'Activate Light Mode') : (isDe ? 'Dark Mode aktivieren' : 'Activate Dark Mode')}
-            style={{ marginRight: '8px' }}
-          >
-            {theme === 'dark' ? <Sun style={{ width: '16px', height: '16px' }} /> : <Moon style={{ width: '16px', height: '16px' }} />}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <button
+              type="button"
+              className="header-icon-btn"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              title={theme === 'dark' ? (isDe ? 'Light Mode aktivieren' : 'Activate Light Mode') : (isDe ? 'Dark Mode aktivieren' : 'Activate Dark Mode')}
+            >
+              {theme === 'dark' ? <Sun style={{ width: '16px', height: '16px' }} /> : <Moon style={{ width: '16px', height: '16px' }} />}
+            </button>
 
-          <button
-            type="button"
-            className="header-icon-btn"
-            onClick={() => setShowBugReport(true)}
-            title={isDe ? 'Bug melden' : 'Found a Bug?'}
-          >
-            <Bug style={{ width: '15px', height: '15px' }} />
-          </button>
+            <button
+              type="button"
+              className="header-icon-btn"
+              onClick={() => setShowBugReport(true)}
+              title={isDe ? 'Bug melden' : 'Found a Bug?'}
+            >
+              <Bug style={{ width: '15px', height: '15px' }} />
+            </button>
 
-          <button
-            type="button"
-            className={`header-icon-btn${settingsNeedAttention ? ' has-alert' : ''}`}
-            onClick={openSettings}
-            title={isDe ? 'Einstellungen' : 'Settings'}
-          >
-            <Settings style={{ width: '16px', height: '16px' }} />
-          </button>
+            <button
+              type="button"
+              className={`header-icon-btn${settingsNeedAttention ? ' has-alert' : ''}`}
+              onClick={openSettings}
+              title={isDe ? 'Einstellungen' : 'Settings'}
+            >
+              <Settings style={{ width: '16px', height: '16px' }} />
+            </button>
+          </div>
 
           {currentUser && (
-            <div className="header-user-chip">
+            <div className="header-user-chip" style={{ borderRadius: '8px', padding: '4px 6px 4px 8px' }}>
               {currentUser.photoURL ? (
-                <img src={currentUser.photoURL} alt="" className="header-user-avatar" />
+                <img src={currentUser.photoURL} alt="" className="header-user-avatar" style={{ borderRadius: '4px' }} />
               ) : (
-                <div className="header-user-avatar-fallback">
+                <div className="header-user-avatar-fallback" style={{ borderRadius: '4px' }}>
                   {currentUser.displayName ? currentUser.displayName[0] : (currentUser.email ? currentUser.email[0].toUpperCase() : 'U')}
                 </div>
               )}
@@ -7219,8 +7220,23 @@ export default function App() {
                     onConfirm: () => supabase?.auth.signOut()
                   });
                 }}
-                className="btn btn-danger"
-                style={{ padding: '4px 10px', fontSize: '11px', height: '26px', borderRadius: '99px' }}
+                style={{
+                  padding: '5px 12px',
+                  fontSize: '11.5px',
+                  fontWeight: 600,
+                  height: '26px',
+                  borderRadius: '6px',
+                  backgroundColor: '#ef4444',
+                  color: '#ffffff',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'background-color 0.15s ease',
+                }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#dc2626'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = '#ef4444'}
               >
                 {isDe ? 'Abmelden' : 'Sign Out'}
               </button>
