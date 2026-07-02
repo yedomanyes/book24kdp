@@ -774,9 +774,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
                     {phase.phase}
                   </span>
                   <span className={`rm2-badge ${isActive ? 'live' : 'soon'}`}>
-                    {isActive && (
-                      <span style={{ display: 'inline-block', width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#3b82f6', animation: 'pulse 1.5s infinite' }} />
-                    )}
                     {phase.badge}
                   </span>
                 </div>
