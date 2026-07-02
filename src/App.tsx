@@ -7849,8 +7849,8 @@ export default function App() {
                             <option value="5.5x8.5">5.5×8.5″</option>
                             <option value="6x9">6×9″ Standard KDP</option>
                             <option value="8.5x11">8.5×11″ {isDe ? 'Großformat' : 'Large Format'}</option>
-                            <option value="custom">Custom</option>
                             <option value="a4">DIN A4</option>
+                            <option value="custom">✏ Custom</option>
                           </select>
                         </div>
                         <div className="ex-field">
@@ -7866,6 +7866,38 @@ export default function App() {
                         </div>
                       </div>
 
+                      {activeBook.pageSize === 'custom' && (
+                        <div style={{ marginBottom: '15px' }}>
+                          <div className="ex-grid-2">
+                            <div className="ex-field">
+                              <label className="ex-label">{isDe ? 'Breite (Zoll)' : 'Width (inches)'}</label>
+                              <input
+                                className="ex-input"
+                                type="number" step="0.1" min="3" max="12"
+                                value={activeBook.customWidth || 6}
+                                onChange={e => updateActiveBookConfig('customWidth', Math.max(3, Math.min(12, Number(e.target.value))))}
+                              />
+                            </div>
+                            <div className="ex-field">
+                              <label className="ex-label">{isDe ? 'Höhe (Zoll)' : 'Height (inches)'}</label>
+                              <input
+                                className="ex-input"
+                                type="number" step="0.1" min="4" max="18"
+                                value={activeBook.customHeight || 9}
+                                onChange={e => updateActiveBookConfig('customHeight', Math.max(4, Math.min(18, Number(e.target.value))))}
+                              />
+                            </div>
+                          </div>
+                          <button 
+                            className="ex-btn ex-btn-ghost" 
+                            style={{ fontSize: '10px', marginTop: '-5px', padding: '2px 8px' }}
+                            onClick={() => updateActiveBookConfig('pageSize', '6x9')}
+                          >
+                            {isDe ? '← Zurück zu Standard' : '← Back to standard'}
+                          </button>
+                        </div>
+                      )}
+
                       <div className="ex-grid-2">
                         <div className="ex-field">
                           <label className="ex-label">TOC</label>
@@ -7880,29 +7912,6 @@ export default function App() {
                         </div>
                         <div />
                       </div>
-
-                      {activeBook.pageSize === 'custom' && (
-                        <div className="ex-grid-2">
-                          <div className="ex-field">
-                            <label className="ex-label">{isDe ? 'Breite (Zoll)' : 'Width (inches)'}</label>
-                            <input
-                              className="ex-input"
-                              type="number" step="0.1" min="3" max="12"
-                              value={activeBook.customWidth || 6}
-                              onChange={e => updateActiveBookConfig('customWidth', Math.max(3, Math.min(12, Number(e.target.value))))}
-                            />
-                          </div>
-                          <div className="ex-field">
-                            <label className="ex-label">{isDe ? 'Höhe (Zoll)' : 'Height (inches)'}</label>
-                            <input
-                              className="ex-input"
-                              type="number" step="0.1" min="4" max="18"
-                              value={activeBook.customHeight || 9}
-                              onChange={e => updateActiveBookConfig('customHeight', Math.max(4, Math.min(18, Number(e.target.value))))}
-                            />
-                          </div>
-                        </div>
-                      )}
 
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <button onClick={applyRomanPreset} className="ex-btn ex-btn-accent" style={{ flex: 1, padding: '7px' }}>
