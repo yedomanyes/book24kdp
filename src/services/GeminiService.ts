@@ -314,17 +314,15 @@ Ziel-Seitenzahl: ${targetPages} (Das generierte JSON MUSS exakt ${targetPages} S
 
     prompt += `\n\nFür jede einzelne Seite des Buches (von Seite 1 bis Seite ${targetPages}) musst du festlegen, worum es auf dieser Seite geht.
 
-KRITISCHSTE REGEL – SEITEN-FOKUS (PFLICHT, NIEMALS IGNORIEREN):
-Jede Seite MUSS einen ABSOLUT EINZIGARTIGEN und UNVERWECHSELBAREN Fokus haben!
-Wenn mehrere aufeinanderfolgende Seiten zum selben Kapitel gehören, MUSS jede Seite einen VOLLKOMMEN ANDEREN Teilaspekt beleuchten.
-Es ist STRENGSTENS VERBOTEN, zwei Seiten mit demselben oder ähnlichem "focus"-Text zu versehen.
+KRITISCHSTE REGEL – SEITEN-FOKUS & UNTERSCHIEDLICHE INHALTE (NIEMALS IGNORIEREN):
+Jede einzelne Buchseite MUSS einen vollkommen eigenständigen, glasklaren und unverwechselbaren Fokus ("focus") haben. 
+- Wenn mehrere Seiten zum selben Kapitel gehören, ist es STRENGSTENS VERBOTEN, ähnliche oder redundante Schwerpunkte zu setzen.
+- Jede Seite muss das Thema progressiv vorantreiben (z.B. Seite 3: 'Psychologischer Auslöser des Verhaltens', Seite 4: 'Erste SOS-Schritte im Alltag', Seite 5: 'Ein konkretes Praxisbeispiel aus der Wirtschaft').
+- Es darf unter keinen Umständen im gesamten Buch eine Dopplung von Fokus-Ideen geben. Jede Seite muss neuen Nutzwert oder eine neue Perspektive bieten.
 
 KAPITELLÄNGE – ORGANISCH & THEMENGERECHT:
-Entscheide selbst, wie viele Seiten ein Kapitel braucht – basierend darauf, wie viel das Thema wirklich hergibt.
-Ein einfaches Thema kann in 2-3 Seiten vollständig abgedeckt sein. Ein komplexes Thema kann 6, 8 oder mehr Seiten rechtfertigen.
-RULE: Schließe ein Kapitel ab, sobald das Thema vollständig und gut behandelt wurde – nicht früher, nicht später.
-Füge KEINE Füllseiten hinzu nur um eine bestimmte Anzahl zu erreichen!
-Starte das nächste Kapitel, wenn das aktuelle Thema wirklich abgeschlossen ist.
+Entscheide selbst, wie viele Seiten ein Kapitel benötigt – basierend darauf, wie viel Inhalt das Thema wirklich hergibt. Ein einfaches Kapitel kommt mit 2-3 Seiten aus, ein komplexes Thema kann 6-8+ Seiten einnehmen. 
+RULE: Schließe ein Kapitel ab, sobald das Thema vollständig und qualitativ hochwertig behandelt wurde. Vermeide Füllseiten um jeden Preis! Starte das nächste Kapitel, wenn das vorherige Thema logisch abgeschlossen ist.
 
 ANLEITUNG für einzigartige Seiten-Fokuspunkte innerhalb eines Kapitels:
 Pro Seite wähle einen anderen Blickwinkel aus dieser Pool (nur was zum Thema PASST und wirklich sinnvoll ist):
@@ -388,14 +386,12 @@ Hauptidee/Beschreibung: "${safeIdea}"
 Sprache des Buches: "${language === 'de' ? 'Deutsch' : 'ENGLISH (CRITICAL: All generated output MUST be completely in English, including chapter titles and key points!)'}"
 Das Buch hat insgesamt ${targetPages} Seiten. Du planst jetzt NUR die Seiten ${start} bis ${end} (${chunkSize} Seiten).
 ${safeGuidelines && safeGuidelines.trim() ? `\nAutoren-Richtlinien: "${safeGuidelines}"\n` : ''}
+KRITISCHSTE REGEL – SEITEN-FOKUS & EIGENSTÄNDIGKEIT (PFLICHT):
+Jede einzelne Seite MUSS einen absolut einzigartigen, trennscharfen und unverwechselbaren Fokus haben!
+- Wenn mehrere Seiten zum selben Kapitel gehören, ist es STRENGSTENS VERBOTEN, ähnliche oder redundante Aspekte zu wiederholen.
+- Jede Seite muss das Thema fortführen und ein neues Detail oder einen neuen Gedanken beleuchten. Jede Dopplung im gesamten Buch ist verboten.
 
-KRITISCHSTE REGEL – SEITEN-FOKUS (PFLICHT):
-Jede Seite MUSS einen ABSOLUT EINZIGARTIGEN Fokus haben!
-Wenn mehrere Seiten zum selben Kapitel gehören, MUSS jede einen VÖLLIG ANDEREN Teilaspekt beleuchten.
-
-KAPITELLÄNGE ORGANISCH: Entscheide selbst wie viele Seiten ein Kapitel braucht.
-Einfache Themen: 2-3 Seiten. Komplexe Themen: kann auch 6-8+ Seiten sein.
-Starte das nächste Kapitel sobald das aktuelle Thema wirklich vollständig abgedeckt ist – keine Füllseiten!
+KAPITELLÄNGE ORGANISCH: Entscheide selbst wie viele Seiten ein Kapitel braucht (einfache Themen 2-3 Seiten, komplexe Themen 6-8+ Seiten). Starte das nächste Kapitel, sobald das aktuelle Thema vollständig abgedeckt ist – keine Füllseiten!
 
 BLICKWINKEL-POOL (nur was zum Thema PASST):
 Einführung & Kernfrage • Mechanismen & Hintergründe • Praxisbeispiele & Anwendung • Häufige Fehler & Mythen • Schritt-für-Schritt • Psychologie & Emotion • Wissenschaft & Belege • Fallstudie & Erfahrung • Vergleich & Abgrenzung • Langzeitwirkung & Fazit
@@ -544,7 +540,10 @@ Die letzten bereits geplanten Seiten waren:
 ${lastExistingPagesContext}
 
 SETZE NAHTLOS FORT. Plane jetzt NUR die Seiten ${startPage} bis ${endPage} (${chunkSize} Seiten).
-VERMEIDE Wiederholungen oder Dopplungen der bereits geplanten Inhalte.
+KRITISCHSTE REGEL – SEITEN-FOKUS & EIGENSTÄNDIGKEIT (PFLICHT):
+Jede geplante Seite MUSS einen absolut einzigartigen, neuen und unverwechselbaren Fokus haben!
+- Es ist STRENGSTENS VERBOTEN, Themen, Aspekte oder Fokus-Ideen der bereits geplanten Seiten (Seiten 1 bis ${startPage - 1}) zu wiederholen oder zu doppeln.
+- Jede neue Seite muss die Argumentation progressiv weitertreiben, statt sich im Kreis zu drehen.
 ${customGuidelines ? `\nRichtlinien: "${customGuidelines}"\n` : ''}
 
 STRIKTE REGEL FÜR DIE KAPITELTITEL (chapter_title):
@@ -881,7 +880,7 @@ ${truncatedPrevText}
 ---
 Der allerletzte Satz / die letzten Sätze der vorherigen Seite waren:
 "${lastSentences}"
-Setze den Text absolut nahtlos fort. Der allererste Satz dieser neuen Seite ${pageNumber} MUSS grammatikalisch und logisch an diesen Gedanken anknüpfen, ohne ein neues Kapitel einzuleiten oder das Thema abrupt zu wechseln.`;
+Setze den Text absolut nahtlos fort. Der allererste Satz dieser neuen Seite ${pageNumber} MUSS sich grammatikalisch, stilistisch und logisch perfekt an diese Worte anschließen (wie ein einziger fortlaufender Textfluss), OHNE das Thema neu einzuleiten, Konzepte zu wiederholen oder Phrasen der vorherigen Seiten aufzugreifen. Gehe sofort über zum NEUEN Aspekt dieser Seite: "${currentPageInfo.focus}".`;
     }
 
     // Mathematische Berechnung der optimalen Wortanzahl basierend auf dem Seitenformat und der Schriftgröße,
@@ -938,7 +937,7 @@ Achte peinlich genau auf folgende Regeln:
 1. ${isChapterOpening ? `Zitate sind auf dieser Seite (Beginn eines neuen Kapitels!) als feierlicher Einstieg sehr erwünscht. ABER ACHTUNG: Ein Zitat darf NIEMALS ganz oben am Anfang der Seite stehen! Beginne die Seite IMMER zuerst mit mindestens einem eleganten Absatz Fließtext als Einleitung in das Thema, bevor du weiter unten ein Zitat einfügst. Das Zitat muss gemeinfrei/legal sein, in einer eigenen Zeile stehen, eingeleitet mit "> ", und MUSS am Ende immer eine Autorenangabe enthalten (Format: — Vorname Nachname). Beispiel:
 > "Wissen ist Macht." — Francis Bacon
 EIN ZITAT OHNE — AUTORENANGABE AM ENDE IST STRENGSTENS VERBOTEN.` : `Es ist dir STRENGSTENS VERBOTEN, Zitate auf dieser Seite zu generieren! Verwende kein Zitat (keine Zeile mit "> "). Zitate dürfen ausschließlich auf der allerersten Seite eines Kapitels verwendet werden, dies ist jedoch eine normale Inhaltsseite.`}
-2. Vermeide jegliche Wiederholungen von Fakten, Ausdrücken oder Ideen, die bereits auf den vorherigen Seiten stehen.
+2. KRITISCHES REDUNDANZ-VERBOT: Vermeide absolut jegliche Wiederholungen von Fakten, Beispielen, Formulierungen, Phrasen oder Ideen, die bereits auf den vorherigen Seiten behandelt wurden. Jede Seite muss das Thema progressiv vorantreiben. Plane und schreibe exklusiv über den neuen Fokus dieser Seite und bringe neue Informationen ein, statt bereits Gesagtes neu zu formulieren.
 3. Formatiere den Text lesbar durch klare Absätze. Teile den Text unbedingt in mehrere Absätze (durch Zeilenumbrüche getrennt) auf, um das Lesen zu erleichtern! Ein einziger großer Textblock ist verboten. Verwende KEINE Markdown-Überschriften (wie # oder ##) oder Sternchen (wie **fett**). Einzige Ausnahme sind Zitate, die mit "> " beginnen. Überschriften werden vom Layout-System automatisch eingefügt.
 4. Schreibe so viel Text, wie das Thema auf dieser Seite natürlich erfordert — orientiere dich am Richtwert von ca. ${minWords} bis ${maxWords} Wörtern. WICHTIG: Beende den Text NIEMALS mitten im Satz oder mitten in einer Aufzählung; führe jeden Gedanken sauber zu Ende. Wenn ein Layout-Element (z. B. eine Tabelle, eine Box, eine Checkliste, ein Zitat, eine Liste oder Schreiblinien) die Seite thematisch abschließt, ist es vollkommen in Ordnung, danach nicht mehr weiterzuschreiben — füge dann KEINEN künstlichen Fülltext hinzu. Wenn die Seite hingegen reinen Fließtext enthält und das Thema noch nicht abgeschlossen ist, nutze den Raum und schreibe bis in den unteren Bereich der Seite.
 6. Vermeide typische KI-Floskeln und künstliche oder extrem repetitive Übergänge wie 'Zusammenfassend...', 'Es ist wichtig zu betonen...', 'Abschließend...', 'Nicht nur..., sondern auch...', 'Daher...', 'Deshalb...', 'Folglich...'. Es ist dir absolut VERBOTEN, Absätze oder Sätze mehrfach hintereinander mit den exakt selben Wörtern wie "Daher" oder "Deshalb" zu beginnen! Schreibe stattdessen literarisch elegant, extrem abwechslungsreich, mit sauberem Vokabular und organisch fließend.
