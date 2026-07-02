@@ -5,7 +5,6 @@ import type { AppUser } from '../supabase';
 import { BrainService, getNicheColor, slugify } from '../services/brain/BrainService';
 import { ObsidianSyncService } from '../services/brain/ObsidianSyncService';
 import { CloudQueueService } from '../services/brain/CloudQueueService';
-import Aurora from './Aurora';
 import type { BrainState, BrainBookInput } from '../types/brain';
 import { SupabaseStatusBox } from './SupabaseStatusBox';
 
@@ -296,13 +295,13 @@ export const BrainDashboard: React.FC<BrainDashboardProps> = ({
         height: 'calc(100vh - 56px)',
         background: isDark
           ? 'linear-gradient(180deg, #020617 0%, #06111f 42%, #020617 100%)'
-          : '#f4f4f5',
+          : '#f4f5f7',
         overflow: 'hidden',
       }}
     >
       <div style={{ position: 'absolute', inset: 0, zIndex: 0, overflow: 'hidden' }}>
         {theme === 'light' ? (
-          <Aurora colorStops={['#e0f2fe', '#ffffff', '#dbeafe']} amplitude={1.1} blend={0.65} />
+          <div style={{ position: 'absolute', inset: 0, background: '#f4f5f7' }} />
         ) : (
           <>
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(34,211,238,0.04), rgba(2,6,23,0) 24%), linear-gradient(90deg, rgba(96,165,250,0.06), transparent 25%, transparent 75%, rgba(96,165,250,0.06))' }} />
