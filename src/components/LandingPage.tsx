@@ -773,7 +773,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
                   <span style={{ fontFamily: 'monospace', fontSize: '11px', fontWeight: 600, color: theme === 'dark' ? '#71717a' : '#9ca3af', letterSpacing: '0.1em' }}>
                     {phase.phase}
                   </span>
-                  <span className={`rm2-badge ${isActive ? 'live' : 'soon'}`} style={{ fontFamily: 'monospace', fontSize: '9px', fontWeight: 700, padding: '2px 8px', borderRadius: '3px' }}>
+                  <span className={`rm2-badge ${isActive ? 'live' : 'soon'}`}>
+                    {isActive && (
+                      <span style={{ display: 'inline-block', width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#3b82f6', animation: 'pulse 1.5s infinite' }} />
+                    )}
                     {phase.badge}
                   </span>
                 </div>
