@@ -256,7 +256,7 @@
 
 .light-theme .gooey-nav-app {
   --gooey-text: var(--text-muted);
-  --gooey-active-text: #0b57d0;
+  --gooey-active-text: #1e293b;
   --gooey-pill: #ffffff;
   --gooey-filter-bg: var(--bg-main);
 }
@@ -264,22 +264,22 @@
 .dark-theme .gooey-nav-app,
 .gooey-nav-app {
   --gooey-text: var(--text-muted);
-  --gooey-active-text: #1d4ed8;
+  --gooey-active-text: #1e293b;
   --gooey-pill: #ffffff;
   --gooey-filter-bg: #0d0f0f;
 }
 
 /* Tab themes: blue-white base + matching accent */
 .gooey-nav-app.gooey-tab-projects {
-  --gooey-active-text: #1d4ed8;
+  --gooey-active-text: #1e293b;
   --color-1: #ffffff;
-  --color-2: #60a5fa;
-  --color-3: #3b82f6;
-  --color-4: #bfdbfe;
+  --color-2: #ffffff;
+  --color-3: #ffffff;
+  --color-4: #ffffff;
 }
 
 .gooey-nav-app.gooey-tab-dashboard {
-  --gooey-active-text: #0369a1;
+  --gooey-active-text: #1e293b;
   --color-1: #ffffff;
   --color-2: #38bdf8;
   --color-3: #0ea5e9;
@@ -287,7 +287,7 @@
 }
 
 .gooey-nav-app.gooey-tab-brain {
-  --gooey-active-text: #4338ca;
+  --gooey-active-text: #1e293b;
   --color-1: #ffffff;
   --color-2: #818cf8;
   --color-3: #6366f1;
@@ -295,7 +295,7 @@
 }
 
 .gooey-nav-app.gooey-tab-studio {
-  --gooey-active-text: #1e40af;
+  --gooey-active-text: #1e293b;
   --color-1: #ffffff;
   --color-2: #93c5fd;
   --color-3: #2563eb;
@@ -303,19 +303,19 @@
 }
 
 .light-theme .gooey-nav-app.gooey-tab-projects {
-  --gooey-active-text: #1d4ed8;
+  --gooey-active-text: #1e293b;
 }
 
 .light-theme .gooey-nav-app.gooey-tab-dashboard {
-  --gooey-active-text: #0284c7;
+  --gooey-active-text: #1e293b;
 }
 
 .light-theme .gooey-nav-app.gooey-tab-brain {
-  --gooey-active-text: #4f46e5;
+  --gooey-active-text: #1e293b;
 }
 
 .light-theme .gooey-nav-app.gooey-tab-studio {
-  --gooey-active-text: #1d4ed8;
+  --gooey-active-text: #1e293b;
 }
 
 .gooey-nav-container nav ul li.maintenance {
