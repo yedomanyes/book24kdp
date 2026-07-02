@@ -33,6 +33,8 @@
 
 .gooey-nav-container {
   position: relative;
+  overflow: hidden;
+  border-radius: 8px; /* Match header-nav border radius */
 }
 
 .gooey-nav-container.gooey-nav-app nav ul {
