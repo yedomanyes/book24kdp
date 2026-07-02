@@ -542,7 +542,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
         </motion.div>
         
         <div style={{ background: '#0a0a0a', borderRadius: '24px', border: '1px solid #262626', overflow: 'hidden', boxShadow: theme === 'dark' ? '0 25px 50px -12px rgba(0, 0, 0, 0.5)' : '0 25px 50px -12px rgba(0, 0, 0, 0.15)' }}>
-          <KdpCalculator theme="dark" />
+          <KdpCalculator theme="dark" language={language} />
         </div>
       </section>
 

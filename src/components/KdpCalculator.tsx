@@ -14,9 +14,49 @@ import { Download } from 'lucide-react';
 
 export interface KdpCalculatorProps {
   theme?: 'light' | 'dark';
+  language?: 'de' | 'en';
 }
 
-export default function KdpCalculator(_props: KdpCalculatorProps) {
+export default function KdpCalculator({ language = 'de' }: KdpCalculatorProps) {
+  const isDe = language === 'de';
+
+  // i18n strings
+  const t = {
+    simParams:    isDe ? 'Simulations-Parameter'        : 'Simulation Parameters',
+    timeHorizon:  isDe ? 'Zeithorizont'                 : 'Time Horizon',
+    t30:          isDe ? '30 Tage'                       : '30 Days',
+    t1y:          isDe ? '1 Jahr'                        : '1 Year',
+    t5y:          isDe ? '5 Jahre'                       : '5 Years',
+    booksMonth:   isDe ? 'Bücher / Monat'               : 'Books / Month',
+    salePrice:    isDe ? 'Verkaufspreis'                 : 'Sale Price',
+    salesBook:    isDe ? 'Verkäufe/Buch'                : 'Sales/Book',
+    today:        isDe ? 'Heute'                         : 'Today',
+    yesterday:    isDe ? 'Gestern'                       : 'Yesterday',
+    thisMonth:    isDe ? 'Diesen Monat'                  : 'This Month',
+    download:     isDe ? 'Bericht herunterladen'         : 'Download Report',
+    estRoyalties: isDe ? 'Geschätzte Tantiemen'         : 'Estimated Royalties',
+    orders:       isDe ? 'Bestellungen'                  : 'Orders',
+    kenpPages:    isDe ? 'Gelesene KENP-Seiten'          : 'KENP Pages Read',
+    processedOrders: isDe ? 'Bearbeitete Bestellungen'  : 'Processed Orders',
+    pagesRead:    isDe ? 'Gelesene Seiten'               : 'Pages Read',
+    viewRoyalties: isDe ? 'Tantiemenschätzung anzeigen' : 'View Royalty Estimate',
+    viewOrders:   isDe ? 'Bestellungen anzeigen'        : 'View Orders',
+    viewKenp:     isDe ? 'Gelesene KENP-Seiten anzeigen': 'View KENP Pages Read',
+    ordersTab:    isDe ? 'Bestellungen'                  : 'Orders',
+    kenpTab:      isDe ? 'Gelesene KENP-Seiten'          : 'KENP Pages Read',
+    royaltiesTab: isDe ? 'Tantiemenschätzung'            : 'Royalty Estimate',
+    last30:       isDe ? 'Letzte 30 Tage'               : 'Last 30 Days',
+    last1y:       isDe ? 'Letztes 1 Jahr'               : 'Last 1 Year',
+    last5y:       isDe ? 'Letzte 5 Jahre'               : 'Last 5 Years',
+    lineChart:    isDe ? 'Liniendiagramm'               : 'Line Chart',
+    barChart:     isDe ? 'Balkendiagramm'               : 'Bar Chart',
+    dashboard:    isDe ? 'Dashboard'                    : 'Dashboard',
+    dashboardInfo: isDe
+      ? 'Alle Daten basieren auf der Zeitzone des Marketplace, auf dem die Bestellung aufgegeben wurde.'
+      : 'All data is based on the time zone of the marketplace where the order was placed.',
+    learnMore:    isDe ? 'Erfahren Sie mehr über das Dashboard.' : 'Learn more about the dashboard.',
+  };
+
   // Simulator Inputs
   const [booksPerMonth, setBooksPerMonth] = useState<number>(18);
   const [sellingPrice, setSellingPrice] = useState<number>(12.95);
@@ -24,10 +64,10 @@ export default function KdpCalculator(_props: KdpCalculatorProps) {
   const [projectionMonths, setProjectionMonths] = useState<number>(1);
   const currency = '€';
 
-  // KDP Dashboard State
-  const [timeframe, setTimeframe] = useState<'Heute' | 'Gestern' | 'Diesen Monat'>('Diesen Monat');
-  const [activeTab, setActiveTab] = useState<'Bestellungen' | 'KENP' | 'Tantiemen'>('Tantiemen');
-  const [chartType, setChartType] = useState<'Liniendiagramm' | 'Balkendiagramm'>('Balkendiagramm');
+  // KDP Dashboard State — use translated labels as state values
+  const [timeframe, setTimeframe] = useState<string>(isDe ? 'Diesen Monat' : 'This Month');
+  const [activeTab, setActiveTab] = useState<'orders' | 'kenp' | 'royalties'>('royalties');
+  const [chartType, setChartType] = useState<'line' | 'bar'>('bar');
 
   // Royalties calculation
   // Royalty ist abhängig vom Verkaufspreis (ca. 50% nach Abzug der Druckkosten von 2.95€)
@@ -55,9 +95,9 @@ export default function KdpCalculator(_props: KdpCalculatorProps) {
       // Ensure the sum doesn't exceed the target too wildly, but it's just a simulation
       data.push({
         date: `${i < 10 ? '0'+i : i} Juni`,
-        Bestellungen: dayOrders,
+        Orders: dayOrders,
         KENP: 0,
-        Tantiemen: parseFloat(dayRoyalties.toFixed(2))
+        Royalties: parseFloat(dayRoyalties.toFixed(2))
       });
       currentOrdersSum += dayOrders;
       currentRoyaltiesSum += dayRoyalties;
@@ -69,9 +109,9 @@ export default function KdpCalculator(_props: KdpCalculatorProps) {
 
     return data.map(d => ({
       ...d,
-      Bestellungen: Math.round(d.Bestellungen * orderScale),
+      Orders: Math.round(d.Orders * orderScale),
       KENP: 0,
-      Tantiemen: parseFloat((d.Tantiemen * royaltyScale).toFixed(2))
+      Royalties: parseFloat((d.Royalties * royaltyScale).toFixed(2))
     }));
   }, [monthlyOrders, monthlyRoyalties, royaltyPerBook, dailyOrders]);
 
@@ -83,19 +123,16 @@ export default function KdpCalculator(_props: KdpCalculatorProps) {
 
   // Metric to display in top cards based on timeframe
   const getMetric = (type: 'orders' | 'kenp' | 'royalties') => {
-    const isDay = timeframe === 'Heute' || timeframe === 'Gestern';
+    const isDay = timeframe === t.today || timeframe === t.yesterday;
     const scale = isDay ? 1/30 : 1;
-    
-    // Add slight variance for Heute vs Gestern
-    const variance = timeframe === 'Heute' ? 1.05 : (timeframe === 'Gestern' ? 0.95 : 1);
-
+    const variance = timeframe === t.today ? 1.05 : (timeframe === t.yesterday ? 0.95 : 1);
     if (type === 'orders') return Math.round(monthlyOrders * scale * variance);
     if (type === 'kenp') return 0;
     if (type === 'royalties') return monthlyRoyalties * scale * variance;
     return 0;
   };
 
-  const currentDataKey = activeTab === 'Bestellungen' ? 'Bestellungen' : activeTab === 'KENP' ? 'KENP' : 'Tantiemen';
+  const currentDataKey = activeTab === 'orders' ? 'Orders' : activeTab === 'kenp' ? 'KENP' : 'Royalties';
 
   return (
     <div style={{ 
@@ -110,22 +147,22 @@ export default function KdpCalculator(_props: KdpCalculatorProps) {
         {/* Left: Simulation Parameters */}
         <div style={{ background: '#ffffff', color: '#0f1111', padding: '14px 16px', borderRight: '1px solid #d5d9d9', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{ fontSize: '12px', fontWeight: 700, color: '#0f1111', marginBottom: '2px' }}>
-            Simulations-Parameter
+            {t.simParams}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-            <label style={{ fontSize: '10.5px', color: '#555', fontWeight: 700 }}>Zeithorizont</label>
+            <label style={{ fontSize: '10.5px', color: '#555', fontWeight: 700 }}>{t.timeHorizon}</label>
             <select value={projectionMonths} onChange={e => setProjectionMonths(Number(e.target.value))} style={{ background: '#fff', color: '#0f1111', border: '1px solid #d5d9d9', padding: '3px 8px', borderRadius: '4px', fontSize: '12px', outline: 'none', cursor: 'pointer' }}>
-              <option value={1}>30 Tage</option>
-              <option value={12}>1 Jahr</option>
-              <option value={60}>5 Jahre</option>
+              <option value={1}>{t.t30}</option>
+              <option value={12}>{t.t1y}</option>
+              <option value={60}>{t.t5y}</option>
             </select>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-            <label style={{ fontSize: '10.5px', color: '#555', fontWeight: 700 }}>Bücher / Monat: <strong>{booksPerMonth}</strong></label>
+            <label style={{ fontSize: '10.5px', color: '#555', fontWeight: 700 }}>{t.booksMonth}: <strong>{booksPerMonth}</strong></label>
             <input type="range" min="1" max="50" value={booksPerMonth} onChange={e => setBooksPerMonth(Number(e.target.value))} style={{ accentColor: '#007185', height: '4px', cursor: 'pointer', width: '100%' }} />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-            <label style={{ fontSize: '10.5px', color: '#555', fontWeight: 700 }}>Verkaufspreis</label>
+            <label style={{ fontSize: '10.5px', color: '#555', fontWeight: 700 }}>{t.salePrice}</label>
             <select value={sellingPrice} onChange={e => setSellingPrice(Number(e.target.value))} style={{ background: '#fff', color: '#0f1111', border: '1px solid #d5d9d9', padding: '3px 8px', borderRadius: '4px', fontSize: '12px', outline: 'none', cursor: 'pointer' }}>
               <option value={10.95}>10.95 {currency}</option>
               <option value={12.95}>12.95 {currency}</option>
@@ -133,7 +170,7 @@ export default function KdpCalculator(_props: KdpCalculatorProps) {
             </select>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-            <label style={{ fontSize: '10.5px', color: '#555', fontWeight: 700 }}>Verkäufe/Buch: <strong>{salesPerBook}</strong></label>
+            <label style={{ fontSize: '10.5px', color: '#555', fontWeight: 700 }}>{t.salesBook}: <strong>{salesPerBook}</strong></label>
             <input type="range" min="5" max="100" value={salesPerBook} onChange={e => setSalesPerBook(Number(e.target.value))} style={{ accentColor: '#007185', height: '4px', cursor: 'pointer', width: '100%' }} />
           </div>
         </div>
@@ -143,20 +180,20 @@ export default function KdpCalculator(_props: KdpCalculatorProps) {
           {/* Timeframe Tabs & Button */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #d5d9d9', paddingBottom: '10px' }}>
             <div style={{ display: 'flex', gap: '20px' }}>
-              {['Heute', 'Gestern', 'Diesen Monat'].map(t => (
+              {[t.today, t.yesterday, t.thisMonth].map(tf => (
                 <button 
-                  key={t}
-                  onClick={() => setTimeframe(t as any)}
+                  key={tf}
+                  onClick={() => setTimeframe(tf)}
                   style={{ 
                     background: 'none', border: 'none', fontSize: '13px', cursor: 'pointer',
-                    color: timeframe === t ? '#0f1111' : '#555',
-                    fontWeight: timeframe === t ? 700 : 400,
-                    borderBottom: timeframe === t ? `2px solid ${kdpTeal}` : '2px solid transparent',
+                    color: timeframe === tf ? '#0f1111' : '#555',
+                    fontWeight: timeframe === tf ? 700 : 400,
+                    borderBottom: timeframe === tf ? `2px solid ${kdpTeal}` : '2px solid transparent',
                     paddingBottom: '4px',
                     marginBottom: '-14px'
                   }}
                 >
-                  {t}
+                  {tf}
                 </button>
               ))}
             </div>
@@ -166,42 +203,42 @@ export default function KdpCalculator(_props: KdpCalculatorProps) {
               padding: '5px 10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer'
             }}>
               <Download size={12} />
-              Bericht herunterladen
+              {t.download}
             </button>
           </div>
 
           {/* 3 Metrics in a row */}
           <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', flex: 1 }}>
             <div style={{ flex: 1, minWidth: '120px' }}>
-              <h3 style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 8px 0' }}>Geschätzte Tantiemen</h3>
+              <h3 style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 8px 0' }}>{t.estRoyalties}</h3>
               <div style={{ fontSize: '24px', fontWeight: 700, fontFamily: 'Bookerly, serif', margin: '0 0 2px 0' }}>
                 {formatCurrency(getMetric('royalties'))}*
               </div>
               <div style={{ fontSize: '11px', color: '#555', marginBottom: '8px' }}>({currency === '€' ? 'EUR' : 'USD'})</div>
               <div style={{ borderTop: '1px solid #d5d9d9', paddingTop: '6px' }}>
-                <span style={{ color: kdpTeal, fontSize: '12px', cursor: 'pointer' }}>Tantiemenschätzung anzeigen</span>
+                <span style={{ color: kdpTeal, fontSize: '12px', cursor: 'pointer' }}>{t.viewRoyalties}</span>
               </div>
             </div>
             
             <div style={{ flex: 1, minWidth: '120px' }}>
-              <h3 style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 8px 0' }}>Bestellungen</h3>
+              <h3 style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 8px 0' }}>{t.orders}</h3>
               <div style={{ fontSize: '24px', fontWeight: 700, fontFamily: 'Bookerly, serif', margin: '0 0 2px 0' }}>
                 {formatNumber(getMetric('orders'))}
               </div>
-              <div style={{ fontSize: '11px', color: '#555', marginBottom: '8px' }}>Bearbeitete Bestellungen</div>
+              <div style={{ fontSize: '11px', color: '#555', marginBottom: '8px' }}>{t.processedOrders}</div>
               <div style={{ borderTop: '1px solid #d5d9d9', paddingTop: '6px' }}>
-                <span style={{ color: kdpTeal, fontSize: '12px', cursor: 'pointer' }}>Bestellungen anzeigen</span>
+                <span style={{ color: kdpTeal, fontSize: '12px', cursor: 'pointer' }}>{t.viewOrders}</span>
               </div>
             </div>
 
             <div style={{ flex: 1, minWidth: '120px' }}>
-              <h3 style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 8px 0' }}>Gelesene KENP-Seiten</h3>
+              <h3 style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 8px 0' }}>{t.kenpPages}</h3>
               <div style={{ fontSize: '24px', fontWeight: 700, fontFamily: 'Bookerly, serif', margin: '0 0 2px 0' }}>
                 {formatNumber(getMetric('kenp'))}
               </div>
-              <div style={{ fontSize: '11px', color: '#555', marginBottom: '8px' }}>Gelesene Seiten</div>
+              <div style={{ fontSize: '11px', color: '#555', marginBottom: '8px' }}>{t.pagesRead}</div>
               <div style={{ borderTop: '1px solid #d5d9d9', paddingTop: '6px' }}>
-                <span style={{ color: kdpTeal, fontSize: '12px', cursor: 'pointer' }}>Gelesene KENP-Seiten anzeigen</span>
+                <span style={{ color: kdpTeal, fontSize: '12px', cursor: 'pointer' }}>{t.viewKenp}</span>
               </div>
             </div>
           </div>
@@ -212,44 +249,41 @@ export default function KdpCalculator(_props: KdpCalculatorProps) {
           <div style={{ background: '#fff', border: '1px solid #d5d9d9', borderRadius: '4px', padding: '16px' }}>
             {/* Chart Tabs */}
             <div style={{ display: 'flex', gap: '20px', borderBottom: '1px solid #d5d9d9', paddingBottom: '8px', marginBottom: '16px' }}>
-              {['Bestellungen', 'Gelesene KENP-Seiten', 'Tantiemenschätzung'].map(t => {
-                const shortT = t === 'Gelesene KENP-Seiten' ? 'KENP' : t === 'Tantiemenschätzung' ? 'Tantiemen' : 'Bestellungen';
-                return (
-                  <button 
-                    key={t}
-                    onClick={() => setActiveTab(shortT as any)}
-                    style={{ 
-                      background: 'none', border: 'none', fontSize: '14px', cursor: 'pointer',
-                      color: activeTab === shortT ? '#0f1111' : '#555',
-                      fontWeight: activeTab === shortT ? 700 : 400,
-                      borderBottom: activeTab === shortT ? `2px solid ${kdpTeal}` : '2px solid transparent',
-                      paddingBottom: '4px',
-                      marginBottom: '-13px'
-                    }}
-                  >
-                    {t}
-                  </button>
-                )
-              })}
+              {([['orders', t.ordersTab], ['kenp', t.kenpTab], ['royalties', t.royaltiesTab]] as const).map(([key, label]) => (
+                <button 
+                  key={key}
+                  onClick={() => setActiveTab(key)}
+                  style={{ 
+                    background: 'none', border: 'none', fontSize: '14px', cursor: 'pointer',
+                    color: activeTab === key ? '#0f1111' : '#555',
+                    fontWeight: activeTab === key ? 700 : 400,
+                    borderBottom: activeTab === key ? `2px solid ${kdpTeal}` : '2px solid transparent',
+                    paddingBottom: '4px',
+                    marginBottom: '-13px'
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h2 style={{ fontSize: '16px', fontWeight: 700, margin: 0 }}>
-                {projectionMonths === 1 ? 'Letzte 30 Tage' : projectionMonths === 12 ? 'Letztes 1 Jahr' : 'Letzte 5 Jahre'}
+                {projectionMonths === 1 ? t.last30 : projectionMonths === 12 ? t.last1y : t.last5y}
               </h2>
               <div style={{ display: 'flex', border: `1px solid ${kdpTeal}`, borderRadius: '4px', overflow: 'hidden' }}>
-                {['Liniendiagramm', 'Balkendiagramm'].map(t => (
+                {([['line', t.lineChart], ['bar', t.barChart]] as const).map(([key, label]) => (
                   <button 
-                    key={t}
-                    onClick={() => setChartType(t as any)}
+                    key={key}
+                    onClick={() => setChartType(key)}
                     style={{
-                      background: chartType === t ? kdpTeal : '#fff',
-                      color: chartType === t ? '#fff' : kdpTeal,
+                      background: chartType === key ? kdpTeal : '#fff',
+                      color: chartType === key ? '#fff' : kdpTeal,
                       border: 'none', padding: '6px 12px', fontSize: '13px', cursor: 'pointer', fontWeight: 600
                     }}
                   >
-                    {chartType === t && <span style={{ marginRight: '6px' }}>✓</span>}
-                    {t}
+                    {chartType === key && <span style={{ marginRight: '6px' }}>✓</span>}
+                    {label}
                   </button>
                 ))}
               </div>
@@ -257,7 +291,7 @@ export default function KdpCalculator(_props: KdpCalculatorProps) {
 
             <div style={{ height: '180px' }}>
               <ResponsiveContainer width="100%" height="100%">
-                {chartType === 'Balkendiagramm' ? (
+                {chartType === 'bar' ? (
                   <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e7e7e7" />
                     <XAxis dataKey="date" stroke="#555" fontSize={11} tickMargin={10} axisLine={false} tickLine={false} interval="preserveStartEnd" minTickGap={30} />
@@ -279,7 +313,7 @@ export default function KdpCalculator(_props: KdpCalculatorProps) {
             
             <div style={{ marginTop: '12px' }}>
               <span style={{ color: kdpTeal, textDecoration: 'none', fontSize: '13px', cursor: 'pointer' }}>
-                {activeTab === 'Tantiemen' ? 'Tantiemenschätzung anzeigen' : activeTab === 'KENP' ? 'Gelesene KENP-Seiten anzeigen' : 'Bestellungen anzeigen'}
+                {activeTab === 'royalties' ? t.viewRoyalties : activeTab === 'kenp' ? t.viewKenp : t.viewOrders}
               </span>
             </div>
           </div>
