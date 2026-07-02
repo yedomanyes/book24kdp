@@ -1018,32 +1018,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
               </a>
             </div>
 
-            {/* Status indicator */}
-            <div style={{ 
-              display: 'inline-flex', 
-              alignItems: 'center', 
-              gap: '8px', 
-              background: theme === 'dark' ? 'rgba(34, 197, 94, 0.06)' : 'rgba(34, 197, 94, 0.04)',
-              border: theme === 'dark' ? '1px solid rgba(34, 197, 94, 0.15)' : '1px solid rgba(34, 197, 94, 0.1)',
-              borderRadius: '99px',
-              padding: '4px 12px',
-              width: 'fit-content'
-            }}>
-              <motion.span 
-                animate={{ opacity: [0.4, 1, 0.4] }}
-                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                style={{
-                  width: '6px',
-                  height: '6px',
-                  borderRadius: '50%',
-                  backgroundColor: '#22c55e',
-                  boxShadow: '0 0 8px #22c55e',
-                }} 
-              />
-              <span style={{ fontSize: '11px', fontWeight: 600, color: '#22c55e', letterSpacing: '0.02em' }}>
-                {isDe ? 'Alle Systeme online' : 'All systems operational'}
-              </span>
-            </div>
+
           </div>
 
           {/* Product Column */}
@@ -1143,70 +1118,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
             </ul>
           </div>
 
-          {/* Newsletter Column */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: '220px' }}>
-            <h4 style={{ color: theme === 'dark' ? '#ffffff' : '#111827', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
-              {isDe ? 'Bleibe informiert' : 'Stay Connected'}
-            </h4>
-            <p style={{ color: theme === 'dark' ? '#737373' : '#666', fontSize: '13px', lineHeight: 1.5, margin: 0 }}>
-              {isDe 
-                ? 'Erhalte Updates zu neuen KI-Features und KDP-Erfolgsstrategien.' 
-                : 'Get updates on new AI features and KDP success strategies.'}
-            </p>
-            <form 
-              onSubmit={e => { e.preventDefault(); alert(isDe ? 'Vielen Dank für dein Interesse!' : 'Thank you for your interest!'); }}
-              style={{ display: 'flex', gap: '8px', width: '100%' }}
-            >
-              <input 
-                type="email" 
-                required
-                placeholder={isDe ? 'Deine E-Mail...' : 'Your email...'}
-                style={{
-                  flex: 1,
-                  padding: '10px 14px',
-                  borderRadius: '8px',
-                  border: theme === 'dark' ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.1)',
-                  backgroundColor: theme === 'dark' ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.6)',
-                  color: theme === 'dark' ? '#fff' : '#000',
-                  fontSize: '13px',
-                  outline: 'none',
-                  transition: 'border-color 0.2s',
-                  boxSizing: 'border-box',
-                }}
-                onFocus={e => e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.5)'}
-                onBlur={e => e.currentTarget.style.borderColor = theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)'}
-              />
-              <button 
-                type="submit"
-                style={{
-                  background: 'linear-gradient(180deg, #1e1e24 0%, #0c0c0e 100%)',
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  borderBottom: '3px solid rgba(255, 255, 255, 0.35)',
-                  color: '#fff',
-                  borderRadius: '8px',
-                  padding: '0 16px 2px 16px',
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
-                  transition: 'all 0.15s ease',
-                  whiteSpace: 'nowrap'
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                  e.currentTarget.style.borderBottomWidth = '4px';
-                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(255, 255, 255, 0.15)';
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.borderBottomWidth = '3px';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 255, 255, 0.05)';
-                }}
-              >
-                <ShinyText text={isDe ? 'Abonnieren' : 'Subscribe'} color="rgba(255, 255, 255, 0.85)" shineColor="#ffffff" speed={2.5} />
-              </button>
-            </form>
-          </div>
+
         </div>
 
         {/* Bottom bar */}
