@@ -54,6 +54,7 @@
   display: flex;
   position: relative;
   transform: translate3d(0, 0, 0.01px);
+  z-index: 2; /* Force nav buttons to draw in front of .effect */
 }
 
 .gooey-nav-container nav ul {
