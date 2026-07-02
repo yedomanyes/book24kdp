@@ -4665,6 +4665,7 @@ export default function App() {
         titlePagePublisherY: activeBook.titlePagePublisherY || 0,
         titlePagePublisherBold: activeBook.titlePagePublisherBold === true,
         mirrorMargins: mirrorMargins,
+        images: activeBook.images || {},
       };
       const pdfBlob = await generateBookPdf(activeBook.outline, activeBook.pagesText || {}, config);
       const url = URL.createObjectURL(pdfBlob);

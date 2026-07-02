@@ -778,6 +778,42 @@ export async function generateBookPdf(
           const tr = raw.trim().replace(/ {2,}/g, ' ');
           if (!tr) { bi++; continue; }
 
+          // Image placeholder new format: :::image PROMPT float:left width:50
+          if (/^:::image\s+/i.test(tr)) {
+            const lineText = tr.replace(/^:::image\s+/i, '');
+            const widthMatch = lineText.match(/width:(\d+)/i);
+            const floatMatch = lineText.match(/float:(none|left|right)/i);
+            
+            const width = widthMatch ? parseInt(widthMatch[1], 10) : 85;
+            const float = floatMatch ? (floatMatch[1] as any) : 'none';
+            
+            const prompt = lineText
+              .replace(/width:\d+/i, '')
+              .replace(/float:(none|left|right)/i, '')
+              .trim();
+              
+            blks.push({ kind: 'image', text: prompt, float, width });
+            bi++; continue;
+          }
+
+          // Custom image new format: :::custom_image ID float:left width:50
+          if (/^:::custom_image\s+/i.test(tr)) {
+            const lineText = tr.replace(/^:::custom_image\s+/i, '');
+            const widthMatch = lineText.match(/width:(\d+)/i);
+            const floatMatch = lineText.match(/float:(none|left|right)/i);
+            
+            const width = widthMatch ? parseInt(widthMatch[1], 10) : 85;
+            const float = floatMatch ? (floatMatch[1] as any) : 'none';
+            
+            const id = lineText
+              .replace(/width:\d+/i, '')
+              .replace(/float:(none|left|right)/i, '')
+              .trim();
+              
+            blks.push({ kind: 'custom_image', id, float, width });
+            bi++; continue;
+          }
+
           // [grafik: ...] or [image: ...]
           if (/^\[(grafik|image):\s*(.*)\]$/i.test(tr)) {
             const isCustom = /^\[image:\s*(.*)\]$/i.test(tr);

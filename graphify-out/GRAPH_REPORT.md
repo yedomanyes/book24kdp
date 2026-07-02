@@ -1,7 +1,7 @@
 # Graph Report - KDP  (2026-07-02)
 
 ## Corpus Check
-- 112 files · ~182,042 words
+- 112 files · ~182,050 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `9bcfe529`
+- Built from commit: `4ff32367`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -464,7 +464,7 @@ Cohesion: 0.12
 Nodes (14): Ba(), _clearLiveRegion(), emitOne(), _handleKey(), identToString(), Ne(), O, Oa() (+6 more)
 
 ## Knowledge Gaps
-- **263 isolated node(s):** `OwnerUserRow`, `Props`, `NAV_TABS`, `NavTabId`, `NAV_TAB_PARTICLE_COLORS` (+258 more)
+- **263 isolated node(s):** `NAV_TABS`, `NavTabId`, `NAV_TAB_PARTICLE_COLORS`, `COVER_FONTS`, `BoxDesign` (+258 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **28 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -479,7 +479,7 @@ _Questions this graph is uniquely positioned to answer:_
   _High betweenness centrality (0.007) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `constructor()` (e.g. with `l()` and `pa()`) actually correct?**
   _`constructor()` has 2 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `OwnerUserRow`, `Props`, `NAV_TABS` to the rest of the system?**
+- **What connects `NAV_TABS`, `NavTabId`, `NAV_TAB_PARTICLE_COLORS` to the rest of the system?**
   _263 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
   _Cohesion score 0.01246084232509572 - nodes in this community are weakly interconnected._
