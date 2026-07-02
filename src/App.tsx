@@ -7186,10 +7186,8 @@ export default function App() {
             className="header-icon-btn"
             onClick={() => setShowBugReport(true)}
             title={isDe ? 'Bug melden' : 'Found a Bug?'}
-            style={{ gap: '5px', fontSize: '11px', fontWeight: 600, padding: '0 10px', color: 'var(--text-muted)' }}
           >
-            <Bug style={{ width: '13px', height: '13px' }} />
-            {isDe ? 'Bug?' : 'Found a Bug?'}
+            <Bug style={{ width: '15px', height: '15px' }} />
           </button>
 
           <button

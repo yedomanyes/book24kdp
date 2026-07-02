@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Bug, CheckCircle2, Loader2 } from 'lucide-react';
+import { X, Bug, CheckCircle2, Loader2, Clock } from 'lucide-react';
 import { supabase } from '../supabase';
 import type { AppUser } from '../supabase';
 
@@ -9,6 +9,9 @@ interface Props {
   isDe: boolean;
   currentUser: AppUser | null;
 }
+
+const RATE_LIMIT_KEY = 'bug_report_last_sent';
+const RATE_LIMIT_MS = 60_000; // 1 Minute
 
 const CATEGORIES_DE = [
   'PDF / Export Fehler',
@@ -28,6 +31,18 @@ const CATEGORIES_EN = [
   'Other',
 ];
 
+function getRemainingSeconds(): number {
+  try {
+    const last = localStorage.getItem(RATE_LIMIT_KEY);
+    if (!last) return 0;
+    const diff = Date.now() - parseInt(last, 10);
+    if (diff >= RATE_LIMIT_MS) return 0;
+    return Math.ceil((RATE_LIMIT_MS - diff) / 1000);
+  } catch {
+    return 0;
+  }
+}
+
 export const BugReportModal: React.FC<Props> = ({ onClose, theme, isDe, currentUser }) => {
   const [category, setCategory] = useState('');
   const [title, setTitle] = useState('');
@@ -35,12 +50,20 @@ export const BugReportModal: React.FC<Props> = ({ onClose, theme, isDe, currentU
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [rateLimitSecs, setRateLimitSecs] = useState<number>(getRemainingSeconds);
 
   const categories = isDe ? CATEGORIES_DE : CATEGORIES_EN;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!description.trim()) return;
+
+    // Rate limit check
+    const remaining = getRemainingSeconds();
+    if (remaining > 0) {
+      setRateLimitSecs(remaining);
+      return;
+    }
 
     setSubmitting(true);
     setError(null);
@@ -58,6 +81,9 @@ export const BugReportModal: React.FC<Props> = ({ onClose, theme, isDe, currentU
         });
 
       if (insertError) throw insertError;
+
+      // Save timestamp for rate limiting
+      localStorage.setItem(RATE_LIMIT_KEY, Date.now().toString());
       setSubmitted(true);
     } catch (err: any) {
       setError(isDe
@@ -146,6 +172,22 @@ export const BugReportModal: React.FC<Props> = ({ onClose, theme, isDe, currentU
               </div>
             </div>
 
+            {/* Rate limit warning */}
+            {rateLimitSecs > 0 && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)',
+                borderRadius: '6px', padding: '10px 12px', marginBottom: '14px',
+              }}>
+                <Clock size={13} color="#f59e0b" />
+                <span style={{ fontSize: '12px', color: '#f59e0b' }}>
+                  {isDe
+                    ? `Bitte warte ${rateLimitSecs}s vor dem nächsten Report.`
+                    : `Please wait ${rateLimitSecs}s before sending another report.`}
+                </span>
+              </div>
+            )}
+
             {/* Category */}
             <div style={{ marginBottom: '14px' }}>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: textMuted, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
@@ -225,13 +267,15 @@ export const BugReportModal: React.FC<Props> = ({ onClose, theme, isDe, currentU
               </button>
               <button
                 type="submit"
-                disabled={submitting || !description.trim()}
+                disabled={submitting || !description.trim() || rateLimitSecs > 0}
                 className="btn btn-danger"
                 style={{ flex: 2, padding: '10px', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
               >
                 {submitting
                   ? <><Loader2 size={14} className="animate-spin" /> {isDe ? 'Senden...' : 'Sending...'}</>
-                  : <>{isDe ? 'Bug melden' : 'Report Bug'}</>
+                  : rateLimitSecs > 0
+                    ? <><Clock size={14} /> {rateLimitSecs}s</>
+                    : <>{isDe ? 'Bug melden' : 'Report Bug'}</>
                 }
               </button>
             </div>

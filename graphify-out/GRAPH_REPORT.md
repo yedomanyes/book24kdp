@@ -1,20 +1,21 @@
 # Graph Report - KDP  (2026-07-02)
 
 ## Corpus Check
-- 110 files · ~179,290 words
+- 111 files · ~180,707 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1642 nodes · 3593 edges · 146 communities (103 shown, 43 thin omitted)
+- 1650 nodes · 3602 edges · 132 communities (104 shown, 28 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 58 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `0fc9135b`
+- Built from commit: `cecf4630`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
+- [[_COMMUNITY_Community 0|Community 0]]
 - [[_COMMUNITY_Community 1|Community 1]]
 - [[_COMMUNITY_Community 2|Community 2]]
 - [[_COMMUNITY_Community 3|Community 3]]
@@ -136,21 +137,7 @@
 - [[_COMMUNITY_Community 128|Community 128]]
 - [[_COMMUNITY_Community 129|Community 129]]
 - [[_COMMUNITY_Community 130|Community 130]]
-- [[_COMMUNITY_Community 131|Community 131]]
-- [[_COMMUNITY_Community 132|Community 132]]
-- [[_COMMUNITY_Community 133|Community 133]]
-- [[_COMMUNITY_Community 134|Community 134]]
 - [[_COMMUNITY_Community 135|Community 135]]
-- [[_COMMUNITY_Community 136|Community 136]]
-- [[_COMMUNITY_Community 137|Community 137]]
-- [[_COMMUNITY_Community 138|Community 138]]
-- [[_COMMUNITY_Community 139|Community 139]]
-- [[_COMMUNITY_Community 140|Community 140]]
-- [[_COMMUNITY_Community 141|Community 141]]
-- [[_COMMUNITY_Community 142|Community 142]]
-- [[_COMMUNITY_Community 143|Community 143]]
-- [[_COMMUNITY_Community 144|Community 144]]
-- [[_COMMUNITY_Community 145|Community 145]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `constructor()` - 95 edges
@@ -166,7 +153,7 @@
 
 ## Surprising Connections (you probably didn't know these)
 - `syncUserProfile()` --calls--> `doc`  [INFERRED]
-  src/services/userProfileService.ts → test-jspdf.js
+  src/services/userProfileService.ts → test_jspdf.js
 - `SupabaseStatusBox()` --calls--> `MetricCard()`  [INFERRED]
   src/components/SupabaseStatusBox.tsx → src/components/OwnerPanel.tsx
 - `SupabaseStatusBox()` --calls--> `StatusPill()`  [INFERRED]
@@ -179,35 +166,39 @@
 ## Import Cycles
 - None detected.
 
-## Communities (146 total, 43 thin omitted)
+## Communities (132 total, 28 thin omitted)
+
+### Community 0 - "Community 0"
+Cohesion: 0.01
+Nodes (10): _applyScrollModifier(), _batchedMemoryCleanup(), cleanupMemory(), compositionupdate(), consumeWheelEvent(), isFgPalette(), isUnderlineColorPalette(), kill() (+2 more)
 
 ### Community 1 - "Community 1"
-Cohesion: 0.12
-Nodes (29): compactMarkdown(), countCompletedPages(), DirHandle, ensureDir(), formatBookMetaMd(), formatChapterMd(), formatCodebaseMd(), formatGoalMd() (+21 more)
+Cohesion: 0.23
+Nodes (18): compactMarkdown(), countCompletedPages(), DirHandle, formatBookMetaMd(), formatChapterMd(), formatCodebaseMd(), formatGoalMd(), formatLearningLogMd() (+10 more)
 
 ### Community 2 - "Community 2"
-Cohesion: 0.12
-Nodes (10): GlobalDiversityIndex, GlobalOpening, CmieOrchestrator, ConsistencyValidator, DuplicateGuard, DuplicateValidationResult, ChapterMemory, CmieConfig (+2 more)
+Cohesion: 0.07
+Nodes (16): GlobalDiversityIndex, GlobalOpening, BookMemoryStore, CmieOrchestrator, ConsistencyValidator, CopyrightGuard, LocalSourcePlagiarismChecker, PlagiarismCheckerInterface (+8 more)
 
 ### Community 4 - "Community 4"
-Cohesion: 0.08
-Nodes (24): addEncoding(), addProtocol(), ca(), _computeKeybinding(), _computeKeyCodeChord(), constructor(), eo(), _getChangeOptions() (+16 more)
+Cohesion: 0.06
+Nodes (38): addEncoding(), addProtocol(), ca(), _computeKeybinding(), _computeKeyCodeChord(), constructor(), eo(), fromCharData() (+30 more)
 
 ### Community 5 - "Community 5"
-Cohesion: 0.17
-Nodes (15): [(ao = Symbol.iterator, lo = Symbol.toStringTag, ao)](), computeLeakingDisposables(), decorations(), _flushCleanupDeleted(), _flushCleanupInserted(), forEachByKey(), forEachDecorationAtCell(), getDecorationsAtCell() (+7 more)
+Cohesion: 0.32
+Nodes (8): _flushCleanupDeleted(), _flushCleanupInserted(), forEachByKey(), forEachDecorationAtCell(), getDecorationsAtCell(), getKeyIterator(), _insert(), _search()
 
 ### Community 6 - "Community 6"
-Cohesion: 0.05
-Nodes (59): a(), _addStyle(), _alignRowWidth(), _announceCharacters(), appendChild(), _applyMinimumContrast(), _createAccessibilityTreeNode(), _createArrow() (+51 more)
+Cohesion: 0.08
+Nodes (37): a(), _applyMinimumContrast(), createRow(), el(), Fi(), Ga(), getBgColor(), getBgColorMode() (+29 more)
 
 ### Community 8 - "Community 8"
 Cohesion: 0.06
 Nodes (36): dependencies, class-variance-authority, clsx, cobe, embla-carousel-react, framer-motion, @google/generative-ai, gsap (+28 more)
 
 ### Community 9 - "Community 9"
-Cohesion: 0.11
-Nodes (30): Al(), copyCellsFrom(), emitOne(), enqueue(), _getCorrectBufferLength(), getTrimmedLength(), identToString(), _innerWrite() (+22 more)
+Cohesion: 0.12
+Nodes (21): activateNormalBuffer(), _cancelCallback(), clear(), clearAllMarkers(), cursorBackwardTab(), enqueue(), fit(), _getCorrectBufferLength() (+13 more)
 
 ### Community 10 - "Community 10"
 Cohesion: 0.20
@@ -215,51 +206,51 @@ Nodes (25): deleteChars(), deleteColumns(), deleteLines(), _eraseAttrData(), era
 
 ### Community 11 - "Community 11"
 Cohesion: 0.06
-Nodes (20): LayoutWarning, LicensePrompt(), LicensePromptProps, BookOutline, BookOutlinePage, syncUserProfile(), Account, Book (+12 more)
+Nodes (22): BugReportModal(), CATEGORIES_DE, CATEGORIES_EN, Props, LicensePrompt(), LicensePromptProps, BRAIN_ALLOWED_EMAILS, hasBrainAccess() (+14 more)
 
 ### Community 12 - "Community 12"
-Cohesion: 0.12
-Nodes (18): activeProtocol(), activeVersion(), bell(), _deliver(), _deliverQueue(), emitMany(), fire(), _handleColorEvent() (+10 more)
+Cohesion: 0.09
+Nodes (25): activateAltBuffer(), activeProtocol(), activeVersion(), bell(), debug(), _deliver(), _deliverQueue(), emitMany() (+17 more)
 
 ### Community 13 - "Community 13"
-Cohesion: 0.33
-Nodes (7): bufferRows(), clearTextureAtlas(), flush(), _fullRefresh(), _handleIntersectionChange(), refreshRows(), setRenderer()
+Cohesion: 0.06
+Nodes (45): _addStyle(), _alignRowWidth(), _announceCharacters(), appendChild(), bl(), bufferRows(), clearTextureAtlas(), _createAccessibilityTreeNode() (+37 more)
 
 ### Community 14 - "Community 14"
-Cohesion: 0.19
-Nodes (13): h2(), k(), keyCodeToStr(), m(), n(), o2(), p(), r() (+5 more)
+Cohesion: 0.21
+Nodes (12): h2(), k(), m(), n(), o2(), p(), r(), requestMode() (+4 more)
 
 ### Community 15 - "Community 15"
-Cohesion: 0.08
-Nodes (35): _arrowPointerDown(), cancel(), cancelAndSet(), check(), delegatePointerDown(), delegateVerticalScrollbarPointerDown(), dispatchEvent(), _domNodePointerDown() (+27 more)
+Cohesion: 0.14
+Nodes (22): _arrowPointerDown(), cancel(), cancelAndSet(), check(), dispatchEvent(), getMostFrequentStack(), inertia(), _inputEvent() (+14 more)
 
 ### Community 16 - "Community 16"
 Cohesion: 0.09
 Nodes (21): author, dependencies, axios, cors, dotenv, express, firebase-admin, firebase-functions (+13 more)
 
 ### Community 17 - "Community 17"
-Cohesion: 0.17
-Nodes (16): _computeValues(), ensureVisibility(), isNeeded(), onDidScroll(), _onDragStart(), _onElementScrollPosition(), _onElementScrollSize(), _onElementSize() (+8 more)
+Cohesion: 0.12
+Nodes (23): _computeValues(), ensureVisibility(), getArrowSize(), getCurrentScrollPosition(), getRectangleLargeSize(), getRectangleSmallSize(), getScrollPosition(), getSliderPosition() (+15 more)
 
 ### Community 18 - "Community 18"
-Cohesion: 0.15
-Nodes (14): clearMarkers(), copyFrom(), getBg(), _getCyclicIndex(), getFg(), maxLength(), recycle(), _removeListener() (+6 more)
+Cohesion: 0.14
+Nodes (17): clearMarkers(), copyFrom(), getBg(), _getCyclicIndex(), getFg(), getJoinedCharacters(), _getJoinedRanges(), maxLength() (+9 more)
 
 ### Community 19 - "Community 19"
-Cohesion: 0.26
-Nodes (12): clearSelection(), _dragScroll(), _fireEventIfSelectionChanged(), _fireOnSelectionChange(), handleTrim(), Pn(), refresh(), _removeMouseDownListeners() (+4 more)
+Cohesion: 0.18
+Nodes (19): clearSelection(), _dragScroll(), error(), getSelection(), _handleSelectionChange(), handleTrim(), Pn(), refresh() (+11 more)
 
 ### Community 20 - "Community 20"
-Cohesion: 0.05
-Nodes (58): acceptScrollDimensions(), addDigit(), addParam(), addSubParam(), charAttributes(), clearRange(), clone(), combine() (+50 more)
+Cohesion: 0.12
+Nodes (21): acceptScrollDimensions(), combine(), createScrollEvent(), delegateScrollFromMouseWheelEvent(), equals(), getFutureScrollPosition(), _initAnimations(), isPhysicalMouseWheel() (+13 more)
 
 ### Community 21 - "Community 21"
-Cohesion: 0.48
-Nodes (7): scrollLines(), scrollPages(), scrollToBottom(), scrollToLine(), scrollToTop(), setScrollPosition(), _verifyIntegers()
+Cohesion: 0.15
+Nodes (11): ensureDir(), listDirectories(), listMarkdownFiles(), loadContextCache(), loadHandle(), ObsidianSyncService, openIdb(), readTextFile() (+3 more)
 
 ### Community 22 - "Community 22"
-Cohesion: 0.22
-Nodes (10): compositionend(), _finalizeComposition(), _handleAnyTextareaChanges(), _handleTextAreaFocus(), Il(), _isThirdLevelShift(), keydown(), _keyPress() (+2 more)
+Cohesion: 0.29
+Nodes (8): _handleAnyTextareaChanges(), _handleTextAreaFocus(), Il(), _isThirdLevelShift(), keydown(), _keyPress(), selectAll(), _showCursor()
 
 ### Community 23 - "Community 23"
 Cohesion: 0.15
@@ -270,24 +261,24 @@ Cohesion: 0.11
 Nodes (18): compilerOptions, allowImportingTsExtensions, erasableSyntaxOnly, jsx, lib, module, moduleDetection, moduleResolution (+10 more)
 
 ### Community 25 - "Community 25"
-Cohesion: 0.17
-Nodes (13): deviceStatus(), deviceStatusPrivate(), _equalEvents(), _handleTextAreaBlur(), input(), _reportFocus(), _reportWindowsOptions(), sendDeviceAttributesPrimary() (+5 more)
+Cohesion: 0.10
+Nodes (22): Cn(), compositionend(), deviceStatus(), deviceStatusPrivate(), _equalEvents(), _evalLazyOptionalParams(), _finalizeComposition(), _handleTextAreaBlur() (+14 more)
 
 ### Community 26 - "Community 26"
 Cohesion: 0.11
 Nodes (17): compilerOptions, allowImportingTsExtensions, erasableSyntaxOnly, lib, module, moduleDetection, moduleResolution, noEmit (+9 more)
 
 ### Community 27 - "Community 27"
-Cohesion: 0.16
-Nodes (17): addLineToLink(), addMarker(), _askForLink(), backspace(), Bs(), _checkLinkProviderResult(), get(), getCss() (+9 more)
+Cohesion: 0.21
+Nodes (13): _askForLink(), backspace(), Bs(), _checkLinkProviderResult(), get(), getCss(), getDisposableData(), getLine() (+5 more)
 
 ### Community 28 - "Community 28"
 Cohesion: 0.24
 Nodes (10): add(), clearAndLeak(), compositionstart(), deleteAndLeak(), f(), has(), hasWindow(), registerWindow() (+2 more)
 
 ### Community 29 - "Community 29"
-Cohesion: 0.11
-Nodes (26): getArrowSize(), getCurrentScrollPosition(), getRectangleLargeSize(), getRectangleSmallSize(), getScrollPosition(), ie(), Pl(), render() (+18 more)
+Cohesion: 0.13
+Nodes (24): _createSlider(), ie(), Pl(), _renderDomNode(), setBottom(), setContain(), setFontSize(), setHeight() (+16 more)
 
 ### Community 30 - "Community 30"
 Cohesion: 0.20
@@ -298,12 +289,12 @@ Cohesion: 0.12
 Nodes (16): compilerOptions, declaration, declarationMap, exactOptionalPropertyTypes, isolatedModules, jsx, module, moduleDetection (+8 more)
 
 ### Community 32 - "Community 32"
-Cohesion: 0.11
-Nodes (29): beginHide(), beginReveal(), _bindKeys(), bindMouse(), buffer(), _createSlider(), event(), _hide() (+21 more)
+Cohesion: 0.17
+Nodes (20): _bindKeys(), bindMouse(), buffer(), _createArrow(), event(), _initGlobal(), l(), onblur() (+12 more)
 
 ### Community 33 - "Community 33"
-Cohesion: 0.24
-Nodes (9): formatDate(), OwnerPanel(), OwnerUserRow, Props, getOwnerEmailClient(), isOwnerEmail(), isOwnerRoute(), OWNER_ROUTES (+1 more)
+Cohesion: 0.22
+Nodes (10): formatDate(), MetricCard(), OwnerPanel(), OwnerUserRow, Props, getOwnerEmailClient(), isOwnerEmail(), isOwnerRoute() (+2 more)
 
 ### Community 34 - "Community 34"
 Cohesion: 0.14
@@ -318,64 +309,68 @@ Cohesion: 0.29
 Nodes (7): decode(), fill(), isProtected(), markAllDirty(), requestStatusString(), screenAlignmentPattern(), setDefault()
 
 ### Community 37 - "Community 37"
-Cohesion: 0.15
-Nodes (13): addDcsHandler(), addEscHandler(), addOscHandler(), clearCsiHandler(), clearDcsHandler(), clearEscHandler(), clearHandler(), clearOscHandler() (+5 more)
+Cohesion: 0.12
+Nodes (17): addCsiHandler(), addDcsHandler(), addEscHandler(), addOscHandler(), clearCsiHandler(), clearDcsHandler(), clearEscHandler(), clearHandler() (+9 more)
 
 ### Community 38 - "Community 38"
-Cohesion: 0.08
-Nodes (33): _addMouseDownListeners(), Ci(), _clearCurrentLink(), _createLinkUnderlineEvent(), Ec(), _fireUnderlineEvent(), getCoords(), _getMouseBufferCoords() (+25 more)
+Cohesion: 0.09
+Nodes (27): activate(), areSelectionValuesReversed(), Ci(), _clearCurrentLink(), _createLinkUnderlineEvent(), Ec(), finalSelectionEnd(), finalSelectionStart() (+19 more)
 
 ### Community 39 - "Community 39"
 Cohesion: 0.29
 Nodes (10): getAdminApp(), getAdminAuth(), getAdminDb(), parseServiceAccount(), getBearerToken(), isOwner(), requireOwner(), applyFilters() (+2 more)
 
+### Community 40 - "Community 40"
+Cohesion: 0.33
+Nodes (6): _handleColorEvent(), Hs(), ml(), modifyColors(), restoreColor(), toColorRGB()
+
 ### Community 41 - "Community 41"
-Cohesion: 0.27
-Nodes (11): activateNormalBuffer(), _cancelCallback(), clear(), clearAllMarkers(), _fireOnCanvasResize(), handleCharSizeChanged(), handleDevicePixelRatioChange(), _handleOptionsChanged() (+3 more)
+Cohesion: 0.17
+Nodes (17): addDigit(), addParam(), addSubParam(), clearRange(), end(), fromArray(), hook(), It() (+9 more)
 
 ### Community 42 - "Community 42"
-Cohesion: 0.13
-Nodes (17): estimateTokens(), getNicheColor(), NEON_COLORS, actionBtnStyle(), BrainDashboard(), BrainDashboardProps, BrainLink, BrainNode (+9 more)
+Cohesion: 0.14
+Nodes (16): getNicheColor(), NEON_COLORS, actionBtnStyle(), BrainDashboard(), BrainDashboardProps, BrainLink, BrainNode, LAYER_Y (+8 more)
 
 ### Community 43 - "Community 43"
-Cohesion: 0.22
-Nodes (9): activateAltBuffer(), debug(), fillViewportRows(), keypadApplicationMode(), keypadNumericMode(), resetModePrivate(), restoreCursor(), saveCursor() (+1 more)
+Cohesion: 0.24
+Nodes (15): charAttributes(), clone(), _createHyperlink(), _extractColor(), _finishHyperlink(), fromColorRGB(), _getCurrentLinkId(), getSubParams() (+7 more)
 
 ### Community 44 - "Community 44"
-Cohesion: 0.11
-Nodes (20): activate(), createInstance(), _createRenderer(), disable(), enable(), fit(), _handleScreenReaderModeOptionChange(), hasRenderer() (+12 more)
+Cohesion: 0.18
+Nodes (12): createInstance(), _createRenderer(), disable(), enable(), _handleScreenReaderModeOptionChange(), hasRenderer(), onCursorMove(), onSelectionChange() (+4 more)
 
 ### Community 46 - "Community 46"
 Cohesion: 0.14
 Nodes (14): devDependencies, eslint, @eslint/js, eslint-plugin-react-hooks, eslint-plugin-react-refresh, globals, @types/node, @types/react (+6 more)
 
 ### Community 47 - "Community 47"
-Cohesion: 0.15
-Nodes (6): BookMemoryStore, CopyrightGuard, LocalSourcePlagiarismChecker, PlagiarismCheckerInterface, EmbeddingService, OutlinePlanner
+Cohesion: 0.34
+Nodes (14): Al(), copyCellsFrom(), deleteCells(), getTrimmedLength(), getWidth(), hasContent(), insertCells(), print() (+6 more)
 
 ### Community 48 - "Community 48"
 Cohesion: 0.23
 Nodes (11): config, outline, pdfBlob, BoxDesign, drawBookEmblem(), drawFloralEmblem(), drawGeometricEmblem(), drawStarEmblem() (+3 more)
 
 ### Community 49 - "Community 49"
-Cohesion: 0.11
-Nodes (23): accept(), acceptStandardWheelEvent(), _computeScore(), Ea(), _flushDeleted(), _flushInserted(), getWindowId(), getZoomFactor() (+15 more)
+Cohesion: 0.20
+Nodes (12): accept(), acceptStandardWheelEvent(), _computeScore(), getWindowId(), getZoomFactor(), getZoomLevel(), _isAlmostInt(), isFullscreen() (+4 more)
 
 ### Community 50 - "Community 50"
 Cohesion: 0.17
 Nodes (12): addDecoration(), _addLineToZone(), _lineAdjacentToZone(), _lineIntersectsZone(), _refreshCanvasDimensions(), _refreshColorZonePadding(), _refreshDecorations(), _refreshDrawConstants() (+4 more)
 
 ### Community 51 - "Community 51"
-Cohesion: 0.22
-Nodes (13): co(), create(), d(), e(), findLastMonotonous(), Fl(), i(), _innerRefresh() (+5 more)
+Cohesion: 0.21
+Nodes (14): co(), create(), d(), e(), findLastMonotonous(), Fl(), i(), _innerRefresh() (+6 more)
 
 ### Community 52 - "Community 52"
-Cohesion: 0.33
-Nodes (7): BRAIN_KEY(), BrainService, nicheKeyword(), pushEvent(), slugify(), upsertNiche(), upsertPattern()
+Cohesion: 0.31
+Nodes (8): BRAIN_KEY(), BrainService, estimateTokens(), nicheKeyword(), pushEvent(), slugify(), upsertNiche(), upsertPattern()
 
 ### Community 53 - "Community 53"
-Cohesion: 0.38
-Nodes (7): cc(), charProperties(), createPropertyValue(), extractShouldJoin(), extractWidth(), getStringCellWidth(), wcwidth()
+Cohesion: 0.32
+Nodes (8): cc(), charProperties(), createPropertyValue(), extractShouldJoin(), extractWidth(), getStringCellWidth(), repeatPrecedingCharacter(), wcwidth()
 
 ### Community 54 - "Community 54"
 Cohesion: 0.29
@@ -406,8 +401,8 @@ Cohesion: 0.31
 Nodes (7): NicheFinderDashboard(), NicheFinderDashboardProps, Competitor, delay(), NicheMetrics, NicheResult, searchNiche()
 
 ### Community 61 - "Community 61"
-Cohesion: 0.40
-Nodes (5): focus(), _keyUp(), Mn(), Tc(), updateCursorStyle()
+Cohesion: 0.33
+Nodes (6): focus(), _keyUp(), Mn(), shouldColumnSelect(), Tc(), updateCursorStyle()
 
 ### Community 62 - "Community 62"
 Cohesion: 0.25
@@ -418,16 +413,16 @@ Cohesion: 0.67
 Nodes (3): Aa(), as(), ka()
 
 ### Community 64 - "Community 64"
-Cohesion: 0.21
-Nodes (10): AI_MODEL_OPTIONS, SettingsModal(), SettingsModalProps, SettingsTab, LanguageContext, LanguageContextValue, LanguageProvider(), Language (+2 more)
+Cohesion: 0.19
+Nodes (11): AI_MODEL_OPTIONS, SettingsModal(), SettingsModalProps, SettingsTab, StatusPill(), LanguageContext, LanguageContextValue, LanguageProvider() (+3 more)
 
 ### Community 65 - "Community 65"
 Cohesion: 0.12
 Nodes (15): Auth(), AuthProps, DEFAULT_STATE, EmbeddedText, GilLog, GilState, GoldenExample, LayoutWarning (+7 more)
 
 ### Community 66 - "Community 66"
-Cohesion: 0.40
-Nodes (5): Cn(), kl(), paste(), qs(), setParent()
+Cohesion: 0.20
+Nodes (12): delegatePointerDown(), delegateVerticalScrollbarPointerDown(), _domNodePointerDown(), Fo(), getDesiredScrollPositionFromOffset(), getDesiredScrollPositionFromOffsetPaged(), _onPointerDown(), _pointerDownRelativePosition() (+4 more)
 
 ### Community 67 - "Community 67"
 Cohesion: 0.29
@@ -438,16 +433,16 @@ Cohesion: 0.22
 Nodes (4): LegalModal(), LegalModalProps, LegalPage, s
 
 ### Community 69 - "Community 69"
-Cohesion: 0.28
-Nodes (8): MetricCard(), StatusPill(), compact(), formatTime(), initialState, Props, StatusState, SupabaseStatusBox()
+Cohesion: 0.38
+Nodes (6): compact(), formatTime(), initialState, Props, StatusState, SupabaseStatusBox()
 
 ### Community 70 - "Community 70"
-Cohesion: 0.32
-Nodes (8): delete(), dispose(), _handleBufferActivate(), kill(), markAsDisposed(), onClose(), pr(), _removeDecoration()
+Cohesion: 0.47
+Nodes (6): delete(), dispose(), _handleBufferActivate(), markAsDisposed(), pr(), _removeDecoration()
 
 ### Community 71 - "Community 71"
-Cohesion: 0.33
-Nodes (6): error(), _evalLazyOptionalParams(), getSelection(), _handleSelectionChange(), info(), _log()
+Cohesion: 0.52
+Nodes (6): Ea(), je(), ns(), Po(), Sa(), Ta()
 
 ### Community 72 - "Community 72"
 Cohesion: 0.33
@@ -486,8 +481,8 @@ Cohesion: 0.67
 Nodes (3): cursorForwardTab(), nextStop(), tab()
 
 ### Community 84 - "Community 84"
-Cohesion: 0.19
-Nodes (20): addCodepointToCell(), Ce(), _convertViewportColToCharacterIndex(), deleteCells(), getCell(), getChars(), getCodePoint(), getJoinedCharacters() (+12 more)
+Cohesion: 0.15
+Nodes (17): addCodepointToCell(), Ce(), _convertViewportColToCharacterIndex(), getAsCharData(), getCell(), getChars(), getCode(), getCodePoint() (+9 more)
 
 ### Community 85 - "Community 85"
 Cohesion: 0.67
@@ -501,77 +496,77 @@ Nodes (7): getFaqs(), getRoadmapPhases(), LandingPage(), LandingPageProps, TEAM,
 Cohesion: 0.67
 Nodes (3): addRefreshCallback(), _queueRefresh(), queueSync()
 
+### Community 115 - "Community 115"
+Cohesion: 0.24
+Nodes (5): LayoutFixDB, LayoutWarning, BookOutline, BookOutlinePage, Book
+
 ### Community 116 - "Community 116"
-Cohesion: 0.50
-Nodes (4): bl(), setIconName(), setTitle(), windowOptions()
+Cohesion: 0.40
+Nodes (6): addTarget(), Gn(), ignoreGesture(), ignoreTarget(), isTouchDevice(), markAsSingleton()
 
 ### Community 118 - "Community 118"
 Cohesion: 0.50
 Nodes (3): KdpCalculator(), KdpCalculatorProps, formatCurrency()
 
 ### Community 120 - "Community 120"
-Cohesion: 0.19
-Nodes (14): addTarget(), C(), fr(), getDisposableData(), getRootParent(), Gn(), ignoreGesture(), ignoreTarget() (+6 more)
+Cohesion: 0.28
+Nodes (9): C(), fr(), isMonitoring(), Kn(), observe(), _registerIntersectionObserver(), startMonitoring(), stopMonitoring() (+1 more)
 
 ### Community 121 - "Community 121"
-Cohesion: 0.67
-Nodes (3): _areCoordsInSelection(), _isCellInSelection(), _isClickInSelection()
+Cohesion: 0.33
+Nodes (6): [(ao = Symbol.iterator, lo = Symbol.toStringTag, ao)](), decorations(), getWindows(), keys(), values(), versions()
 
 ### Community 122 - "Community 122"
-Cohesion: 0.67
-Nodes (3): getPositionOfChildWindowRelativeToAncestorWindow(), getSameOriginWindowChain(), pa()
+Cohesion: 0.33
+Nodes (6): computeLeakingDisposables(), _flushDeleted(), _flushInserted(), no(), sort(), unshift()
 
 ### Community 123 - "Community 123"
 Cohesion: 0.50
-Nodes (5): _createElement(), _doRefreshDecorations(), _refreshStyle(), _refreshXPosition(), _renderDecoration()
+Nodes (5): addLineToLink(), addMarker(), _getEntryIdKey(), registerLink(), registerMarker()
 
 ### Community 124 - "Community 124"
 Cohesion: 0.67
 Nodes (3): _handleLinkHover(), _handleLinkLeave(), _setCellUnderline()
 
 ### Community 125 - "Community 125"
-Cohesion: 0.67
-Nodes (3): setDcsHandlerFallback(), setHandlerFallback(), setOscHandlerFallback()
+Cohesion: 0.50
+Nodes (4): Ao(), is(), Lo(), update()
 
 ### Community 126 - "Community 126"
 Cohesion: 0.18
-Nodes (11): Ao(), _applyVisibilitySetting(), is(), Lo(), Ne(), _setListeningToMouseWheel(), setOppositeScrollbarSize(), setVisibility() (+3 more)
+Nodes (12): _applyVisibilitySetting(), beginHide(), beginReveal(), _hide(), _onDragEnd(), setClassName(), setDomNode(), setOppositeScrollbarSize() (+4 more)
 
 ### Community 127 - "Community 127"
 Cohesion: 0.50
-Nodes (4): areSelectionValuesReversed(), finalSelectionEnd(), finalSelectionStart(), _selectToWordAt()
-
-### Community 128 - "Community 128"
-Cohesion: 0.33
-Nodes (6): addCsiHandler(), _enableWindowsWrappingHeuristics(), _handleWindowsPtyOptionChange(), onLineFeed(), registerCsiHandler(), _setup()
+Nodes (4): ll(), _reflow(), _reflowLarger(), _reflowLargerAdjustViewport()
 
 ### Community 129 - "Community 129"
-Cohesion: 0.50
-Nodes (4): setOrReportBgColor(), setOrReportCursorColor(), setOrReportFgColor(), _setOrReportSpecialColor()
+Cohesion: 0.10
+Nodes (25): _addMouseDownListeners(), _areCoordsInSelection(), _fireEventIfSelectionChanged(), _fireOnSelectionChange(), _getMouseBufferCoords(), getWrappedRangeForLine(), _handleDoubleClick(), _handleIncrementalClick() (+17 more)
 
-### Community 131 - "Community 131"
-Cohesion: 1.00
-Nodes (3): isMonitoring(), startMonitoring(), stopMonitoring()
+### Community 135 - "Community 135"
+Cohesion: 0.17
+Nodes (13): _clearLiveRegion(), elapsed(), emitOne(), _handleKey(), identToString(), Ne(), push(), registerLinkProvider() (+5 more)
 
 ## Knowledge Gaps
-- **259 isolated node(s):** `NAV_TABS`, `NavTabId`, `NAV_TAB_PARTICLE_COLORS`, `COVER_FONTS`, `BoxDesign` (+254 more)
+- **263 isolated node(s):** `promptDelete`, `id`, `name`, `version`, `minAppVersion` (+258 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **43 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **28 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `GeminiService` connect `Community 7` to `Community 11`?**
-  _High betweenness centrality (0.016) - this node is a cross-community bridge._
-- **Why does `ObsidianSyncService` connect `Community 1` to `Community 42`, `Community 11`?**
-  _High betweenness centrality (0.004) - this node is a cross-community bridge._
-- **Why does `constructor()` connect `Community 4` to `Community 0`, `Community 128`, `Community 6`, `Community 9`, `Community 138`, `Community 143`, `Community 144`, `Community 17`, `Community 145`, `Community 20`, `Community 28`, `Community 29`, `Community 32`, `Community 36`, `Community 37`, `Community 41`, `Community 44`, `Community 49`, `Community 50`, `Community 51`, `Community 54`, `Community 71`, `Community 80`, `Community 90`, `Community 120`, `Community 122`, `Community 125`, `Community 126`?**
-  _High betweenness centrality (0.003) - this node is a cross-community bridge._
+- **Why does `GeminiService` connect `Community 7` to `Community 11`, `Community 115`?**
+  _High betweenness centrality (0.011) - this node is a cross-community bridge._
+- **Why does `GraphicDecision` connect `Community 23` to `Community 11`?**
+  _High betweenness centrality (0.006) - this node is a cross-community bridge._
+- **Why does `CloudQueueService` connect `Community 56` to `Community 42`, `Community 11`?**
+  _High betweenness centrality (0.006) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `constructor()` (e.g. with `l()` and `pa()`) actually correct?**
   _`constructor()` has 2 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `NAV_TABS`, `NavTabId`, `NAV_TAB_PARTICLE_COLORS` to the rest of the system?**
-  _259 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **What connects `promptDelete`, `id`, `name` to the rest of the system?**
+  _263 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
-  _Cohesion score 0.013071895424836602 - nodes in this community are weakly interconnected._
-- **Should `Community 1` be split into smaller, more focused modules?**
-  _Cohesion score 0.11733615221987315 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.012648640460501402 - nodes in this community are weakly interconnected._
+- **Should `Community 2` be split into smaller, more focused modules?**
+  _Cohesion score 0.07227891156462585 - nodes in this community are weakly interconnected._
