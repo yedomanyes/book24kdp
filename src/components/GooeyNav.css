@@ -118,6 +118,10 @@
   text-shadow: none;
 }
 
+.gooey-nav-container nav ul li.active button.gooey-nav-btn {
+  color: var(--gooey-active-text, #ffffff) !important;
+}
+
 .gooey-nav-container nav ul li.active::after {
   opacity: 1;
   transform: scale(1);

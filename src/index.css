@@ -2084,6 +2084,13 @@ input:focus, select:focus, textarea:focus {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
+.light-theme .ex-pane button[style*="var(--bg-card)"],
+.light-theme .preview-area button[style*="var(--bg-card)"] {
+  background: var(--bg-card) !important;
+  color: var(--text-muted) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
 .ex-pane button:hover,
 .preview-area button:hover {
   transform: translateY(-1px) !important;
@@ -2096,6 +2103,10 @@ input:focus, select:focus, textarea:focus {
   background-color: #fcfcfd !important;
   border-radius: 4px !important;
   transition: box-shadow 0.3s ease !important;
+}
+
+.light-theme .book-page-preview {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
 }
 
 /* Slogan Hover Underline Accent */
