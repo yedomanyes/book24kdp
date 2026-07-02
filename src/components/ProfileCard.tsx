@@ -18,6 +18,7 @@ const adjust = (v: number, fMin: number, fMax: number, tMin: number, tMax: numbe
 
 export interface ProfileCardProps {
   avatarUrl?: string;
+  avatarScale?: number;
   iconUrl?: string;
   grainUrl?: string;
   innerGradient?: string;
@@ -41,6 +42,7 @@ export interface ProfileCardProps {
 
 const ProfileCardComponent: React.FC<ProfileCardProps> = ({
   avatarUrl = '',
+  avatarScale = 1,
   iconUrl = '',
   grainUrl = '',
   innerGradient,
@@ -325,6 +327,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
                   src={avatarUrl}
                   alt={`${name} avatar`}
                   loading="lazy"
+                  style={avatarScale !== 1 ? { transform: `translateX(calc(-50% + (var(--pointer-from-left) - 0.5) * 6px)) translateZ(0) scaleY(calc(${avatarScale} + (var(--pointer-from-top) - 0.5) * 0.02)) scaleX(calc(${avatarScale} + (var(--pointer-from-left) - 0.5) * 0.01))` } : {}}
                   onError={e => {
                     (e.target as HTMLImageElement).style.display = 'none';
                   }}

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Menu, X, Sun, Moon, Globe } from 'lucide-react';
 import './LandingNavbar.css';
 import RotatingText from './RotatingText';
+import ShinyText from './ShinyText';
 
 interface LandingNavbarProps {
   onLoginClick: () => void;
@@ -134,7 +135,7 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
           </button>
           <button type="button" className="landing-nav-cta" onClick={onLoginClick}>
-            {isDe ? 'Anmelden' : 'Sign In'}
+            <ShinyText text={isDe ? 'Anmelden' : 'Sign In'} color="rgba(255, 255, 255, 0.85)" shineColor="#ffffff" speed={2.5} />
           </button>
           <button
             type="button"
@@ -204,7 +205,7 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
                 onLoginClick();
               }}
             >
-              {isDe ? 'Anmelden' : 'Sign In'}
+              <ShinyText text={isDe ? 'Anmelden' : 'Sign In'} color="rgba(255, 255, 255, 0.85)" shineColor="#ffffff" speed={2.5} />
             </button>
           </motion.div>
         )}

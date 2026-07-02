@@ -31,7 +31,7 @@ const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
 /**
  * MOCK SERVICE for Niche Finder.
- * In a real environment, this will call our backend/Firebase Function, 
+ * In a real environment, this will call our backend/Supabase Edge Function, 
  * which in turn calls DataForSEO/Keepa to fetch real Amazon data.
  */
 export async function searchNiche(keyword: string): Promise<NicheResult> {

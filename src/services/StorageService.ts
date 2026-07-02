@@ -1,5 +1,4 @@
-import { db } from '../firebase';
-import { doc, getDoc, getDocs, collection, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { supabase } from '../supabase';
 
 /**
  * StorageService — Persistente Datenspeicherung für Book24 Studio
@@ -9,22 +8,26 @@ import { doc, getDoc, getDocs, collection, setDoc, deleteDoc, writeBatch } from 
  * 2. Automatische Migration aller alten Keys (kryork_*, book24_*)
  * 3. Export: JSON-Datei auf die Festplatte herunterladen
  * 4. Import: JSON-Datei von der Festplatte lesen und wiederherstellen
- * 5. Cloud-Sync: Lese/Schreib-Operationen mit Firestore, wenn eingeloggt
+ * 5. Cloud-Sync: Lese/Schreib-Operationen mit Supabase, wenn eingeloggt
  */
 
 const STORAGE_PREFIX = 'b24studio_v1';
 
 /** Feste Key-Namen — werden NIE mehr geändert */
 export const KEYS = {
-  theme:         `${STORAGE_PREFIX}_theme`,
-  accounts:      `${STORAGE_PREFIX}_accounts`,
+  theme: `${STORAGE_PREFIX}_theme`,
+  accounts: `${STORAGE_PREFIX}_accounts`,
   activeAccount: `${STORAGE_PREFIX}_active_account`,
   selectedModel: `${STORAGE_PREFIX}_selected_model`,
-  library:       (accountId: string) => `${STORAGE_PREFIX}_library_${accountId}`,
+  library: (accountId: string) => `${STORAGE_PREFIX}_library_${accountId}`,
 };
 
 /** Alle alten Key-Präfixe die migriert werden sollen */
 const LEGACY_PREFIXES = ['kryork_', 'book24_'];
+
+const getActiveAccountId = (): string => {
+  return localStorage.getItem(KEYS.activeAccount) || 'default';
+};
 
 /**
  * Einmalige Migration: Kopiert alle alten localStorage-Daten
@@ -34,13 +37,12 @@ export function migrateOldKeys(): void {
   const mapKey = (oldPrefix: string, suffix: string) => `${oldPrefix}${suffix}`;
 
   const migrations: Array<{ newKey: string; oldSuffixes: string[] }> = [
-    { newKey: KEYS.theme,         oldSuffixes: ['theme'] },
-    { newKey: KEYS.accounts,      oldSuffixes: ['accounts'] },
+    { newKey: KEYS.theme, oldSuffixes: ['theme'] },
+    { newKey: KEYS.accounts, oldSuffixes: ['accounts'] },
     { newKey: KEYS.activeAccount, oldSuffixes: ['active_account'] },
     { newKey: KEYS.selectedModel, oldSuffixes: ['selected_model'] },
   ];
 
-  // Migrate simple keys
   for (const { newKey, oldSuffixes } of migrations) {
     if (!localStorage.getItem(newKey)) {
       for (const prefix of LEGACY_PREFIXES) {
@@ -56,7 +58,6 @@ export function migrateOldKeys(): void {
     }
   }
 
-  // Migrate library keys — find all account IDs across all old prefixes
   const accountIds = new Set<string>(['default']);
   for (const prefix of LEGACY_PREFIXES) {
     for (let i = 0; i < localStorage.length; i++) {
@@ -86,8 +87,6 @@ export function migrateOldKeys(): void {
   }
 }
 
-// ─── Export ──────────────────────────────────────────────────────────────────
-
 export interface BackupData {
   version: number;
   exportedAt: string;
@@ -95,14 +94,12 @@ export interface BackupData {
   accounts: string | null;
   activeAccount: string | null;
   selectedModel: string | null;
-  libraries: Record<string, string>; // accountId → JSON string
+  libraries: Record<string, string>;
 }
 
-/** Erstellt ein vollständiges Backup-Objekt aus localStorage */
 export function createBackup(): BackupData {
   const libraries: Record<string, string> = {};
 
-  // Find all library entries
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (key?.startsWith(`${STORAGE_PREFIX}_library_`)) {
@@ -115,15 +112,14 @@ export function createBackup(): BackupData {
   return {
     version: 1,
     exportedAt: new Date().toISOString(),
-    theme:         localStorage.getItem(KEYS.theme),
-    accounts:      localStorage.getItem(KEYS.accounts),
+    theme: localStorage.getItem(KEYS.theme),
+    accounts: localStorage.getItem(KEYS.accounts),
     activeAccount: localStorage.getItem(KEYS.activeAccount),
     selectedModel: localStorage.getItem(KEYS.selectedModel),
     libraries,
   };
 }
 
-/** Lädt das Backup als .json Datei auf die Festplatte herunter */
 export function downloadBackup(): void {
   const backup = createBackup();
   const json = JSON.stringify(backup, null, 2);
@@ -140,9 +136,6 @@ export function downloadBackup(): void {
   URL.revokeObjectURL(url);
 }
 
-// ─── Import ──────────────────────────────────────────────────────────────────
-
-/** Liest eine Backup-Datei ein und stellt alle Daten wieder her */
 export function importBackup(file: File): Promise<void> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -155,13 +148,11 @@ export function importBackup(file: File): Promise<void> {
           throw new Error('Unbekannte Backup-Version.');
         }
 
-        // Restore simple keys
-        if (backup.theme)         localStorage.setItem(KEYS.theme, backup.theme);
-        if (backup.accounts)      localStorage.setItem(KEYS.accounts, backup.accounts);
+        if (backup.theme) localStorage.setItem(KEYS.theme, backup.theme);
+        if (backup.accounts) localStorage.setItem(KEYS.accounts, backup.accounts);
         if (backup.activeAccount) localStorage.setItem(KEYS.activeAccount, backup.activeAccount);
         if (backup.selectedModel) localStorage.setItem(KEYS.selectedModel, backup.selectedModel);
 
-        // Restore libraries
         for (const [accountId, data] of Object.entries(backup.libraries)) {
           localStorage.setItem(KEYS.library(accountId), data);
         }
@@ -177,7 +168,6 @@ export function importBackup(file: File): Promise<void> {
   });
 }
 
-/** Auto-Backup: Speichert Backup-Datum nach jedem erfolgreichen Schreibvorgang */
 export const AUTO_BACKUP_KEY = `${STORAGE_PREFIX}_last_backup`;
 export function markBackupTime(): void {
   localStorage.setItem(AUTO_BACKUP_KEY, new Date().toISOString());
@@ -186,83 +176,174 @@ export function getLastBackupTime(): string | null {
   return localStorage.getItem(AUTO_BACKUP_KEY);
 }
 
-// ─── Cloud Sync (Firestore) ──────────────────────────────────────────────────
-
-/** Speichert ein einzelnes Buch in der Cloud */
 export async function saveBookToCloud(uid: string, book: any): Promise<void> {
-  if (!db) return;
+  if (!supabase || !uid || !book?.id) return;
+  const accountId = getActiveAccountId();
   try {
-    const bookRef = doc(db, 'users', uid, 'books', book.id);
-    await setDoc(bookRef, book);
+    const { error } = await supabase.from('books').upsert({
+      id: book.id,
+      user_id: uid,
+      account_id: accountId,
+      title: book.title ?? null,
+      market_niche: book.marketNiche ?? null,
+      payload: book,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id,id' });
+
+    if (error) throw error;
   } catch (err) {
     console.error('Failed to save book to cloud:', err);
   }
 }
 
-/** Löscht ein einzelnes Buch aus der Cloud */
 export async function deleteBookFromCloud(uid: string, bookId: string): Promise<void> {
-  if (!db) return;
+  if (!supabase || !uid || !bookId) return;
   try {
-    const bookRef = doc(db, 'users', uid, 'books', bookId);
-    await deleteDoc(bookRef);
+    const { error } = await supabase
+      .from('books')
+      .delete()
+      .eq('user_id', uid)
+      .eq('id', bookId)
+      .eq('account_id', getActiveAccountId());
+
+    if (error) throw error;
   } catch (err) {
     console.error('Failed to delete book from cloud:', err);
   }
 }
 
-/** Lädt alle Bücher eines Benutzers aus der Cloud */
 export async function loadBooksFromCloud(uid: string): Promise<any[]> {
-  if (!db) return [];
+  if (!supabase || !uid) return [];
   try {
-    const booksColl = collection(db, 'users', uid, 'books');
-    const snap = await getDocs(booksColl);
-    const books: any[] = [];
-    snap.forEach(docSnap => {
-      books.push(docSnap.data());
-    });
-    return books;
+    const { data, error } = await supabase
+      .from('books')
+      .select('payload, updated_at')
+      .eq('user_id', uid)
+      .order('updated_at', { ascending: true });
+
+    if (error) throw error;
+    return (data || []).map((row: any) => row.payload).filter(Boolean);
   } catch (err) {
     console.error('Failed to load books from cloud:', err);
     return [];
   }
 }
 
-/** Synchronisiert die gesamte lokale Bibliothek beim ersten Login in die Cloud */
 export async function syncLocalLibraryToCloud(uid: string, books: any[]): Promise<void> {
-  if (!db || books.length === 0) return;
-  try {
-    const batch = writeBatch(db);
-    books.forEach(book => {
-      const bookRef = doc(db, 'users', uid, 'books', book.id);
-      batch.set(bookRef, book);
-    });
-    await batch.commit();
-  } catch (err) {
-    console.error('Failed to sync local library to cloud:', err);
+  if (!supabase || !uid || books.length === 0) return;
+  const accountId = getActiveAccountId();
+  const rows = books.map((book) => ({
+    id: book.id,
+    user_id: uid,
+    account_id: accountId,
+    title: book.title ?? null,
+    market_niche: book.marketNiche ?? null,
+    payload: book,
+    updated_at: new Date().toISOString(),
+  }));
+
+  // Batch in chunks of 10 to avoid payload limits
+  const CHUNK = 10;
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const chunk = rows.slice(i, i + CHUNK);
+    let attempts = 0;
+    while (attempts < 3) {
+      try {
+        const { error } = await supabase.from('books').upsert(chunk, { onConflict: 'user_id,id' });
+        if (error) throw error;
+        break; // success
+      } catch (err) {
+        attempts++;
+        if (attempts >= 3) {
+          console.error(`[CloudSync] FAILED after 3 attempts for chunk ${i}–${i + CHUNK}:`, err);
+        } else {
+          await new Promise(r => setTimeout(r, 800 * attempts)); // backoff
+        }
+      }
+    }
   }
 }
 
-/** Speichert die Accounts-Konfiguration in der Cloud */
+/**
+ * Garantierter Force-Push aller Bücher zur Cloud.
+ * Wird bei Login, nach jeder Generierung und alle 2 Min aufgerufen.
+ */
+export async function forcePushBooksToCloud(uid: string, books: any[]): Promise<{ ok: boolean; synced: number; failed: number }> {
+  if (!supabase || !uid) return { ok: false, synced: 0, failed: 0 };
+  if (books.length === 0) return { ok: true, synced: 0, failed: 0 };
+
+  const accountId = getActiveAccountId();
+  let synced = 0;
+  let failed = 0;
+
+  for (const book of books) {
+    if (!book?.id) continue;
+    let attempts = 0;
+    let success = false;
+    while (attempts < 3 && !success) {
+      try {
+        const { error } = await supabase.from('books').upsert({
+          id: book.id,
+          user_id: uid,
+          account_id: accountId,
+          title: book.title ?? null,
+          market_niche: book.marketNiche ?? null,
+          payload: book,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id,id' });
+        if (error) throw error;
+        success = true;
+        synced++;
+      } catch (err) {
+        attempts++;
+        if (attempts >= 3) {
+          console.error(`[ForcePush] Could not save book "${book.title ?? book.id}":`, err);
+          failed++;
+        } else {
+          await new Promise(r => setTimeout(r, 600 * attempts));
+        }
+      }
+    }
+  }
+
+  console.log(`[CloudSync] ✅ ${synced} saved, ❌ ${failed} failed`);
+  return { ok: failed === 0, synced, failed };
+}
+
+
 export async function saveAccountsToCloud(uid: string, accounts: any[]): Promise<void> {
-  if (!db) return;
+  if (!supabase || !uid) return;
   try {
-    const dataRef = doc(db, 'users', uid, 'data', 'accounts');
-    await setDoc(dataRef, { accounts });
+    const { error: deleteError } = await supabase.from('accounts').delete().eq('user_id', uid);
+    if (deleteError) throw deleteError;
+
+    if (accounts.length === 0) return;
+
+    const rows = accounts.map((account) => ({
+      id: account.id,
+      user_id: uid,
+      username: account.username,
+      updated_at: new Date().toISOString(),
+    }));
+
+    const { error } = await supabase.from('accounts').insert(rows);
+    if (error) throw error;
   } catch (err) {
     console.error('Failed to save accounts to cloud:', err);
   }
 }
 
-/** Lädt die Accounts-Konfiguration aus der Cloud */
 export async function loadAccountsFromCloud(uid: string): Promise<any[] | null> {
-  if (!db) return null;
+  if (!supabase || !uid) return null;
   try {
-    const dataRef = doc(db, 'users', uid, 'data', 'accounts');
-    const snap = await getDoc(dataRef);
-    if (snap.exists()) {
-      return snap.data().accounts || [];
-    }
-    return null;
+    const { data, error } = await supabase
+      .from('accounts')
+      .select('id, username')
+      .eq('user_id', uid)
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
   } catch (err) {
     console.error('Failed to load accounts from cloud:', err);
     return null;

@@ -1,62 +1,65 @@
-import { db } from '../../firebase';
-import { collection, setDoc, getDocs, query, where, updateDoc, doc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { getCurrentAppUser, supabase } from '../../supabase';
 import type { BrainState } from '../../types/brain';
 import type { BrainBookInput } from '../../types/brain';
 import { ObsidianSyncService } from './ObsidianSyncService';
 import { BrainService } from './BrainService';
 
 export class CloudQueueService {
-  /**
-   * Pushes a book to the cloud queue.
-   * If the Mac is offline, it stays there with synced_to_obsidian = false.
-   */
+  private static async getCurrentUid(): Promise<string | null> {
+    const user = await getCurrentAppUser();
+    return user?.uid ?? null;
+  }
+
+  private static getQueueDocId(accountId: string, bookId: string): string {
+    return `${accountId}__${bookId}`;
+  }
+
   static async pushBookToQueue(accountId: string, book: BrainBookInput): Promise<void> {
-    if (!db) return;
+    const uid = await this.getCurrentUid();
+    if (!supabase || !uid) return;
     try {
-      const docRef = doc(db, 'books', book.id);
-      await setDoc(docRef, {
+      const { error } = await supabase.from('queue_items').upsert({
+        id: this.getQueueDocId(accountId, book.id),
+        account_id: accountId,
+        book_id: book.id,
         title: book.title || 'Unbekanntes Buch',
         niche: book.marketNiche || 'Allgemein',
-        user_id: accountId, // Or a global auth uid
-        content: JSON.stringify(book), // Store the raw book structure
+        user_id: uid,
+        content: book,
         quality_score: book.marketScore || 0,
         synced_to_obsidian: false,
-        updated_at: serverTimestamp()
-      }, { merge: true });
-      console.log('Book successfully pushed to Cloud Queue.');
+        updated_at: new Date().toISOString(),
+      });
+      if (error) throw error;
+      console.log('Book successfully pushed to Supabase Queue.');
     } catch (err) {
-      console.error('Failed to push to Cloud Queue:', err);
+      console.error('Failed to push to Supabase Queue:', err);
     }
   }
 
-  /**
-   * Reads from the Cloud Queue and syncs to Obsidian if connected.
-   */
   static async processQueue(accountId: string): Promise<number> {
-    if (!db || !ObsidianSyncService.isConnected()) return 0;
-    
+    const uid = await this.getCurrentUid();
+    if (!supabase || !uid || !ObsidianSyncService.isConnected()) return 0;
+
     let syncedCount = 0;
     try {
-      const colRef = collection(db, 'books');
-      const q = query(
-        colRef, 
-        where('synced_to_obsidian', '==', false),
-        where('user_id', '==', accountId)
-      );
-      
-      const snapshot = await getDocs(q);
-      if (snapshot.empty) return 0;
+      const { data, error } = await supabase
+        .from('queue_items')
+        .select('*')
+        .eq('user_id', uid)
+        .eq('account_id', accountId)
+        .eq('synced_to_obsidian', false)
+        .order('updated_at', { ascending: true });
 
-      for (const document of snapshot.docs) {
-        const data = document.data();
-        const book: BrainBookInput = JSON.parse(data.content);
-        
-        // Sync the full book to Obsidian
+      if (error) throw error;
+      if (!data || data.length === 0) return 0;
+
+      for (const entry of data) {
+        const book = entry.content as BrainBookInput;
         const state = BrainService.getState(accountId);
-        
-        // Re-sync book metadata and chapters
+
         await ObsidianSyncService.syncBookMeta(book, state);
-        
+
         if (book.cmieStore && book.pagesText) {
           for (const [pageStr, text] of Object.entries(book.pagesText)) {
             const pageNum = Number(pageStr);
@@ -66,53 +69,56 @@ export class CloudQueueService {
             }
           }
         }
-        
-        // Mark as synced in Firebase
-        await updateDoc(doc(db, 'books', document.id), {
-          synced_to_obsidian: true
-        });
-        
+
+        const { error: updateError } = await supabase
+          .from('queue_items')
+          .update({ synced_to_obsidian: true, updated_at: new Date().toISOString() })
+          .eq('id', entry.id)
+          .eq('user_id', uid);
+
+        if (updateError) throw updateError;
         syncedCount++;
       }
-      
+
       if (syncedCount > 0) {
         BrainService.markObsidianSync(accountId, syncedCount);
       }
-      
     } catch (err) {
-      console.error('Failed to process Cloud Queue:', err);
+      console.error('Failed to process Supabase Queue:', err);
     }
-    
+
     return syncedCount;
   }
 
-  /**
-   * Pushes the entire BrainState to the cloud.
-   */
   static async pushBrainState(accountId: string, state: BrainState): Promise<void> {
-    if (!db) return;
+    const uid = await this.getCurrentUid();
+    if (!supabase || !uid) return;
     try {
-      const docRef = doc(db, 'brain_states', accountId);
-      await setDoc(docRef, {
-        state: JSON.stringify(state),
-        updated_at: serverTimestamp()
-      }, { merge: true });
+      const { error } = await supabase.from('brain_states').upsert({
+        user_id: uid,
+        account_id: accountId,
+        state,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id,account_id' });
+      if (error) throw error;
     } catch (err) {
       console.error('Failed to push BrainState to cloud:', err);
     }
   }
 
-  /**
-   * Pulls the BrainState from the cloud.
-   */
   static async pullBrainState(accountId: string): Promise<BrainState | null> {
-    if (!db) return null;
+    const uid = await this.getCurrentUid();
+    if (!supabase || !uid) return null;
     try {
-      const docRef = doc(db, 'brain_states', accountId);
-      const snap = await getDoc(docRef);
-      if (snap.exists() && snap.data().state) {
-        return JSON.parse(snap.data().state) as BrainState;
-      }
+      const { data, error } = await supabase
+        .from('brain_states')
+        .select('state')
+        .eq('user_id', uid)
+        .eq('account_id', accountId)
+        .maybeSingle();
+
+      if (error) throw error;
+      return (data?.state as BrainState | undefined) ?? null;
     } catch (err) {
       console.error('Failed to pull BrainState from cloud:', err);
     }

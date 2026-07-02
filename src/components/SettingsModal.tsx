@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { X, Key, Sun, Moon, Cpu, Settings, CheckCircle2, AlertCircle, Eye, EyeOff, Copy, Check } from 'lucide-react';
 import { supabase } from '../supabase';
+import { t, type Language } from '../i18n';
 
 export const AI_MODEL_OPTIONS = [
   { group: 'Groq API', models: [
-    { value: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B — Top Qualität' },
-    { value: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B — Schnell' },
+    { value: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B — Top Quality' },
+    { value: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B — Fast' },
     { value: 'mixtral-8x7b-32768', label: 'Mixtral 8x7B' },
   ]},
   { group: 'Google Gemini', models: [
@@ -22,8 +23,8 @@ interface SettingsModalProps {
   onClose: () => void;
   theme: 'dark' | 'light';
   onThemeChange: (theme: 'dark' | 'light') => void;
-  language?: 'de' | 'en';
-  onLanguageChange?: (lang: 'de' | 'en') => void;
+  language?: Language;
+  onLanguageChange?: (lang: Language) => void;
   groqKeys: string;
   onGroqKeysChange: (value: string) => void;
   geminiKeys: string;
@@ -54,6 +55,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   userEmail,
   userId,
 }) => {
+  const tr = t(language).settings;
   const [tab, setTab] = useState<SettingsTab>('general');
   const [username, setUsername] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -89,7 +91,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     
     const trimmed = username.trim();
     if (trimmed.length > 0 && trimmed.length < 3) {
-      setSaveMessage('Fehler: Der Name muss mindestens 3 Zeichen lang sein.');
+      setSaveMessage(tr.nameTooShort);
       return;
     }
 
@@ -101,19 +103,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         .update({ username: trimmed === '' ? null : trimmed })
         .eq('id', userId);
       if (error) throw error;
-      setSaveMessage('Name erfolgreich gespeichert!');
+      setSaveMessage(tr.savedSuccess);
       setTimeout(() => setSaveMessage(null), 3000);
     } catch (e: any) {
       console.error(e);
-      let errMsg = 'Speichern fehlgeschlagen';
+      let errMsg: string = tr.savedError;
       if (e.message && (e.message.includes('unique_username') || e.message.includes('duplicate key'))) {
-        errMsg = 'Dieser Benutzername ist bereits vergeben.';
+        errMsg = tr.nameTaken;
       } else if (e.code === '23505') {
-        errMsg = 'Dieser Benutzername ist bereits vergeben.';
+        errMsg = tr.nameTaken;
       } else {
         errMsg = e.message || errMsg;
       }
-      setSaveMessage(`Fehler: ${errMsg}`);
+      setSaveMessage(`Error: ${errMsg}`);
     } finally {
       setIsSaving(false);
     }
@@ -129,9 +131,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   if (!open) return null;
 
   const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
-    { id: 'general', label: 'Allgemein', icon: <Settings style={{ width: 14, height: 14 }} /> },
-    { id: 'api', label: 'API Keys', icon: <Key style={{ width: 14, height: 14 }} /> },
-    { id: 'model', label: 'KI-Modell', icon: <Cpu style={{ width: 14, height: 14 }} /> },
+    { id: 'general', label: tr.tabs.general, icon: <Settings style={{ width: 14, height: 14 }} /> },
+    { id: 'api', label: tr.tabs.api, icon: <Key style={{ width: 14, height: 14 }} /> },
+    { id: 'model', label: tr.tabs.model, icon: <Cpu style={{ width: 14, height: 14 }} /> },
   ];
 
   return (
@@ -139,10 +141,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       <div className="settings-panel" onClick={e => e.stopPropagation()}>
         <div className="settings-header">
           <div>
-            <h2 className="settings-title">Einstellungen</h2>
+            <h2 className="settings-title">{tr.title}</h2>
             {userEmail && <p className="settings-subtitle">{userEmail}</p>}
           </div>
-          <button type="button" className="settings-close" onClick={onClose} aria-label="Schließen">
+          <button type="button" className="settings-close" onClick={onClose} aria-label={tr.close}>
             <X style={{ width: 18, height: 18 }} />
           </button>
         </div>
@@ -168,8 +170,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <div className="settings-content">
             {tab === 'general' && (
               <>
-                <SectionTitle>Erscheinungsbild</SectionTitle>
-                <p className="settings-hint">Wähle zwischen hellem und dunklem Interface.</p>
+                <SectionTitle>{tr.appearance}</SectionTitle>
+                <p className="settings-hint">{tr.appearanceHint}</p>
                 <div className="theme-switch" style={{ marginBottom: '24px' }}>
                   <button
                     type="button"
@@ -177,7 +179,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     onClick={() => onThemeChange('light')}
                   >
                     <Sun style={{ width: 16, height: 16 }} />
-                    Hell
+                    {tr.light}
                   </button>
                   <button
                     type="button"
@@ -185,12 +187,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     onClick={() => onThemeChange('dark')}
                   >
                     <Moon style={{ width: 16, height: 16 }} />
-                    Dunkel
+                    {tr.dark}
                   </button>
                 </div>
 
-                <SectionTitle>Sprache / Language</SectionTitle>
-                <p className="settings-hint">Wähle die Sprache der Benutzeroberfläche.</p>
+                <SectionTitle>{tr.language}</SectionTitle>
+                <p className="settings-hint">{tr.languageHint}</p>
                 <div className="theme-switch" style={{ marginBottom: '24px' }}>
                   <button
                     type="button"
@@ -210,8 +212,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </button>
                 </div>
 
-                <SectionTitle>Profilname</SectionTitle>
-                <p className="settings-hint">Ändere deinen Namen, der in der Bibliothek angezeigt wird.</p>
+                <SectionTitle>{tr.profileName}</SectionTitle>
+                <p className="settings-hint">{tr.profileNameHint}</p>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
                   <input
                     type="text"
@@ -225,7 +227,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       fontSize: '14px',
                       outline: 'none',
                     }}
-                    placeholder="Dein Profilname"
+                    placeholder={tr.profileNamePlaceholder}
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                   />
@@ -244,14 +246,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       cursor: 'pointer',
                     }}
                   >
-                    {isSaving ? 'Speichert...' : 'Speichern'}
+                    {isSaving ? tr.saving : tr.save}
                   </button>
                 </div>
                 {saveMessage && (
                   <p style={{
                     margin: '0 0 24px 0',
                     fontSize: '12px',
-                    color: saveMessage.includes('Fehler') ? '#dc2626' : '#10b981',
+                    color: saveMessage.toLowerCase().includes('error') || saveMessage.toLowerCase().includes('fehler') ? '#dc2626' : '#10b981',
                     fontWeight: 500
                   }}>
                     {saveMessage}
@@ -260,8 +262,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 <div style={{ height: '16px' }} />
 
-                <SectionTitle>Benutzer-ID (UUID)</SectionTitle>
-                <p className="settings-hint">Deine eindeutige System-Identifikationsnummer.</p>
+                <SectionTitle>{tr.userId}</SectionTitle>
+                <p className="settings-hint">{tr.userIdHint}</p>
                 <div style={{ 
                   display: 'flex', 
                   alignItems: 'center', 
@@ -288,7 +290,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     type="button"
                     onClick={() => setShowUserId(!showUserId)}
                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px', display: 'flex', alignItems: 'center' }}
-                    title={showUserId ? 'Verbergen' : 'Anzeigen'}
+                    title={showUserId ? tr.hide : tr.show}
                   >
                     {showUserId ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -297,7 +299,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     type="button"
                     onClick={handleCopyId}
                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px', display: 'flex', alignItems: 'center' }}
-                    title="Kopieren"
+                    title={tr.copy}
                   >
                     {copied ? <Check size={16} style={{ color: '#10b981' }} /> : <Copy size={16} />}
                   </button>
@@ -307,40 +309,40 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
             {tab === 'api' && (
               <>
-                <SectionTitle>API-Verbindungen</SectionTitle>
-                <p className="settings-hint">
-                  Keys werden lokal im Browser gespeichert. Bei Rate-Limits rotiert das System automatisch zum nächsten Key.
-                </p>
+                <SectionTitle>{tr.apiConnections}</SectionTitle>
+                <p className="settings-hint">{tr.apiHint}</p>
 
                 <ApiKeyBlock
                   label="Groq API Keys"
-                  hint="Llama / Mixtral — kostenlos"
+                  hint={tr.groqHint}
                   link="https://console.groq.com/keys"
-                  linkLabel="Keys erstellen"
-                  placeholder="gsk_...&#10;(Mehrere Keys durch Komma oder Zeilenumbruch)"
+                  linkLabel={tr.createKeys}
+                  placeholder={tr.groqPlaceholder}
                   value={groqKeys}
                   onChange={onGroqKeysChange}
                   connected={groqConnected}
+                  tr={tr}
                 />
 
                 <ApiKeyBlock
                   label="Gemini API Keys"
-                  hint="Google AI Studio"
+                  hint={tr.geminiHint}
                   link="https://aistudio.google.com/app/apikey"
-                  linkLabel="Keys holen"
-                  placeholder="AIzaSy...&#10;(Mehrere Keys durch Komma oder Zeilenumbruch)"
+                  linkLabel={tr.getKeys}
+                  placeholder={tr.geminiPlaceholder}
                   value={geminiKeys}
                   onChange={onGeminiKeysChange}
                   connected={geminiConnected}
+                  tr={tr}
                 />
               </>
             )}
 
             {tab === 'model' && (
               <>
-                <SectionTitle>KI-Modell</SectionTitle>
-                <p className="settings-hint">Standardmodell für Planung, Schreiben und Marketing.</p>
-                <label className="settings-label">Aktives Modell</label>
+                <SectionTitle>{tr.aiModel}</SectionTitle>
+                <p className="settings-hint">{tr.aiModelHint}</p>
+                <label className="settings-label">{tr.activeModel}</label>
                 <select
                   className="settings-select"
                   value={selectedModel}
@@ -355,8 +357,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   ))}
                 </select>
                 <div className="settings-status-row">
-                  <StatusPill ok={groqConnected} label="Groq" />
-                  <StatusPill ok={geminiConnected} label="Gemini" />
+                  <StatusPill ok={groqConnected} label="Groq" readyLabel={tr.ready} missingLabel={tr.keyMissing} />
+                  <StatusPill ok={geminiConnected} label="Gemini" readyLabel={tr.ready} missingLabel={tr.keyMissing} />
                 </div>
               </>
             )}
@@ -372,7 +374,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 }
 
 function ApiKeyBlock({
-  label, hint, link, linkLabel, placeholder, value, onChange, connected,
+  label, hint, link, linkLabel, placeholder, value, onChange, connected, tr,
 }: {
   label: string;
   hint: string;
@@ -382,6 +384,7 @@ function ApiKeyBlock({
   value: string;
   onChange: (v: string) => void;
   connected: boolean;
+  tr: ReturnType<typeof t>['settings'];
 }) {
   const [newKey, setNewKey] = useState('');
   const keys = value.split(/[\n,]+/).map(k => k.trim()).filter(Boolean);
@@ -414,9 +417,9 @@ function ApiKeyBlock({
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {connected ? (
-            <span className="settings-badge ok"><CheckCircle2 style={{ width: 12, height: 12 }} /> Verbunden</span>
+            <span className="settings-badge ok"><CheckCircle2 style={{ width: 12, height: 12 }} /> {tr.connected}</span>
           ) : (
-            <span className="settings-badge warn"><AlertCircle style={{ width: 12, height: 12 }} /> Fehlt</span>
+            <span className="settings-badge warn"><AlertCircle style={{ width: 12, height: 12 }} /> {tr.missing}</span>
           )}
           <a href={link} target="_blank" rel="noreferrer" className="settings-link">{linkLabel} →</a>
         </div>
@@ -437,7 +440,7 @@ function ApiKeyBlock({
             <button 
               onClick={() => removeKey(index)}
               style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              title="Key entfernen"
+              title={tr.removeKey}
             >
               <X style={{ width: 16, height: 16 }} />
             </button>
@@ -449,7 +452,7 @@ function ApiKeyBlock({
             type="text"
             className="settings-textarea"
             style={{ padding: '6px 10px', height: '32px', margin: 0, flex: 1 }}
-            placeholder="Neuen API Key hier einfügen..."
+            placeholder={tr.newKeyPlaceholder}
             value={newKey}
             onChange={e => setNewKey(e.target.value)}
             onKeyDown={e => {
@@ -473,24 +476,24 @@ function ApiKeyBlock({
               cursor: 'pointer'
             }}
           >
-            Hinzufügen
+            {tr.addKey}
           </button>
         </div>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
         <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-          Das System rotiert bei Pausen automatisch durch die Liste!
+          {tr.rotationHint}
         </span>
       </div>
     </div>
   );
 }
 
-function StatusPill({ ok, label }: { ok: boolean; label: string }) {
+function StatusPill({ ok, label, readyLabel, missingLabel }: { ok: boolean; label: string; readyLabel: string; missingLabel: string }) {
   return (
     <span className={`settings-badge${ok ? ' ok' : ' warn'}`}>
       {ok ? <CheckCircle2 style={{ width: 12, height: 12 }} /> : <AlertCircle style={{ width: 12, height: 12 }} />}
-      {label} {ok ? 'bereit' : 'Key fehlt'}
+      {label} {ok ? readyLabel : missingLabel}
     </span>
   );
 }

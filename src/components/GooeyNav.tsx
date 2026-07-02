@@ -4,6 +4,7 @@ import './GooeyNav.css';
 export interface GooeyNavItem {
   label: string;
   disabled?: boolean;
+  maintenance?: boolean;
 }
 
 export interface GooeyNavProps {
@@ -119,7 +120,7 @@ const GooeyNav = ({
   const handleClick = (e: React.MouseEvent, index: number) => {
     e.preventDefault();
     const item = items[index];
-    if (item?.disabled || activeIndex === index) return;
+    if ((item?.disabled && !item?.maintenance) || activeIndex === index) return;
 
     const liEl = (e.currentTarget as HTMLElement).closest('li');
     if (!liEl) return;
@@ -178,15 +179,15 @@ const GooeyNav = ({
           {items.map((item, index) => (
             <li
               key={item.label}
-              className={`${activeIndex === index ? 'active' : ''}${item.disabled ? ' disabled' : ''}`}
+              className={`${activeIndex === index ? 'active' : ''}${item.disabled ? ' disabled' : ''}${item.maintenance ? ' maintenance' : ''}`}
             >
               <button
                 type="button"
                 className="gooey-nav-btn"
                 onClick={e => handleClick(e, index)}
                 onKeyDown={e => handleKeyDown(e, index)}
-                disabled={item.disabled}
-                title={item.disabled ? `${item.label} nicht verfügbar` : item.label}
+                disabled={item.disabled && !item.maintenance}
+                title={item.maintenance ? `${item.label} befindet sich in Wartung` : item.disabled ? `${item.label} nicht verfügbar` : item.label}
               >
                 {item.label}
               </button>

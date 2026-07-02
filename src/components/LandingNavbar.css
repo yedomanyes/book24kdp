@@ -72,7 +72,7 @@
 
 .landing-nav-brand-text .brand-suffix {
   font-weight: 300;
-  color: rgba(255, 255, 255, 0.6);
+  color: #ffffff;
 }
 
 .landing-nav-links {
@@ -118,59 +118,40 @@
   align-items: center;
   gap: 6px;
   border: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: 3px solid rgba(255, 255, 255, 0.35);
   border-radius: 8px;
-  padding: 7px 14px;
+  padding: 6px 14px 8px 14px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   color: #fff;
   cursor: pointer;
-  background: rgba(255, 255, 255, 0.06);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 100%);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.1) inset,
-    0 4px 12px rgba(0, 0, 0, 0.15);
-  transition:
-    background-color 0.25s ease,
-    border-color 0.25s ease,
-    transform 0.25s ease,
-    box-shadow 0.25s ease;
-}
-
-.landing-nav-cta:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.25);
-  transform: translateY(-1px);
-  box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.15) inset,
-    0 6px 16px rgba(0, 0, 0, 0.25);
-}
-
-.landing-nav-cta:active {
+    0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
   transform: translateY(0);
 }
 
-/* Shine effect */
-.landing-nav-cta::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -150%;
-  width: 80%;
-  height: 100%;
-  background: linear-gradient(
-    to right,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.25) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  transform: skewX(-25deg);
-  pointer-events: none;
+.landing-nav-cta:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.08) 100%);
+  border-color: rgba(255, 255, 255, 0.2);
+  border-bottom-width: 4px;
+  transform: translateY(-1.5px);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.25) inset,
+    0 8px 16px rgba(255, 255, 255, 0.1),
+    0 10px 24px rgba(0, 0, 0, 0.4);
 }
 
-.landing-nav-cta:hover::after {
-  left: 150%;
-  transition: left 0.8s ease-in-out;
+.landing-nav-cta:active {
+  transform: translateY(1px);
+  border-bottom-width: 1px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.1) inset,
+    0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
 .landing-nav-menu-btn {
@@ -248,27 +229,28 @@
 .landing-nav-promo-badge {
   display: inline-flex;
   align-items: center;
-  padding: 5px 14px;
-  border-radius: 99px;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, #fbbf24 0%, #ea580c 100%);
   border: 1px solid rgba(255, 255, 255, 0.15);
   margin-left: 14px;
   margin-right: auto;
   overflow: hidden;
-  height: 24px;
+  height: 32px;
   box-sizing: border-box;
   white-space: nowrap;
   backdrop-filter: blur(8px);
-  box-shadow: 0 0 15px rgba(124, 58, 237, 0.4);
+  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);
   transition: all 0.3s ease;
+  cursor: pointer;
 }
 
 .landing-nav-promo-badge:hover {
-  background: linear-gradient(135deg, #1d4ed8 0%, #6d28d9 100%);
+  background: linear-gradient(135deg, #f59e0b 0%, #c2410c 100%);
   border-color: rgba(255, 255, 255, 0.35);
   transform: translateY(-0.5px);
   box-shadow: 0 0 20px rgba(124, 58, 237, 0.6);
@@ -299,14 +281,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 12px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #fbbf24 0%, #ea580c 100%);
   border: 1px solid rgba(255, 255, 255, 0.15);
   margin: 6px 12px 12px;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   overflow: hidden;
   backdrop-filter: blur(8px);

@@ -317,3 +317,14 @@
 .light-theme .gooey-nav-app.gooey-tab-studio {
   --gooey-active-text: #1d4ed8;
 }
+
+.gooey-nav-container nav ul li.maintenance {
+  opacity: 0.45;
+  cursor: pointer !important;
+}
+
+.gooey-nav-container nav ul li.maintenance button.gooey-nav-btn {
+  cursor: pointer !important;
+  color: var(--text-muted);
+}
+

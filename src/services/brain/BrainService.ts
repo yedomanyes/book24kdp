@@ -252,7 +252,11 @@ export class BrainService {
     });
 
     this.saveState(accountId, state);
-    void ObsidianSyncService.syncPageLearned(book, pageNum, memory, state);
+    void ObsidianSyncService.syncPageLearned(book, pageNum, memory, state).then((filesWritten) => {
+      if (filesWritten > 0) {
+        this.markObsidianSync(accountId, filesWritten);
+      }
+    });
     void CloudQueueService.pushBookToQueue(accountId, book);
     return state;
   }
@@ -269,7 +273,11 @@ export class BrainService {
       detail: book.idea?.slice(0, 120),
     });
     this.saveState(accountId, state);
-    void ObsidianSyncService.syncNicheProfile(state.niches[slugify(nicheKeyword(book))], state);
+    void ObsidianSyncService.syncNicheProfile(state.niches[slugify(nicheKeyword(book))], state).then((filesWritten) => {
+      if (filesWritten > 0) {
+        this.markObsidianSync(accountId, filesWritten);
+      }
+    });
     void CloudQueueService.pushBookToQueue(accountId, book);
     return state;
   }
@@ -325,7 +333,11 @@ export class BrainService {
     }
 
     this.saveState(accountId, state);
-    void ObsidianSyncService.syncBookMeta(book, state);
+    void ObsidianSyncService.syncBookMeta(book, state).then((filesWritten) => {
+      if (filesWritten > 0) {
+        this.markObsidianSync(accountId, filesWritten);
+      }
+    });
     void CloudQueueService.pushBookToQueue(accountId, book);
     return state;
   }
@@ -353,7 +365,11 @@ export class BrainService {
       detail: `${state.totalPagesLearned} Seiten, ${Object.keys(state.niches).length} Nischen`,
     });
     this.saveState(accountId, state);
-    void ObsidianSyncService.syncFullState(state, books);
+    void ObsidianSyncService.syncFullState(state, books).then((filesWritten) => {
+      if (filesWritten > 0) {
+        this.markObsidianSync(accountId, filesWritten);
+      }
+    });
     return state;
   }
 
@@ -403,7 +419,8 @@ export class BrainService {
     const state = this.loadState(accountId);
     const slug = slugify(nicheKeyword(book));
     const niche = state.niches[slug];
-    if (!niche && state.patterns.avoid.length === 0 && state.patterns.success.length === 0) {
+    const obsidianCtx = ObsidianSyncService.getCachedGenerationContext(book);
+    if (!niche && state.patterns.avoid.length === 0 && state.patterns.success.length === 0 && !obsidianCtx) {
       return '';
     }
 
@@ -434,6 +451,9 @@ export class BrainService {
     }
 
     prompt += `Nutze etabliertes Wissen — keine Wiederholung bekannter Schwächen.\n`;
+    if (obsidianCtx) {
+      prompt += `\n${obsidianCtx}`;
+    }
     return prompt;
   }
 

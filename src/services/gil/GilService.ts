@@ -1,5 +1,4 @@
-import { db } from '../../firebase';
-import { collection, getDocs, setDoc, doc } from 'firebase/firestore';
+import { getCurrentAppUser, supabase } from '../../supabase';
 
 export interface GilLog {
   id: string;
@@ -147,45 +146,46 @@ export class GilService {
     }
   }
 
-  // Sync a single opening vector to Firestore
+  // Sync a single opening vector to Supabase
   private static async syncVectorToFirestore(item: EmbeddedText) {
-    if (!db) return;
+    if (!supabase) return;
     try {
-      const docRef = doc(db, 'global_diversity_embeddings', item.id);
-      await setDoc(docRef, {
+      const currentUser = await getCurrentAppUser();
+      const { error } = await supabase.from('global_diversity_embeddings').upsert({
         id: item.id,
-        bookId: item.bookId,
+        user_id: currentUser?.uid ?? null,
+        book_id: item.bookId,
         title: item.title,
-        openingText: item.openingText,
+        opening_text: item.openingText,
         vector: item.vector,
-        timestamp: new Date().toISOString()
+        updated_at: new Date().toISOString()
       });
+      if (error) throw error;
     } catch (e) {
-      console.warn('Failed to sync vector to Firestore', e);
+      console.warn('Failed to sync vector to Supabase', e);
     }
   }
 
-  // Fetch all vectors from Firestore to check against
+  // Fetch all vectors from Supabase to check against
   private static async fetchAllFirestoreVectors(): Promise<EmbeddedText[]> {
-    if (!db) return [];
+    if (!supabase) return [];
     try {
-      const querySnapshot = await getDocs(collection(db, 'global_diversity_embeddings'));
-      const items: EmbeddedText[] = [];
-      querySnapshot.forEach(docVal => {
-        const data = docVal.data();
-        if (data && data.vector && data.bookId) {
-          items.push({
-            id: data.id || docVal.id,
-            bookId: data.bookId,
-            title: data.title || '',
-            openingText: data.openingText || '',
-            vector: data.vector
-          });
-        }
-      });
-      return items;
+      const currentUser = await getCurrentAppUser();
+      let query = supabase.from('global_diversity_embeddings').select('*');
+      if (currentUser?.uid) {
+        query = query.eq('user_id', currentUser.uid);
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      return (data || []).map((row: any) => ({
+        id: row.id,
+        bookId: row.book_id,
+        title: row.title || '',
+        openingText: row.opening_text || '',
+        vector: row.vector || {}
+      }));
     } catch (e) {
-      console.warn('Failed to fetch vectors from Firestore', e);
+      console.warn('Failed to fetch vectors from Supabase', e);
       return [];
     }
   }

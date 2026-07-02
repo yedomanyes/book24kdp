@@ -1259,7 +1259,7 @@ export default function App() {
         // This guarantees that localStorage books are never lost even if
         // the previous session failed to save.
         if (finalBooks.length > 0) {
-          forcePushBooksToCloud(user.uid, finalBooks).then(result => {
+          forcePushBooksToCloud(user.uid, finalBooks).then((result: any) => {
             console.log(`[Login Sync] Books pushed to cloud:`, result);
           });
         }
@@ -1327,7 +1327,7 @@ export default function App() {
       console.log('[Auth] OAuth callback detected, waiting for SIGNED_IN event...');
     }
 
-    const { data: { subscription } } = supabase!.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase!.auth.onAuthStateChange((event: any, session: any) => {
       // Update refresh token backups whenever session is active
       if (session?.refresh_token) {
         try {
@@ -6983,7 +6983,7 @@ export default function App() {
           }}>
             <LicensePrompt 
               language={language}
-              onValidLicense={async (key) => {
+              onValidLicense={async (key: string) => {
                 // Use the SECURITY DEFINER RPC that saves to profiles + claims the key
                 try {
                   await supabase!.rpc('activate_license_for_user', { p_key: key });

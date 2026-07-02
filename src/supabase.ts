@@ -65,23 +65,25 @@ const safeStorage = {
   }
 };
 
-export const supabase = isSupabaseConfigured()
-  ? createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-        // IMPORTANT: Implicit flow is required for Safari + Safari Private Mode compatibility.
-        // With PKCE, Supabase stores a `code_verifier` in localStorage before the Google redirect.
-        // Safari's ITP deletes localStorage during cross-site redirects (google.com → book24kdp.vercel.app),
-        // making the code exchange fail silently — user lands back on landing page.
-        // With implicit flow, the access_token is embedded directly in the URL hash (#access_token=...),
-        // so NO localStorage read is needed during the callback. The token is immediately available.
-        flowType: 'implicit',
-        storage: safeStorage,
-      },
-    })
-  : null;
+export const supabase = (typeof window !== 'undefined' && window.location.search.includes('dev_mode=true'))
+  ? null
+  : (isSupabaseConfigured()
+      ? createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true,
+            // IMPORTANT: Implicit flow is required for Safari + Safari Private Mode compatibility.
+            // With PKCE, Supabase stores a `code_verifier` in localStorage before the Google redirect.
+            // Safari's ITP deletes localStorage during cross-site redirects (google.com → book24kdp.vercel.app),
+            // making the code exchange fail silently — user lands back on landing page.
+            // With implicit flow, the access_token is embedded directly in the URL hash (#access_token=...),
+            // so NO localStorage read is needed during the callback. The token is immediately available.
+            flowType: 'implicit',
+            storage: safeStorage,
+          },
+        })
+      : null);
 
 export type AppUser = {
   id: string;
@@ -102,7 +104,7 @@ export type AppUser = {
 export const toAppUser = (user: SupabaseAuthUser | null): AppUser | null => {
   if (!user) return null;
 
-  const providerData = (user.identities || []).map((identity) => ({
+  const providerData = (user.identities || []).map((identity: any) => ({
     providerId: identity.provider || 'unknown',
   }));
 

@@ -65,18 +65,53 @@ export class GeminiService {
     return 'groq';
   }
 
-  private normalizeOutlinePages(pages: BookOutlinePage[], expectedCount: number, startPageNum: number = 1): BookOutlinePage[] {
+  private normalizeOutlinePages(
+    pages: BookOutlinePage[],
+    expectedCount: number,
+    startPageNum: number = 1,
+    language: string = 'de'
+  ): BookOutlinePage[] {
     const normalized = [...pages];
     normalized.forEach((p, idx) => {
       p.page_number = startPageNum + idx;
     });
 
+    const isDe = language === 'de';
+
     while (normalized.length < expectedCount) {
+      const lastPage = normalized[normalized.length - 1];
+      const lastChapterTitle = lastPage ? lastPage.chapter_title : (isDe ? "Einleitung" : "Introduction");
+      const pageIndexInChapter = normalized.filter(p => p.chapter_title === lastChapterTitle).length + 1;
+      
+      const focusTemplates = isDe ? [
+        `Detaillierte Vertiefung und Analyse des Themas: "${lastChapterTitle}" (Aspekt ${pageIndexInChapter})`,
+        `Praktische Beispiele, Anwendungsfälle und Vergleiche zu: "${lastChapterTitle}"`,
+        `Wichtige Kernaspekte, Hintergrundwissen und theoretische Grundlagen zu: "${lastChapterTitle}"`,
+        `Häufige Missverständnisse, Fallstricke und Lösungsansätze bezüglich: "${lastChapterTitle}"`,
+        `Schritt-für-Schritt-Anleitung, konkrete Übungen und Checklisten für den Leser im Bereich: "${lastChapterTitle}"`
+      ] : [
+        `Detailed exploration and analysis of the topic: "${lastChapterTitle}" (Aspect ${pageIndexInChapter})`,
+        `Practical examples, use cases, and comparisons regarding: "${lastChapterTitle}"`,
+        `Key core concepts, background knowledge, and theoretical foundations of: "${lastChapterTitle}"`,
+        `Common misconceptions, pitfalls, and solutions regarding: "${lastChapterTitle}"`,
+        `Step-by-step instructions, concrete exercises, and checklists for the reader in the area of: "${lastChapterTitle}"`
+      ];
+      
+      const templateIdx = normalized.length % focusTemplates.length;
+      
       normalized.push({
         page_number: startPageNum + normalized.length,
-        chapter_title: "Fortführung des Themas",
-        focus: "Nahtlose inhaltliche Fortsetzung und detaillierte Vertiefung.",
-        key_points: ["Weitere Aspekte", "Zusammenhänge", "Vertiefende Details"]
+        chapter_title: lastChapterTitle,
+        focus: focusTemplates[templateIdx],
+        key_points: isDe ? [
+          `Vertiefung von ${lastChapterTitle} (Teil ${pageIndexInChapter})`,
+          `Praktische Relevanz und konkrete Erklärungen`,
+          `Tipps zur direkten Umsetzung für den Leser`
+        ] : [
+          `Exploration of ${lastChapterTitle} (Part ${pageIndexInChapter})`,
+          `Practical relevance and concrete explanations`,
+          `Tips for direct implementation by the reader`
+        ]
       });
     }
 
@@ -85,6 +120,91 @@ export class GeminiService {
     }
 
     return normalized;
+  }
+
+  /**
+   * Post-processes an outline to ensure that no two pages within the same chapter
+   * have identical or near-identical focus descriptions.
+   */
+  private diversifyPageFocus(
+    pages: BookOutlinePage[],
+    language: string
+  ): BookOutlinePage[] {
+    const isDe = language === 'de';
+
+    const perspectivesEn = [
+      'Opening perspective & core concept',
+      'Deep-dive analysis & mechanisms',
+      'Practical application & real-world examples',
+      'Common pitfalls, myths & misconceptions',
+      'Step-by-step guide & actionable exercises',
+      'Psychological & emotional dimension',
+      'Scientific background & evidence',
+      'Case study & personal story angle',
+      'Comparison & contrast with related topics',
+      'Long-term impact & advanced integration'
+    ];
+    const perspectivesDe = [
+      'Einführung & Kernkonzept',
+      'Tiefenanalyse & Mechanismen',
+      'Praktische Anwendung & Alltagsbeispiele',
+      'Häufige Fehler, Mythen & Missverständnisse',
+      'Schritt-für-Schritt-Anleitung & Übungen',
+      'Psychologische & emotionale Dimension',
+      'Wissenschaftlicher Hintergrund & Belege',
+      'Fallbeispiel & persönliche Erfahrung',
+      'Vergleich & Abgrenzung zu verwandten Themen',
+      'Langfristige Wirkung & Vertiefung'
+    ];
+    const perspectives = isDe ? perspectivesDe : perspectivesEn;
+
+    // Group pages by chapter title to process each chapter independently
+    const chapterGroups: Map<string, BookOutlinePage[]> = new Map();
+    for (const p of pages) {
+      const key = p.chapter_title.trim().toLowerCase();
+      if (!chapterGroups.has(key)) chapterGroups.set(key, []);
+      chapterGroups.get(key)!.push(p);
+    }
+
+    const result = [...pages];
+
+    for (const [, groupPages] of chapterGroups) {
+      if (groupPages.length <= 1) continue;
+
+      const seenFocuses: string[] = [];
+      for (let i = 0; i < groupPages.length; i++) {
+        const page = groupPages[i];
+        const normalizedFocus = page.focus.trim().toLowerCase();
+
+        // Check if this focus is too similar to any previously seen one in this chapter
+        const isDuplicate = seenFocuses.some(seen => {
+          if (seen === normalizedFocus) return true;
+          // Rough similarity: more than 60% of significant words overlap
+          const wordsA = new Set(seen.split(/\s+/).filter(w => w.length > 4));
+          const wordsB = normalizedFocus.split(/\s+/).filter(w => w.length > 4);
+          if (wordsA.size === 0 || wordsB.length === 0) return false;
+          const overlap = wordsB.filter(w => wordsA.has(w)).length;
+          return overlap / Math.max(wordsA.size, wordsB.length) > 0.6;
+        });
+
+        if (isDuplicate) {
+          const perspIdx = i % perspectives.length;
+          const chapterTitle = page.chapter_title;
+          const newFocus = isDe
+            ? `${perspectives[perspIdx]}: Vertiefung von „${chapterTitle}" – Seite ${i + 1}`
+            : `${perspectives[perspIdx]}: deeper dive into "${chapterTitle}" – page ${i + 1}`;
+          const originalIdx = result.findIndex(p => p.page_number === page.page_number);
+          if (originalIdx !== -1) {
+            result[originalIdx] = { ...result[originalIdx], focus: newFocus };
+          }
+          seenFocuses.push(newFocus.toLowerCase());
+        } else {
+          seenFocuses.push(normalizedFocus);
+        }
+      }
+    }
+
+    return result;
   }
 
   private async executeWithKeyRotation(
@@ -192,7 +312,26 @@ Ziel-Seitenzahl: ${targetPages} (Das generierte JSON MUSS exakt ${targetPages} S
       prompt += `\n\nFolgende Autoren-Richtlinien und Stil-Vorgaben müssen beim Entwurf der Gliederung und der einzelnen Seiten-Fokuspunkte strikt berücksichtigt werden:\n"${safeGuidelines}"`;
     }
 
-    prompt += `\n\nFür jede einzelne Seite des Buches (von Seite 1 bis Seite ${targetPages}) musst du festlegen, worum es auf dieser Seite geht. Jede Seite sollte einen klaren Fokus haben, damit es keine Dopplungen gibt und das Buch logisch aufgebaut ist. Um einen tiefgehenden Inhalt zu garantieren, plane pro Seite detaillierte stichpunktartige Key Points (in "key_points"), die genau beschreiben, welche Argumente oder Szenen ausgeführt werden sollen.
+    prompt += `\n\nFür jede einzelne Seite des Buches (von Seite 1 bis Seite ${targetPages}) musst du festlegen, worum es auf dieser Seite geht.
+
+KRITISCHSTE REGEL – SEITEN-FOKUS (PFLICHT, NIEMALS IGNORIEREN):
+Jede Seite MUSS einen ABSOLUT EINZIGARTIGEN und UNVERWECHSELBAREN Fokus haben!
+Wenn mehrere aufeinanderfolgende Seiten zum selben Kapitel gehören, MUSS jede Seite einen VOLLKOMMEN ANDEREN Teilaspekt beleuchten.
+Es ist STRENGSTENS VERBOTEN, zwei Seiten mit demselben oder ähnlichem "focus"-Text zu versehen.
+
+KAPITELLÄNGE – ORGANISCH & THEMENGERECHT:
+Entscheide selbst, wie viele Seiten ein Kapitel braucht – basierend darauf, wie viel das Thema wirklich hergibt.
+Ein einfaches Thema kann in 2-3 Seiten vollständig abgedeckt sein. Ein komplexes Thema kann 6, 8 oder mehr Seiten rechtfertigen.
+RULE: Schließe ein Kapitel ab, sobald das Thema vollständig und gut behandelt wurde – nicht früher, nicht später.
+Füge KEINE Füllseiten hinzu nur um eine bestimmte Anzahl zu erreichen!
+Starte das nächste Kapitel, wenn das aktuelle Thema wirklich abgeschlossen ist.
+
+ANLEITUNG für einzigartige Seiten-Fokuspunkte innerhalb eines Kapitels:
+Pro Seite wähle einen anderen Blickwinkel aus dieser Pool (nur was zum Thema PASST und wirklich sinnvoll ist):
+Einführung & Kernfrage • Mechanismen & Hintergründe • Praxisbeispiele & Anwendung • Häufige Fehler & Mythen • Schritt-für-Schritt • Psychologie & Emotion • Wissenschaft & Belege • Fallstudie & Erfahrung • Vergleich & Abgrenzung • Langzeitwirkung & Fazit
+Wähle NUR die Blickwinkel, die für das konkrete Kapitelthema relevant und sinnvoll sind!
+
+Um einen tiefgehenden Inhalt zu garantieren, plane pro Seite detaillierte stichpunktartige Key Points (in "key_points"), die genau beschreiben, welche Argumente oder Szenen ausgeführt werden sollen.
 
 STRIKTE REGEL FÜR DIE KAPITELTITEL (chapter_title):
 - Keine zwei Kapitelüberschriften dürfen dieselbe Satzstruktur verwenden.
@@ -216,7 +355,7 @@ Antworte ausschließlich im JSON-Format mit folgender Struktur:
     {
       "page_number": 1,
       "chapter_title": "Kapitel-Überschrift (z.B. Einleitung)",
-      "focus": "Der exakte Inhaltsschwerpunkt dieser einzelnen Seite",
+      "focus": "Der exakte, einzigartige Inhaltsschwerpunkt NUR DIESER Seite (darf kein anderes \"focus\"-Feld wiederholen!)",
       "key_points": ["Wichtiger Punkt 1", "Wichtiger Punkt 2", "Wichtiger Punkt 3"]
     },
     ...
@@ -250,6 +389,17 @@ Sprache des Buches: "${language === 'de' ? 'Deutsch' : 'ENGLISH (CRITICAL: All g
 Das Buch hat insgesamt ${targetPages} Seiten. Du planst jetzt NUR die Seiten ${start} bis ${end} (${chunkSize} Seiten).
 ${safeGuidelines && safeGuidelines.trim() ? `\nAutoren-Richtlinien: "${safeGuidelines}"\n` : ''}
 
+KRITISCHSTE REGEL – SEITEN-FOKUS (PFLICHT):
+Jede Seite MUSS einen ABSOLUT EINZIGARTIGEN Fokus haben!
+Wenn mehrere Seiten zum selben Kapitel gehören, MUSS jede einen VÖLLIG ANDEREN Teilaspekt beleuchten.
+
+KAPITELLÄNGE ORGANISCH: Entscheide selbst wie viele Seiten ein Kapitel braucht.
+Einfache Themen: 2-3 Seiten. Komplexe Themen: kann auch 6-8+ Seiten sein.
+Starte das nächste Kapitel sobald das aktuelle Thema wirklich vollständig abgedeckt ist – keine Füllseiten!
+
+BLICKWINKEL-POOL (nur was zum Thema PASST):
+Einführung & Kernfrage • Mechanismen & Hintergründe • Praxisbeispiele & Anwendung • Häufige Fehler & Mythen • Schritt-für-Schritt • Psychologie & Emotion • Wissenschaft & Belege • Fallstudie & Erfahrung • Vergleich & Abgrenzung • Langzeitwirkung & Fazit
+
 STRIKTE REGEL FÜR DIE KAPITELTITEL (chapter_title):
 - Keine zwei Kapitelüberschriften dürfen dieselbe Satzstruktur verwenden.
 - Es ist streng verboten, mehr als 2x im gesamten Buch mit Phrasen wie "Die Rolle von...", "Die Bedeutung von..." oder "Die Bedeutung von... bei..." zu beginnen.
@@ -268,7 +418,7 @@ Antworte ausschließlich im JSON-Format:
     {
       "page_number": ${start},
       "chapter_title": "Kapitel-Überschrift",
-      "focus": "Inhaltsschwerpunkt dieser Seite",
+      "focus": "Einzigartiger Inhaltsschwerpunkt NUR dieser Seite (nicht wiederholbar!)",
       "key_points": ["Punkt 1", "Punkt 2", "Punkt 3"]
     },
     ...
@@ -309,7 +459,7 @@ Die "pages"-Liste muss EXAKT ${chunkSize} Einträge enthalten, mit page_number v
           throw new Error(`Outline-Chunk ${start}-${end} enthält keine Seiten.`);
         }
         
-        chunkPages = this.normalizeOutlinePages(chunkPages, chunkSize, start);
+        chunkPages = this.normalizeOutlinePages(chunkPages, chunkSize, start, language);
         allPages.push(...chunkPages);
         if (onChunkComplete) {
           onChunkComplete([...allPages]);
@@ -321,12 +471,13 @@ Die "pages"-Liste muss EXAKT ${chunkSize} Einträge enthalten, mit page_number v
         }
       }
 
+      const finalGroqPages = this.diversifyPageFocus(allPages, language);
       return {
         title,
         subtitle,
         language,
         target_pages: targetPages,
-        pages: allPages
+        pages: finalGroqPages
       } as BookOutline;
 
     } else {
@@ -363,7 +514,8 @@ Die "pages"-Liste muss EXAKT ${chunkSize} Einträge enthalten, mit page_number v
         jsonText = jsonText.replace(/^```json/, '').replace(/^```/, '').replace(/```$/, '').trim();
       }
       const parsed = JSON.parse(jsonText) as BookOutline;
-      parsed.pages = this.normalizeOutlinePages(parsed.pages, targetPages, 1);
+      parsed.pages = this.normalizeOutlinePages(parsed.pages, targetPages, 1, language);
+      parsed.pages = this.diversifyPageFocus(parsed.pages, language);
       return parsed;
     }
   }
@@ -440,7 +592,7 @@ Die "pages"-Liste muss EXAKT ${chunkSize} Einträge enthalten, mit page_number v
         })
       );
       const parsed = JSON.parse(data.choices[0].message.content);
-      return this.normalizeOutlinePages(parsed.pages || [], chunkSize, startPage);
+      return this.normalizeOutlinePages(parsed.pages || [], chunkSize, startPage, language);
     } else {
       const data = await this.executeWithKeyRotation('gemini', (key) =>
         fetch(`https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${key}`, {
@@ -456,7 +608,7 @@ Die "pages"-Liste muss EXAKT ${chunkSize} Einträge enthalten, mit page_number v
       let jsonText = data.candidates[0].content.parts[0].text.trim();
       if (jsonText.startsWith('```')) jsonText = jsonText.replace(/^```json/, '').replace(/^```/, '').replace(/```$/, '').trim();
       const parsed = JSON.parse(jsonText);
-      return this.normalizeOutlinePages(parsed.pages || [], chunkSize, startPage);
+      return this.normalizeOutlinePages(parsed.pages || [], chunkSize, startPage, language);
     }
   }
 
@@ -617,6 +769,14 @@ Schreibe jetzt den Eröffnungsabsatz mit der Technik "${style.name}":`;
     fontSize: number = 11,
     customGuidelines: string = ''
   ): Promise<string> {
+    if (writingStyle === 'Sachbuch / Theorien') {
+      const isEn = outline.language !== 'de';
+      const theoryRule = isEn
+        ? "SPECIAL RULE FOR THIS STYLE ('Sachbuch / Theorien'): Write generally like a normal, well-founded non-fiction book about the facts. BUT occasionally (only sometimes, not always) sprinkle in your own or known theories, hypotheses, or speculations about the topic to make the text more interesting."
+        : "SONDERREGEL FÜR DIESEN STIL ('Sachbuch / Theorien'): Schreibe generell wie ein normales, fundiertes Sachbuch über die Fakten. ABER streue teilweise (nur manchmal, nicht immer) eigene oder bekannte Theorien, Hypothesen oder Spekulationen zu dem Thema ein, um den Text interessanter zu gestalten.";
+      customGuidelines = customGuidelines ? `${customGuidelines}\n\n${theoryRule}` : theoryRule;
+    }
+
     const lang = outline.language === 'de' ? 'Deutsch (korrekte Rechtschreibung und Grammatik)' : 'ENGLISH (CRITICAL: YOU MUST WRITE THE ENTIRE TEXT IN ENGLISH ONLY!)';
 
     // Word budget: subtract opening length from page target
@@ -691,6 +851,14 @@ Schreibe jetzt den Fortsetzungstext (${continuationMin}–${continuationMax} Wö
     autoChapterGraphics: boolean = false,
     cmiePromptEnrichment: string = ''
   ): Promise<string> {
+    if (writingStyle === 'Sachbuch / Theorien') {
+      const isEn = outline.language !== 'de';
+      const theoryRule = isEn
+        ? "SPECIAL RULE FOR THIS STYLE ('Sachbuch / Theorien'): Write generally like a normal, well-founded non-fiction book about the facts. BUT occasionally (only sometimes, not always) sprinkle in your own or known theories, hypotheses, or speculations about the topic to make the text more interesting."
+        : "SONDERREGEL FÜR DIESEN STIL ('Sachbuch / Theorien'): Schreibe generell wie ein normales, fundiertes Sachbuch über die Fakten. ABER streue teilweise (nur manchmal, nicht immer) eigene oder bekannte Theorien, Hypothesen oder Spekulationen zu dem Thema ein, um den Text interessanter zu gestalten.";
+      customGuidelines = customGuidelines ? `${customGuidelines}\n\n${theoryRule}` : theoryRule;
+    }
+
     const currentPageInfo = outline.pages.find(p => p.page_number === pageNumber);
     if (!currentPageInfo) throw new Error(`Seite ${pageNumber} nicht in der Outline gefunden.`);
 
@@ -772,7 +940,7 @@ Achte peinlich genau auf folgende Regeln:
 EIN ZITAT OHNE — AUTORENANGABE AM ENDE IST STRENGSTENS VERBOTEN.` : `Es ist dir STRENGSTENS VERBOTEN, Zitate auf dieser Seite zu generieren! Verwende kein Zitat (keine Zeile mit "> "). Zitate dürfen ausschließlich auf der allerersten Seite eines Kapitels verwendet werden, dies ist jedoch eine normale Inhaltsseite.`}
 2. Vermeide jegliche Wiederholungen von Fakten, Ausdrücken oder Ideen, die bereits auf den vorherigen Seiten stehen.
 3. Formatiere den Text lesbar durch klare Absätze. Teile den Text unbedingt in mehrere Absätze (durch Zeilenumbrüche getrennt) auf, um das Lesen zu erleichtern! Ein einziger großer Textblock ist verboten. Verwende KEINE Markdown-Überschriften (wie # oder ##) oder Sternchen (wie **fett**). Einzige Ausnahme sind Zitate, die mit "> " beginnen. Überschriften werden vom Layout-System automatisch eingefügt.
-4. Generiere exakt die Länge für eine Buchseite (ca. ${minWords} bis ${maxWords} Wörter). Es ist EXTREM WICHTIG, dass du die Seite visuell bis GANZ NACH UNTEN mit Text ausfüllst. Generiere lieber etwas mehr Text, um die Seite perfekt zu füllen, und orientiere dich stark am oberen Limit von ${maxWords} Wörtern. Beende den Text nicht mitten im Satz, sondern führe den Gedanken auf dieser Seite sauber zu Ende.
+4. Schreibe so viel Text, wie das Thema auf dieser Seite natürlich erfordert — orientiere dich am Richtwert von ca. ${minWords} bis ${maxWords} Wörtern. WICHTIG: Beende den Text NIEMALS mitten im Satz oder mitten in einer Aufzählung; führe jeden Gedanken sauber zu Ende. Wenn ein Layout-Element (z. B. eine Tabelle, eine Box, eine Checkliste, ein Zitat, eine Liste oder Schreiblinien) die Seite thematisch abschließt, ist es vollkommen in Ordnung, danach nicht mehr weiterzuschreiben — füge dann KEINEN künstlichen Fülltext hinzu. Wenn die Seite hingegen reinen Fließtext enthält und das Thema noch nicht abgeschlossen ist, nutze den Raum und schreibe bis in den unteren Bereich der Seite.
 6. Vermeide typische KI-Floskeln und künstliche oder extrem repetitive Übergänge wie 'Zusammenfassend...', 'Es ist wichtig zu betonen...', 'Abschließend...', 'Nicht nur..., sondern auch...', 'Daher...', 'Deshalb...', 'Folglich...'. Es ist dir absolut VERBOTEN, Absätze oder Sätze mehrfach hintereinander mit den exakt selben Wörtern wie "Daher" oder "Deshalb" zu beginnen! Schreibe stattdessen literarisch elegant, extrem abwechslungsreich, mit sauberem Vokabular und organisch fließend.
 7. ZWINGENDE LAYOUT-STRUKTUR FÜR DIESE SEITE (Um das Buch abwechslungsreich und visuell einzigartig wie Handarbeit zu gestalten, MUSS diese Seite exakt folgendem Layout folgen):
    👉 "${selectedTemplate}"
@@ -838,6 +1006,10 @@ ${contextPrompt}
 
 Schreibe jetzt den vollständigen Fließtext für Seite ${pageNumber}. Verwende keine Anmerkungen, keine Einleitung, sondern starte direkt mit dem Buchtext:`;
 
+    const isEng = outline.language !== 'de';
+    finalSystemPrompt = this.enforceEnglishOnly(finalSystemPrompt, isEng);
+    let finalUserPrompt = this.enforceEnglishOnly(userPrompt, isEng);
+
     const provider = this.getProvider();
     let data: any;
 
@@ -853,7 +1025,7 @@ Schreibe jetzt den vollständigen Fließtext für Seite ${pageNumber}. Verwende 
             model: this.model,
             messages: [
               { role: 'system', content: finalSystemPrompt },
-              { role: 'user', content: userPrompt }
+              { role: 'user', content: finalUserPrompt }
             ],
             temperature: 0.75,
             max_tokens: 1500
@@ -870,7 +1042,7 @@ Schreibe jetzt den vollständigen Fließtext für Seite ${pageNumber}. Verwende 
           contents: [
             {
               role: 'user',
-              parts: [{ text: userPrompt }]
+              parts: [{ text: finalUserPrompt }]
             }
           ],
           generationConfig: {
@@ -911,6 +1083,14 @@ Schreibe jetzt den vollständigen Fließtext für Seite ${pageNumber}. Verwende 
     fontSize: number = 11,
     customGuidelines: string = ''
   ): Promise<string> {
+    if (writingStyle === 'Sachbuch / Theorien') {
+      const isEn = outline.language !== 'de';
+      const theoryRule = isEn
+        ? "SPECIAL RULE FOR THIS STYLE ('Sachbuch / Theorien'): Write generally like a normal, well-founded non-fiction book about the facts. BUT occasionally (only sometimes, not always) sprinkle in your own or known theories, hypotheses, or speculations about the topic to make the text more interesting."
+        : "SONDERREGEL FÜR DIESEN STIL ('Sachbuch / Theorien'): Schreibe generell wie ein normales, fundiertes Sachbuch über die Fakten. ABER streue teilweise (nur manchmal, nicht immer) eigene oder bekannte Theorien, Hypothesen oder Spekulationen zu dem Thema ein, um den Text interessanter zu gestalten.";
+      customGuidelines = customGuidelines ? `${customGuidelines}\n\n${theoryRule}` : theoryRule;
+    }
+
     const currentPageInfo = outline.pages.find(p => p.page_number === pageNumber);
     if (!currentPageInfo) throw new Error(`Seite ${pageNumber} nicht in der Outline gefunden.`);
 
@@ -987,6 +1167,10 @@ ${contextPrompt}
 
 Schreibe jetzt den vollständigen, verlängerten Fließtext für Seite ${pageNumber} (Zielwortanzahl: ca. ${minWords} bis ${maxWords} Wörter). Starte direkt mit dem Buchtext:`;
 
+    const isEng = outline.language !== 'de';
+    finalSystemPrompt = this.enforceEnglishOnly(finalSystemPrompt, isEng);
+    let finalUserPrompt = this.enforceEnglishOnly(userPrompt, isEng);
+
     const provider = this.getProvider();
     let data: any;
 
@@ -1002,7 +1186,7 @@ Schreibe jetzt den vollständigen, verlängerten Fließtext für Seite ${pageNum
             model: this.model,
             messages: [
               { role: 'system', content: finalSystemPrompt },
-              { role: 'user', content: userPrompt }
+              { role: 'user', content: finalUserPrompt }
             ],
             temperature: 0.65,
             max_tokens: 1500
@@ -1019,7 +1203,7 @@ Schreibe jetzt den vollständigen, verlängerten Fließtext für Seite ${pageNum
           contents: [
             {
               role: 'user',
-              parts: [{ text: userPrompt }]
+              parts: [{ text: finalUserPrompt }]
             }
           ],
           generationConfig: {
@@ -1357,7 +1541,7 @@ EVERY SINGLE WORD OF YOUR OUTPUT (CHAPTER TITLES, SUBTITLES, BULLET POINTS, FOCU
 IF YOU ARE GENERATING JSON, ALL STRING VALUES INSIDE THE JSON MUST BE IN ENGLISH ONLY.
 
 ORIGINAL PROMPT SPECIFICATION:
-` + p;
+` + p + `\n\n### CRITICAL OVERRIDE ###\nIGNORE ANY INSTRUCTIONS ABOVE THAT ARE WRITTEN IN GERMAN. YOU MUST WRITE 100% IN NATIVE ENGLISH. NO GERMAN ALLOWED!`;
   }
 
   private async askAI(rawSys: string, rawUsr: string, jsonFormat: boolean = false): Promise<string> {
@@ -1643,8 +1827,9 @@ Regeln:
     try {
       const response = await this.askAI(systemPrompt, userPrompt, true);
       let jsonText = response.trim();
-      if (jsonText.startsWith('```')) {
-        jsonText = jsonText.replace(/^```json/, '').replace(/^```/, '').replace(/```$/, '').trim();
+      const match = jsonText.match(/\[[\s\S]*\]/);
+      if (match) {
+        jsonText = match[0];
       }
       const mergeMap: Array<{ new_chapter_title: string; new_focus: string; original_chapters: string[] }> = JSON.parse(jsonText);
 
