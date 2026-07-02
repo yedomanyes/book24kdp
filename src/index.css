@@ -2465,12 +2465,11 @@ input:focus, select:focus, textarea:focus {
   }
 }
 
-/* Roadmap Redesign */
-/* ── Roadmap: Meme Coin Grid Style ── */
+/* ── Roadmap: Meta UI Grid Style ── */
 .rm2-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 20px;
+  gap: 16px;
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 24px;
@@ -2478,97 +2477,90 @@ input:focus, select:focus, textarea:focus {
 
 .rm2-card {
   position: relative;
-  border-radius: 12px;
-  padding: 24px;
+  border-radius: 6px;
+  padding: 28px 24px;
   min-height: 380px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  border: 1px solid transparent;
 }
 
 .rm2-card.dark {
-  background: rgba(15, 23, 42, 0.3);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(10, 10, 10, 0.5);
+  border-color: rgba(255, 255, 255, 0.06);
 }
 
 .rm2-card.light {
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.6);
   border-color: rgba(0, 0, 0, 0.06);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
 }
 
 .rm2-card:hover {
-  transform: translateY(-6px);
-  border-color: var(--c-border);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15), 0 0 30px var(--c-bg);
+  transform: translateY(-2px);
 }
 
-.rm2-card.active {
-  background: var(--c-bg);
-  border-color: var(--c-border);
-  box-shadow: 0 10px 30px var(--c-bg);
+.rm2-card.dark:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.02);
 }
 
-.rm2-bg-num {
-  position: absolute;
-  right: -10px;
-  top: -15px;
-  font-size: 130px;
-  font-weight: 900;
-  line-height: 1;
-  pointer-events: none;
-  font-family: 'Poppins', sans-serif;
-  user-select: none;
-  opacity: 0.15;
+.rm2-card.light:hover {
+  border-color: rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.01);
+}
+
+.rm2-card.active.dark {
+  border-color: rgba(139, 92, 246, 0.4);
+  background: rgba(139, 92, 246, 0.02);
+}
+
+.rm2-card.active.light {
+  border-color: rgba(109, 40, 217, 0.3);
+  background: rgba(109, 40, 217, 0.01);
 }
 
 .rm2-badge {
-  font-size: 10px;
-  font-weight: 800;
-  padding: 4px 10px;
-  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
   letter-spacing: 0.05em;
+  font-family: monospace;
+  background: transparent;
+  border: 1px solid transparent;
 }
 
 .rm2-badge.live {
-  background: rgba(16, 185, 129, 0.12);
   color: #10b981;
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-color: rgba(16, 185, 129, 0.3);
 }
 
 .rm2-badge.soon {
-  background: rgba(245, 158, 11, 0.1);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.25);
-}
-
-.rm2-badge.locked {
-  background: rgba(255, 255, 255, 0.04);
   color: #71717a;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-color: rgba(113, 113, 122, 0.3);
 }
 
 /* Horizontal scrolling on small screens */
 @media (max-width: 1200px) {
   .rm2-grid {
-    grid-template-columns: repeat(5, 300px);
+    grid-template-columns: repeat(5, 290px);
     overflow-x: auto;
     padding-bottom: 24px;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
+    gap: 16px;
   }
   
   .rm2-card {
     scroll-snap-align: start;
+    min-height: 360px;
   }
 }
+
 
 
 /* ── Skeleton Loading System ── */

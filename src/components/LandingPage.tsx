@@ -39,63 +39,58 @@ const CARD_SIZE = '280px';
 
 const getRoadmapPhases = (isDe: boolean) => [
   {
-    phase: 'Phase 1',
-    emoji: '🔥',
-    title: 'Foundation & Core AI',
+    phase: 'Phase 01',
+    title: 'Core Engine & KDP-Ready Export',
     price: '199$',
     badge: 'LIVE',
     features: isDe
-      ? ['KI-Textgenerierung', 'KDP-Ready PDF Export', 'Multi-Format Layouts', 'Unbegrenzte Bücher']
-      : ['AI Text Generation', 'KDP-Ready PDF Export', 'Multi-Format Layouts', 'Unlimited Books'],
-    desc: isDe ? 'Das Fundament ist live. Täglich besser werdend.' : 'The foundation is live. Getting better every day.',
+      ? ['Optimierte Textgenerierung', 'Druckfertiger PDF-Export (6x9)', 'Dynamische Kapitelstrukturen', 'Unbegrenzte Bucherstellung']
+      : ['Optimized Text Generation', 'Print-ready PDF Export (6x9)', 'Dynamic Chapter Structures', 'Unlimited Book Creation'],
+    desc: isDe ? 'Das Fundament der Plattform ist live und einsatzbereit.' : 'The platform core is live and ready for deployment.',
     active: true,
   },
   {
-    phase: 'Phase 2',
-    emoji: '⚡',
+    phase: 'Phase 02',
     title: 'Advanced Layouts & Deep Research',
     price: '300$',
-    badge: isDe ? 'BALD' : 'SOON',
+    badge: isDe ? 'AKTIV' : 'ACTIVE',
     features: isDe
-      ? ['KDP Nischen-Analyse', 'Professionelle Cover-KI', 'Erweiterte Templates', 'Deep Research Modus']
-      : ['KDP Niche Analysis', 'Professional Cover AI', 'Advanced Templates', 'Deep Research Mode'],
-    desc: isDe ? 'Nischen finden. Konkurrenz schlagen. Automatisch.' : 'Find niches. Beat competition. Automatically.',
+      ? ['KDP Nischen-Analyse', 'Cover-Design Engine', 'Erweiterte Layout-Templates', 'Deep Research Modus']
+      : ['KDP Niche Analysis', 'Cover Design Engine', 'Advanced Layout Templates', 'Deep Research Mode'],
+    desc: isDe ? 'Nischenpotenziale analysieren und Buchcover visuell gestalten.' : 'Analyze niche potentials and visually design book covers.',
     active: false,
   },
   {
-    phase: 'Phase 3',
-    emoji: '🤖',
+    phase: 'Phase 03',
     title: 'Automation & Bulk Creation',
     price: '500$',
-    badge: '🔒 LOCKED',
+    badge: 'PLANNED',
     features: isDe
-      ? ['Bulk-Buchgenerierung', 'Auto-Upload zu KDP', 'Keyword-Optimierung', 'Vollautomatisch']
-      : ['Bulk Book Generation', 'Auto-Upload to KDP', 'Keyword Optimization', 'Fully Automated'],
-    desc: isDe ? '1 Klick. 10 Bücher. Fertig.' : '1 click. 10 books. Done.',
+      ? ['Batch-Buchgenerierung', 'Direkter KDP-Upload-Assistent', 'Automatische Keyword-Optimierung', 'Bulk Metadata Management']
+      : ['Batch Book Generation', 'Direct KDP Upload Assistant', 'Automated Keyword Optimization', 'Bulk Metadata Management'],
+    desc: isDe ? 'Erstellung und Export mehrerer Manuskripte in einem Schritt.' : 'Generate and export multiple manuscripts in a single run.',
     active: false,
   },
   {
-    phase: 'Phase 4',
-    emoji: '🌍',
-    title: 'Global Scaling',
+    phase: 'Phase 04',
+    title: 'Global Localization',
     price: '1000$',
-    badge: '🔒 LOCKED',
+    badge: 'PLANNED',
     features: isDe
-      ? ['20+ Sprachen', 'Globale Märkte', 'Advanced Cover Gen', 'Publisher Dashboard']
-      : ['20+ Languages', 'Global Markets', 'Advanced Cover Gen', 'Publisher Dashboard'],
-    desc: isDe ? 'Dein Business. Weltweit. In jeder Sprache.' : 'Your business. Worldwide. In every language.',
+      ? ['Automatisierte Übersetzung (20+ Sprachen)', 'Globale Marktanalysen', 'Regionale KDP-Layout-Profile', 'Publisher Dashboard']
+      : ['Automated Translation (20+ Languages)', 'Global Market Analysis', 'Regional KDP Layout Profiles', 'Publisher Dashboard'],
+    desc: isDe ? 'Lokalisierung und Skalierung von Buchprojekten weltweit.' : 'Localize and scale book projects for international markets.',
     active: false,
   },
   {
-    phase: 'Phase 5',
-    emoji: '👑',
-    title: 'The KDP Monopoly',
+    phase: 'Phase 05',
+    title: 'The Publisher Enterprise',
     price: '2000$',
-    badge: '🔒 ENDGAME',
+    badge: 'VISION',
     features: isDe
-      ? ['Vollständige Kontrolle', 'KI-Empire Builder', 'Unbegrenzte Skalierung', 'No Limits']
-      : ['Full Control', 'AI Empire Builder', 'Unlimited Scaling', 'No Limits'],
-    desc: isDe ? 'Das Endgame. Wer jetzt einsteigt, hat alles inklusive.' : 'The endgame. Early adopters get everything included.',
+      ? ['Kollaborativer Editor', 'Team-Rollen-Verwaltung', 'API-Zugang & Automatisierung', 'Enterprise Support']
+      : ['Collaborative Editor', 'Team Role Management', 'API Access & Automation', 'Enterprise Support'],
+    desc: isDe ? 'Die vollumfängliche Plattform für professionelle Publisher.' : 'The comprehensive suite for professional publishing houses.',
     active: false,
   }
 ];
@@ -726,25 +721,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
       <section id="roadmap" style={{ position: 'relative', zIndex: 10, padding: '120px 0 80px', overflow: 'hidden' }}>
 
         {/* Ambient glow */}
-        <div style={{ position: 'absolute', top: '30%', left: '20%', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 65%)', pointerEvents: 'none', filter: 'blur(40px)' }} />
-        <div style={{ position: 'absolute', top: '50%', right: '10%', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(245,158,11,0.06) 0%, transparent 65%)', pointerEvents: 'none', filter: 'blur(40px)' }} />
+        <div style={{ position: 'absolute', top: '30%', left: '20%', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(124, 58, 237, 0.04) 0%, transparent 65%)', pointerEvents: 'none', filter: 'blur(60px)' }} />
 
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          style={{ textAlign: 'center', marginBottom: '64px', padding: '0 24px', position: 'relative' }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          style={{ textAlign: 'center', marginBottom: '80px', padding: '0 24px', position: 'relative' }}
         >
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: 800, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#a78bfa', marginBottom: '20px', padding: '6px 16px', borderRadius: '999px', background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.25)' }}>
-            🗺 {isDe ? 'Der Masterplan' : 'The Masterplan'}
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.25em', textTransform: 'uppercase', color: theme === 'dark' ? '#a78bfa' : '#6d28d9', marginBottom: '16px' }}>
+            {isDe ? 'PROJEKTPLAN' : 'PROJECT TIMELINE'}
           </div>
-          <h2 style={{ fontSize: 'clamp(40px, 6vw, 72px)', fontWeight: 900, letterSpacing: '-0.05em', margin: '0 0 16px', color: theme === 'dark' ? '#fff' : '#0f172a', lineHeight: 1.0 }}>
+          <h2 style={{ fontSize: 'clamp(36px, 5vw, 56px)', fontWeight: 800, letterSpacing: '-0.04em', margin: '0 0 16px', color: theme === 'dark' ? '#fff' : '#0f172a', lineHeight: 1.1 }}>
             Book24 Roadmap
           </h2>
-          <p style={{ fontSize: '18px', color: theme === 'dark' ? '#71717a' : '#6b7280', maxWidth: '540px', margin: '0 auto', lineHeight: 1.5 }}>
-            {isDe ? 'Früh einsteigen. Mehr kriegen. Für immer.' : 'Get in early. Get more. Forever.'}
+          <p style={{ fontSize: '16px', color: theme === 'dark' ? '#a1a1aa' : '#4b5563', maxWidth: '480px', margin: '0 auto', lineHeight: 1.5 }}>
+            {isDe ? 'Langfristige Wertsteigerung durch kontinuierliche Systemerweiterungen.' : 'Long-term value creation through continuous system expansions.'}
           </p>
         </motion.div>
 
@@ -753,56 +747,53 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
           {getRoadmapPhases(isDe).map((phase, i) => {
             const isActive = phase.active;
             const colorSets = [
-              { glow: '#8b5cf6', accent: '#c084fc', border: 'rgba(192,132,252,0.5)', bg: 'rgba(139,92,246,0.08)', num: '#3b0764' },
-              { glow: '#3b82f6', accent: '#60a5fa', border: 'rgba(96,165,250,0.4)', bg: 'rgba(59,130,246,0.06)', num: '#1e3a8a' },
-              { glow: '#06b6d4', accent: '#22d3ee', border: 'rgba(34,211,238,0.35)', bg: 'rgba(6,182,212,0.06)', num: '#164e63' },
-              { glow: '#10b981', accent: '#34d399', border: 'rgba(52,211,153,0.35)', bg: 'rgba(16,185,129,0.06)', num: '#064e3b' },
-              { glow: '#f59e0b', accent: '#fbbf24', border: 'rgba(251,191,36,0.4)', bg: 'rgba(245,158,11,0.07)', num: '#451a03' },
+              { glow: '#8b5cf6', accent: '#a78bfa', border: 'rgba(139,92,246,0.2)', bg: 'rgba(139,92,246,0.02)' },
+              { glow: '#3b82f6', accent: '#60a5fa', border: 'rgba(59,130,246,0.15)', bg: 'rgba(59,130,246,0.01)' },
+              { glow: '#06b6d4', accent: '#22d3ee', border: 'rgba(6,182,212,0.15)', bg: 'rgba(6,182,212,0.01)' },
+              { glow: '#10b981', accent: '#34d399', border: 'rgba(16,185,129,0.15)', bg: 'rgba(16,185,129,0.01)' },
+              { glow: '#f59e0b', accent: '#fbbf24', border: 'rgba(245,158,11,0.15)', bg: 'rgba(245,158,11,0.01)' },
             ][i];
-            const isLocked = !isActive && i > 1;
             return (
               <motion.div
                 key={phase.phase}
-                initial={{ opacity: 0, y: 40 }}
+                initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-60px' }}
-                transition={{ duration: 0.6, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                viewport={{ once: true, margin: '-40px' }}
+                transition={{ duration: 0.5, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
                 className={`rm2-card ${isActive ? 'active' : ''} ${theme === 'dark' ? 'dark' : 'light'}`}
                 style={{ ['--c-glow' as any]: colorSets.glow, ['--c-accent' as any]: colorSets.accent, ['--c-border' as any]: colorSets.border, ['--c-bg' as any]: colorSets.bg }}
               >
-                {/* Big background phase number */}
-                <div className="rm2-bg-num" style={{ color: theme === 'dark' ? `${colorSets.num}88` : `${colorSets.num}22` }}>
-                  {String(i + 1).padStart(2, '0')}
-                </div>
+                {/* Accent line top */}
+                {isActive && (
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: `linear-gradient(90deg, #7c3aed, ${colorSets.glow})` }} />
+                )}
 
-                {/* Badge row */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', position: 'relative' }}>
-                  <span style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: colorSets.accent }}>
+                {/* Header row */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', position: 'relative' }}>
+                  <span style={{ fontFamily: 'monospace', fontSize: '11px', fontWeight: 600, color: theme === 'dark' ? '#71717a' : '#9ca3af', letterSpacing: '0.1em' }}>
                     {phase.phase}
                   </span>
-                  <span className={`rm2-badge ${isActive ? 'live' : isLocked ? 'locked' : 'soon'}`}>
-                    {isActive && <span className="pulse-dot" style={{ width: '5px', height: '5px', flexShrink: 0 }} />}
+                  <span className={`rm2-badge ${isActive ? 'live' : 'soon'}`} style={{ fontFamily: 'monospace', fontSize: '9px', fontWeight: 700, padding: '2px 8px', borderRadius: '3px' }}>
                     {phase.badge}
                   </span>
                 </div>
 
-                {/* Emoji + Title */}
-                <div style={{ fontSize: '36px', lineHeight: 1, marginBottom: '10px' }}>{phase.emoji}</div>
-                <h3 style={{ fontSize: '18px', fontWeight: 900, letterSpacing: '-0.02em', margin: '0 0 10px', color: theme === 'dark' ? '#fff' : '#0f172a', lineHeight: 1.25, position: 'relative' }}>
+                {/* Title */}
+                <h3 style={{ fontSize: '16px', fontWeight: 700, letterSpacing: '-0.02em', margin: '0 0 8px', color: theme === 'dark' ? '#fff' : '#0f172a', lineHeight: 1.3, position: 'relative' }}>
                   {phase.title}
                 </h3>
 
                 {/* Tagline */}
-                <p style={{ fontSize: '13px', fontWeight: 600, margin: '0 0 18px', color: colorSets.accent, lineHeight: 1.4, position: 'relative' }}>
+                <p style={{ fontSize: '13px', margin: '0 0 24px', color: theme === 'dark' ? '#71717a' : '#6b7280', lineHeight: 1.4, position: 'relative' }}>
                   {phase.desc}
                 </p>
 
                 {/* Feature checklist */}
-                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px', display: 'flex', flexDirection: 'column', gap: '7px', position: 'relative' }}>
+                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px', display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative' }}>
                   {phase.features.map((f: string) => (
-                    <li key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', color: theme === 'dark' ? (isLocked ? '#52525b' : '#d4d4d8') : (isLocked ? '#9ca3af' : '#374151') }}>
-                      <span style={{ color: isLocked ? '#52525b' : colorSets.accent, flexShrink: 0, fontSize: '14px' }}>
-                        {isLocked ? '🔒' : '✓'}
+                    <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '12px', color: theme === 'dark' ? '#a1a1aa' : '#374151', lineHeight: 1.4 }}>
+                      <span style={{ color: theme === 'dark' ? '#52525b' : '#d1d5db', flexShrink: 0, fontSize: '10px', marginTop: '1px' }}>
+                        —
                       </span>
                       {f}
                     </li>
@@ -810,11 +801,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
                 </ul>
 
                 {/* Price */}
-                <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`, position: 'relative' }}>
-                  <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: theme === 'dark' ? '#52525b' : '#9ca3af', marginBottom: '4px' }}>
-                    {isDe ? 'Preis steigt auf' : 'Price rises to'}
+                <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`, position: 'relative' }}>
+                  <div style={{ fontSize: '9px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.15em', color: theme === 'dark' ? '#52525b' : '#9ca3af', marginBottom: '4px' }}>
+                    {isDe ? 'WERT-INDIKATOR' : 'VALUE INDICATOR'}
                   </div>
-                  <div style={{ fontSize: '28px', fontWeight: 900, letterSpacing: '-0.03em', background: `linear-gradient(135deg, ${colorSets.accent} 0%, ${colorSets.glow} 100%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: 1 }}>
+                  <div style={{ fontSize: '24px', fontWeight: 800, fontFamily: 'monospace', letterSpacing: '-0.04em', color: theme === 'dark' ? '#fff' : '#0f172a', lineHeight: 1 }}>
                     {phase.price}
                   </div>
                 </div>
@@ -825,14 +816,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
 
         {/* CTA below */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.5 }}
-          style={{ textAlign: 'center', marginTop: '56px', padding: '0 24px' }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          style={{ textAlign: 'center', marginTop: '48px', padding: '0 24px' }}
         >
-          <p style={{ fontSize: '14px', color: theme === 'dark' ? '#52525b' : '#9ca3af', fontWeight: 600 }}>
-            🔒 {isDe ? 'Wer jetzt bei 199$ einsteigt bekommt alles zukünftige inklusive — ohne Mehrkosten.' : 'Early access at 199$ includes everything above — no extra cost. Ever.'}
+          <p style={{ fontSize: '12.5px', color: theme === 'dark' ? '#52525b' : '#9ca3af', letterSpacing: '0.02em' }}>
+            {isDe ? 'Hinweis: Early-Access-Passinhaber erhalten alle System-Erweiterungen ohne zusätzliche Zuzahlung.' : 'Note: Early Access Pass holders receive all future extensions with no additional cost.'}
           </p>
         </motion.div>
       </section>
