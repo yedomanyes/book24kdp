@@ -1,7 +1,7 @@
 # Graph Report - KDP  (2026-07-02)
 
 ## Corpus Check
-- 112 files · ~181,834 words
+- 112 files · ~182,042 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `0ab4d2a3`
+- Built from commit: `9bcfe529`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 

@@ -7226,17 +7226,17 @@ export default function App() {
                   fontWeight: 600,
                   height: '26px',
                   borderRadius: '6px',
-                  backgroundColor: 'transparent',
-                  color: 'var(--text-muted)',
-                  border: '1px solid var(--border-color)',
+                  backgroundColor: '#2563eb',
+                  color: '#ffffff',
+                  border: 'none',
                   cursor: 'pointer',
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  transition: 'all 0.15s ease',
+                  transition: 'background-color 0.15s ease',
                 }}
-                onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1d4ed8'; e.currentTarget.style.color = '#ffffff'; e.currentTarget.style.borderColor = '#1d4ed8'; }}
-                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.borderColor = 'var(--border-color)'; }}
+                onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#3b82f6'; }}
+                onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#2563eb'; }}
               >
                 {isDe ? 'Abmelden' : 'Sign Out'}
               </button>
@@ -11295,9 +11295,12 @@ export default function App() {
                 className="btn"
                 style={{
                   padding: '6px 14px', fontSize: '12px', fontWeight: 600,
-                  backgroundColor: confirmDialog.danger ? '#dc2626' : 'var(--primary)',
-                  color: '#ffffff', border: 'none', borderRadius: '6px', cursor: 'pointer'
+                  backgroundColor: confirmDialog.danger ? '#ef4444' : 'var(--primary)',
+                  color: '#ffffff', border: 'none', borderRadius: '6px', cursor: 'pointer',
+                  transition: 'background-color 0.15s ease',
                 }}
+                onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#2563eb'; }}
+                onMouseLeave={e => { e.currentTarget.style.backgroundColor = confirmDialog.danger ? '#ef4444' : 'var(--primary)'; }}
               >
                 {confirmDialog.confirmLabel || 'Bestätigen'}
               </button>
