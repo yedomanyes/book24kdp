@@ -1,7 +1,7 @@
 # Graph Report - KDP  (2026-07-02)
 
 ## Corpus Check
-- 112 files · ~180,993 words
+- 112 files · ~181,100 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `2f591bfe`
+- Built from commit: `5e104281`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -473,10 +473,10 @@ _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `GeminiService` connect `Community 7` to `Community 11`?**
   _High betweenness centrality (0.011) - this node is a cross-community bridge._
+- **Why does `O` connect `Community 135` to `Community 0`, `Community 54`, `Community 71`?**
+  _High betweenness centrality (0.007) - this node is a cross-community bridge._
 - **Why does `Ke` connect `Community 51` to `Community 0`?**
   _High betweenness centrality (0.007) - this node is a cross-community bridge._
-- **Why does `CloudQueueService` connect `Community 56` to `Community 1`, `Community 11`?**
-  _High betweenness centrality (0.006) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `constructor()` (e.g. with `l()` and `pa()`) actually correct?**
   _`constructor()` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `NAV_TABS`, `NavTabId`, `NAV_TAB_PARTICLE_COLORS` to the rest of the system?**

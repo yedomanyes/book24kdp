@@ -237,7 +237,7 @@
       "label": "cleanPageText()",
       "file_type": "code",
       "source_file": "src/App.tsx",
-      "source_location": "L11298",
+      "source_location": "L11303",
       "_origin": "ast",
       "id": "src_app_cleanpagetext",
       "community": 11,
@@ -247,7 +247,7 @@
       "label": "generateStructureVariationsLocal()",
       "file_type": "code",
       "source_file": "src/App.tsx",
-      "source_location": "L11353",
+      "source_location": "L11358",
       "_origin": "ast",
       "id": "src_app_generatestructurevariationslocal",
       "community": 11,
@@ -257,7 +257,7 @@
       "label": "ImageInsertModalInnerProps",
       "file_type": "code",
       "source_file": "src/App.tsx",
-      "source_location": "L11428",
+      "source_location": "L11433",
       "_origin": "ast",
       "id": "src_app_imageinsertmodalinnerprops",
       "community": 11,
@@ -267,11 +267,81 @@
       "label": "ImageInsertModalInner()",
       "file_type": "code",
       "source_file": "src/App.tsx",
-      "source_location": "L11433",
+      "source_location": "L11438",
       "_origin": "ast",
       "id": "src_app_imageinsertmodalinner",
       "community": 11,
       "norm_label": "imageinsertmodalinner()"
+    },
+    {
+      "label": "OwnerPanel.tsx",
+      "file_type": "code",
+      "source_file": "src/components/OwnerPanel.tsx",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "components_ownerpanel",
+      "community": 33,
+      "norm_label": "ownerpanel.tsx"
+    },
+    {
+      "label": "OwnerUserRow",
+      "file_type": "code",
+      "source_file": "src/components/OwnerPanel.tsx",
+      "source_location": "L9",
+      "_origin": "ast",
+      "id": "components_ownerpanel_owneruserrow",
+      "community": 33,
+      "norm_label": "owneruserrow"
+    },
+    {
+      "label": "Props",
+      "file_type": "code",
+      "source_file": "src/components/OwnerPanel.tsx",
+      "source_location": "L28",
+      "_origin": "ast",
+      "id": "components_ownerpanel_props",
+      "community": 33,
+      "norm_label": "props"
+    },
+    {
+      "label": "formatDate()",
+      "file_type": "code",
+      "source_file": "src/components/OwnerPanel.tsx",
+      "source_location": "L33",
+      "_origin": "ast",
+      "id": "components_ownerpanel_formatdate",
+      "community": 33,
+      "norm_label": "formatdate()"
+    },
+    {
+      "label": "OwnerPanel()",
+      "file_type": "code",
+      "source_file": "src/components/OwnerPanel.tsx",
+      "source_location": "L43",
+      "_origin": "ast",
+      "id": "components_ownerpanel_ownerpanel",
+      "community": 33,
+      "norm_label": "ownerpanel()"
+    },
+    {
+      "label": "MetricCard()",
+      "file_type": "code",
+      "source_file": "src/components/OwnerPanel.tsx",
+      "source_location": "L1297",
+      "_origin": "ast",
+      "id": "components_ownerpanel_metriccard",
+      "community": 69,
+      "norm_label": "metriccard()"
+    },
+    {
+      "label": "OwnerToolbarButton()",
+      "file_type": "code",
+      "source_file": "src/components/OwnerPanel.tsx",
+      "source_location": "L1308",
+      "_origin": "ast",
+      "id": "components_ownerpanel_ownertoolbarbutton",
+      "community": 33,
+      "norm_label": "ownertoolbarbutton()"
     },
     {
       "label": "BugReportModal.tsx",
@@ -279,9 +349,9 @@
       "source_file": "src/components/BugReportModal.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "components_bugreportmodal",
       "community": 42,
-      "norm_label": "bugreportmodal.tsx"
+      "norm_label": "bugreportmodal.tsx",
+      "id": "components_bugreportmodal"
     },
     {
       "label": "Props",
@@ -289,9 +359,9 @@
       "source_file": "src/components/BugReportModal.tsx",
       "source_location": "L6",
       "_origin": "ast",
-      "id": "components_bugreportmodal_props",
       "community": 42,
-      "norm_label": "props"
+      "norm_label": "props",
+      "id": "components_bugreportmodal_props"
     },
     {
       "label": "CATEGORIES_DE",
@@ -299,9 +369,9 @@
       "source_file": "src/components/BugReportModal.tsx",
       "source_location": "L16",
       "_origin": "ast",
-      "id": "components_bugreportmodal_categories_de",
       "community": 42,
-      "norm_label": "categories_de"
+      "norm_label": "categories_de",
+      "id": "components_bugreportmodal_categories_de"
     },
     {
       "label": "CATEGORIES_EN",
@@ -309,9 +379,9 @@
       "source_file": "src/components/BugReportModal.tsx",
       "source_location": "L25",
       "_origin": "ast",
-      "id": "components_bugreportmodal_categories_en",
       "community": 42,
-      "norm_label": "categories_en"
+      "norm_label": "categories_en",
+      "id": "components_bugreportmodal_categories_en"
     },
     {
       "label": "getRemainingSeconds()",
@@ -319,9 +389,9 @@
       "source_file": "src/components/BugReportModal.tsx",
       "source_location": "L34",
       "_origin": "ast",
-      "id": "components_bugreportmodal_getremainingseconds",
       "community": 42,
-      "norm_label": "getremainingseconds()"
+      "norm_label": "getremainingseconds()",
+      "id": "components_bugreportmodal_getremainingseconds"
     },
     {
       "label": "BugReportModal()",
@@ -329,9 +399,9 @@
       "source_file": "src/components/BugReportModal.tsx",
       "source_location": "L46",
       "_origin": "ast",
-      "id": "components_bugreportmodal_bugreportmodal",
       "community": 42,
-      "norm_label": "bugreportmodal()"
+      "norm_label": "bugreportmodal()",
+      "id": "components_bugreportmodal_bugreportmodal"
     },
     {
       "label": "app.json",
@@ -10304,76 +10374,6 @@
       "id": "components_gooeynav_gooeynav"
     },
     {
-      "label": "OwnerPanel.tsx",
-      "file_type": "code",
-      "source_file": "src/components/OwnerPanel.tsx",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 33,
-      "norm_label": "ownerpanel.tsx",
-      "id": "components_ownerpanel"
-    },
-    {
-      "label": "OwnerUserRow",
-      "file_type": "code",
-      "source_file": "src/components/OwnerPanel.tsx",
-      "source_location": "L9",
-      "_origin": "ast",
-      "community": 33,
-      "norm_label": "owneruserrow",
-      "id": "components_ownerpanel_owneruserrow"
-    },
-    {
-      "label": "Props",
-      "file_type": "code",
-      "source_file": "src/components/OwnerPanel.tsx",
-      "source_location": "L28",
-      "_origin": "ast",
-      "community": 33,
-      "norm_label": "props",
-      "id": "components_ownerpanel_props"
-    },
-    {
-      "label": "formatDate()",
-      "file_type": "code",
-      "source_file": "src/components/OwnerPanel.tsx",
-      "source_location": "L33",
-      "_origin": "ast",
-      "community": 33,
-      "norm_label": "formatdate()",
-      "id": "components_ownerpanel_formatdate"
-    },
-    {
-      "label": "OwnerPanel()",
-      "file_type": "code",
-      "source_file": "src/components/OwnerPanel.tsx",
-      "source_location": "L43",
-      "_origin": "ast",
-      "community": 33,
-      "norm_label": "ownerpanel()",
-      "id": "components_ownerpanel_ownerpanel"
-    },
-    {
-      "label": "MetricCard()",
-      "file_type": "code",
-      "source_file": "src/components/OwnerPanel.tsx",
-      "source_location": "L1291",
-      "_origin": "ast",
-      "community": 69,
-      "norm_label": "metriccard()",
-      "id": "components_ownerpanel_metriccard"
-    },
-    {
-      "label": "OwnerToolbarButton()",
-      "file_type": "code",
-      "source_file": "src/components/OwnerPanel.tsx",
-      "source_location": "L1302",
-      "_origin": "ast",
-      "community": 33,
-      "norm_label": "ownertoolbarbutton()",
-      "id": "components_ownerpanel_ownertoolbarbutton"
-    },
-    {
       "label": "test_jspdf.js",
       "file_type": "code",
       "source_file": "test_jspdf.js",
@@ -17831,6 +17831,143 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+      "source_file": "src/components/OwnerPanel.tsx",
+      "source_location": "L78",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "components_ownerpanel",
+      "target": "components_ownerpanel_formatdate"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/OwnerPanel.tsx",
+      "source_location": "L1195",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "components_ownerpanel",
+      "target": "components_ownerpanel_metriccard"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/OwnerPanel.tsx",
+      "source_location": "L145",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "components_ownerpanel",
+      "target": "components_ownerpanel_ownerpanel"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/OwnerPanel.tsx",
+      "source_location": "L1206",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "components_ownerpanel",
+      "target": "components_ownerpanel_ownertoolbarbutton"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/OwnerPanel.tsx",
+      "source_location": "L15",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "components_ownerpanel",
+      "target": "components_ownerpanel_owneruserrow"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/OwnerPanel.tsx",
+      "source_location": "L29",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "components_ownerpanel",
+      "target": "components_ownerpanel_props"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/OwnerPanel.tsx",
+      "source_location": "L13",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "components_ownerpanel",
+      "target": "lib_owner"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/OwnerPanel.tsx",
+      "source_location": "L13",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "components_ownerpanel",
+      "target": "lib_owner_isowneremail"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/OwnerPanel.tsx",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "components_ownerpanel",
+      "target": "src_supabase"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/OwnerPanel.tsx",
+      "source_location": "L2",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "components_ownerpanel",
+      "target": "src_supabase_appuser"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/OwnerPanel.tsx",
+      "source_location": "L778",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "components_ownerpanel_ownerpanel",
+      "target": "components_ownerpanel_formatdate"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/components/OwnerPanel.tsx",
+      "source_location": "L156",
+      "weight": 1.0,
+      "source": "components_ownerpanel_ownerpanel",
+      "target": "lib_owner_isowneremail"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/components/SupabaseStatusBox.tsx",
+      "source_location": "L239",
+      "weight": 1.0,
+      "source": "components_supabasestatusbox_supabasestatusbox",
+      "target": "components_ownerpanel_metriccard"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
       "source_file": "src/components/BugReportModal.tsx",
       "source_location": "L31",
       "weight": 1.0,
@@ -17864,9 +18001,9 @@
       "source_file": "src/components/BugReportModal.tsx",
       "source_location": "L34",
       "weight": 1.0,
+      "confidence_score": 1.0,
       "source": "components_bugreportmodal",
-      "target": "components_bugreportmodal_getremainingseconds",
-      "confidence_score": 1.0
+      "target": "components_bugreportmodal_getremainingseconds"
     },
     {
       "relation": "contains",
@@ -45261,143 +45398,6 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
-      "source_file": "src/components/OwnerPanel.tsx",
-      "source_location": "L78",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "components_ownerpanel",
-      "target": "components_ownerpanel_formatdate"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/components/OwnerPanel.tsx",
-      "source_location": "L1195",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "components_ownerpanel",
-      "target": "components_ownerpanel_metriccard"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/components/OwnerPanel.tsx",
-      "source_location": "L145",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "components_ownerpanel",
-      "target": "components_ownerpanel_ownerpanel"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/components/OwnerPanel.tsx",
-      "source_location": "L1206",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "components_ownerpanel",
-      "target": "components_ownerpanel_ownertoolbarbutton"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/components/OwnerPanel.tsx",
-      "source_location": "L15",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "components_ownerpanel",
-      "target": "components_ownerpanel_owneruserrow"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/components/OwnerPanel.tsx",
-      "source_location": "L29",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "components_ownerpanel",
-      "target": "components_ownerpanel_props"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "src/components/OwnerPanel.tsx",
-      "source_location": "L13",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "components_ownerpanel",
-      "target": "lib_owner"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "src/components/OwnerPanel.tsx",
-      "source_location": "L13",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "components_ownerpanel",
-      "target": "lib_owner_isowneremail"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "src/components/OwnerPanel.tsx",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "components_ownerpanel",
-      "target": "src_supabase"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "src/components/OwnerPanel.tsx",
-      "source_location": "L2",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "components_ownerpanel",
-      "target": "src_supabase_appuser"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "src/components/OwnerPanel.tsx",
-      "source_location": "L778",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "components_ownerpanel_ownerpanel",
-      "target": "components_ownerpanel_formatdate"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/components/OwnerPanel.tsx",
-      "source_location": "L156",
-      "weight": 1.0,
-      "source": "components_ownerpanel_ownerpanel",
-      "target": "lib_owner_isowneremail"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "INFERRED",
-      "confidence_score": 0.8,
-      "source_file": "src/components/SupabaseStatusBox.tsx",
-      "source_location": "L239",
-      "weight": 1.0,
-      "source": "components_supabasestatusbox_supabasestatusbox",
-      "target": "components_ownerpanel_metriccard"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
       "source_file": "test_jspdf.js",
       "source_location": "L2",
       "weight": 1.0,
@@ -54846,5 +54846,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "2f591bfe93dcf57b934fd22dacb67f2867b3f4e2"
+  "built_at_commit": "5e1042818f939024599ed0982e127ab9a7aa6dfb"
 }

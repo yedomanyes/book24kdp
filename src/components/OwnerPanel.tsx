@@ -528,7 +528,7 @@ export function OwnerPanel({ currentUser, theme }: Props) {
                 setLoadingReports(true);
                 setReportsError(null);
                 try {
-                  const { data, error } = await supabase!.from('bug_reports').select('*').order('created_at', { ascending: false }).limit(100);
+                  const { data, error } = await supabase!.rpc('admin_get_bug_reports');
                   if (error) throw error;
                   setBugReports(data || []);
                 } catch (err: any) {
@@ -1163,8 +1163,10 @@ export function OwnerPanel({ currentUser, theme }: Props) {
               onClick={async () => {
                 setLoadingReports(true);
                 try {
-                  const { data } = await supabase!.from('bug_reports').select('*').order('created_at', { ascending: false }).limit(100);
-                  setBugReports(data || []);
+                  const { data, error } = await supabase!.rpc('admin_get_bug_reports');
+                  if (!error) {
+                    setBugReports(data || []);
+                  }
                 } finally { setLoadingReports(false); }
               }}
               style={{ fontSize: '12px', color: t.textMuted, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
