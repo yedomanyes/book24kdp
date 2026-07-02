@@ -262,13 +262,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
             onClick={() => window.location.href = 'https://book24studio.gumroad.com/l/howtbr'}
             style={{
               background: theme === 'dark'
-                ? 'linear-gradient(180deg, #0b57d0 0%, #0842a0 100%)'
+                ? 'linear-gradient(180deg, #ea580c 0%, #c2410c 100%)'
                 : 'linear-gradient(180deg, #1e1e24 0%, #0c0c0e 100%)',
               border: theme === 'dark'
                 ? '1px solid rgba(255, 255, 255, 0.2)'
                 : '1px solid rgba(255, 255, 255, 0.15)',
               borderBottom: theme === 'dark'
-                ? '4px solid #063078'
+                ? '4px solid #9a3412'
                 : '4px solid rgba(255, 255, 255, 0.35)',
               padding: '14px 36px 16px 36px',
               borderRadius: '12px',
@@ -277,7 +277,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
               alignItems: 'center',
               gap: '12px',
               boxShadow: theme === 'dark'
-                ? '0 8px 30px rgba(11, 87, 208, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3)'
+                ? '0 8px 30px rgba(234, 88, 12, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3)'
                 : '0 8px 30px rgba(255, 255, 255, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.25)',
               transition: 'all 0.15s cubic-bezier(0.16, 1, 0.3, 1)',
               transform: 'translateY(0)',
@@ -287,39 +287,39 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
             onMouseEnter={(e) => { 
               e.currentTarget.style.transform = 'translateY(-2px)'; 
               e.currentTarget.style.borderBottom = theme === 'dark'
-                ? '5px solid #0a4fbe'
+                ? '5px solid #ea580c'
                 : '5px solid rgba(255, 255, 255, 0.45)';
               e.currentTarget.style.boxShadow = theme === 'dark'
-                ? '0 12px 40px rgba(11, 87, 208, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4)'
+                ? '0 12px 40px rgba(234, 88, 12, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4)'
                 : '0 12px 40px rgba(255, 255, 255, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.35)';
               e.currentTarget.style.filter = 'brightness(1.2)';
             }}
             onMouseLeave={(e) => { 
               e.currentTarget.style.transform = 'translateY(0)'; 
               e.currentTarget.style.borderBottom = theme === 'dark'
-                ? '4px solid #063078'
+                ? '4px solid #9a3412'
                 : '4px solid rgba(255, 255, 255, 0.35)';
               e.currentTarget.style.boxShadow = theme === 'dark'
-                ? '0 8px 30px rgba(11, 87, 208, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3)'
+                ? '0 8px 30px rgba(234, 88, 12, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3)'
                 : '0 8px 30px rgba(255, 255, 255, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.25)';
               e.currentTarget.style.filter = 'brightness(1)';
             }}
             onMouseDown={(e) => {
               e.currentTarget.style.transform = 'translateY(2px)';
               e.currentTarget.style.borderBottom = theme === 'dark'
-                ? '1px solid #063078'
+                ? '1px solid #9a3412'
                 : '1px solid rgba(255, 255, 255, 0.15)';
               e.currentTarget.style.boxShadow = theme === 'dark'
-                ? '0 4px 10px rgba(11, 87, 208, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15)'
+                ? '0 4px 10px rgba(234, 88, 12, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15)'
                 : '0 4px 10px rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
             }}
             onMouseUp={(e) => {
               e.currentTarget.style.transform = 'translateY(-2px)';
               e.currentTarget.style.borderBottom = theme === 'dark'
-                ? '5px solid #0a4fbe'
+                ? '5px solid #ea580c'
                 : '5px solid rgba(255, 255, 255, 0.45)';
               e.currentTarget.style.boxShadow = theme === 'dark'
-                ? '0 12px 40px rgba(11, 87, 208, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4)'
+                ? '0 12px 40px rgba(234, 88, 12, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4)'
                 : '0 12px 40px rgba(255, 255, 255, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.35)';
             }}
           >
