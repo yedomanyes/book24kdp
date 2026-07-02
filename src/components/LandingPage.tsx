@@ -7,7 +7,6 @@ import TiltedCard from './TiltedCard';
 import { LandingBadPagePreview, LandingBookPagePreview } from './LandingContentPreview';
 
 import LiquidEther from './LiquidEther';
-import Grainient from './Grainient';
 import ClickSpark from './ClickSpark';
 import { LandingNavbar } from './LandingNavbar';
 import KdpCalculator from './KdpCalculator';
@@ -198,32 +197,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
           />
         </div>
       ) : (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-          <Grainient
-            color1="#fffeff"
-            color2="#d6d6d8"
-            color3="#c7c6c6"
-            timeSpeed={0.25}
-            colorBalance={0}
-            warpStrength={1}
-            warpFrequency={5}
-            warpSpeed={2}
-            warpAmplitude={50}
-            blendAngle={0}
-            blendSoftness={0.05}
-            rotationAmount={500}
-            noiseScale={2}
-            grainAmount={0.1}
-            grainScale={2}
-            grainAnimated={false}
-            contrast={1.5}
-            gamma={1}
-            saturation={1}
-            centerX={0}
-            centerY={0}
-            zoom={0.9}
-          />
-        </div>
+        <div style={{ 
+          position: 'fixed', 
+          inset: 0, 
+          zIndex: 0, 
+          pointerEvents: 'none', 
+          background: 'linear-gradient(to bottom, #fcfbfa 0%, #f4efe6 100%)' 
+        }} />
       )}
 
       {/* Navbar */}
