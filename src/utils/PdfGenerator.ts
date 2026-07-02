@@ -72,6 +72,7 @@ export interface PdfConfig {
   box1Design?: BoxDesign;
   box2Design?: BoxDesign;
   box3Design?: BoxDesign;
+  mirrorMargins?: boolean; // true = Spiegel-Ränder (KDP-optimal), false = gleiche Ränder auf allen Seiten
 }
 
 export interface BoxDesign {
@@ -84,11 +85,11 @@ export interface BoxDesign {
   borderStyle: 'solid' | 'dashed' | 'dotted';
 }
 
-export function generateBookPdf(
+export async function generateBookPdf(
   outline: BookOutline,
   pagesText: { [key: number]: string },
   config: PdfConfig
-): Blob {
+): Promise<Blob> {
   // Determine page dimensions in inches
   let widthInches = 6;
   let heightInches = 9;
@@ -120,12 +121,69 @@ export function generateBookPdf(
   }
 
   const doc = new jsPDF(pageSettings);
+
+  // ── Font Embedding: load TTFs and embed into PDF for KDP compliance ──
+
+  // Convert arrayBuffer to base64 using FileReader (fast, 100% correct, browser native)
+  function arrayBufferToBase64(buffer: ArrayBuffer): Promise<string> {
+    const blob = new Blob([buffer], { type: 'application/octet-stream' });
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        const base64 = dataUrl.substring(dataUrl.indexOf(',') + 1);
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  // Load a TTF and register it with jsPDF
+  async function embedFont(path: string, family: string, style: string) {
+    try {
+      const res = await fetch(path);
+      if (!res.ok) return;
+      const buf = await res.arrayBuffer();
+      const b64 = await arrayBufferToBase64(buf);
+      const fname = `${family}-${style}.ttf`;
+      doc.addFileToVFS(fname, b64);
+      doc.addFont(fname, family, style);
+    } catch (e) {
+      console.warn(`Font embed skipped: ${family} ${style}`, e);
+    }
+  }
+
+
+  await Promise.all([
+    embedFont('/fonts/LibreBaskerville-Regular.ttf', 'librebaskerville', 'normal'),
+    embedFont('/fonts/LibreBaskerville-Bold.ttf',    'librebaskerville', 'bold'),
+    embedFont('/fonts/LibreBaskerville-Italic.ttf',  'librebaskerville', 'italic'),
+    embedFont('/fonts/LibreBaskerville-Bold.ttf',    'librebaskerville', 'bolditalic'), // Use bold for bolditalic fallback
+    embedFont('/fonts/Lato-Regular.ttf',    'lato', 'normal'),
+    embedFont('/fonts/Lato-Bold.ttf',       'lato', 'bold'),
+    embedFont('/fonts/Lato-Italic.ttf',     'lato', 'italic'),
+    embedFont('/fonts/Lato-BoldItalic.ttf', 'lato', 'bolditalic'),
+    embedFont('/fonts/PlayfairDisplay-Regular.ttf',    'playfairdisplay', 'normal'),
+    embedFont('/fonts/PlayfairDisplay-Bold.ttf',       'playfairdisplay', 'bold'),
+    embedFont('/fonts/PlayfairDisplay-Italic.ttf',     'playfairdisplay', 'italic'),
+    embedFont('/fonts/PlayfairDisplay-BoldItalic.ttf', 'playfairdisplay', 'bolditalic'),
+    embedFont('/fonts/CourierPrime-Regular.ttf', 'courierprime', 'normal'),
+    embedFont('/fonts/CourierPrime-Bold.ttf',    'courierprime', 'bold'),
+    embedFont('/fonts/CourierPrime-Regular.ttf', 'courierprime', 'italic'),
+    embedFont('/fonts/CourierPrime-Bold.ttf',    'courierprime', 'bolditalic'),
+  ]);
+  // ─────────────────────────────────────────────────────────────────────
+
   const { fontFamily: rawFontFamily, fontSize, lineHeightMultiplier } = config;
-  const fontFamily = rawFontFamily === 'arial' || rawFontFamily === 'inter'
-    ? 'helvetica'
-    : rawFontFamily === 'playfair'
-      ? 'times'
-      : rawFontFamily;
+  const fontFamily = (() => {
+    const f = rawFontFamily;
+    if (f === 'arial' || f === 'inter' || f === 'helvetica') return 'lato';
+    if (f === 'playfair') return 'playfairdisplay';
+    if (f === 'courier') return 'courierprime';
+    if (f === 'times') return 'librebaskerville';
+    return 'librebaskerville';
+  })();
 
   // Helper: parse hex color or rgba to [R, G, B] decimals
   function parseHexColor(hex: string): [number, number, number] {
@@ -176,35 +234,21 @@ export function generateBookPdf(
         borderStyle: 'dotted'
       }
     };
-
     const styleNum = boxStyle === 2 || boxStyle === 3 ? boxStyle : 1;
     const custom = styleNum === 1 ? config.box1Design :
                    styleNum === 2 ? config.box2Design :
                    config.box3Design;
-
-    return {
-      ...defaults[styleNum],
-      ...(custom || {})
-    };
+    return { ...defaults[styleNum], ...(custom || {}) };
   }
 
   // Helper: resolve typography font key to jsPDF-compatible font family
   function resolvePdfFont(key?: string): string {
     if (!key) return fontFamily;
     const k = key.toLowerCase();
-    
-    // Sans-serif fonts map to helvetica
-    if (['arial', 'inter', 'montserrat', 'poppins', 'oswald', 'helvetica'].includes(k)) {
-      return 'helvetica';
-    }
-    
-    // Monospace maps to courier
-    if (['courier'].includes(k)) {
-      return 'courier';
-    }
-    
-    // Default serif fonts (including playfair, garamond, etc.) map to times
-    return 'times';
+    if (['arial', 'inter', 'montserrat', 'poppins', 'lato', 'helvetica', 'oswald', 'cinzel'].includes(k)) return 'lato';
+    if (['courier', 'courierprime', 'mono'].includes(k)) return 'courierprime';
+    if (['playfair', 'playfairdisplay'].includes(k)) return 'playfairdisplay';
+    return 'librebaskerville'; // default serif
   }
   const pageWidth = pageFormat[0];
   const pageHeight = pageFormat[1];
@@ -215,14 +259,15 @@ export function generateBookPdf(
   const outsideMargin = 45; 
   
   // Dynamic inside margin (Bundsteg-Kompensation / Gutter) based on actual outline pages
-  let insideMargin = 45;
+  // KDP minimum: 0.75" (54pt) for ≤150 pages, more for thicker books
+  let insideMargin = 54; // 0.75" — KDP minimum for all books
   const totalBookPages = outline.pages.length;
   if (totalBookPages > 500) {
-    insideMargin = 72; // +27pt gutter (0.375") for huge books
+    insideMargin = 90; // 1.25" gutter for huge books (KDP requirement)
   } else if (totalBookPages > 300) {
-    insideMargin = 63; // +18pt gutter (0.25") for thick books
+    insideMargin = 81; // 1.125" gutter for 301-500 pages
   } else if (totalBookPages > 150) {
-    insideMargin = 54; // +9pt gutter (0.125") for medium books
+    insideMargin = 72; // 1.0" gutter for 151-300 pages
   }
   
   const writableWidth = pageWidth - insideMargin - outsideMargin;
@@ -231,22 +276,23 @@ export function generateBookPdf(
   const fontStyleBold = 'bold';
   const fontStyleItalic = 'italic';
 
-  // Match live preview and real book printing:
-  // odd physical pages are recto/right pages (gutter/inside on the left),
-  // even physical pages are verso/left pages (outside on the left, gutter on the right).
+  // Odd pages = recto (right), even = verso (left).
+  // mirrorMargins: inside/outside wechseln pro Seite (KDP-Standard)
+  // kein mirrorMargins: alle Seiten gleicher linker Rand (insideMargin)
   function getLeftMarginX(pdfPageNum: number): number {
+    if (config.mirrorMargins === false) return insideMargin; // gleiche Ränder
     return pdfPageNum % 2 === 0 ? outsideMargin : insideMargin;
   }
 
   // --- 1. TITLE PAGE ---
   if (!config.hideTitlePage) {
-  // Premium double borders
+  // Premium double borders — kept inside KDP safe zone (min 0.5" = 36pt from edge)
   if (config.titlePageShowBorders !== false) {
     doc.setLineWidth(1.5);
     doc.setDrawColor(60); // Neutral dark gray
-    doc.rect(24, 24, pageWidth - 48, pageHeight - 48);
+    doc.rect(38, 38, pageWidth - 76, pageHeight - 76);
     doc.setLineWidth(0.5);
-    doc.rect(28, 28, pageWidth - 56, pageHeight - 56);
+    doc.rect(43, 43, pageWidth - 86, pageHeight - 86);
   }
 
   // --- Helper: compute X for text alignment + custom offset ---
@@ -567,7 +613,7 @@ export function generateBookPdf(
         doc.setFontSize(9);
         doc.setTextColor(100);
         const roman = toRoman(pdfPageCounter);
-        doc.text(roman, pageWidth / 2, pageHeight - bottomMargin + 20, { align: 'center' });
+        doc.text(roman, pageWidth / 2, pageHeight - bottomMargin + 8, { align: 'center' });
         
         // Add new page
         doc.addPage();
@@ -623,7 +669,7 @@ export function generateBookPdf(
     doc.setFontSize(9);
     doc.setTextColor(100);
     const roman = toRoman(pdfPageCounter);
-    doc.text(roman, pageWidth / 2, pageHeight - bottomMargin + 20, { align: 'center' });
+    doc.text(roman, pageWidth / 2, pageHeight - bottomMargin + 8, { align: 'center' });
   }
 
   // --- 3. CONTENT PAGES ---
@@ -1594,7 +1640,7 @@ export function generateBookPdf(
         doc.setTextColor(100);
         const footerX = pageWidth / 2;
         const arabicPageNum = pageContentNumberMap[i] + partIndex;
-        doc.text(arabicPageNum.toString(), footerX, pageHeight - bottomMargin + 20, { align: 'center' });
+        doc.text(arabicPageNum.toString(), footerX, pageHeight - bottomMargin + 8, { align: 'center' });
       }
     });
   });

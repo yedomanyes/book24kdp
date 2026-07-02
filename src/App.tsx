@@ -71,6 +71,8 @@ import { hasBrainAccess } from './config/brainAccess';
 import { OwnerPanel } from './components/OwnerPanel';
 import { isOwnerEmail, isOwnerRoute } from './lib/owner';
 import { syncUserProfile } from './services/userProfileService';
+import { LanguageProvider } from './contexts/LanguageContext';
+
 
 // Run migration once at module load (before any state is initialized)
 migrateOldKeys();
@@ -923,10 +925,28 @@ const safeLocalStorage = {
 
 export default function App() {
   // Supabase Auth states
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [authLoading, setAuthLoading] = useState<boolean>(true);
+  const [currentUser, setCurrentUser] = useState<any>(() => {
+    try {
+      const isDev = new URLSearchParams(window.location.search).get('dev_mode') === 'true';
+      if (isDev) return { uid: 'dev-user-id', email: 'dev@example.com', displayName: 'Developer' };
+    } catch (e) {}
+    return null;
+  });
+  const [authLoading, setAuthLoading] = useState<boolean>(() => {
+    try {
+      const isDev = new URLSearchParams(window.location.search).get('dev_mode') === 'true';
+      if (isDev) return false;
+    } catch (e) {}
+    return true;
+  });
   const [authError, setAuthError] = useState<string | null>(null);
-  const [userHasValidLicense, setUserHasValidLicense] = useState<boolean | null>(null);
+  const [userHasValidLicense, setUserHasValidLicense] = useState<boolean | null>(() => {
+    try {
+      const isDev = new URLSearchParams(window.location.search).get('dev_mode') === 'true';
+      if (isDev) return true;
+    } catch (e) {}
+    return null;
+  });
   const [maintenanceInfo, setMaintenanceInfo] = useState<{ active: boolean; message: string | null; endsAt: string | null }>({ active: false, message: null, endsAt: null });
   const [activeModules, setActiveModules] = useState<Record<string, any>>({ brain: true, dashboard: true, calculator: true, studio: true });
   const [showBanModal, setShowBanModal] = useState(false);
@@ -949,6 +969,9 @@ export default function App() {
 
   // Sync state with Supabase auth status
   useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('dev_mode') === 'true') {
+      return;
+    }
     if (!supabase) {
       setAuthLoading(false);
       return;
@@ -1035,9 +1058,19 @@ export default function App() {
           profileStatus = profile?.status;
           if (profile?.license_key) {
             hasLicense = true;
+            // Store locally so refresh always works
+            safeLocalStorage.setItem(`b24_activated_${user.uid}`, 'true');
           }
         } catch (err) {
           // ignore
+        }
+
+        // Check permanent per-user localStorage flag (survives refresh, set on key activation)
+        if (!hasLicense) {
+          const locallyActivated = safeLocalStorage.getItem(`b24_activated_${user.uid}`);
+          if (locallyActivated === 'true') {
+            hasLicense = true;
+          }
         }
 
         // Auto-claim existing license by email (e.g., if switching from email/password to Google)
@@ -1049,6 +1082,7 @@ export default function App() {
             });
             if (autoClaimed) {
               hasLicense = true;
+              safeLocalStorage.setItem(`b24_activated_${user.uid}`, 'true');
               console.log('Successfully auto-claimed existing license key by email');
             }
           } catch (e) {
@@ -1066,15 +1100,23 @@ export default function App() {
         // Mark user as returning so they bypass LicensePrompt in the future on this browser
         safeLocalStorage.setItem('b24_returning_user', 'true');
 
-        // Check for Gumroad License in localStorage
+        // Check for Gumroad License in localStorage (pre-auth flow)
         const savedLicense = safeLocalStorage.getItem('b24_valid_license_key');
         if (savedLicense && !hasLicense) {
           try {
             await supabase.rpc('claim_license_key', { key_to_claim: savedLicense });
             hasLicense = true;
-            safeLocalStorage.removeItem('b24_valid_license_key'); // clear after claim
+            safeLocalStorage.removeItem('b24_valid_license_key');
+            safeLocalStorage.setItem(`b24_activated_${user.uid}`, 'true');
           } catch (e) {
             console.error('Failed to claim license:', e);
+          }
+          try {
+            await supabase.from('profiles').update({ license_key: savedLicense }).eq('id', user.uid);
+            hasLicense = true;
+            safeLocalStorage.setItem(`b24_activated_${user.uid}`, 'true');
+          } catch (e) {
+            console.error('Failed to persist license_key to profile:', e);
           }
         }
 
@@ -1407,6 +1449,9 @@ export default function App() {
     // Auto-detect from browser
     return (typeof navigator !== 'undefined' && navigator.language.startsWith('de')) ? 'de' : 'en';
   });
+
+  const isDe = language === 'de';
+
   const setLanguage = (lang: 'de' | 'en') => {
     setLanguageState(lang);
     safeLocalStorage.setItem('b24studio_language', lang);
@@ -2341,6 +2386,7 @@ export default function App() {
   // Resizable Panes States
   const [showGilInsights, setShowGilInsights] = useState(false);
   const [gilRefreshKey, setGilRefreshKey] = useState(0);
+  const [mirrorMargins, setMirrorMargins] = useState(true); // true = KDP Spiegel-Ränder, false = gleiche Ränder
 
   const [leftWidth, setLeftWidth] = useState<number>(() => {
     const saved = safeLocalStorage.getItem('b24studio_left_width');
@@ -4567,7 +4613,7 @@ export default function App() {
   };
 
   // Download compiled PDF
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
     const activeBook = booksRef.current.find(b => b.id === activeBookId);
     if (!activeBook || !activeBook.outline) return;
     try {
@@ -4628,8 +4674,9 @@ export default function App() {
         titlePagePublisherX: activeBook.titlePagePublisherX || 0,
         titlePagePublisherY: activeBook.titlePagePublisherY || 0,
         titlePagePublisherBold: activeBook.titlePagePublisherBold === true,
+        mirrorMargins: mirrorMargins,
       };
-      const pdfBlob = generateBookPdf(activeBook.outline, activeBook.pagesText || {}, config);
+      const pdfBlob = await generateBookPdf(activeBook.outline, activeBook.pagesText || {}, config);
       const url = URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
       link.href = url;
@@ -6817,6 +6864,7 @@ export default function App() {
         />
         {showAuthModal && (
           <Auth 
+            language={language}
             onAuthSuccess={() => setShowAuthModal(false)} 
             onClose={() => setShowAuthModal(false)} 
           />
@@ -6826,6 +6874,7 @@ export default function App() {
   }
 
   return (
+    <LanguageProvider language={language} setLanguage={setLanguage}>
     <>
       {authError && (
         <div style={{
@@ -6835,7 +6884,7 @@ export default function App() {
           display: 'flex', alignItems: 'center', gap: '12px', fontFamily: 'sans-serif', fontSize: '13px',
           maxWidth: '90vw', width: '400px', justifyContent: 'space-between', boxSizing: 'border-box'
         }}>
-          <span style={{ textAlign: 'left' }}><strong>Anmelde-Fehler:</strong> {authError}</span>
+          <span style={{ textAlign: 'left' }}><strong>{isDe ? 'Anmelde-Fehler:' : 'Sign-in Error:'}</strong> {authError}</span>
           <button onClick={() => setAuthError(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#a8201a', fontWeight: 'bold', fontSize: '16px', padding: '0 4px' }}>✕</button>
         </div>
       )}
@@ -6869,19 +6918,19 @@ export default function App() {
             {/* Title */}
             <div>
               <h2 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: 800, color: '#fca5a5', letterSpacing: '-0.02em' }}>
-                Konto gesperrt
+                {isDe ? 'Konto gesperrt' : 'Account Banned'}
               </h2>
               <p style={{ margin: 0, fontSize: '15px', color: '#fecaca', lineHeight: 1.6 }}>
-                Dein Konto wurde vorübergehend eingefroren oder dauerhaft gesperrt.
+                {isDe ? 'Dein Konto wurde vorübergehend eingefroren oder dauerhaft gesperrt.' : 'Your account has been temporarily frozen or permanently suspended.'}
               </p>
             </div>
             {/* Divider */}
             <div style={{ width: '100%', height: '1px', background: 'rgba(239,68,68,0.2)' }} />
             {/* Support info */}
             <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '12px', padding: '16px 20px', width: '100%' }}>
-              <p style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 700, color: '#fca5a5', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Support kontaktieren</p>
+              <p style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 700, color: '#fca5a5', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{isDe ? 'Support kontaktieren' : 'Contact Support'}</p>
               <p style={{ margin: 0, fontSize: '14px', color: '#f87171', lineHeight: 1.6 }}>
-                Wenn du glaubst, dass dies ein Fehler ist oder mehr Informationen benötigst, wende dich bitte an unseren Support.
+                {isDe ? 'Wenn du glaubst, dass dies ein Fehler ist oder mehr Informationen benötigst, wende dich bitte an unseren Support.' : 'If you believe this is an error or need more information, please contact our support.'}
               </p>
             </div>
             {/* Buttons */}
@@ -6895,7 +6944,7 @@ export default function App() {
                   display: 'block', boxShadow: '0 4px 16px rgba(220,38,38,0.4)'
                 }}
               >
-                ✉️ Support schreiben
+                {isDe ? '✉️ Support schreiben' : '✉️ Write to Support'}
               </a>
               <button
                 onClick={() => setShowBanModal(false)}
@@ -6904,7 +6953,7 @@ export default function App() {
                   background: 'transparent', color: '#f87171', fontSize: '14px', fontWeight: 600, cursor: 'pointer'
                 }}
               >
-                Schließen
+                {isDe ? 'Schließen' : 'Close'}
               </button>
             </div>
           </div>
@@ -6933,14 +6982,26 @@ export default function App() {
             fontFamily: 'Inter, system-ui, sans-serif'
           }}>
             <LicensePrompt 
+              language={language}
               onValidLicense={async (key) => {
+                // Use the SECURITY DEFINER RPC that saves to profiles + claims the key
                 try {
-                  await supabase!.rpc('claim_license_key', { key_to_claim: key });
-                  setUserHasValidLicense(true);
+                  await supabase!.rpc('activate_license_for_user', { p_key: key });
                 } catch (e) {
-                  console.error('Failed to claim license:', e);
-                  setUserHasValidLicense(true);
+                  // Fallback: try the old claim RPC
+                  try { await supabase!.rpc('claim_license_key', { key_to_claim: key }); } catch {}
+                  // Fallback: direct profile update
+                  try {
+                    if (currentUser?.uid) {
+                      await supabase!.from('profiles').update({ license_key: key }).eq('id', currentUser.uid);
+                    }
+                  } catch {}
                 }
+                // Also store locally so refresh is instant on this device
+                if (currentUser?.uid) {
+                  safeLocalStorage.setItem(`b24_activated_${currentUser.uid}`, 'true');
+                }
+                setUserHasValidLicense(true);
               }}
             />
             <button
@@ -6968,7 +7029,7 @@ export default function App() {
               onMouseOver={e => { e.currentTarget.style.background = '#e8eaed'; e.currentTarget.style.color = '#202124'; }}
               onMouseOut={e => { e.currentTarget.style.background = '#f1f3f4'; e.currentTarget.style.color = '#3c4043'; }}
             >
-              Zurück zur Startseite
+              {language === 'de' ? 'Zurück zur Startseite' : 'Back to Home'}
             </button>
           </div>
         </div>
@@ -6989,11 +7050,6 @@ export default function App() {
       <header className="header">
         <div className="header-left">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <img 
-              src="/logokdpbook24studio.png" 
-              alt="Book24 Studio Logo" 
-              style={{ height: '28px', width: 'auto', display: 'block' }} 
-            />
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
               <span style={{
                 fontFamily: "'Poppins', 'Roboto', sans-serif",
@@ -7007,7 +7063,7 @@ export default function App() {
                 fontFamily: "'Poppins', 'Roboto', sans-serif",
                 fontWeight: 300,
                 fontSize: '15px',
-                color: 'var(--text-muted)',
+                color: 'var(--text-main)',
                 lineHeight: 1,
               }}>Studio</span>
             </div>
@@ -7035,11 +7091,11 @@ export default function App() {
               const status = getModuleStatus(tab);
               const isMaintenance = status === 'maintenance';
 
-              if (tab === 'projects') return { label: 'Mediathek' };
-              if (tab === 'dashboard') return { label: 'Nischen-Finder', maintenance: isMaintenance };
+              if (tab === 'projects') return { label: isDe ? 'Mediathek' : 'Library' };
+              if (tab === 'dashboard') return { label: isDe ? 'Nischen-Finder' : 'Niche Finder', maintenance: isMaintenance };
               if (tab === 'brain') return { label: 'Brain', disabled: !brainEnabled && !isMaintenance, maintenance: isMaintenance };
-              if (tab === 'studio') return { label: 'Schreibstudio', maintenance: isMaintenance };
-              if (tab === 'calculator') return { label: 'Rechner', maintenance: isMaintenance };
+              if (tab === 'studio') return { label: isDe ? 'Schreibstudio' : 'Studio', maintenance: isMaintenance };
+              if (tab === 'calculator') return { label: isDe ? 'Rechner' : 'Calculator', maintenance: isMaintenance };
               if (tab === 'owner') return { label: 'Owner Panel' };
               return { label: '' };
             });
@@ -7074,14 +7130,14 @@ export default function App() {
             >
               <User style={{ width: '14px', height: '14px', color: 'var(--text-muted)' }} />
               <span className="truncate" style={{ maxWidth: '120px' }}>
-                {(accounts.find(a => a.id === activeAccountId)?.username) || 'Profil'}
+                {(accounts.find(a => a.id === activeAccountId)?.username) || (isDe ? 'Profil' : 'Profile')}
               </span>
               <ChevronDown style={{ width: '12px', height: '12px', color: 'var(--text-muted)' }} />
             </button>
 
             {showAccountModal && (
               <div className="dropdown-menu">
-                <div style={{ fontSize: '10.5px', fontWeight: 'bold', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Profil umschalten</div>
+                <div style={{ fontSize: '10.5px', fontWeight: 'bold', color: 'var(--text-muted)', textTransform: 'uppercase' }}>{isDe ? 'Profil umschalten' : 'Switch Profile'}</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', maxHeight: '150px', overflowY: 'auto' }}>
                   {accounts.map(acc => (
                     <button
@@ -7106,13 +7162,13 @@ export default function App() {
                 <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '6px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
                   <input 
                     type="text" 
-                    placeholder="Profilname..." 
+                    placeholder={isDe ? 'Profilname...' : 'Profile name...'} 
                     value={newUsernameInput}
                     onChange={e => setNewUsernameInput(e.target.value)}
                     style={{ padding: '6px 10px', fontSize: '13px' }}
                   />
                   <button onClick={handleCreateAccount} className="btn btn-primary" style={{ width: '100%', padding: '6px 10px', fontSize: '13px' }}>
-                    <Plus style={{ width: '13px', height: '13px' }} /> Hinzufügen
+                    <Plus style={{ width: '13px', height: '13px' }} /> {isDe ? 'Hinzufügen' : 'Add'}
                   </button>
                 </div>
               </div>
@@ -7123,7 +7179,7 @@ export default function App() {
             type="button"
             className="header-icon-btn"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            title={theme === 'dark' ? 'Light Mode aktivieren' : 'Dark Mode aktivieren'}
+            title={theme === 'dark' ? (isDe ? 'Light Mode aktivieren' : 'Activate Light Mode') : (isDe ? 'Dark Mode aktivieren' : 'Activate Dark Mode')}
             style={{ marginRight: '8px' }}
           >
             {theme === 'dark' ? <Sun style={{ width: '16px', height: '16px' }} /> : <Moon style={{ width: '16px', height: '16px' }} />}
@@ -7133,7 +7189,7 @@ export default function App() {
             type="button"
             className={`header-icon-btn${settingsNeedAttention ? ' has-alert' : ''}`}
             onClick={openSettings}
-            title="Einstellungen"
+            title={isDe ? 'Einstellungen' : 'Settings'}
           >
             <Settings style={{ width: '16px', height: '16px' }} />
           </button>
@@ -7151,9 +7207,9 @@ export default function App() {
                 type="button"
                 onClick={() => {
                   showConfirm({
-                    title: 'Abmelden',
-                    message: 'Möchtest du dich wirklich abmelden?',
-                    confirmLabel: 'Abmelden',
+                    title: isDe ? 'Abmelden' : 'Sign Out',
+                    message: isDe ? 'Möchtest du dich wirklich abmelden?' : 'Are you sure you want to sign out?',
+                    confirmLabel: isDe ? 'Abmelden' : 'Sign Out',
                     danger: true,
                     onConfirm: () => supabase?.auth.signOut()
                   });
@@ -7161,7 +7217,7 @@ export default function App() {
                 className="btn btn-danger"
                 style={{ padding: '4px 10px', fontSize: '11px', height: '26px', borderRadius: '99px' }}
               >
-                Abmelden
+                {isDe ? 'Abmelden' : 'Sign Out'}
               </button>
             </div>
           )}
@@ -7199,21 +7255,21 @@ export default function App() {
             <div className="mediathek-container" style={{ position: 'relative', zIndex: 1 }}>
               <div className="mediathek-header">
               <div>
-                <h2 className="mediathek-title">Meine Buchprojekte</h2>
+                <h2 className="mediathek-title">{isDe ? 'Meine Buchprojekte' : 'My Book Projects'}</h2>
                 <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                  Bibliothek des Profils: <strong>{(accounts.find(a => a.id === activeAccountId)?.username)}</strong>
+                  {isDe ? 'Bibliothek des Profils:' : 'Profile Library:'} <strong>{(accounts.find(a => a.id === activeAccountId)?.username)}</strong>
                 </p>
               </div>
               <button onClick={handleCreateBook} className="btn btn-primary">
-                <Plus style={{ width: '14px', height: '14px' }} /> Neues Buchprojekt
+                <Plus style={{ width: '14px', height: '14px' }} /> {isDe ? 'Neues Buchprojekt' : 'New Book Project'}
               </button>
             </div>
 
             {books.length === 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '260px', border: '1px dashed var(--border-color)', borderRadius: '4px', gap: '8px', color: 'var(--text-muted)' }}>
                 <BookOpen style={{ width: '28px', height: '28px', color: 'var(--border-color)' }} />
-                <p style={{ fontSize: '13px' }}>Deine Mediathek ist leer.</p>
-                <button onClick={handleCreateBook} className="btn" style={{ fontSize: '12px' }}>Erstes Projekt anlegen</button>
+                <p style={{ fontSize: '13px' }}>{isDe ? 'Deine Mediathek ist leer.' : 'Your library is empty.'}</p>
+                <button onClick={handleCreateBook} className="btn" style={{ fontSize: '12px' }}>{isDe ? 'Erstes Projekt anlegen' : 'Create first project'}</button>
               </div>
             ) : (
               <div className="projects-grid">
@@ -7235,9 +7291,9 @@ export default function App() {
                     >
                       <div className="flex-space" style={{ alignItems: 'start' }}>
                         <div style={{ flex: 1, minWidth: 0, paddingRight: '8px', overflow: 'hidden' }}>
-                          <h3 className="project-title" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.title || 'Unbenanntes Buch'}</h3>
+                          <h3 className="project-title" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.title || (isDe ? 'Unbenanntes Buch' : 'Untitled Book')}</h3>
                           <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} className="truncate">
-                            {b.subtitle || 'Kein Untertitel'}
+                            {b.subtitle || (isDe ? 'Kein Untertitel' : 'No Subtitle')}
                           </p>
                         </div>
                         <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
@@ -7245,7 +7301,7 @@ export default function App() {
                             onClick={(e) => handleCopyBook(b.id, e)} 
                             className="btn"
                             style={{ padding: '4px', backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', color: 'var(--text-muted)' }}
-                            title="Projekt kopieren"
+                            title={isDe ? 'Projekt kopieren' : 'Copy Project'}
                           >
                             <Copy style={{ width: '12px', height: '12px' }} />
                           </button>
@@ -7253,7 +7309,7 @@ export default function App() {
                             onClick={(e) => handleDeleteBook(b.id, e)} 
                             className="btn btn-danger"
                             style={{ padding: '4px' }}
-                            title="Projekt löschen"
+                            title={isDe ? 'Projekt löschen' : 'Delete Project'}
                           >
                             <Trash2 style={{ width: '12px', height: '12px' }} />
                           </button>
@@ -7261,16 +7317,16 @@ export default function App() {
                       </div>
 
                       <div className="project-meta">
-                        <div><strong style={{ color: 'var(--text-main)' }}>Sprache:</strong> {b.language === 'de' ? 'Deutsch' : 'Englisch'}</div>
-                        <div><strong style={{ color: 'var(--text-main)' }}>Stil:</strong> {b.writingStyle}</div>
-                        <div><strong style={{ color: 'var(--text-main)' }}>Format:</strong> {b.pageSize === 'custom' ? `${b.customWidth}x${b.customHeight}"` : b.pageSize === 'a4' ? 'DIN A4' : `${b.pageSize}"`}</div>
+                        <div><strong style={{ color: 'var(--text-main)' }}>{isDe ? 'Sprache:' : 'Language:'}</strong> {b.language === 'de' ? (isDe ? 'Deutsch' : 'German') : (isDe ? 'Englisch' : 'English')}</div>
+                        <div><strong style={{ color: 'var(--text-main)' }}>{isDe ? 'Stil:' : 'Style:'}</strong> {b.writingStyle}</div>
+                        <div><strong style={{ color: 'var(--text-main)' }}>{isDe ? 'Format:' : 'Format:'}</strong> {b.pageSize === 'custom' ? `${b.customWidth}x${b.customHeight}"` : b.pageSize === 'a4' ? (isDe ? 'DIN A4' : 'A4') : `${b.pageSize}"`}</div>
                       </div>
 
                       {/* Progress widget inside card */}
                       <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <div className="flex-space" style={{ fontSize: '9px', fontWeight: 'bold' }}>
-                          <span>SCHREIBPROZESS</span>
-                          <span>{donePages} / {maxPages} Seiten ({pct}%)</span>
+                          <span>{isDe ? 'SCHREIBPROZESS' : 'WRITING PROCESS'}</span>
+                          <span>{donePages} / {maxPages} {isDe ? 'Seiten' : 'pages'} ({pct}%)</span>
                         </div>
                         <div className="progress-track" style={{ height: '3px' }}>
                           <div className="progress-bar" style={{ width: `${pct}%` }} />
@@ -7299,7 +7355,7 @@ export default function App() {
                             <line x1="3" x2="21" y1="10" y2="10"/>
                           </svg>
                           <span>
-                            Erstellt: {getProjectFormattedDate(b)}
+                            {isDe ? 'Erstellt:' : 'Created:'} {getProjectFormattedDate(b)}
                           </span>
                         </div>
                         
@@ -7327,7 +7383,7 @@ export default function App() {
                                 <polyline points="12 6 12 12 16 14"/>
                               </svg>
                               <span>
-                                Generierungszeit: {m}:{s.toString().padStart(2, '0')}
+                                {isDe ? 'Generierungszeit:' : 'Generation time:'} {m}:{s.toString().padStart(2, '0')}
                               </span>
                             </div>
                           );
@@ -7343,7 +7399,7 @@ export default function App() {
                         className="btn btn-primary"
                         style={{ width: '100%', marginTop: '6px', padding: '6px' }}
                       >
-                        Projekt öffnen
+                        {isDe ? 'Projekt öffnen' : 'Open Project'}
                       </button>
                     </div>
                   );
@@ -7356,7 +7412,7 @@ export default function App() {
                   style={{ borderStyle: 'dashed', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '195px', gap: '8px', color: 'var(--text-muted)' }}
                 >
                   <Plus style={{ width: '22px', height: '22px' }} />
-                  <span style={{ fontSize: '11px', fontWeight: 'bold' }}>Neues Projekt hinzufügen</span>
+                  <span style={{ fontSize: '11px', fontWeight: 'bold' }}>{isDe ? 'Neues Projekt hinzufügen' : 'Add New Project'}</span>
                 </div>
               </div>
             )}
@@ -7393,7 +7449,7 @@ export default function App() {
               <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
                 <div>
                   <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '6px' }}>KDP Publishing</div>
-                  <h1 style={{ margin: 0, fontSize: '32px', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.03em', lineHeight: 1 }}>Nischen-Finder</h1>
+                  <h1 style={{ margin: 0, fontSize: '32px', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.03em', lineHeight: 1 }}>{isDe ? 'Nischen-Finder' : 'Niche Finder'}</h1>
                 </div>
               </div>
 
@@ -7414,7 +7470,7 @@ export default function App() {
         {/* Tab 4: Calculator */}
         {activeTab === 'calculator' && (
           !isOwnerClient && activeModules.calculator === 'maintenance' ? (
-            <MaintenanceView name="KDP Rechner" theme={theme} onBack={() => setActiveTab('projects')} />
+            <MaintenanceView name={isDe ? 'KDP Rechner' : 'KDP Calculator'} theme={theme} onBack={() => setActiveTab('projects')} />
           ) : (
             <div style={{ height: 'calc(100vh - 110px)', overflowY: 'auto', background: theme === 'dark' ? '#0f172a' : '#f8fafc', padding: '20px' }}>
               <KdpCalculator theme={theme} />
@@ -7425,7 +7481,7 @@ export default function App() {
         {/* Tab 2: Studio Layout Panel Grid */}
         {activeTab === 'studio' && (
           !isOwnerClient && activeModules.studio === 'maintenance' ? (
-            <MaintenanceView name="Buch Studio" theme={theme} onBack={() => setActiveTab('projects')} />
+            <MaintenanceView name={isDe ? 'Buch Studio' : 'Book Studio'} theme={theme} onBack={() => setActiveTab('projects')} />
           ) : (
             !activeBook ? (
               <div style={{
@@ -7452,9 +7508,9 @@ export default function App() {
                   boxShadow: '0 20px 40px rgba(0,0,0,0.06)',
                   boxSizing: 'border-box'
                 }}>
-                  <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '12px', color: 'var(--text-main)' }}>Kein Projekt ausgewählt</h2>
+                  <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '12px', color: 'var(--text-main)' }}>{isDe ? 'Kein Projekt ausgewählt' : 'No Project Selected'}</h2>
                   <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: '1.6', marginBottom: '24px' }}>
-                    Bitte wähle zuerst in der Mediathek ein Buchprojekt aus oder erstelle ein neues Projekt, um das Schreibstudio zu öffnen.
+                    {isDe ? 'Bitte wähle zuerst in der Mediathek ein Buchprojekt aus oder erstelle ein neues Projekt, um das Schreibstudio zu öffnen.' : 'Please select a book project in the Library first or create a new project to open the Writing Studio.'}
                   </p>
                   <button
                     onClick={() => setActiveTab('projects')}
@@ -7469,7 +7525,7 @@ export default function App() {
                       cursor: 'pointer',
                     }}
                   >
-                    Zur Mediathek gehen
+                    {isDe ? 'Zur Mediathek gehen' : 'Go to Library'}
                   </button>
                 </div>
               </div>
@@ -7487,7 +7543,6 @@ export default function App() {
               {/* ── Header ── */}
               <div className="ex-header">
                 <div className="ex-wordmark">
-                  <div className="ex-wordmark-dot" />
                   <span className="ex-wordmark-text">Explorer</span>
                 </div>
                 <button
@@ -7496,7 +7551,7 @@ export default function App() {
                     setIsExplorerCollapsed(true);
                     localStorage.setItem('b24studio_left_collapsed', 'true');
                   }}
-                  title="Panel einklappen"
+                  title={isDe ? 'Panel einklappen' : 'Collapse Panel'}
                 >
                   <ChevronLeft style={{ width: '15px', height: '15px' }} />
                 </button>
@@ -7508,7 +7563,7 @@ export default function App() {
                   className={`ex-tab${explorerTab === 'settings' ? ' active' : ''}`}
                   onClick={() => setExplorerTab('settings')}
                 >
-                  Layout & Inhalt
+                  {isDe ? 'Layout & Inhalt' : 'Layout & Content'}
                 </button>
                 <button
                   className={`ex-tab${explorerTab === 'marketing' ? ' active' : ''}`}
@@ -7523,28 +7578,28 @@ export default function App() {
                 {explorerTab === 'settings' ? (
                   <>
                     {/* ── Buch ── */}
-                    <div className="ex-section-label">Buch</div>
+                    <div className="ex-section-label">{isDe ? 'Buch' : 'Book'}</div>
                     <div className="ex-section">
-                      <div className="ex-field">
-                        <label className="ex-label">Titel</label>
+                       <div className="ex-field">
+                        <label className="ex-label">{isDe ? 'Titel' : 'Title'}</label>
                         <input
                           className="ex-input"
                           type="text"
                           value={activeBook.title}
                           onChange={e => updateActiveBookConfig('title', e.target.value)}
                           disabled={isPlanning || isGenerating}
-                          placeholder="Buchtitel..."
+                          placeholder={isDe ? 'Buchtitel...' : 'Book title...'}
                         />
                       </div>
                       <div className="ex-field">
-                        <label className="ex-label">Untertitel</label>
+                        <label className="ex-label">{isDe ? 'Untertitel' : 'Subtitle'}</label>
                         <input
                           className="ex-input"
                           type="text"
                           value={activeBook.subtitle}
                           onChange={e => updateActiveBookConfig('subtitle', e.target.value)}
                           disabled={isPlanning || isGenerating}
-                          placeholder="Untertitel..."
+                          placeholder={isDe ? 'Untertitel...' : 'Subtitle...'}
                         />
                       </div>
                     </div>
@@ -7552,19 +7607,19 @@ export default function App() {
                     <div className="ex-divider" />
 
                     {/* ── Inhalt ── */}
-                    <div className="ex-section-label">Inhalt & Idee</div>
+                    <div className="ex-section-label">{isDe ? 'Inhalt & Idee' : 'Content & Idea'}</div>
                     <div className="ex-section">
                       <div className="ex-idea-tabs">
                         <button
                           type="button"
                           className={`ex-idea-tab${ideaTab === 'text' ? ' active' : ''}`}
                           onClick={() => setIdeaTab('text')}
-                        >Plot / Idee</button>
+                        >{isDe ? 'Plot / Idee' : 'Plot / Idea'}</button>
                         <button
                           type="button"
                           className={`ex-idea-tab${ideaTab === 'sources' ? ' active' : ''}`}
                           onClick={() => setIdeaTab('sources')}
-                        >KI Futter (URLs)</button>
+                        >{isDe ? 'KI Futter (URLs)' : 'AI Feed (URLs)'}</button>
                       </div>
 
                       {ideaTab === 'text' ? (
@@ -7574,7 +7629,7 @@ export default function App() {
                           value={activeBook.idea}
                           onChange={e => updateActiveBookConfig('idea', e.target.value)}
                           disabled={isPlanning || isGenerating}
-                          placeholder="Hauptidee deines Buches..."
+                          placeholder={isDe ? 'Hauptidee deines Buches...' : 'Main idea of your book...'}
                         />
                       ) : (
                         <div className="ex-section">
@@ -7584,7 +7639,7 @@ export default function App() {
                             value={activeBook.sourceUrls || ''}
                             onChange={e => updateActiveBookConfig('sourceUrls', e.target.value)}
                             disabled={isPlanning || isGenerating || isFetchingSources}
-                            placeholder="Website-URLs (eine pro Zeile)..."
+                            placeholder={isDe ? 'Website-URLs (eine pro Zeile)...' : 'Website URLs (one per line)...'}
                             style={{ fontFamily: 'monospace', fontSize: '11px' }}
                           />
                           <button
@@ -7594,12 +7649,12 @@ export default function App() {
                             disabled={isFetchingSources || isPlanning || isGenerating || !(activeBook.sourceUrls || '').trim()}
                           >
                             {isFetchingSources
-                              ? <><Loader2 className="animate-spin" style={{ width: '13px', height: '13px' }} /> Lade Websites...</>
-                              : <><CheckCircle2 style={{ width: '13px', height: '13px' }} /> Websites einlesen</>}
+                              ? <><Loader2 className="animate-spin" style={{ width: '13px', height: '13px' }} /> {isDe ? 'Lade Websites...' : 'Loading websites...'}</>
+                              : <><CheckCircle2 style={{ width: '13px', height: '13px' }} /> {isDe ? 'Websites einlesen' : 'Fetch websites'}</>}
                           </button>
                           {activeBook.extractedSourceText && (
                             <div className="ex-source-ok">
-                              ✓ {activeBook.extractedSourceText.length.toLocaleString()} Zeichen eingelesen
+                              ✓ {activeBook.extractedSourceText.length.toLocaleString()} {isDe ? 'Zeichen eingelesen' : 'characters read'}
                             </div>
                           )}
                         </div>
@@ -7609,23 +7664,23 @@ export default function App() {
                     <div className="ex-divider" />
 
                     {/* ── Parameter ── */}
-                    <div className="ex-section-label">Parameter</div>
+                    <div className="ex-section-label">{isDe ? 'Parameter' : 'Parameters'}</div>
                     <div className="ex-section">
                       <div className="ex-grid-2">
                         <div className="ex-field">
-                          <label className="ex-label">Sprache</label>
+                          <label className="ex-label">{isDe ? 'Sprache' : 'Language'}</label>
                           <select
                             className="ex-select"
                             value={activeBook.language}
                             onChange={e => updateActiveBookConfig('language', e.target.value)}
                             disabled={isPlanning || isGenerating}
                           >
-                            <option value="de">Deutsch</option>
-                            <option value="en">Englisch</option>
+                            <option value="de">{isDe ? 'Deutsch' : 'German'}</option>
+                            <option value="en">{isDe ? 'Englisch' : 'English'}</option>
                           </select>
                         </div>
                         <div className="ex-field">
-                          <label className="ex-label">Seiten (max. 200)</label>
+                          <label className="ex-label">{isDe ? 'Seiten (max. 200)' : 'Pages (max. 200)'}</label>
                           <input
                             className="ex-input"
                             type="number"
@@ -7646,41 +7701,41 @@ export default function App() {
                           disabled={isTranslating || isGenerating || isPlanning}
                         >
                           {isTranslating
-                            ? <><Loader2 className="animate-spin" style={{ width: '12px', height: '12px' }} />{translationProgress || 'Übersetze...'}</>
-                            : <><Sparkles style={{ width: '12px', height: '12px' }} />Auf Englisch übersetzen</>}
+                            ? <><Loader2 className="animate-spin" style={{ width: '12px', height: '12px' }} />{translationProgress || (isDe ? 'Übersetze...' : 'Translating...')}</>
+                            : <><Sparkles style={{ width: '12px', height: '12px' }} />{isDe ? 'Auf Englisch übersetzen' : 'Translate to English'}</>}
                         </button>
                       )}
 
                       <div className="ex-field">
-                        <label className="ex-label">Schreibstil</label>
+                        <label className="ex-label">{isDe ? 'Schreibstil' : 'Writing Style'}</label>
                         <select
                           className="ex-select"
                           value={activeBook.writingStyle}
                           onChange={e => updateActiveBookConfig('writingStyle', e.target.value)}
                           disabled={isPlanning || isGenerating}
                         >
-                          <option value="Sachbuch / Informativ">Sachbuch / Informativ</option>
-                          <option value="Sachbuch / Theorien">Sachbuch / Theorien</option>
-                          <option value="Kreatives Storytelling">Kreatives Storytelling</option>
-                          <option value="Akademisch / Wissenschaftlich">Akademisch / Wissenschaftlich</option>
-                          <option value="Einfache Sprache">Einfache Sprache</option>
+                          <option value="Sachbuch / Informativ">{isDe ? 'Sachbuch / Informativ' : 'Non-fiction / Informative'}</option>
+                          <option value="Sachbuch / Theorien">{isDe ? 'Sachbuch / Theorien' : 'Non-fiction / Theories'}</option>
+                          <option value="Kreatives Storytelling">{isDe ? 'Kreatives Storytelling' : 'Creative Storytelling'}</option>
+                          <option value="Akademisch / Wissenschaftlich">{isDe ? 'Akademisch / Wissenschaftlich' : 'Academic / Scientific'}</option>
+                          <option value="Einfache Sprache">{isDe ? 'Einfache Sprache' : 'Simple Language'}</option>
                         </select>
                       </div>
 
                       <div className="ex-field">
-                        <label className="ex-label">Autoren-Richtlinien</label>
+                        <label className="ex-label">{isDe ? 'Autoren-Richtlinien' : 'Author Guidelines'}</label>
                         <textarea
                           className="ex-textarea"
                           value={activeBook.customGuidelines || ''}
                           onChange={e => updateActiveBookConfig('customGuidelines', e.target.value)}
-                          placeholder="z. B. Ich-Perspektive, verbotene Wörter..."
+                          placeholder={isDe ? 'z. B. Ich-Perspektive, verbotene Wörter...' : 'e.g. First-person view, forbidden words...'}
                           rows={3}
                           disabled={isPlanning || isGenerating}
                         />
                       </div>
 
                       <div className="ex-field">
-                        <label className="ex-label">Zitate-Einstellung</label>
+                        <label className="ex-label">{isDe ? 'Zitate-Einstellung' : 'Quotes Setting'}</label>
                         <button
                           onClick={() => updateActiveBookConfig('noQuotes', !activeBook.noQuotes)}
                           disabled={isPlanning || isGenerating}
@@ -7699,14 +7754,18 @@ export default function App() {
                             transition: 'all 0.2s',
                             width: '100%',
                           }}
-                          title={activeBook.noQuotes ? 'Zitate sind deaktiviert — klicken zum Aktivieren' : 'Zitate sind aktiv — klicken zum Deaktivieren'}
+                          title={activeBook.noQuotes 
+                            ? (isDe ? 'Zitate sind deaktiviert — klicken zum Aktivieren' : 'Quotes are disabled — click to enable')
+                            : (isDe ? 'Zitate sind aktiv — klicken zum Deaktivieren' : 'Quotes are active — click to disable')}
                         >
-                          {activeBook.noQuotes ? 'Zitate deaktiviert (kein > "..." in allen Seiten)' : 'Zitate aktiv (max. 1 pro Kapitel)'}
+                          {activeBook.noQuotes 
+                            ? (isDe ? 'Zitate deaktiviert (kein > "..." in allen Seiten)' : 'Quotes disabled (no > "..." in all pages)') 
+                            : (isDe ? 'Zitate aktiv (max. 1 pro Kapitel)' : 'Quotes active (max. 1 per chapter)')}
                         </button>
                       </div>
 
                       <div className="ex-field">
-                        <label className="ex-label">KI-Modell</label>
+                        <label className="ex-label">{isDe ? 'KI-Modell' : 'AI Model'}</label>
                         <select
                           className="ex-select"
                           value={selectedModel}
@@ -7714,8 +7773,8 @@ export default function App() {
                           disabled={isPlanning || isGenerating}
                         >
                           <optgroup label="Groq API">
-                            <option value="llama-3.3-70b-versatile">Llama 3.3 70B — Top Qualität</option>
-                            <option value="llama-3.1-8b-instant">Llama 3.1 8B — Schnell</option>
+                            <option value="llama-3.3-70b-versatile">Llama 3.3 70B — {isDe ? 'Top Qualität' : 'Top Quality'}</option>
+                            <option value="llama-3.1-8b-instant">Llama 3.1 8B — {isDe ? 'Schnell' : 'Fast'}</option>
                             <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
                           </optgroup>
                           <optgroup label="Google Gemini">
@@ -7730,11 +7789,11 @@ export default function App() {
                     <div className="ex-divider" />
 
                     {/* ── Layout ── */}
-                    <div className="ex-section-label">Layout & Design</div>
+                    <div className="ex-section-label">{isDe ? 'Layout & Design' : 'Layout & Design'}</div>
                     <div className="ex-section">
                       <div className="ex-grid-2">
                         <div className="ex-field">
-                          <label className="ex-label">Schriftart</label>
+                          <label className="ex-label">{isDe ? 'Schriftart' : 'Font'}</label>
                           <select
                             className="ex-select"
                             value={activeBook.fontFamily}
@@ -7749,7 +7808,7 @@ export default function App() {
                           </select>
                         </div>
                         <div className="ex-field">
-                          <label className="ex-label">Größe</label>
+                          <label className="ex-label">{isDe ? 'Größe' : 'Size'}</label>
                           <select
                             className="ex-select"
                             value={activeBook.fontSize}
@@ -7766,14 +7825,14 @@ export default function App() {
 
                       <div className="ex-grid-2">
                         <div className="ex-field">
-                          <label className="ex-label">Ausrichtung</label>
+                          <label className="ex-label">{isDe ? 'Ausrichtung' : 'Alignment'}</label>
                           <select
                             className="ex-select"
                             value={activeBook.alignment || 'justify'}
                             onChange={e => updateActiveBookConfig('alignment', e.target.value)}
                           >
-                            <option value="justify">Blocksatz</option>
-                            <option value="left">Linksbündig</option>
+                            <option value="justify">{isDe ? 'Blocksatz' : 'Justified'}</option>
+                            <option value="left">{isDe ? 'Linksbündig' : 'Left Aligned'}</option>
                           </select>
                         </div>
                         <div className="ex-field">
@@ -7783,39 +7842,39 @@ export default function App() {
                             value={activeBook.chapterOrnament || ''}
                             onChange={e => updateActiveBookConfig('chapterOrnament', e.target.value)}
                           >
-                            <option value="">Keines</option>
+                            <option value="">{isDe ? 'Keines' : 'None'}</option>
                             <option value="❦">Floral ❦</option>
-                            <option value="❖">Raute ❖</option>
-                            <option value="✻">Stern ✻</option>
+                            <option value="❖">{isDe ? 'Raute ❖' : 'Diamond ❖'}</option>
+                            <option value="✻">{isDe ? 'Stern ✻' : 'Star ✻'}</option>
                           </select>
                         </div>
                       </div>
 
                       <div className="ex-grid-2">
                         <div className="ex-field">
-                          <label className="ex-label">Buchgröße</label>
+                          <label className="ex-label">{isDe ? 'Buchgröße' : 'Book Size'}</label>
                           <select
                             className="ex-select"
                             value={activeBook.pageSize}
                             onChange={e => updateActiveBookConfig('pageSize', e.target.value)}
                           >
-                            <option value="5x8">5×8″ Taschenbuch</option>
+                            <option value="5x8">5×8″ {isDe ? 'Taschenbuch' : 'Paperback'}</option>
                             <option value="5.5x8.5">5.5×8.5″</option>
                             <option value="6x9">6×9″ Standard KDP</option>
-                            <option value="8.5x11">8.5×11″ Großformat</option>
+                            <option value="8.5x11">8.5×11″ {isDe ? 'Großformat' : 'Large Format'}</option>
                             <option value="custom">Custom</option>
                             <option value="a4">DIN A4</option>
                           </select>
                         </div>
                         <div className="ex-field">
-                          <label className="ex-label">Kopfzeile</label>
+                          <label className="ex-label">{isDe ? 'Kopfzeile' : 'Header'}</label>
                           <select
                             className="ex-select"
                             value={activeBook.showRunningHeader !== false ? 'true' : 'false'}
                             onChange={e => updateActiveBookConfig('showRunningHeader', e.target.value === 'true')}
                           >
-                            <option value="true">Ein</option>
-                            <option value="false">Aus</option>
+                            <option value="true">{isDe ? 'Ein' : 'On'}</option>
+                            <option value="false">{isDe ? 'Aus' : 'Off'}</option>
                           </select>
                         </div>
                       </div>
@@ -7828,8 +7887,8 @@ export default function App() {
                             value={activeBook.generateTOC !== false ? 'true' : 'false'}
                             onChange={e => updateActiveBookConfig('generateTOC', e.target.value === 'true')}
                           >
-                            <option value="true">Generieren</option>
-                            <option value="false">Überspringen</option>
+                            <option value="true">{isDe ? 'Generieren' : 'Generate'}</option>
+                            <option value="false">{isDe ? 'Überspringen' : 'Skip'}</option>
                           </select>
                         </div>
                         <div />
@@ -7838,7 +7897,7 @@ export default function App() {
                       {activeBook.pageSize === 'custom' && (
                         <div className="ex-grid-2">
                           <div className="ex-field">
-                            <label className="ex-label">Breite (Zoll)</label>
+                            <label className="ex-label">{isDe ? 'Breite (Zoll)' : 'Width (inches)'}</label>
                             <input
                               className="ex-input"
                               type="number" step="0.1" min="3" max="12"
@@ -7847,7 +7906,7 @@ export default function App() {
                             />
                           </div>
                           <div className="ex-field">
-                            <label className="ex-label">Höhe (Zoll)</label>
+                            <label className="ex-label">{isDe ? 'Höhe (Zoll)' : 'Height (inches)'}</label>
                             <input
                               className="ex-input"
                               type="number" step="0.1" min="4" max="18"
@@ -7860,10 +7919,10 @@ export default function App() {
 
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <button onClick={applyRomanPreset} className="ex-btn ex-btn-accent" style={{ flex: 1, padding: '7px' }}>
-                          Roman
+                          {isDe ? 'Roman' : 'Novel'}
                         </button>
                         <button onClick={applySachbuchPreset} className="ex-btn ex-btn-plan" style={{ flex: 1, padding: '7px' }}>
-                          Sachbuch
+                          {isDe ? 'Sachbuch' : 'Non-fiction'}
                         </button>
                       </div>
                     </div>
@@ -7871,7 +7930,7 @@ export default function App() {
                     <div className="ex-divider" />
 
                     {/* ── Aktionen ── */}
-                    <div className="ex-section-label">Aktionen</div>
+                    <div className="ex-section-label">{isDe ? 'Aktionen' : 'Actions'}</div>
                     <div className="ex-section">
                       {outline ? (
                         <>
@@ -7883,8 +7942,8 @@ export default function App() {
                             >
                               <Play style={{ width: '13px', height: '13px', fill: 'currentColor' }} />
                               {completedPagesCount > 0
-                                ? `Weiter (${completedPagesCount}/${totalPagesCount})`
-                                : 'Alle Seiten generieren'}
+                                ? (isDe ? `Weiter (${completedPagesCount}/${totalPagesCount})` : `Continue (${completedPagesCount}/${totalPagesCount})`)
+                                : (isDe ? 'Alle Seiten generieren' : 'Generate all pages')}
                             </button>
                           )}
 
@@ -7894,7 +7953,7 @@ export default function App() {
                               onClick={() => { cancelGenerationRef.current = true; }}
                             >
                               <Loader2 className="spinner" style={{ width: '13px', height: '13px' }} />
-                              Generierung stoppen
+                              {isDe ? 'Generierung stoppen' : 'Stop generation'}
                             </button>
                           )}
 
@@ -7919,42 +7978,46 @@ export default function App() {
                             disabled={isPlanning || isGenerating || !activeBook.title?.trim()}
                           >
                             <RotateCw style={{ width: '13px', height: '13px' }} />
-                            Gliederung neu planen
+                            {isDe ? 'Gliederung neu planen' : 'Replan Outline'}
                           </button>
 
                           <button
                             className="ex-btn ex-btn-warn"
                             onClick={handleCondenseOutline}
                             disabled={isPlanning || isGenerating || !activeBook.outline}
-                            title="Kapitelnamen kürzen"
+                            title={isDe ? 'Kapitelnamen kürzen' : 'Shorten chapter names'}
                           >
                             {isPlanning
                               ? <Loader2 className="spinner" style={{ width: '13px', height: '13px' }} />
                               : <Scissors style={{ width: '13px', height: '13px' }} />}
-                            TOC einkürzen (AI)
+                            {isDe ? 'TOC einkürzen (AI)' : 'Shorten TOC (AI)'}
                           </button>
 
                           {activeBook.outlineBackup && (
                             <button className="ex-btn ex-btn-restore" onClick={handleRestoreOutline}>
                               <RotateCw style={{ width: '13px', height: '13px' }} />
                               {activeBook.pagesTextBackup && Object.keys(activeBook.pagesTextBackup).length > 0
-                                ? 'Gliederung & Seiten wiederherstellen'
-                                : 'Gliederung wiederherstellen'}
+                                ? (isDe ? 'Gliederung & Seiten wiederherstellen' : 'Restore Outline & Pages')
+                                : (isDe ? 'Gliederung wiederherstellen' : 'Restore Outline')}
                             </button>
                           )}
 
                           {activeBook.outline && Object.keys(activeBook.pagesText || {}).length > activeBook.outline.pages.length && (
                             <button className="ex-btn ex-btn-recover" onClick={handleRecoverOutlineFromPages}>
                               <RotateCw style={{ width: '13px', height: '13px' }} />
-                              ⚠ {Object.keys(activeBook.pagesText || {}).length} Seiten wiederherstellen
+                              {isDe 
+                                ? `⚠ ${Object.keys(activeBook.pagesText || {}).length} Seiten wiederherstellen` 
+                                : `⚠ Restore ${Object.keys(activeBook.pagesText || {}).length} Pages`}
                             </button>
                           )}
 
                           {activeBook.outline && activeBook.outline.pages.length < activeBook.targetPages && (
                             <button className="ex-btn ex-btn-recover" onClick={handleExtendOutline} disabled={isPlanning || isGenerating}>
                               {isPlanning
-                                ? <><Loader2 className="spinner" style={{ width: '13px', height: '13px' }} />Erweitere...</>
-                                : `Notfall: ${activeBook.outline.pages.length}/${activeBook.targetPages} — Rest ergänzen`}
+                                ? <><Loader2 className="spinner" style={{ width: '13px', height: '13px' }} />{isDe ? 'Erweitere...' : 'Extending...'}</>
+                                : (isDe 
+                                    ? `Notfall: ${activeBook.outline.pages.length}/${activeBook.targetPages} — Rest ergänzen` 
+                                    : `Emergency: ${activeBook.outline.pages.length}/${activeBook.targetPages} — Fill remaining`)}
                             </button>
                           )}
                         </>
@@ -7980,10 +8043,10 @@ export default function App() {
                             disabled={isPlanning || isGenerating || !activeBook.title?.trim()}
                           >
                             {isPlanning
-                              ? <><Loader2 className="spinner" style={{ width: '13px', height: '13px' }} />Plane Gliederung...</>
+                              ? <><Loader2 className="spinner" style={{ width: '13px', height: '13px' }} />{isDe ? 'Plane Gliederung...' : 'Planning Outline...'}</>
                               : isGenerating
-                              ? <><Loader2 className="spinner" style={{ width: '13px', height: '13px' }} />Schreibe Seiten...</>
-                              : <><Play style={{ width: '13px', height: '13px', fill: 'currentColor' }} />Buch generieren</>}
+                              ? <><Loader2 className="spinner" style={{ width: '13px', height: '13px' }} />{isDe ? 'Schreibe Seiten...' : 'Writing Pages...'}</>
+                              : <><Play style={{ width: '13px', height: '13px', fill: 'currentColor' }} />{isDe ? 'Buch generieren' : 'Generate Book'}</>}
                           </button>
                         </>
                       )}
@@ -8014,8 +8077,8 @@ export default function App() {
                               <span style={{ fontSize: '13px' }}>📝</span>
                             </div>
                             <div>
-                              <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-main)', fontFamily: 'var(--ex-font)' }}>HTML Beschreibung</div>
-                              <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--ex-font)' }}>Amazon KDP Produktseite</div>
+                              <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-main)', fontFamily: 'var(--ex-font)' }}>{isDe ? 'HTML Beschreibung' : 'HTML Description'}</div>
+                              <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--ex-font)' }}>{isDe ? 'Amazon KDP Produktseite' : 'Amazon KDP Product Page'}</div>
                             </div>
                           </div>
                           {activeBook.amazonDescription && (
@@ -8024,7 +8087,7 @@ export default function App() {
                               borderRadius: '20px', background: 'rgba(56,189,248,0.12)',
                               color: 'var(--ex-nvidia)', border: '1px solid rgba(56,189,248,0.25)',
                               fontFamily: 'var(--ex-font)', letterSpacing: '0.04em'
-                            }}>✓ BEREIT</span>
+                            }}>{isDe ? '✓ BEREIT' : '✓ READY'}</span>
                           )}
                         </div>
                         <button
@@ -8033,8 +8096,8 @@ export default function App() {
                           disabled={isGeneratingMarketing || isPlanning || isGenerating}
                         >
                           {isGeneratingMarketing
-                            ? <><Loader2 className="animate-spin" style={{ width: '13px', height: '13px' }} />Generiere...</>
-                            : <><Sparkles style={{ width: '13px', height: '13px' }} />Mit AI erstellen</>}
+                            ? <><Loader2 className="animate-spin" style={{ width: '13px', height: '13px' }} />{isDe ? 'Generiere...' : 'Generating...'}</>
+                            : <><Sparkles style={{ width: '13px', height: '13px' }} />{isDe ? 'Mit AI erstellen' : 'Create with AI'}</>}
                         </button>
                       </div>
 
@@ -8044,21 +8107,21 @@ export default function App() {
                           rows={7}
                           value={activeBook.amazonDescription || ''}
                           onChange={e => updateActiveBookConfig('amazonDescription', e.target.value)}
-                          placeholder="Füge hier deine Amazon HTML Beschreibung ein oder lass sie von der AI generieren..."
+                          placeholder={isDe ? 'Füge hier deine Amazon HTML Beschreibung ein oder lass sie von der AI generieren...' : 'Paste your Amazon HTML description here or let the AI generate it...'}
                           style={{ fontFamily: 'monospace', fontSize: '11px', lineHeight: '1.6' }}
                         />
                         {activeBook.amazonDescription && (
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--ex-font)' }}>
-                              {activeBook.amazonDescription.length} Zeichen
+                              {activeBook.amazonDescription.length} {isDe ? 'Zeichen' : 'characters'}
                             </span>
                             <button
                               className="ex-btn ex-btn-ghost"
-                              onClick={() => { navigator.clipboard.writeText(activeBook.amazonDescription || ''); alert('Beschreibung kopiert!'); }}
+                              onClick={() => { navigator.clipboard.writeText(activeBook.amazonDescription || ''); alert(isDe ? 'Beschreibung kopiert!' : 'Description copied!'); }}
                               style={{ width: 'auto', padding: '5px 14px', fontSize: '11px' }}
                             >
                               <Copy style={{ width: '11px', height: '11px' }} />
-                              HTML kopieren
+                              {isDe ? 'HTML kopieren' : 'Copy HTML'}
                             </button>
                           </div>
                         )}
@@ -8068,7 +8131,7 @@ export default function App() {
                     <div className="ex-divider" />
 
                     {/* ── Keywords ── */}
-                    <div className="ex-section-label">Keywords & Ranking</div>
+                    <div className="ex-section-label">{isDe ? 'Keywords & Ranking' : 'Keywords & Ranking'}</div>
                     <div className="ex-section">
                       <div style={{
                         background: 'linear-gradient(135deg, rgba(29,78,216,0.1) 0%, rgba(37,99,235,0.04) 100%)',
@@ -8091,7 +8154,7 @@ export default function App() {
                             </div>
                             <div>
                               <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-main)', fontFamily: 'var(--ex-font)' }}>7 KDP Keywords</div>
-                              <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--ex-font)' }}>SEO Optimierung</div>
+                              <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--ex-font)' }}>{isDe ? 'SEO Optimierung' : 'SEO Optimization'}</div>
                             </div>
                           </div>
                           {activeBook.kdpKeywords && activeBook.kdpKeywords.length > 0 && (
@@ -8109,8 +8172,8 @@ export default function App() {
                           disabled={isGeneratingMarketing || isPlanning || isGenerating}
                         >
                           {isGeneratingMarketing
-                            ? <><Loader2 className="animate-spin" style={{ width: '13px', height: '13px' }} />Optimiere...</>
-                            : <><Sparkles style={{ width: '13px', height: '13px' }} />Keywords optimieren</>}
+                            ? <><Loader2 className="animate-spin" style={{ width: '13px', height: '13px' }} />{isDe ? 'Optimiere...' : 'Optimizing...'}</>
+                            : <><Sparkles style={{ width: '13px', height: '13px' }} />{isDe ? 'Keywords optimieren' : 'Optimize Keywords'}</>}
                         </button>
                       </div>
 
@@ -8124,11 +8187,11 @@ export default function App() {
                           ))}
                           <button
                             className="ex-btn ex-btn-ghost"
-                            onClick={() => { navigator.clipboard.writeText((activeBook.kdpKeywords || []).join(', ')); alert('Keywords kopiert!'); }}
+                            onClick={() => { navigator.clipboard.writeText((activeBook.kdpKeywords || []).join(', ')); alert(isDe ? 'Keywords kopiert!' : 'Keywords copied!'); }}
                             style={{ marginTop: '2px' }}
                           >
                             <Copy style={{ width: '12px', height: '12px' }} />
-                            Alle kopieren (kommagetrennt)
+                            {isDe ? 'Alle kopieren (kommagetrennt)' : 'Copy all (comma-separated)'}
                           </button>
                         </div>
                       ) : (
@@ -8138,7 +8201,7 @@ export default function App() {
                           color: 'var(--text-muted)', fontSize: '11.5px',
                           fontFamily: 'var(--ex-font)', fontWeight: 500
                         }}>
-                          Noch keine Keywords generiert
+                          {isDe ? 'Noch keine Keywords generiert' : 'No keywords generated yet'}
                         </div>
                       )}
                     </div>
@@ -8146,7 +8209,7 @@ export default function App() {
                     <div className="ex-divider" />
 
                     {/* ── Kategorien ── */}
-                    <div className="ex-section-label">Kategorien</div>
+                    <div className="ex-section-label">{isDe ? 'Kategorien' : 'Categories'}</div>
                     <div className="ex-section">
                       <div style={{
                         background: 'linear-gradient(135deg, rgba(37,99,235,0.08) 0%, rgba(56,189,248,0.04) 100%)',
@@ -8168,7 +8231,7 @@ export default function App() {
                               <span style={{ fontSize: '13px' }}>📂</span>
                             </div>
                             <div>
-                              <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-main)', fontFamily: 'var(--ex-font)' }}>Kategorie-Finder</div>
+                              <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-main)', fontFamily: 'var(--ex-font)' }}>{isDe ? 'Kategorie-Finder' : 'Category Finder'}</div>
                               <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--ex-font)' }}>Amazon Browse Node</div>
                             </div>
                           </div>
@@ -8188,8 +8251,8 @@ export default function App() {
                           disabled={isGeneratingMarketing || isPlanning || isGenerating}
                         >
                           {isGeneratingMarketing
-                            ? <><Loader2 className="animate-spin" style={{ width: '13px', height: '13px' }} />Suche...</>
-                            : <><Sparkles style={{ width: '13px', height: '13px' }} />Kategorien suchen</>}
+                            ? <><Loader2 className="animate-spin" style={{ width: '13px', height: '13px' }} />{isDe ? 'Suche...' : 'Searching...'}</>
+                            : <><Sparkles style={{ width: '13px', height: '13px' }} />{isDe ? 'Kategorien suchen' : 'Search Categories'}</>}
                         </button>
                       </div>
 
@@ -8209,7 +8272,7 @@ export default function App() {
                           color: 'var(--text-muted)', fontSize: '11.5px',
                           fontFamily: 'var(--ex-font)', fontWeight: 500
                         }}>
-                          Noch keine Kategorien vorgeschlagen
+                          {isDe ? 'Noch keine Kategorien vorgeschlagen' : 'No categories suggested yet'}
                         </div>
                       )}
                     </div>
@@ -8246,13 +8309,13 @@ export default function App() {
                         gap: '4px',
                         marginRight: '6px'
                       }}
-                      title="Explorer ausklappen"
+                      title={isDe ? 'Explorer ausklappen' : 'Expand Explorer'}
                     >
                       <ChevronRight style={{ width: '13px', height: '13px' }} />
                       <span>Explorer</span>
                     </button>
                   )}
-                  <div className="pane-title">Schreibstudio</div>
+                  <div className="pane-title">{isDe ? 'Schreibstudio' : 'Writing Studio'}</div>
                   {outline && (
                     <button
                       onClick={() => setShowGilInsights(prev => !prev)}
@@ -8273,7 +8336,7 @@ export default function App() {
                         outline: 'none',
                         transition: 'all 0.2s ease-in-out'
                       }}
-                      title="GIL Insights Panel ein-/ausblenden"
+                      title={isDe ? 'GIL Insights Panel ein-/ausblenden' : 'Toggle GIL Insights Panel'}
                       className="gil-insights-toggle-btn"
                     >
                       <TrendingUp style={{ width: '13px', height: '13px' }} />
@@ -8281,10 +8344,30 @@ export default function App() {
                     </button>
                   )}
                 </div>
+                <button
+                  onClick={() => setMirrorMargins(m => !m)}
+                  title={mirrorMargins ? 'Spiegel-Ränder aktiv (KDP-optimal) — klicken für gleiche Ränder' : 'Gleiche Ränder aktiv — klicken für Spiegel-Ränder (KDP-optimal)'}
+                  style={{
+                    padding: '4px 8px',
+                    fontSize: '10px',
+                    border: '1px solid var(--border)',
+                    borderRadius: '4px',
+                    background: mirrorMargins ? 'var(--accent-light, #f0f4ff)' : 'transparent',
+                    color: mirrorMargins ? 'var(--accent, #4f6ef7)' : 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                >
+                  <span style={{ fontSize: '10px' }}>{mirrorMargins ? '⇌' : '='}</span>
+                  {mirrorMargins ? 'Spiegel' : 'Gleich'}
+                </button>
                 <button 
                   onClick={handleDownloadPdf} 
                   disabled={!outline || (completedPagesCount === 0 && Object.keys(activeBook.pagesText || {}).length === 0)}
-                  className="btn btn-success" 
+                  className="btn btn-primary" 
                   style={{ 
                     padding: '4px 10px', 
                     fontSize: '10px',
@@ -8305,45 +8388,32 @@ export default function App() {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     gap: '12px',
-                    padding: '10px 14px',
-                    backgroundColor: 'rgba(16, 185, 129, 0.08)',
-                    border: '1px solid rgba(16, 185, 129, 0.25)',
-                    borderRadius: '8px',
-                    marginBottom: '14px',
-                    fontSize: '11.5px',
-                    color: 'var(--text-main)',
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.05)'
+                    padding: '8px 12px',
+                    backgroundColor: 'var(--bg-card)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '6px',
+                    marginBottom: '12px',
+                    fontSize: '10.5px',
+                    color: 'var(--text-muted)'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <RotateCw style={{ width: '13px', height: '13px', color: '#10b981' }} />
-                      <span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                      <RotateCw style={{ width: '11px', height: '11px', opacity: 0.5, flexShrink: 0 }} />
+                      <span style={{ lineHeight: 1.4 }}>
                         {activeBook.pagesTextBackup && Object.keys(activeBook.pagesTextBackup).length > 0
-                          ? 'Gliederung wurde neu geplant oder geändert. Möchtest du den vorherigen Stand (inkl. Seiteninhalte) wiederherstellen?'
-                          : 'Gliederung wurde geändert (Kapitelkürzung / TOC-Regenerierung). Möchtest du sie auf den vorherigen Stand zurücksetzen?'
+                          ? (isDe ? 'Gliederung geändert — vorherigen Stand wiederherstellen?' : 'Outline changed — restore previous state?')
+                          : (isDe ? 'Gliederung geändert — zurücksetzen?' : 'Outline modified — revert?')
                         }
                       </span>
                     </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                    <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
                       <button
                         onClick={handleRestoreOutline}
                         className="btn"
-                        style={{
-                          padding: '4px 10px',
-                          fontSize: '10.5px',
-                          backgroundColor: '#10b981',
-                          color: '#ffffff',
-                          border: 'none',
-                          borderRadius: '5px',
-                          cursor: 'pointer',
-                          fontWeight: 600,
-                          transition: 'opacity 0.2s'
-                        }}
-                        onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'}
-                        onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+                        style={{ padding: '3px 8px', fontSize: '10px' }}
                       >
                         {activeBook.pagesTextBackup && Object.keys(activeBook.pagesTextBackup).length > 0
-                          ? `Gliederung & Seiten wiederherstellen (${activeBook.outlineBackup.length} S.)`
-                          : `Gliederung wiederherstellen (${activeBook.outlineBackup.length} S.)`
+                          ? (isDe ? `Wiederherstellen (${activeBook.outlineBackup.length} S.)` : `Restore (${activeBook.outlineBackup.length} p.)`)
+                          : (isDe ? `Zurücksetzen (${activeBook.outlineBackup.length} S.)` : `Reset (${activeBook.outlineBackup.length} p.)`)
                         }
                       </button>
                       <button
@@ -8363,17 +8433,9 @@ export default function App() {
                           }));
                         }}
                         className="btn"
-                        style={{
-                          padding: '4px 10px',
-                          fontSize: '10.5px',
-                          backgroundColor: 'transparent',
-                          color: 'var(--text-muted)',
-                          border: '1px solid var(--border-color)',
-                          borderRadius: '5px',
-                          cursor: 'pointer'
-                        }}
+                        style={{ padding: '3px 8px', fontSize: '10px' }}
                       >
-                        Behalten
+                        {isDe ? 'Behalten' : 'Keep'}
                       </button>
                     </div>
                   </div>
@@ -8390,24 +8452,24 @@ export default function App() {
                         <button 
                           onClick={() => triggerPageWriting(outline, activeBook.id)}
                           className="btn"
-                          style={{ padding: '4px 10px', fontSize: '10px', fontWeight: 700, height: '24px', display: 'flex', alignItems: 'center', gap: '5px', background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', color: '#fff', border: '1px solid #38bdf8', borderRadius: '6px', boxShadow: '0 2px 8px rgba(37,99,235,0.3)', cursor: 'pointer' }}
+                          style={{ padding: '3px 8px', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '4px' }}
                         >
-                          <Play style={{ width: '10px', height: '10px', fill: 'currentColor' }} />
-                          Alle nicht generierten Seiten generieren
+                          <Play style={{ width: '9px', height: '9px', fill: 'currentColor' }} />
+                          {isDe ? 'Alle generieren' : 'Generate all'}
                         </button>
                       )}
                       {isGenerating && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{ fontSize: '9.5px', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                             <Loader2 className="spinner" style={{ width: '10px', height: '10px' }} />
-                            Generiere Seiten...
+                            {isDe ? 'Generiere Seiten...' : 'Generating pages...'}
                           </span>
                           <button 
                             onClick={() => { cancelGenerationRef.current = true; }}
                             className="btn btn-danger"
                             style={{ padding: '2px 6px', fontSize: '9px', height: '18px', display: 'flex', alignItems: 'center' }}
                           >
-                            Abbrechen
+                            {isDe ? 'Abbrechen' : 'Cancel'}
                           </button>
                         </div>
                       )}
@@ -8432,7 +8494,7 @@ export default function App() {
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                           <span style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '11.5px' }}>
-                            {selectedPages.length} Seiten gewählt
+                            {isDe ? `${selectedPages.length} Seiten gewählt` : `${selectedPages.length} pages selected`}
                           </span>
                         </div>
                         
@@ -8440,7 +8502,7 @@ export default function App() {
                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '2px' }}>
                           <input 
                             type="text"
-                            placeholder="Gemeinsamen Kapitelnamen eingeben..."
+                            placeholder={isDe ? 'Gemeinsamen Kapitelnamen eingeben...' : 'Enter common chapter name...'}
                             value={bulkChapterTitle}
                             onChange={(e) => setBulkChapterTitle(e.target.value)}
                             className="ex-input-sleek"
@@ -8450,9 +8512,9 @@ export default function App() {
                             onClick={handleApplyBulkChapterTitle}
                             className="btn"
                             style={{ padding: '4px 12px', fontSize: '11px', fontWeight: 700, height: '28px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', color: '#fff', border: '1px solid #38bdf8', borderRadius: '6px' }}
-                            title="Alle markierten Seiten unter diesem Kapitelnamen zusammenführen"
+                            title={isDe ? 'Alle markierten Seiten unter diesem Kapitelnamen zusammenführen' : 'Merge all selected pages under this chapter name'}
                           >
-                            Zusammenführen / Umbenennen
+                            {isDe ? 'Zusammenführen / Umbenennen' : 'Merge / Rename'}
                           </button>
                         </div>
 
@@ -8465,9 +8527,9 @@ export default function App() {
                             }}
                             className="btn"
                             style={{ padding: '2px 8px', fontSize: '9.5px', height: '22px', backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
-                            title="Kapitelüberschriften für ausgewählte Seiten ausblenden"
+                            title={isDe ? 'Kapitelüberschriften für ausgewählte Seiten ausblenden' : 'Hide chapter headings for selected pages'}
                           >
-                            <EyeOff style={{ width: '10px', height: '10px' }} /> Kapitel aus
+                            <EyeOff style={{ width: '10px', height: '10px' }} /> {isDe ? 'Kapitel aus' : 'Chapter off'}
                           </button>
                           <button
                             onClick={() => {
@@ -8477,9 +8539,9 @@ export default function App() {
                             }}
                             className="btn"
                             style={{ padding: '2px 8px', fontSize: '9.5px', height: '22px', backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
-                            title="Kapitelüberschriften für ausgewählte Seiten einblenden"
+                            title={isDe ? 'Kapitelüberschriften für ausgewählte Seiten einblenden' : 'Show chapter headings for selected pages'}
                           >
-                            <Eye style={{ width: '10px', height: '10px' }} /> Kapitel ein
+                            <Eye style={{ width: '10px', height: '10px' }} /> {isDe ? 'Kapitel ein' : 'Chapter on'}
                           </button>
                           <button
                             onClick={() => {
@@ -8489,9 +8551,9 @@ export default function App() {
                             }}
                             className="btn"
                             style={{ padding: '2px 8px', fontSize: '9.5px', height: '22px', backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
-                            title="Kopfzeilen für ausgewählte Seiten ausblenden"
+                            title={isDe ? 'Kopfzeilen für ausgewählte Seiten ausblenden' : 'Hide running headers for selected pages'}
                           >
-                            <EyeOff style={{ width: '10px', height: '10px' }} /> Kopfzeile aus
+                            <EyeOff style={{ width: '10px', height: '10px' }} /> {isDe ? 'Kopfzeile aus' : 'Header off'}
                           </button>
                           <button
                             onClick={() => {
@@ -8501,9 +8563,9 @@ export default function App() {
                             }}
                             className="btn"
                             style={{ padding: '2px 8px', fontSize: '9.5px', height: '22px', backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
-                            title="Kopfzeilen für ausgewählte Seiten einblenden"
+                            title={isDe ? 'Kopfzeilen für ausgewählte Seiten einblenden' : 'Show running headers for selected pages'}
                           >
-                            <Eye style={{ width: '10px', height: '10px' }} /> Kopfzeile ein
+                            <Eye style={{ width: '10px', height: '10px' }} /> {isDe ? 'Kopfzeile ein' : 'Header on'}
                           </button>
                           <button
                             onClick={() => {
@@ -8513,9 +8575,9 @@ export default function App() {
                             }}
                             className="btn"
                             style={{ padding: '2px 8px', fontSize: '9.5px', height: '22px', backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
-                            title="Initiale (Drop Cap) für ausgewählte Seiten aktivieren"
+                            title={isDe ? 'Initiale (Drop Cap) für ausgewählte Seiten aktivieren' : 'Enable drop cap for selected pages'}
                           >
-                            <span style={{ fontSize: '11px', fontWeight: 800, fontFamily: 'Georgia, serif', lineHeight: 1 }}>I</span> Initiale ein
+                            <span style={{ fontSize: '11px', fontWeight: 800, fontFamily: 'Georgia, serif', lineHeight: 1 }}>I</span> {isDe ? 'Initiale ein' : 'Drop cap on'}
                           </button>
                           <button
                             onClick={() => {
@@ -8525,9 +8587,9 @@ export default function App() {
                             }}
                             className="btn"
                             style={{ padding: '2px 8px', fontSize: '9.5px', height: '22px', backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
-                            title="Initiale (Drop Cap) für ausgewählte Seiten deaktivieren"
+                            title={isDe ? 'Initiale (Drop Cap) für ausgewählte Seiten deaktivieren' : 'Disable drop cap for selected pages'}
                           >
-                            <span style={{ fontSize: '11px', fontWeight: 800, fontFamily: 'Georgia, serif', lineHeight: 1, opacity: 0.4 }}>I</span> Initiale aus
+                            <span style={{ fontSize: '11px', fontWeight: 800, fontFamily: 'Georgia, serif', lineHeight: 1, opacity: 0.4 }}>I</span> {isDe ? 'Initiale aus' : 'Drop cap off'}
                           </button>
                         </div>
                       </div>
@@ -8538,23 +8600,10 @@ export default function App() {
                       <div style={{ display: 'flex', gap: '6px' }}>
                         <button
                           onClick={() => { setSelectedPage('title'); setSelectedPages([]); }}
-                          style={{
-                            flex: 1,
-                            fontSize: '10px',
-                            fontWeight: 600,
-                            padding: '4px 8px',
-                            borderRadius: '6px',
-                            backgroundColor: selectedPage === 'title' ? 'var(--primary)' : 'var(--bg-card)',
-                            color: selectedPage === 'title' ? '#ffffff' : 'var(--text-muted)',
-                            border: '1px solid var(--border-color)',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '4px'
-                          }}
+                          className={`btn${selectedPage === 'title' ? ' btn-primary' : ''}`}
+                          style={{ flex: 1, fontSize: '10px', padding: '4px 8px', gap: '4px' }}
                         >
-                          Titelblatt
+                          {isDe ? 'Titelblatt' : 'Title Page'}
                         </button>
                         
                         {activeBook.generateTOC !== false && (() => {
@@ -8563,23 +8612,10 @@ export default function App() {
                             return (
                               <button
                                 onClick={() => { setSelectedPage('toc_0'); setSelectedPages([]); }}
-                                style={{
-                                  flex: 1,
-                                  fontSize: '10px',
-                                  fontWeight: 600,
-                                  padding: '4px 8px',
-                                  borderRadius: '6px',
-                                  backgroundColor: selectedPage === 'toc_0' || selectedPage === 'toc' ? 'var(--primary)' : 'var(--bg-card)',
-                                  color: selectedPage === 'toc_0' || selectedPage === 'toc' ? '#ffffff' : 'var(--text-muted)',
-                                  border: '1px solid var(--border-color)',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  gap: '4px'
-                                }}
+                                className={`btn${selectedPage === 'toc_0' || selectedPage === 'toc' ? ' btn-primary' : ''}`}
+                                style={{ flex: 1, fontSize: '10px', padding: '4px 8px', gap: '4px' }}
                               >
-                                Verzeichnis
+                                {isDe ? 'Verzeichnis' : 'TOC'}
                               </button>
                             );
                           }
@@ -8596,24 +8632,10 @@ export default function App() {
                                 <button
                                   key={idx}
                                   onClick={() => { setSelectedPage(`toc_${idx}`); setSelectedPages([]); }}
-                                  style={{
-                                    flex: 1,
-                                    fontSize: '9px',
-                                    fontWeight: 600,
-                                    padding: '4px 6px',
-                                    borderRadius: '6px',
-                                    backgroundColor: selectedPage === `toc_${idx}` ? 'var(--primary)' : 'var(--bg-card)',
-                                    color: selectedPage === `toc_${idx}` ? '#ffffff' : 'var(--text-muted)',
-                                    border: '1px solid var(--border-color)',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '3px',
-                                    whiteSpace: 'nowrap'
-                                  }}
+                                  className={`btn${selectedPage === `toc_${idx}` ? ' btn-primary' : ''}`}
+                                  style={{ flex: 1, fontSize: '9px', padding: '3px 6px', gap: '3px', whiteSpace: 'nowrap' }}
                                 >
-                                  Verzeichnis {idx + 1}
+                                  {isDe ? `Verzeichnis ${idx + 1}` : `TOC ${idx + 1}`}
                                 </button>
                               ))}
                             </div>
@@ -8624,54 +8646,25 @@ export default function App() {
                       
                       <button
                         onClick={handleCondenseOutline}
-                        title="Verkürzt das Inhaltsverzeichnis (z.B. wenn es zu lang ist)."
-                        style={{
-                          width: '100%',
-                          fontSize: '9.5px',
-                          fontWeight: 600,
-                          padding: '5px 8px',
-                          borderRadius: '6px',
-                          backgroundColor: 'rgba(56, 189, 248, 0.08)',
-                          color: '#38bdf8',
-                          border: '1px solid rgba(56, 189, 248, 0.25)',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '5px',
-                          marginTop: '4px',
-                          transition: 'all 0.15s ease'
-                        }}
+                        title={isDe ? 'Verkürzt das Inhaltsverzeichnis (z.B. wenn es zu lang ist).' : 'Shortens the table of contents (e.g. if it is too long).'}
+                        className="btn"
+                        style={{ width: '100%', fontSize: '10px', padding: '4px 8px', marginTop: '4px', gap: '5px' }}
                       >
-                        <Scissors style={{ width: '10px', height: '10px' }} />
-                        Inhaltsverzeichnis kürzen
+                        <Scissors style={{ width: '10px', height: '10px', opacity: 0.6 }} />
+                        {isDe ? 'Inhaltsverzeichnis kürzen' : 'Shorten TOC'}
                       </button>
 
 
                       {activeBook.outlineBackup && (
                         <button
                           onClick={handleRestoreOutline}
-                          style={{
-                            width: '100%',
-                            fontSize: '9.5px',
-                            fontWeight: 600,
-                            padding: '5px 8px',
-                            borderRadius: '6px',
-                            backgroundColor: 'rgba(16, 185, 129, 0.08)',
-                            color: '#10b981',
-                            border: '1px solid rgba(16, 185, 129, 0.3)',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '4px',
-                            marginTop: '2px'
-                          }}
+                          className="btn"
+                          style={{ width: '100%', fontSize: '10px', padding: '4px 8px', marginTop: '2px', gap: '4px' }}
                         >
-                          <RotateCw style={{ width: '10px', height: '10px' }} />
+                          <RotateCw style={{ width: '10px', height: '10px', opacity: 0.6 }} />
                           {activeBook.pagesTextBackup && Object.keys(activeBook.pagesTextBackup).length > 0
-                            ? `Gliederung & Seiten wiederherstellen (${activeBook.outlineBackup.length} S.)`
-                            : `Gliederung wiederherstellen (${activeBook.outlineBackup.length} S.)`
+                            ? (isDe ? `Wiederherstellen (${activeBook.outlineBackup.length} S.)` : `Restore (${activeBook.outlineBackup.length} p.)`)
+                            : (isDe ? `Gliederung zurücksetzen (${activeBook.outlineBackup.length} S.)` : `Reset outline (${activeBook.outlineBackup.length} p.)`)
                           }
                         </button>
                       )}
@@ -8679,60 +8672,35 @@ export default function App() {
                       {activeBook.outline && Object.keys(activeBook.pagesText || {}).length > activeBook.outline.pages.length && (
                         <button
                           onClick={handleRecoverOutlineFromPages}
-                          style={{
-                            width: '100%',
-                            fontSize: '9.5px',
-                            fontWeight: 600,
-                            padding: '5px 8px',
-                            borderRadius: '6px',
-                            backgroundColor: 'rgba(239, 68, 68, 0.08)',
-                            color: '#ef4444',
-                            border: '1px solid rgba(239, 68, 68, 0.3)',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '4px',
-                            marginTop: '2px'
-                          }}
-                          title="Gliederung aus vorhandenem Seiteninhalt rekonstruieren"
+                          className="btn"
+                          style={{ width: '100%', fontSize: '10px', padding: '4px 8px', marginTop: '2px', gap: '4px' }}
+                          title={isDe ? 'Gliederung aus vorhandenem Seiteninhalt rekonstruieren' : 'Reconstruct outline from existing page content'}
                         >
-                          <RotateCw style={{ width: '10px', height: '10px' }} />
-                          ⚠️ {Object.keys(activeBook.pagesText || {}).length} Seiten wiederherstellen
+                          <RotateCw style={{ width: '10px', height: '10px', opacity: 0.6 }} />
+                          {isDe 
+                            ? `${Object.keys(activeBook.pagesText || {}).length} Seiten wiederherstellen` 
+                            : `Restore ${Object.keys(activeBook.pagesText || {}).length} pages`}
                         </button>
                       )}
 
                       <button
                         onClick={handleRegenerateChaptersFromContent}
                         disabled={isPlanning || isGenerating || !activeBook.outline}
-                        style={{
-                          width: '100%',
-                          fontSize: '10px',
-                          fontWeight: 600,
-                          padding: '6px 10px',
-                          borderRadius: '6px',
-                          background: 'linear-gradient(135deg, rgba(37,99,235,0.12), rgba(29,78,216,0.05))',
-                          color: '#38bdf8',
-                          border: '1px solid rgba(56, 189, 248, 0.3)',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '5px',
-                          marginTop: '4px',
-                          transition: 'all 0.15s ease'
-                        }}
-                        title="Die KI analysiert den Text aller bereits geschriebenen Seiten und erstellt das Inhaltsverzeichnis passend dazu neu."
+                        className="btn"
+                        style={{ width: '100%', fontSize: '10px', padding: '4px 8px', marginTop: '4px', gap: '5px' }}
+                        title={isDe 
+                          ? 'Die KI analysiert den Text aller bereits geschriebenen Seiten und erstellt das Inhaltsverzeichnis passend dazu neu.' 
+                          : 'The AI analyzes the text of all already written pages and recreates the table of contents to fit.'}
                       >
                         {isPlanning ? (
                           <>
-                            <Loader2 className="animate-spin" style={{ width: '10px', height: '10px' }} />
-                            <span>Inhaltsverzeichnis wird generiert...</span>
+                            <Loader2 className="animate-spin" style={{ width: '10px', height: '10px', opacity: 0.6 }} />
+                            <span>{isDe ? 'TOC wird generiert...' : 'Generating TOC...'}</span>
                           </>
                         ) : (
                           <>
-                            <Sparkles style={{ width: '10px', height: '10px' }} />
-                            <span>Inhaltsverzeichnis aus Buchseiten regenerieren</span>
+                            <Sparkles style={{ width: '10px', height: '10px', opacity: 0.6 }} />
+                            <span>{isDe ? 'TOC aus Buchseiten generieren' : 'Generate TOC from pages'}</span>
                           </>
                         )}
                       </button>
@@ -8762,19 +8730,16 @@ export default function App() {
                               boxShadow: '0 0 0 2px rgba(161, 66, 244, 0.2)'
                             } : undefined}
                           >
-                            <span style={{ fontSize: '9px', fontWeight: isSelected ? 700 : 600, fontFamily: isSelected ? "'Plus Jakarta Sans', 'Google Sans', sans-serif" : 'inherit' }}>S. {p.page_number}</span>
+                            <span style={{ fontSize: '9px', fontWeight: isSelected ? 700 : 600, fontFamily: isSelected ? "'Plus Jakarta Sans', 'Google Sans', sans-serif" : 'inherit' }}>{isDe ? 'S. ' + p.page_number : 'P. ' + p.page_number}</span>
                             {status === 'generating' && <Loader2 className="spinner" style={{ width: '9px', height: '9px', marginTop: '1px' }} />}
                             {status === 'completed' && !hasOverflow && <CheckCircle2 style={{ width: '9px', height: '9px', color: isSelected ? '#ffffff' : 'var(--success)', marginTop: '1px' }} />}
                             {status === 'completed' && hasOverflow && <AlertCircle style={{ width: '9px', height: '9px', color: 'var(--error)', marginTop: '1px' }} />}
                             {status === 'failed' && <AlertCircle style={{ width: '9px', height: '9px', color: 'var(--error)', marginTop: '1px' }} />}
                             {(activeBook.cmieStatus || {})[p.page_number] === 'similar' && (
-                              <span title="CMIE: Ähnlichkeit zu früherem Kapitel" style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#eab308', display: 'inline-block', marginLeft: '2px' }}></span>
+                              <span title={isDe ? 'CMIE: Ähnlichkeit zu früherem Kapitel' : 'CMIE: Similarity to previous chapter'} style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#eab308', display: 'inline-block', marginLeft: '2px' }}></span>
                             )}
                             {(activeBook.cmieStatus || {})[p.page_number] === 'review_needed' && (
-                              <span title="CMIE: Copyright Warnung (>15 Wörter Exakt-Match)" style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#ef4444', display: 'inline-block', marginLeft: '2px' }}></span>
-                            )}
-                            {(activeBook.cmieStatus || {})[p.page_number] === 'ok' && status === 'completed' && !hasOverflow && (
-                              <span title="CMIE Integrität bestätigt" style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#38bdf8', display: 'inline-block', marginLeft: '2px' }}></span>
+                              <span title={isDe ? 'CMIE: Copyright Warnung (>15 Wörter Exakt-Match)' : 'CMIE: Copyright Warning (>15 words exact match)'} style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#ef4444', display: 'inline-block', marginLeft: '2px' }}></span>
                             )}
                           </button>
                         );
@@ -8786,7 +8751,7 @@ export default function App() {
                 {selectedPage === 'title' ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1, padding: '16px 20px', border: '1px dashed var(--border-color)', borderRadius: '8px', backgroundColor: 'var(--bg-card)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
-                      <h3 style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-main)', margin: 0 }}>Titelblatt konfigurieren</h3>
+                      <h3 style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-main)', margin: 0 }}>{isDe ? 'Titelblatt konfigurieren' : 'Configure Title Page'}</h3>
                       <button
                         onClick={() => updateActiveBookConfig('hideTitlePage', !activeBook.hideTitlePage)}
                         style={{
@@ -8814,72 +8779,72 @@ export default function App() {
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" />
                           )}
                         </svg>
-                        <span>{activeBook.hideTitlePage ? 'AUSGEBLENDET' : 'SICHTBAR'}</span>
+                        <span>{activeBook.hideTitlePage ? (isDe ? 'AUSGEBLENDET' : 'HIDDEN') : (isDe ? 'SICHTBAR' : 'VISIBLE')}</span>
                       </button>
                     </div>
                     
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <label style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-muted)' }}>Buchtitel</label>
+                      <label style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-muted)' }}>{isDe ? 'Buchtitel' : 'Book Title'}</label>
                       <input 
                         type="text" 
                         value={activeBook.title}
                         onChange={e => updateActiveBookConfig('title', e.target.value)}
-                        placeholder="Buchtitel eingeben..."
+                        placeholder={isDe ? 'Buchtitel eingeben...' : 'Enter book title...'}
                         style={{ padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '11.5px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', outline: 'none' }}
                       />
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <label style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-muted)' }}>Untertitel</label>
+                      <label style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-muted)' }}>{isDe ? 'Untertitel' : 'Subtitle'}</label>
                       <input 
                         type="text" 
                         value={activeBook.subtitle || ''}
                         onChange={e => updateActiveBookConfig('subtitle', e.target.value)}
-                        placeholder="Untertitel eingeben..."
+                        placeholder={isDe ? 'Untertitel eingeben...' : 'Enter subtitle...'}
                         style={{ padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '11.5px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', outline: 'none' }}
                       />
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <label style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-muted)' }}>Autorenname</label>
+                      <label style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-muted)' }}>{isDe ? 'Autorenname' : 'Author Name'}</label>
                       <input 
                         type="text" 
                         value={activeBook.authorName || ''}
                         onChange={e => updateActiveBookConfig('authorName', e.target.value)}
-                        placeholder="Name des Autors..."
+                        placeholder={isDe ? 'Name des Autors...' : 'Author\'s name...'}
                         style={{ padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '11.5px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', outline: 'none' }}
                       />
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <label style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-muted)' }}>Herausgeber / Verlag</label>
+                      <label style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-muted)' }}>{isDe ? 'Herausgeber / Verlag' : 'Publisher / Edition'}</label>
                       <input 
                         type="text" 
                         value={activeBook.publisherLine || ''}
                         onChange={e => updateActiveBookConfig('publisherLine', e.target.value)}
-                        placeholder="z.B. KDP Studio Edition"
+                        placeholder={isDe ? 'z.B. KDP Studio Edition' : 'e.g. KDP Studio Edition'}
                         style={{ padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '11.5px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', outline: 'none' }}
                       />
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px dashed var(--border-color)', paddingTop: '10px' }}>
-                      <label style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-muted)' }}>Titelbild / Emblem</label>
+                      <label style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-muted)' }}>{isDe ? 'Titelbild / Emblem' : 'Cover Image / Emblem'}</label>
                       <select 
                         value={activeBook.titlePageEmblem || 'geometric'}
                         onChange={e => updateActiveBookConfig('titlePageEmblem', e.target.value)}
                         style={{ padding: '6px 10px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '11.5px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', cursor: 'pointer' }}
                       >
-                        <option value="geometric">Geometrisches Emblem (Standard)</option>
-                        <option value="floral">Florales Ornament (Kleeblatt)</option>
-                        <option value="star">Klassische Windrose / Stern</option>
-                        <option value="book">Minimales Buch-Symbol</option>
-                        <option value="custom">Eigenes Titelbild (Lokale Datei)</option>
+                        <option value="geometric">{isDe ? 'Geometrisches Emblem (Standard)' : 'Geometric Emblem (Standard)'}</option>
+                        <option value="floral">{isDe ? 'Florales Ornament (Kleeblatt)' : 'Floral Ornament (Clover)'}</option>
+                        <option value="star">{isDe ? 'Klassische Windrose / Stern' : 'Classic Compass / Star'}</option>
+                        <option value="book">{isDe ? 'Minimales Buch-Symbol' : 'Minimal Book Symbol'}</option>
+                        <option value="custom">{isDe ? 'Eigenes Titelbild (Lokale Datei)' : 'Custom Cover Image (Local File)'}</option>
                       </select>
                     </div>
 
                     {activeBook.titlePageEmblem === 'custom' && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <label style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-muted)' }}>Titelbild hochladen (Vom Desktop)</label>
+                        <label style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-muted)' }}>{isDe ? 'Titelbild hochladen (Vom Desktop)' : 'Upload cover image (from desktop)'}</label>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                           <input 
                             type="file" 
@@ -8925,18 +8890,18 @@ export default function App() {
                           />
                           <label 
                             htmlFor="cover-image-upload" 
-                            className="btn btn-primary"
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', padding: '6px 12px', fontSize: '11px', height: '28px', whiteSpace: 'nowrap' }}
+                            className="btn"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', padding: '4px 10px', fontSize: '10px', whiteSpace: 'nowrap' }}
                           >
-                            📁 Bild auswählen
+                            📁 {isDe ? 'Bild auswählen' : 'Select image'}
                           </label>
                           {activeBook.titlePageImage && (
                             <button 
                               onClick={() => updateActiveBookConfig('titlePageImage', '')}
-                              className="btn btn-danger"
-                              style={{ padding: '6px 12px', fontSize: '11px', height: '28px' }}
+                              className="btn"
+                              style={{ padding: '4px 10px', fontSize: '10px' }}
                             >
-                              Löschen
+                              {isDe ? 'Löschen' : 'Delete'}
                             </button>
                           )}
                         </div>
@@ -8944,8 +8909,8 @@ export default function App() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', backgroundColor: 'var(--input-bg)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
                             <img src={activeBook.titlePageImage} alt="Vorschau" style={{ width: '40px', height: '40px', objectFit: 'contain', borderRadius: '4px', backgroundColor: '#fff', border: '1px solid var(--border-color)' }} />
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                              <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-main)' }}>Bild geladen</span>
-                              <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Lokale Datei</span>
+                              <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-main)' }}>{isDe ? 'Bild geladen' : 'Image loaded'}</span>
+                              <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>{isDe ? 'Lokale Datei' : 'Local file'}</span>
                             </div>
                           </div>
                         )}
@@ -8953,35 +8918,35 @@ export default function App() {
                     )}
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px dashed var(--border-color)', paddingTop: '10px' }}>
-                      <label style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-muted)' }}>Titel-Position</label>
+                      <label style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-muted)' }}>{isDe ? 'Titel-Position' : 'Title Position'}</label>
                       <select 
                         value={activeBook.titlePageLayout || 'centered'}
                         onChange={e => updateActiveBookConfig('titlePageLayout', e.target.value)}
                         style={{ padding: '6px 10px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '11.5px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', cursor: 'pointer' }}
                       >
-                        <option value="centered">Zentriert in der Mitte</option>
-                        <option value="top_centered">Zentriert Oben</option>
+                        <option value="centered">{isDe ? 'Zentriert in der Mitte' : 'Centered in Middle'}</option>
+                        <option value="top_centered">{isDe ? 'Zentriert Oben' : 'Centered at Top'}</option>
                       </select>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px dashed var(--border-color)', paddingTop: '10px' }}>
-                      <label style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-muted)' }}>Zierrahmen (Ränder)</label>
+                      <label style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-muted)' }}>{isDe ? 'Zierrahmen (Ränder)' : 'Decorative Border'}</label>
                       <select 
                         value={activeBook.titlePageShowBorders !== false ? 'true' : 'false'}
                         onChange={e => updateActiveBookConfig('titlePageShowBorders', e.target.value === 'true')}
                         style={{ padding: '6px 10px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '11.5px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', cursor: 'pointer' }}
                       >
-                        <option value="true">Zierrahmen anzeigen (Ein)</option>
-                        <option value="false">Zierrahmen ausblenden (Aus)</option>
+                        <option value="true">{isDe ? 'Zierrahmen anzeigen (Ein)' : 'Show border (On)'}</option>
+                        <option value="false">{isDe ? 'Zierrahmen ausblenden (Aus)' : 'Hide border (Off)'}</option>
                       </select>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px dashed var(--border-color)', paddingTop: '10px' }}>
-                      <label style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-muted)' }}>Bild / Emblem anpassen</label>
+                      <label style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-muted)' }}>{isDe ? 'Bild / Emblem anpassen' : 'Adjust Image / Emblem'}</label>
                       
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9.5px', color: 'var(--text-main)' }}>
-                          <span>Größe ({activeBook.titlePageImageScale || 60} pt)</span>
+                          <span>{isDe ? 'Größe' : 'Size'} ({activeBook.titlePageImageScale || 60} pt)</span>
                           <button 
                             onClick={() => updateActiveBookConfig('titlePageImageScale', 60)}
                             style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '9px', padding: 0 }}
@@ -9000,7 +8965,7 @@ export default function App() {
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9.5px', color: 'var(--text-main)' }}>
-                            <span>Verschieben X ({activeBook.titlePageImageX || 0})</span>
+                            <span>{isDe ? 'Verschieben X' : 'Move X'} ({activeBook.titlePageImageX || 0})</span>
                             <button 
                               onClick={() => updateActiveBookConfig('titlePageImageX', 0)}
                               style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '9px', padding: 0 }}
@@ -9018,7 +8983,7 @@ export default function App() {
 
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9.5px', color: 'var(--text-main)' }}>
-                            <span>Verschieben Y ({activeBook.titlePageImageY || 0})</span>
+                            <span>{isDe ? 'Verschieben Y' : 'Move Y'} ({activeBook.titlePageImageY || 0})</span>
                             <button 
                               onClick={() => updateActiveBookConfig('titlePageImageY', 0)}
                               style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '9px', padding: 0 }}
@@ -9027,7 +8992,7 @@ export default function App() {
                           <input 
                             type="range" 
                             min="-250" 
-max="250" 
+                            max="250" 
                             value={activeBook.titlePageImageY || 0}
                             onChange={e => updateActiveBookConfig('titlePageImageY', Number(e.target.value))}
                             style={{ width: '100%', height: '4px', cursor: 'pointer' }}
@@ -9039,31 +9004,31 @@ max="250"
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px dashed var(--border-color)', paddingTop: '10px' }}>
                       <details style={{ width: '100%' }}>
                         <summary style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-main)', cursor: 'pointer', outline: 'none', display: 'flex', alignItems: 'center', gap: '4px', userSelect: 'none' }}>
-                          <span>✍️ Typografie & Ausrichtung anpassen</span>
+                          <span>✍️ {isDe ? 'Typografie & Ausrichtung anpassen' : 'Adjust Typography & Alignment'}</span>
                         </summary>
                         
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '10px', padding: '6px 2px' }}>
                           
                           {/* Title Styling */}
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderLeft: '2px solid var(--primary)', paddingLeft: '8px' }}>
-                            <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-main)' }}>Buchtitel (Überschrift)</span>
+                            <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-main)' }}>{isDe ? 'Buchtitel (Überschrift)' : 'Book Title (Heading)'}</span>
                             
                             <div style={{ display: 'flex', gap: '6px' }}>
                               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                <label style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Ausrichtung</label>
+                                <label style={{ fontSize: '9px', color: 'var(--text-muted)' }}>{isDe ? 'Ausrichtung' : 'Alignment'}</label>
                                 <select 
                                   value={activeBook.titlePageTitleAlign || 'center'}
                                   onChange={e => updateActiveBookConfig('titlePageTitleAlign', e.target.value)}
                                   style={{ padding: '4px 6px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '10px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)' }}
                                 >
-                                  <option value="center">Zentriert</option>
-                                  <option value="left">Links</option>
-                                  <option value="right">Rechts</option>
+                                  <option value="center">{isDe ? 'Zentriert' : 'Centered'}</option>
+                                  <option value="left">{isDe ? 'Links' : 'Left'}</option>
+                                  <option value="right">{isDe ? 'Rechts' : 'Right'}</option>
                                 </select>
                               </div>
                               
                               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                <label style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Schriftart</label>
+                                <label style={{ fontSize: '9px', color: 'var(--text-muted)' }}>{isDe ? 'Schriftart' : 'Font'}</label>
                                 <select 
                                   value={activeBook.titlePageTitleFont || 'playfair'}
                                   onChange={e => updateActiveBookConfig('titlePageTitleFont', e.target.value)}
@@ -9078,7 +9043,7 @@ max="250"
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9.5px', color: 'var(--text-main)' }}>
-                                <span>Größe ({activeBook.titlePageTitleSize || 28} pt)</span>
+                                <span>{isDe ? 'Größe' : 'Size'} ({activeBook.titlePageTitleSize || 28} pt)</span>
                                 <button 
                                   onClick={() => updateActiveBookConfig('titlePageTitleSize', 28)}
                                   style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '8.5px', padding: 0 }}
@@ -9096,7 +9061,7 @@ max="250"
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9.5px', color: 'var(--text-main)' }}>
-                                <span>Verschiebung X ({activeBook.titlePageTitleX || 0} pt)</span>
+                                <span>{isDe ? 'Verschiebung X' : 'Offset X'} ({activeBook.titlePageTitleX || 0} pt)</span>
                                 <button 
                                   onClick={() => updateActiveBookConfig('titlePageTitleX', 0)}
                                   style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '8.5px', padding: 0 }}
@@ -9115,24 +9080,24 @@ max="250"
 
                           {/* Subtitle Styling */}
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderLeft: '2px solid var(--primary)', paddingLeft: '8px' }}>
-                            <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-main)' }}>Untertitel</span>
+                            <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-main)' }}>{isDe ? 'Untertitel' : 'Subtitle'}</span>
                             
                             <div style={{ display: 'flex', gap: '6px' }}>
                               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                <label style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Ausrichtung</label>
+                                <label style={{ fontSize: '9px', color: 'var(--text-muted)' }}>{isDe ? 'Ausrichtung' : 'Alignment'}</label>
                                 <select 
                                   value={activeBook.titlePageSubtitleAlign || 'center'}
                                   onChange={e => updateActiveBookConfig('titlePageSubtitleAlign', e.target.value)}
                                   style={{ padding: '4px 6px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '10px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)' }}
                                 >
-                                  <option value="center">Zentriert</option>
-                                  <option value="left">Links</option>
-                                  <option value="right">Rechts</option>
+                                  <option value="center">{isDe ? 'Zentriert' : 'Centered'}</option>
+                                  <option value="left">{isDe ? 'Links' : 'Left'}</option>
+                                  <option value="right">{isDe ? 'Rechts' : 'Right'}</option>
                                 </select>
                               </div>
                               
                               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                <label style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Schriftart</label>
+                                <label style={{ fontSize: '9px', color: 'var(--text-muted)' }}>{isDe ? 'Schriftart' : 'Font'}</label>
                                 <select 
                                   value={activeBook.titlePageSubtitleFont || 'times'}
                                   onChange={e => updateActiveBookConfig('titlePageSubtitleFont', e.target.value)}
@@ -9147,7 +9112,7 @@ max="250"
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9.5px', color: 'var(--text-main)' }}>
-                                <span>Größe ({activeBook.titlePageSubtitleSize || 12} pt)</span>
+                                <span>{isDe ? 'Größe' : 'Size'} ({activeBook.titlePageSubtitleSize || 12} pt)</span>
                                 <button 
                                   onClick={() => updateActiveBookConfig('titlePageSubtitleSize', 12)}
                                   style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '8.5px', padding: 0 }}
@@ -9165,7 +9130,7 @@ max="250"
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9.5px', color: 'var(--text-main)' }}>
-                                <span>Verschiebung X ({activeBook.titlePageSubtitleX || 0} pt)</span>
+                                <span>{isDe ? 'Verschiebung X' : 'Offset X'} ({activeBook.titlePageSubtitleX || 0} pt)</span>
                                 <button 
                                   onClick={() => updateActiveBookConfig('titlePageSubtitleX', 0)}
                                   style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '8.5px', padding: 0 }}
@@ -9184,24 +9149,24 @@ max="250"
 
                           {/* Author Styling */}
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderLeft: '2px solid var(--primary)', paddingLeft: '8px' }}>
-                            <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-main)' }}>Autorenname</span>
+                            <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-main)' }}>{isDe ? 'Autorenname' : 'Author Name'}</span>
                             
                             <div style={{ display: 'flex', gap: '6px' }}>
                               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                <label style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Ausrichtung</label>
+                                <label style={{ fontSize: '9px', color: 'var(--text-muted)' }}>{isDe ? 'Ausrichtung' : 'Alignment'}</label>
                                 <select 
                                   value={activeBook.titlePageAuthorAlign || 'center'}
                                   onChange={e => updateActiveBookConfig('titlePageAuthorAlign', e.target.value)}
                                   style={{ padding: '4px 6px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '10px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)' }}
                                 >
-                                  <option value="center">Zentriert</option>
-                                  <option value="left">Links</option>
-                                  <option value="right">Rechts</option>
+                                  <option value="center">{isDe ? 'Zentriert' : 'Centered'}</option>
+                                  <option value="left">{isDe ? 'Links' : 'Left'}</option>
+                                  <option value="right">{isDe ? 'Rechts' : 'Right'}</option>
                                 </select>
                               </div>
                               
                               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                <label style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Schriftart</label>
+                                <label style={{ fontSize: '9px', color: 'var(--text-muted)' }}>{isDe ? 'Schriftart' : 'Font'}</label>
                                 <select 
                                   value={activeBook.titlePageAuthorFont || 'times'}
                                   onChange={e => updateActiveBookConfig('titlePageAuthorFont', e.target.value)}
@@ -9216,7 +9181,7 @@ max="250"
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9.5px', color: 'var(--text-main)' }}>
-                                <span>Größe ({activeBook.titlePageAuthorSize || 14} pt)</span>
+                                <span>{isDe ? 'Größe' : 'Size'} ({activeBook.titlePageAuthorSize || 14} pt)</span>
                                 <button 
                                   onClick={() => updateActiveBookConfig('titlePageAuthorSize', 14)}
                                   style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '8.5px', padding: 0 }}
@@ -9234,7 +9199,7 @@ max="250"
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9.5px', color: 'var(--text-main)' }}>
-                                <span>Verschiebung X ({activeBook.titlePageAuthorX || 0} pt)</span>
+                                <span>{isDe ? 'Verschiebung X' : 'Offset X'} ({activeBook.titlePageAuthorX || 0} pt)</span>
                                 <button 
                                   onClick={() => updateActiveBookConfig('titlePageAuthorX', 0)}
                                   style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '8.5px', padding: 0 }}
@@ -9253,24 +9218,24 @@ max="250"
 
                           {/* Publisher Styling */}
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderLeft: '2px solid var(--primary)', paddingLeft: '8px' }}>
-                            <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-main)' }}>Herausgeber / Verlag</span>
+                            <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-main)' }}>{isDe ? 'Herausgeber / Verlag' : 'Publisher / Edition'}</span>
                             
                             <div style={{ display: 'flex', gap: '6px' }}>
                               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                <label style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Ausrichtung</label>
+                                <label style={{ fontSize: '9px', color: 'var(--text-muted)' }}>{isDe ? 'Ausrichtung' : 'Alignment'}</label>
                                 <select 
                                   value={activeBook.titlePagePublisherAlign || 'center'}
                                   onChange={e => updateActiveBookConfig('titlePagePublisherAlign', e.target.value)}
                                   style={{ padding: '4px 6px', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '10px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)' }}
                                 >
-                                  <option value="center">Zentriert</option>
-                                  <option value="left">Links</option>
-                                  <option value="right">Rechts</option>
+                                  <option value="center">{isDe ? 'Zentriert' : 'Centered'}</option>
+                                  <option value="left">{isDe ? 'Links' : 'Left'}</option>
+                                  <option value="right">{isDe ? 'Rechts' : 'Right'}</option>
                                 </select>
                               </div>
                               
                               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                <label style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Schriftart</label>
+                                <label style={{ fontSize: '9px', color: 'var(--text-muted)' }}>{isDe ? 'Schriftart' : 'Font'}</label>
                                 <select 
                                   value={activeBook.titlePagePublisherFont || 'times'}
                                   onChange={e => updateActiveBookConfig('titlePagePublisherFont', e.target.value)}
@@ -9285,7 +9250,7 @@ max="250"
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9.5px', color: 'var(--text-main)' }}>
-                                <span>Größe ({activeBook.titlePagePublisherSize || 10} pt)</span>
+                                <span>{isDe ? 'Größe' : 'Size'} ({activeBook.titlePagePublisherSize || 10} pt)</span>
                                 <button 
                                   onClick={() => updateActiveBookConfig('titlePagePublisherSize', 10)}
                                   style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '8.5px', padding: 0 }}
@@ -9303,7 +9268,7 @@ max="250"
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9.5px', color: 'var(--text-main)' }}>
-                                <span>Verschiebung X ({activeBook.titlePagePublisherX || 0} pt)</span>
+                                <span>{isDe ? 'Verschiebung X' : 'Offset X'} ({activeBook.titlePagePublisherX || 0} pt)</span>
                                 <button 
                                   onClick={() => updateActiveBookConfig('titlePagePublisherX', 0)}
                                   style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '8.5px', padding: 0 }}
@@ -9325,12 +9290,12 @@ max="250"
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px dashed var(--border-color)', paddingTop: '10px' }}>
-                      <label style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-muted)' }}>Zielgruppe für KI-Untertitel (optional)</label>
+                      <label style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-muted)' }}>{isDe ? 'Zielgruppe für KI-Untertitel (optional)' : 'Target audience for AI subtitle (optional)'}</label>
                       <input 
                         type="text" 
                         value={titlePageTargetAudience}
                         onChange={e => setTitlePageTargetAudience(e.target.value)}
-                        placeholder="z.B. Einsteiger, Fortgeschrittene, Kinder..."
+                        placeholder={isDe ? 'z.B. Einsteiger, Fortgeschrittene, Kinder...' : 'e.g. beginners, advanced, children...'}
                         style={{ padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '6px', fontSize: '11.5px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', outline: 'none' }}
                       />
                     </div>
@@ -9344,10 +9309,10 @@ max="250"
                       {isGeneratingTitleOptions ? (
                         <>
                           <Loader2 className="spinner" style={{ width: '12px', height: '12px' }} />
-                          Vorschläge werden generiert...
+                          {isDe ? 'Vorschläge werden generiert...' : 'Generating suggestions...'}
                         </>
                       ) : (
-                        <span>🪄 KI-Untertitel & Verlagsvorschläge</span>
+                        <span>🪄 {isDe ? 'KI-Untertitel & Verlagsvorschläge' : 'AI Subtitle & Publisher Suggestions'}</span>
                       )}
                     </button>
 
@@ -9364,42 +9329,48 @@ max="250"
                             style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'start', padding: '6px', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-main)', cursor: 'pointer', textAlign: 'left', width: '100%', boxSizing: 'border-box' }}
                           >
                             <span style={{ fontSize: '8px', fontWeight: 'bold', backgroundColor: 'var(--primary-glow)', color: 'var(--primary)', padding: '1px 4px', borderRadius: '3px' }}>
-                              Variante {opt.variante}: {opt.variante === 'A' ? 'Sachlich' : opt.variante === 'B' ? 'Emotional' : 'Dringlich'}
+                              {isDe ? `Variante ${opt.variante}: ${opt.variante === 'A' ? 'Sachlich' : opt.variante === 'B' ? 'Emotional' : 'Dringlich'}` : `Variant ${opt.variante}: ${opt.variante === 'A' ? 'Factual' : opt.variante === 'B' ? 'Emotional' : 'Urgent'}`}
                             </span>
                             <div style={{ fontSize: '10.5px', fontWeight: 'bold', color: 'var(--text-main)', whiteSpace: 'normal', wordBreak: 'break-word' }}>{opt.untertitel}</div>
-                            <div style={{ fontSize: '9px', color: 'var(--text-muted)' }}>Durch: {opt.verlagszeile}</div>
+                            <div style={{ fontSize: '9px', color: 'var(--text-muted)' }}>{isDe ? 'Durch: ' : 'By: '}{opt.verlagszeile}</div>
                           </div>
                         ))}
                       </div>
                     )}
                     
                     <p style={{ fontSize: '9.5px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
-                      Jede Änderung wird sofort live in der rechten Buchvorschau auf dem Titelblatt gerendert.
+                      {isDe 
+                        ? 'Jede Änderung wird sofort live in der rechten Buchvorschau auf dem Titelblatt gerendert.' 
+                        : 'Every change is immediately rendered live on the title page in the preview on the right.'}
                     </p>
                   </div>
                 ) : (selectedPage === 'toc' || (typeof selectedPage === 'string' && selectedPage.startsWith('toc'))) ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1, padding: '16px 20px', border: '1px dashed var(--border-color)', borderRadius: '8px', backgroundColor: 'var(--bg-card)' }}>
-                    <h3 style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-main)', margin: 0 }}>Inhaltsverzeichnis (TOC)</h3>
+                    <h3 style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-main)', margin: 0 }}>{isDe ? 'Inhaltsverzeichnis (TOC)' : 'Table of Contents (TOC)'}</h3>
                     <p style={{ fontSize: '10.5px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
-                      Das Inhaltsverzeichnis wird vollautomatisch generiert. Jedes Kapitel beginnt auf einer ungeraden (rechten) Seite im gedruckten Buch.
+                      {isDe 
+                        ? 'Das Inhaltsverzeichnis wird vollautomatisch generiert. Jedes Kapitel beginnt auf einer ungeraden (rechten) Seite im gedruckten Buch.' 
+                        : 'The table of contents is automatically generated. Each chapter starts on an odd (right-hand) page in the printed book.'}
                     </p>
                     <p style={{ fontSize: '10.5px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
-                      In der rechten Vorschau siehst du den genauen aktuellen Buchsatz der Gliederung mit den korrekten lückenlosen Seitenzahlen.
+                      {isDe 
+                        ? 'In der rechten Vorschau siehst du den genauen aktuellen Buchsatz der Gliederung mit den korrekten lückenlosen Seitenzahlen.' 
+                        : 'In the preview on the right you can see the exact current layout of the outline with correct, contiguous page numbers.'}
                     </p>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', borderTop: '1px solid var(--border-color)', paddingTop: '12px', marginTop: '4px' }}>
-                      <h4 style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-main)', margin: 0 }}>Layout & Typografie</h4>
+                      <h4 style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-main)', margin: 0 }}>{isDe ? 'Layout & Typografie' : 'Layout & Typography'}</h4>
                       
                       {/* Font Family Selection */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <label style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>Schriftart</label>
+                        <label style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>{isDe ? 'Schriftart' : 'Font'}</label>
                         <select
                           value={activeBook.tocFontFamily || ''}
                           onChange={e => updateActiveBookConfig('tocFontFamily', e.target.value)}
                           className="form-select"
                           style={{ width: '100%', padding: '6px', fontSize: '11px', borderRadius: '4px', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', border: '1px solid var(--border-color)' }}
                         >
-                          <option value="">(Wie Buchtext: {(COVER_FONTS.find(f => f.value === activeBook.fontFamily) || { label: activeBook.fontFamily }).label})</option>
+                          <option value="">{isDe ? `(Wie Buchtext: ${(COVER_FONTS.find(f => f.value === activeBook.fontFamily) || { label: activeBook.fontFamily }).label})` : `(Same as book text: ${(COVER_FONTS.find(f => f.value === activeBook.fontFamily) || { label: activeBook.fontFamily }).label})`}</option>
                           {COVER_FONTS.map(f => (
                             <option key={f.value} value={f.value}>{f.label}</option>
                           ))}
@@ -9409,7 +9380,7 @@ max="250"
                       {/* Font Size Selection */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>
-                          <span>Schriftgröße ({activeBook.tocFontSize || 10} pt)</span>
+                          <span>{isDe ? 'Schriftgröße' : 'Font Size'} ({activeBook.tocFontSize || 10} pt)</span>
                           <button 
                             onClick={() => updateActiveBookConfig('tocFontSize', 10)}
                             style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '8.5px', padding: 0 }}
@@ -9429,7 +9400,7 @@ max="250"
                       {/* Spacing Selection */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>
-                          <span>Zeilenabstand ({activeBook.tocLineSpacing || 18} pt)</span>
+                          <span>{isDe ? 'Zeilenabstand' : 'Line Spacing'} ({activeBook.tocLineSpacing || 18} pt)</span>
                           <button 
                             onClick={() => updateActiveBookConfig('tocLineSpacing', 18)}
                             style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '8.5px', padding: 0 }}
@@ -9822,13 +9793,13 @@ max="250"
                           display: 'flex', 
                           gap: '6px', 
                           padding: '8px 14px', 
-                          borderBottom: '1px solid rgba(56,189,248,0.15)',
-                          background: 'linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%)',
+                          borderBottom: '1px solid var(--border-color)',
+                          background: '#0f172a',
                           color: '#ffffff',
                           alignItems: 'center',
                           borderTopLeftRadius: '10px',
                           borderTopRightRadius: '10px',
-                          border: '1px solid rgba(56,189,248,0.2)',
+                          border: '1px solid var(--border-color)',
                           borderBottomWidth: 0
                         }}>
                           <button onMouseDown={(e) => e.preventDefault()} onClick={() => {
@@ -9938,7 +9909,7 @@ max="250"
                           onChange={handleEditorChange}
                           placeholder="Inhalt wird geladen/generiert. Du kannst auch direkt losschreiben..."
                           className="editor-textarea"
-                          style={{ borderTop: 'none', height: '420px', background: '#0f172a', color: '#f8fafc', border: '1px solid rgba(56,189,248,0.2)', borderBottomLeftRadius: '10px', borderBottomRightRadius: '10px', padding: '16px', fontFamily: 'var(--ex-font)', fontSize: '13.5px', lineHeight: '1.7', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}
+                          style={{ borderTop: 'none', height: '420px', background: '#0f172a', color: '#f8fafc', border: '1px solid var(--border-color)', borderBottomLeftRadius: '10px', borderBottomRightRadius: '10px', padding: '16px', fontFamily: 'var(--ex-font)', fontSize: '13.5px', lineHeight: '1.7', boxShadow: 'none' }}
                         />
                       </div>
                     )}
@@ -9960,11 +9931,8 @@ max="250"
 
             {/* Right Panel: Live Print Preview — Billion Dollar Vibe */}
             <div className="ex-pane" style={{ width: `${rightWidth}px`, flexShrink: 0, display: 'flex', flexDirection: 'column', background: '#070d19' }}>
-              <div className="ex-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '12px 16px', background: '#0f172a', borderBottom: '1px solid rgba(56,189,248,0.2)' }}>
-                <div className="ex-wordmark">
-                  <div className="ex-wordmark-dot" style={{ background: '#38bdf8', boxShadow: '0 0 10px #38bdf8' }} />
-                  <span className="ex-wordmark-text">Layout-Viewer</span>
-                </div>
+              <div className="ex-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '12px 16px', background: '#0f172a', borderBottom: '1px solid var(--border-color)' }}>
+                <div className="ex-wordmark" />
                 {activeBook && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <select 
@@ -10347,7 +10315,12 @@ max="250"
                           {/* Field selector tabs */}
                           <div style={{ display: 'flex', gap: '4px', borderRight: '1px solid var(--border-color)', paddingRight: '8px' }}>
                             {(['title', 'subtitle', 'author', 'publisher'] as const).map(f => {
-                              const labels: Record<string, string> = { title: '📖 Titel', subtitle: '💬 Untertitel', author: '✍️ Autor', publisher: '🏢 Verlag' };
+                              const labels: Record<string, string> = {
+                                title: isDe ? 'Titel' : 'Title',
+                                subtitle: isDe ? 'Untertitel' : 'Subtitle',
+                                author: isDe ? 'Autor' : 'Author',
+                                publisher: isDe ? 'Verlag' : 'Publisher'
+                              };
                               const isSel = currentCoverField === f;
                               return (
                                 <button
@@ -10355,9 +10328,9 @@ max="250"
                                   onClick={() => setActiveCoverEditField(f)}
                                   style={{
                                     padding: '5px 9px', fontSize: '11px', fontWeight: isSel ? 700 : 500,
-                                    borderRadius: '6px', border: isSel ? '1px solid var(--primary)' : '1px solid transparent',
-                                    backgroundColor: isSel ? 'rgba(59,130,246,0.15)' : 'transparent',
-                                    color: isSel ? 'var(--primary)' : 'var(--text-muted)', cursor: 'pointer',
+                                    borderRadius: '6px', border: isSel ? '1px solid var(--border-color)' : '1px solid transparent',
+                                    backgroundColor: isSel ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
+                                    color: isSel ? 'var(--text-main)' : 'var(--text-muted)', cursor: 'pointer',
                                     transition: 'all 0.15s'
                                   }}
                                 >
@@ -10406,7 +10379,7 @@ max="250"
                             style={{ padding: '4px 9px', fontSize: '10.5px', fontWeight: 600, borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', cursor: 'pointer' }}
                             title="Position der gewählten Zeile auf Mitte zurücksetzen"
                           >
-                            📍 Reset Pos
+                            Reset Pos
                           </button>
                         </div>
                       );
@@ -11278,6 +11251,7 @@ max="250"
         </div>
       )}
     </>
+    </LanguageProvider>
   );
 }
 
