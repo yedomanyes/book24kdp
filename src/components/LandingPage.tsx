@@ -819,7 +819,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
           <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#737373', marginBottom: '10px' }}>
             Leadership
           </div>
-          <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 12px', color: '#fff' }}>
+          <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 12px', color: theme === 'dark' ? '#fff' : '#1a1a2e' }}>
             {isDe ? 'Das Team hinter Book24 Studio' : 'The Team behind Book24 Studio'}
           </h2>
 
