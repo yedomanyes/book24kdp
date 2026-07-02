@@ -9772,8 +9772,8 @@ export default function App() {
                           gap: '6px', 
                           padding: '8px 14px', 
                           borderBottom: '1px solid var(--border-color)',
-                          background: '#0f172a',
-                          color: '#ffffff',
+                          background: theme === 'dark' ? '#0f172a' : 'var(--bg-card)',
+                          color: theme === 'dark' ? '#ffffff' : 'var(--text-main)',
                           alignItems: 'center',
                           borderTopLeftRadius: '10px',
                           borderTopRightRadius: '10px',
@@ -9789,7 +9789,7 @@ export default function App() {
                             const newText = text.substring(0, start) + '**' + text.substring(start, end) + '**' + text.substring(end);
                             handleEditorChange({ target: { value: newText } } as React.ChangeEvent<HTMLTextAreaElement>);
                             setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + 2, end + 2); }, 0);
-                          }} className="btn" style={{ padding: '4px 8px', fontSize: '12px', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 'bold', color: '#ffffff' }} title="Fett (Strg+B)">B</button>
+                          }} className="btn" style={{ padding: '4px 8px', fontSize: '12px', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 'bold', color: theme === 'dark' ? '#ffffff' : 'var(--text-main)' }} title="Fett (Strg+B)">B</button>
                           
                           <button onMouseDown={(e) => e.preventDefault()} onClick={() => {
                             const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement;
@@ -9800,9 +9800,9 @@ export default function App() {
                             const newText = text.substring(0, start) + '*' + text.substring(start, end) + '*' + text.substring(end);
                             handleEditorChange({ target: { value: newText } } as React.ChangeEvent<HTMLTextAreaElement>);
                             setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + 1, end + 1); }, 0);
-                          }} className="btn" style={{ padding: '4px 8px', fontSize: '12px', background: 'transparent', border: 'none', cursor: 'pointer', fontStyle: 'italic', color: '#ffffff' }} title="Kursiv (Strg+I)">I</button>
+                          }} className="btn" style={{ padding: '4px 8px', fontSize: '12px', background: 'transparent', border: 'none', cursor: 'pointer', fontStyle: 'italic', color: theme === 'dark' ? '#ffffff' : 'var(--text-main)' }} title="Kursiv (Strg+I)">I</button>
                           
-                          <div style={{ width: '1px', height: '14px', backgroundColor: 'rgba(255,255,255,0.3)', margin: '0 4px' }}></div>
+                          <div style={{ width: '1px', height: '14px', backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.3)' : 'var(--border-color)', margin: '0 4px' }}></div>
                           
                           <button onMouseDown={(e) => e.preventDefault()} onClick={() => {
                             const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement;
@@ -9813,7 +9813,7 @@ export default function App() {
                             const newText = text.substring(0, start) + '\n- ' + text.substring(start, end) + text.substring(end);
                             handleEditorChange({ target: { value: newText } } as React.ChangeEvent<HTMLTextAreaElement>);
                             setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + 3, end + 3); }, 0);
-                          }} className="btn" style={{ padding: '4px 8px', fontSize: '11px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#ffffff' }} title="Aufzählungsliste">• Liste</button>
+                          }} className="btn" style={{ padding: '4px 8px', fontSize: '11px', background: 'transparent', border: 'none', cursor: 'pointer', color: theme === 'dark' ? '#ffffff' : 'var(--text-main)' }} title="Aufzählungsliste">• Liste</button>
                           
                           <button onMouseDown={(e) => e.preventDefault()} onClick={() => {
                             const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement;
@@ -9824,7 +9824,7 @@ export default function App() {
                             const newText = text.substring(0, start) + '\n\n:::box Tipp\n' + (text.substring(start, end) || 'Dein Text hier...') + '\n:::\n\n' + text.substring(end);
                             handleEditorChange({ target: { value: newText } } as React.ChangeEvent<HTMLTextAreaElement>);
                             setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + 13, end + 13); }, 0);
-                          }} className="btn" style={{ padding: '4px 8px', fontSize: '11px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#ffffff' }} title="Info-Box einfügen">
+                          }} className="btn" style={{ padding: '4px 8px', fontSize: '11px', background: 'transparent', border: 'none', cursor: 'pointer', color: theme === 'dark' ? '#ffffff' : 'var(--text-main)' }} title="Info-Box einfügen">
                             [Box]
                           </button>
 
@@ -9837,7 +9837,7 @@ export default function App() {
                             const newText = text.substring(0, start) + '\n> ' + (text.substring(start, end) || 'Dein Zitat hier...') + '\n' + text.substring(end);
                             handleEditorChange({ target: { value: newText } } as React.ChangeEvent<HTMLTextAreaElement>);
                             setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + 3, end + 3); }, 0);
-                          }} className="btn" style={{ padding: '4px 8px', fontSize: '11px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#ffffff' }} title="Zitat einfügen">
+                          }} className="btn" style={{ padding: '4px 8px', fontSize: '11px', background: 'transparent', border: 'none', cursor: 'pointer', color: theme === 'dark' ? '#ffffff' : 'var(--text-main)' }} title="Zitat einfügen">
                             "Zitat"
                           </button>
 
@@ -9851,7 +9851,7 @@ export default function App() {
                               background: 'transparent', 
                               border: 'none', 
                               cursor: 'pointer', 
-                              color: '#ffffff',
+                              color: theme === 'dark' ? '#ffffff' : 'var(--text-main)',
                               display: 'flex',
                               alignItems: 'center',
                               gap: '4px'
@@ -9866,7 +9866,7 @@ export default function App() {
                             if(!textarea) return;
                             textarea.focus();
                             document.execCommand('undo');
-                          }} className="btn" style={{ padding: '4px 8px', fontSize: '11px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '4px' }} title="Rückgängig (CMD/CTRL + Z)">
+                          }} className="btn" style={{ padding: '4px 8px', fontSize: '11px', background: 'transparent', border: 'none', cursor: 'pointer', color: theme === 'dark' ? '#ffffff' : 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '4px' }} title="Rückgängig (CMD/CTRL + Z)">
                             <Undo style={{ width: '12px', height: '12px' }} />
                           </button>
                         </div>
@@ -9887,7 +9887,7 @@ export default function App() {
                           onChange={handleEditorChange}
                           placeholder="Inhalt wird geladen/generiert. Du kannst auch direkt losschreiben..."
                           className="editor-textarea"
-                          style={{ borderTop: 'none', height: '420px', background: '#0f172a', color: '#f8fafc', border: '1px solid var(--border-color)', borderBottomLeftRadius: '10px', borderBottomRightRadius: '10px', padding: '16px', fontFamily: 'var(--ex-font)', fontSize: '13.5px', lineHeight: '1.7', boxShadow: 'none' }}
+                          style={{ borderTop: 'none', height: '420px', background: theme === 'dark' ? '#0f172a' : '#ffffff', color: theme === 'dark' ? '#f8fafc' : 'var(--text-main)', border: '1px solid var(--border-color)', borderBottomLeftRadius: '10px', borderBottomRightRadius: '10px', padding: '16px', fontFamily: 'var(--ex-font)', fontSize: '13.5px', lineHeight: '1.7', boxShadow: 'none' }}
                         />
                       </div>
                     )}
@@ -9908,8 +9908,8 @@ export default function App() {
             <div className="resizer-bar" onMouseDown={startResizingRight} />
 
             {/* Right Panel: Live Print Preview — Billion Dollar Vibe */}
-            <div className="ex-pane" style={{ width: `${rightWidth}px`, flexShrink: 0, display: 'flex', flexDirection: 'column', background: '#070d19' }}>
-              <div className="ex-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '12px 16px', background: '#0f172a', borderBottom: '1px solid var(--border-color)' }}>
+            <div className="ex-pane" style={{ width: `${rightWidth}px`, flexShrink: 0, display: 'flex', flexDirection: 'column', background: theme === 'dark' ? '#070d19' : 'var(--bg-main)' }}>
+              <div className="ex-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '12px 16px', background: theme === 'dark' ? '#0f172a' : 'var(--bg-card)', borderBottom: '1px solid var(--border-color)' }}>
                 <div className="ex-wordmark" />
                 {activeBook && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -10023,7 +10023,7 @@ export default function App() {
                 </div>
               )}
 
-              <div className="ex-content" style={{ display: 'flex', flexDirection: 'column', padding: '24px 16px', background: '#060a14', overflowY: 'auto', flex: 1, gap: '20px', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div className="ex-content" style={{ display: 'flex', flexDirection: 'column', padding: '24px 16px', background: theme === 'dark' ? '#060a14' : '#f1f5f9', overflowY: 'auto', flex: 1, gap: '20px', alignItems: 'center', justifyContent: 'space-between' }}>
                 {activeBook && selectedPage !== null ? (
                   <div className="preview-area" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
                     {/* Page Actions Toolbar */}
