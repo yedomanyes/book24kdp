@@ -703,68 +703,104 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
 
 
       {/* Roadmap / Plan Section */}
-      <section id="roadmap" style={{ position: 'relative', zIndex: 10, padding: '100px 24px', maxWidth: '1200px', margin: '0 auto' }}>
+      <section id="roadmap" style={{ position: 'relative', zIndex: 10, padding: '120px 24px 80px', maxWidth: '1300px', margin: '0 auto', overflow: 'hidden' }}>
+        
+        {/* Background glow blob */}
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
+
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          style={{ textAlign: 'center', marginBottom: '64px' }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          style={{ textAlign: 'center', marginBottom: '100px', position: 'relative' }}
         >
-          <h2 style={{ fontSize: 'clamp(36px, 6vw, 48px)', fontWeight: 900, letterSpacing: '-0.04em', margin: '0', color: theme === 'dark' ? '#fff' : '#1a1a1a' }}>
+          <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#7c3aed', marginBottom: '16px' }}>
+            {isDe ? 'Der Plan' : 'The Roadmap'}
+          </div>
+          <h2 style={{ fontSize: 'clamp(40px, 6vw, 64px)', fontWeight: 900, letterSpacing: '-0.04em', margin: '0', color: theme === 'dark' ? '#fff' : '#0f172a', lineHeight: 1.05 }}>
             Book24 Roadmap
           </h2>
+          <p style={{ marginTop: '16px', fontSize: '16px', color: theme === 'dark' ? '#71717a' : '#6b7280', maxWidth: '480px', margin: '16px auto 0' }}>
+            {isDe ? 'Von der ersten Version bis zum globalen Imperium.' : 'From the first release to a global empire.'}
+          </p>
         </motion.div>
 
-        {/* Roadmap Grid */}
-        <div className="roadmap-grid-container">
+        {/* Timeline */}
+        <div className="rm-timeline">
+
+          {/* Central spine line */}
+          <div className={`rm-spine ${theme === 'dark' ? 'dark' : 'light'}`} />
+
           {getRoadmapPhases(isDe).map((phase, i) => {
+            const isLeft = i % 2 === 0;
             const isActive = phase.active;
+            const colors = [
+              { glow: '#8b5cf6', accent: '#a78bfa', border: 'rgba(139,92,246,0.4)' },
+              { glow: '#3b82f6', accent: '#60a5fa', border: 'rgba(59,130,246,0.35)' },
+              { glow: '#06b6d4', accent: '#22d3ee', border: 'rgba(6,182,212,0.35)' },
+              { glow: '#10b981', accent: '#34d399', border: 'rgba(16,185,129,0.35)' },
+              { glow: '#f59e0b', accent: '#fbbf24', border: 'rgba(245,158,11,0.35)' },
+            ][i % 5];
+
             return (
               <motion.div
                 key={phase.phase}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-60px' }}
-                transition={{ duration: 0.6, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
-                className={`roadmap-card ${isActive ? 'active' : ''} ${theme === 'dark' ? 'dark' : 'light'}`}
+                initial={{ opacity: 0, x: isLeft ? -60 : 60 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, margin: '-80px' }}
+                transition={{ duration: 0.7, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                className={`rm-item ${isLeft ? 'left' : 'right'}`}
               >
-                {/* Decorative Phase Outline Number */}
-                <div className="roadmap-phase-num">
-                  0{i + 1}
-                </div>
+                {/* Content side */}
+                <div className={`rm-content ${theme === 'dark' ? 'dark' : 'light'} ${isActive ? 'active' : ''}`}
+                  style={{ ['--rm-glow' as any]: colors.glow, ['--rm-accent' as any]: colors.accent, ['--rm-border' as any]: colors.border }}
+                >
+                  {/* Phase label */}
+                  <div style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '0.2em', textTransform: 'uppercase', color: colors.accent, marginBottom: '10px' }}>
+                    {phase.phase}
+                  </div>
 
-                {/* Content */}
-                <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
-                  <div>
-                    {/* Header: Phase Name & Status */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', gap: '8px' }}>
-                      <span className="roadmap-badge-phase">
-                        {phase.phase}
-                      </span>
-                      <span className={`roadmap-badge-status ${isActive ? 'active' : ''}`}>
-                        {isActive && <span className="pulse-dot" />}
+                  {/* Title */}
+                  <h3 style={{ fontSize: 'clamp(20px, 2.5vw, 26px)', fontWeight: 900, letterSpacing: '-0.03em', margin: '0 0 12px', color: theme === 'dark' ? '#ffffff' : '#0f172a', lineHeight: 1.2 }}>
+                    {phase.title}
+                  </h3>
+
+                  {/* Desc */}
+                  <p style={{ fontSize: '14px', lineHeight: 1.65, margin: '0 0 20px', color: theme === 'dark' ? '#a1a1aa' : '#52525b' }}>
+                    {phase.desc}
+                  </p>
+
+                  {/* Footer row */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {isActive && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 700, color: '#10b981', padding: '4px 10px', borderRadius: '999px', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)' }}>
+                        <span className="pulse-dot" style={{ width: '5px', height: '5px' }} />
+                        {isDe ? 'Live' : 'Live'}
+                      </span>}
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: theme === 'dark' ? '#52525b' : '#9ca3af', padding: '4px 10px', borderRadius: '999px', background: theme === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' }}>
                         {phase.status}
                       </span>
                     </div>
-
-                    {/* Title */}
-                    <h3 className="roadmap-card-title">
-                      {phase.title}
-                    </h3>
-
-                    {/* Description */}
-                    <p className="roadmap-card-desc">
-                      {phase.desc}
-                    </p>
-                  </div>
-
-                  {/* Footer: Price */}
-                  <div style={{ marginTop: '24px', display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                    <span className="roadmap-price-label">{isDe ? 'Wert:' : 'Value:'}</span>
-                    <span className="roadmap-price-value">{phase.price}</span>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: theme === 'dark' ? '#3f3f46' : '#d1d5db', marginBottom: '2px' }}>
+                        {isDe ? 'Wert' : 'Value'}
+                      </div>
+                      <div style={{ fontSize: '22px', fontWeight: 900, letterSpacing: '-0.03em', background: `linear-gradient(135deg, ${colors.accent}, ${colors.glow})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                        {phase.price}
+                      </div>
+                    </div>
                   </div>
                 </div>
+
+                {/* Center dot */}
+                <div className="rm-dot" style={{ ['--rm-glow' as any]: colors.glow, ['--rm-accent' as any]: colors.accent } as any}>
+                  <div className="rm-dot-inner" style={{ background: colors.accent }} />
+                </div>
+
+                {/* Empty opposite side (for spacing) */}
+                <div className="rm-spacer" />
               </motion.div>
             );
           })}
