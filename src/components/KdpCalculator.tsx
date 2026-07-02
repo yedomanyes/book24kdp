@@ -143,7 +143,7 @@ export default function KdpCalculator({ language = 'de' }: KdpCalculatorProps) {
       minHeight: '100%'
     } as any}>
       {/* --- COMPACT TOP ROW: Params left, Metrics right --- */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 0, borderBottom: '1px solid #d5d9d9' }}>
+      <div className="kdp-calc-container-grid">
         {/* Left: Simulation Parameters */}
         <div style={{ background: '#ffffff', color: '#0f1111', padding: '14px 16px', borderRight: '1px solid #d5d9d9', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{ fontSize: '12px', fontWeight: 700, color: '#0f1111', marginBottom: '2px' }}>

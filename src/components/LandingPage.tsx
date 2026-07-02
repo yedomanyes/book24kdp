@@ -336,10 +336,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
             marginTop: '32px', 
             display: 'flex', 
             alignItems: 'center', 
+            justifyContent: 'center',
             gap: '16px', 
+            flexWrap: 'wrap',
             background: theme === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', 
             padding: '12px 24px', 
-            borderRadius: '100px', 
+            borderRadius: '30px', 
             border: theme === 'dark' ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)',
             boxShadow: theme === 'dark' ? '0 10px 30px rgba(0,0,0,0.2)' : '0 10px 30px rgba(0,0,0,0.02)'
           }}
@@ -390,7 +392,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.7 }}
-          style={{ marginTop: '32px', display: 'flex', gap: '16px', justifyContent: 'center' }}
+          style={{ marginTop: '32px', display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}
         >
           {covers.map((item, i) => {
 
@@ -582,7 +584,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
             boxShadow: theme === 'dark' ? '0 20px 40px -10px rgba(0,0,0,0.5)' : '0 20px 40px -10px rgba(0,0,0,0.05)'
           }}>
             {/* Headers */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: theme === 'dark' ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid rgba(0, 0, 0, 0.05)' }}>
+            <div className="comparison-header-grid" style={{ borderBottom: theme === 'dark' ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid rgba(0, 0, 0, 0.05)' }}>
               <div style={{ padding: '24px', textAlign: 'center', background: theme === 'dark' ? 'rgba(239, 68, 68, 0.05)' : 'rgba(239, 68, 68, 0.02)' }}>
                 <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#ef4444', margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                   <X size={20} strokeWidth={3} /> {isDe ? 'Ohne BookLab Studio' : 'Without BookLab Studio'}
@@ -609,9 +611,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
                 { bad: 'Broken margins and constant KDP error messages', good: 'Perfect print layout with one click (KDP-compatible)' },
                 { bad: 'Pay expensive designers or hours of Canva frustration', good: 'Professional, sales-optimized covers created instantly' }
               ]).map((row, i, arr) => (
-                <div key={i} style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: '1fr 1fr', 
+                <div key={i} className="comparison-row-grid" style={{ 
                   borderBottom: i < arr.length - 1 ? (theme === 'dark' ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid rgba(0, 0, 0, 0.05)') : 'none',
                   background: i % 2 === 0 ? 'transparent' : (theme === 'dark' ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.01)')
                 }}>
@@ -622,7 +622,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
                   </div>
                   {/* Good */}
                   <div style={{ padding: '24px', display: 'flex', alignItems: 'flex-start', gap: '16px', color: theme === 'dark' ? '#e5e5e5' : '#1a1a1a', fontSize: '15px', lineHeight: 1.6, position: 'relative' }}>
-                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '1px', background: theme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)' }} />
+                    <div className="comparison-row-divider" style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '1px', background: theme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)' }} />
+
                     <Check size={18} strokeWidth={3} color="#22c55e" style={{ flexShrink: 0, marginTop: '3px' }} />
                     <span style={{ fontWeight: 600 }}>{row.good}</span>
                   </div>

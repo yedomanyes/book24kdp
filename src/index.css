@@ -2615,3 +2615,50 @@ input:focus, select:focus, textarea:focus {
 .light .skeleton-block {
   background-color: rgba(0, 0, 0, 0.03);
 }
+
+/* Responsive grid for KdpCalculator */
+.kdp-calc-container-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 0;
+  border-bottom: 1px solid #d5d9d9;
+}
+
+@media (max-width: 768px) {
+  .kdp-calc-container-grid {
+    grid-template-columns: 1fr;
+  }
+  .kdp-calc-container-grid > div:first-child {
+    border-right: none !important;
+    border-bottom: 1px solid #d5d9d9;
+  }
+}
+
+/* Responsive grid for Before/After KDP pain section */
+.comparison-header-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.comparison-row-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 640px) {
+  .comparison-header-grid {
+    grid-template-columns: 1fr;
+  }
+  .comparison-row-grid {
+    grid-template-columns: 1fr;
+  }
+  .comparison-header-grid > div:last-child {
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .light-theme .comparison-header-grid > div:last-child {
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+  }
+  .comparison-row-divider {
+    display: none !important;
+  }
+}
+
