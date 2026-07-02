@@ -1,12 +1,12 @@
 ---
 source_file: "src/components/SettingsModal.tsx"
 type: "code"
-community: "Community 17"
+community: "Community 64"
 location: "L19"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_17
+  - community/Community_64
 ---
 
 # SettingsModalProps
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[SettingsModal.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_17
+#graphify/code #graphify/EXTRACTED #community/Community_64

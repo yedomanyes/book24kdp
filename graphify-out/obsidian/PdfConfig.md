@@ -1,12 +1,12 @@
 ---
 source_file: "src/utils/PdfGenerator.ts"
 type: "code"
-community: "Community 14"
-location: "L4"
+community: "Community 48"
+location: "L5"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_14
+  - community/Community_48
 ---
 
 # PdfConfig
@@ -15,4 +15,4 @@ tags:
 - [[App.tsx]] - `imports` [EXTRACTED]
 - [[PdfGenerator.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_14
+#graphify/code #graphify/EXTRACTED #community/Community_48

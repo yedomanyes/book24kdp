@@ -1,12 +1,12 @@
 ---
 source_file: "src/services/GeminiService.ts"
 type: "code"
-community: "Community 0"
+community: "Community 52"
 location: "L9"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_0
+  - community/Community_52
 ---
 
 # BookOutline
@@ -19,4 +19,4 @@ tags:
 - [[OutlinePlanner.ts]] - `imports` [EXTRACTED]
 - [[PdfGenerator.ts]] - `imports` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_0
+#graphify/code #graphify/EXTRACTED #community/Community_52

@@ -1,12 +1,12 @@
 ---
 source_file: "src/App.tsx"
 type: "code"
-community: "Community 7"
+community: "Community 11"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_7
+  - community/Community_11
 ---
 
 # App.tsx
@@ -15,7 +15,6 @@ tags:
 - [[Account]] - `contains` [EXTRACTED]
 - [[App()]] - `contains` [EXTRACTED]
 - [[Auth()]] - `imports` [EXTRACTED]
-- [[Auth.tsx]] - `imports_from` [EXTRACTED]
 - [[Book]] - `contains` [EXTRACTED]
 - [[BookOutline]] - `imports` [EXTRACTED]
 - [[BookOutlinePage]] - `imports` [EXTRACTED]
@@ -35,52 +34,59 @@ tags:
 - [[DEFAULT_BOX3_DESIGN]] - `contains` [EXTRACTED]
 - [[GeminiService]] - `imports` [EXTRACTED]
 - [[GeminiService.ts]] - `imports_from` [EXTRACTED]
-- [[GooeyNav.tsx]] - `imports_from` [EXTRACTED]
+- [[GilInsightsPanel()]] - `imports` [EXTRACTED]
+- [[GilInsightsPanel.tsx]] - `imports_from` [EXTRACTED]
+- [[GilService]] - `imports` [EXTRACTED]
+- [[GilService.ts]] - `imports_from` [EXTRACTED]
 - [[GraphicDecision]] - `imports` [EXTRACTED]
 - [[ImageInsertModalInner()]] - `contains` [EXTRACTED]
 - [[ImageInsertModalInnerProps]] - `contains` [EXTRACTED]
 - [[KEYS]] - `imports` [EXTRACTED]
+- [[KdpCalculator.tsx]] - `imports_from` [EXTRACTED]
 - [[LandingPage()]] - `imports` [EXTRACTED]
 - [[LandingPage.tsx]] - `imports_from` [EXTRACTED]
+- [[LayoutFixDB]] - `imports` [EXTRACTED]
+- [[LayoutFixDB.ts]] - `imports_from` [EXTRACTED]
 - [[NAV_TABS]] - `contains` [EXTRACTED]
 - [[NAV_TAB_PARTICLE_COLORS]] - `contains` [EXTRACTED]
 - [[NavTabId]] - `contains` [EXTRACTED]
 - [[NecessityDetector]] - `imports` [EXTRACTED]
-- [[NecessityDetector.ts]] - `imports_from` [EXTRACTED]
 - [[NicheFinderDashboard()]] - `imports` [EXTRACTED]
-- [[NicheFinderDashboard.tsx]] - `imports_from` [EXTRACTED]
 - [[NicheResult]] - `imports` [EXTRACTED]
-- [[NicheService.ts]] - `imports_from` [EXTRACTED]
 - [[ObsidianSyncService]] - `imports` [EXTRACTED]
 - [[ObsidianSyncService.ts]] - `imports_from` [EXTRACTED]
+- [[OwnerPanel()]] - `imports` [EXTRACTED]
+- [[OwnerPanel.tsx]] - `imports_from` [EXTRACTED]
+- [[PageGenerationProgress()]] - `contains` [EXTRACTED]
 - [[PdfConfig]] - `imports` [EXTRACTED]
 - [[PdfGenerator.ts]] - `imports_from` [EXTRACTED]
 - [[PreviewGraphicBox()]] - `contains` [EXTRACTED]
 - [[SettingsModal()]] - `imports` [EXTRACTED]
 - [[SettingsModal.tsx]] - `imports_from` [EXTRACTED]
-- [[StorageService.ts]] - `imports_from` [EXTRACTED]
 - [[SvgGraphicRenderer()]] - `imports` [EXTRACTED]
-- [[SvgGraphicRenderer.tsx]] - `imports_from` [EXTRACTED]
+- [[TitlePageCustomText]] - `contains` [EXTRACTED]
 - [[WorkbookBlock]] - `contains` [EXTRACTED]
-- [[brainAccess.ts]] - `imports_from` [EXTRACTED]
 - [[cleanPageText()]] - `contains` [EXTRACTED]
-- [[cmie.ts]] - `imports_from` [EXTRACTED]
 - [[deleteBookFromCloud()]] - `imports` [EXTRACTED]
 - [[firebase.ts]] - `imports_from` [EXTRACTED]
 - [[generateBookPdf()]] - `imports` [EXTRACTED]
 - [[generateStructureVariationsLocal()]] - `contains` [EXTRACTED]
 - [[getCssFontFamily()]] - `contains` [EXTRACTED]
 - [[getProjectFormattedDate()]] - `contains` [EXTRACTED]
-- [[graphics.ts]] - `imports_from` [EXTRACTED]
 - [[hasBrainAccess()]] - `imports` [EXTRACTED]
+- [[isOwnerEmail()]] - `imports` [EXTRACTED]
+- [[isOwnerRoute()]] - `imports` [EXTRACTED]
 - [[loadAccountsFromCloud()]] - `imports` [EXTRACTED]
 - [[loadBooksFromCloud()]] - `imports` [EXTRACTED]
 - [[main.tsx]] - `imports_from` [EXTRACTED]
 - [[migrateOldKeys()]] - `imports` [EXTRACTED]
+- [[owner.ts]] - `imports_from` [EXTRACTED]
 - [[parsePageLines()]] - `contains` [EXTRACTED]
 - [[saveBookToCloud()]] - `imports` [EXTRACTED]
 - [[searchNiche()]] - `imports` [EXTRACTED]
 - [[serializeBlocksToMarkdown()]] - `contains` [EXTRACTED]
 - [[syncLocalLibraryToCloud()]] - `imports` [EXTRACTED]
+- [[syncUserProfile()]] - `imports` [EXTRACTED]
+- [[userProfileService.ts]] - `imports_from` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_7
+#graphify/code #graphify/EXTRACTED #community/Community_11

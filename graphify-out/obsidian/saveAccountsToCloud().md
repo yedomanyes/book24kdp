@@ -1,12 +1,12 @@
 ---
 source_file: "src/services/StorageService.ts"
 type: "code"
-community: "Community 12"
+community: "Community 34"
 location: "L246"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_12
+  - community/Community_34
 ---
 
 # saveAccountsToCloud()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[StorageService.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_12
+#graphify/code #graphify/EXTRACTED #community/Community_34

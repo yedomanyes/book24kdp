@@ -1,43 +1,55 @@
 ---
 type: community
-cohesion: 0.26
-members: 28
+cohesion: 0.06
+members: 40
 ---
 
 # Community 4
 
-**Cohesion:** 0.26 - loosely connected
-**Members:** 28 nodes
+**Cohesion:** 0.06 - loosely connected
+**Members:** 40 nodes
 
 ## Members
-- [[.buildContextPrompt()]] - code - src/services/brain/BrainService.ts
-- [[.getState()]] - code - src/services/brain/BrainService.ts
-- [[.learnFromOutline()]] - code - src/services/brain/BrainService.ts
-- [[.learnFromPage()]] - code - src/services/brain/BrainService.ts
-- [[.learnFromPageInternal()]] - code - src/services/brain/BrainService.ts
-- [[.loadState()]] - code - src/services/brain/BrainService.ts
-- [[.markObsidianSync()]] - code - src/services/brain/BrainService.ts
-- [[.rebuildFromLibrary()]] - code - src/services/brain/BrainService.ts
-- [[.saveState()]] - code - src/services/brain/BrainService.ts
-- [[.trackBook()]] - code - src/services/brain/BrainService.ts
-- [[.trackBookInternal()]] - code - src/services/brain/BrainService.ts
-- [[BRAIN_KEY()]] - code - src/services/brain/BrainService.ts
-- [[BrainBookInput]] - code - src/types/brain.ts
-- [[BrainEvent]] - code - src/types/brain.ts
-- [[BrainEventType]] - code - src/types/brain.ts
-- [[BrainService]] - code - src/services/brain/BrainService.ts
-- [[BrainService.ts]] - code - src/services/brain/BrainService.ts
-- [[BrainState]] - code - src/types/brain.ts
-- [[CmiePageStatus]] - code - src/types/cmie.ts
-- [[EMPTY_BRAIN_STATE()]] - code - src/types/brain.ts
-- [[NicheBrainProfile]] - code - src/types/brain.ts
-- [[brain.ts]] - code - src/types/brain.ts
-- [[estimateTokens()]] - code - src/services/brain/BrainService.ts
-- [[nicheKeyword()]] - code - src/services/brain/BrainService.ts
-- [[pushEvent()]] - code - src/services/brain/BrainService.ts
-- [[slugify()]] - code - src/services/brain/BrainService.ts
-- [[upsertNiche()]] - code - src/services/brain/BrainService.ts
-- [[upsertPattern()]] - code - src/services/brain/BrainService.ts
+- [[Vo()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[Yo()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[_computeKeyCodeChord()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[_computeKeybinding()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[_getChangeOptions()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[_sanitizeAndValidateOption()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[_setTheme()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[_setupOptions()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[_updateLogLevel()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[_updateRestoreColors()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[addEncoding()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[addProtocol()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[ca()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[constructor()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[eo()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[fromCharData()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[getDomNode()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[getPositionOfChildWindowRelativeToAncestorWindow()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[getSameOriginWindowChain()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[getScrollDimensions()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[onA11yChar()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[onA11yTab()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[onKey()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[onMultipleOptionChange()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[pa()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[qr()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[sc()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[setClassName()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[setCsiHandlerFallback()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[setDcsHandlerFallback()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[setDomNode()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[setErrorHandler()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[setEscHandlerFallback()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[setExecuteHandler()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[setExecuteHandlerFallback()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[setFromCharData()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[setHandlerFallback()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[setOscHandlerFallback()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[setPrintHandler()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[setupPtyScript()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
 
 ## Live Query (requires Dataview plugin)
 
@@ -47,14 +59,39 @@ SORT file.name ASC
 ```
 
 ## Connections to other communities
-- 20 edges to [[_COMMUNITY_Community 5]]
-- 11 edges to [[_COMMUNITY_Community 0]]
-- 4 edges to [[_COMMUNITY_Community 13]]
-- 3 edges to [[_COMMUNITY_Community 7]]
+- 40 edges to [[_COMMUNITY_Community 0]]
+- 6 edges to [[_COMMUNITY_Community 36]]
+- 6 edges to [[_COMMUNITY_Community 21]]
+- 5 edges to [[_COMMUNITY_Community 20]]
+- 5 edges to [[_COMMUNITY_Community 13]]
+- 5 edges to [[_COMMUNITY_Community 29]]
+- 4 edges to [[_COMMUNITY_Community 38]]
+- 4 edges to [[_COMMUNITY_Community 37]]
+- 3 edges to [[_COMMUNITY_Community 40]]
+- 3 edges to [[_COMMUNITY_Community 14]]
+- 2 edges to [[_COMMUNITY_Community 47]]
+- 2 edges to [[_COMMUNITY_Community 10]]
+- 2 edges to [[_COMMUNITY_Community 44]]
+- 2 edges to [[_COMMUNITY_Community 35]]
+- 2 edges to [[_COMMUNITY_Community 5]]
+- 2 edges to [[_COMMUNITY_Community 75]]
+- 2 edges to [[_COMMUNITY_Community 9]]
+- 2 edges to [[_COMMUNITY_Community 41]]
+- 2 edges to [[_COMMUNITY_Community 73]]
+- 1 edge to [[_COMMUNITY_Community 32]]
+- 1 edge to [[_COMMUNITY_Community 28]]
+- 1 edge to [[_COMMUNITY_Community 19]]
+- 1 edge to [[_COMMUNITY_Community 61]]
+- 1 edge to [[_COMMUNITY_Community 80]]
+- 1 edge to [[_COMMUNITY_Community 50]]
+- 1 edge to [[_COMMUNITY_Community 82]]
+- 1 edge to [[_COMMUNITY_Community 27]]
+- 1 edge to [[_COMMUNITY_Community 51]]
+- 1 edge to [[_COMMUNITY_Community 12]]
 
 ## Top bridge nodes
-- [[BrainService.ts]] - degree 20, connects to 3 communities
-- [[BrainBookInput]] - degree 16, connects to 3 communities
-- [[BrainState]] - degree 18, connects to 2 communities
-- [[BrainService]] - degree 14, connects to 2 communities
-- [[brain.ts]] - degree 11, connects to 2 communities
+- [[constructor()]] - degree 95, connects to 26 communities
+- [[setClassName()]] - degree 6, connects to 4 communities
+- [[_setTheme()]] - degree 6, connects to 4 communities
+- [[getSameOriginWindowChain()]] - degree 5, connects to 3 communities
+- [[setDomNode()]] - degree 4, connects to 2 communities

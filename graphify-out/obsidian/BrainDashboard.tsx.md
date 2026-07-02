@@ -1,34 +1,31 @@
 ---
 source_file: "src/components/BrainDashboard.tsx"
 type: "code"
-community: "Community 13"
+community: "Community 1"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_13
+  - community/Community_1
 ---
 
 # BrainDashboard.tsx
 
 ## Connections
 - [[App.tsx]] - `imports_from` [EXTRACTED]
-- [[BRAIN_REGIONS]] - `contains` [EXTRACTED]
 - [[BrainBookInput]] - `imports` [EXTRACTED]
 - [[BrainDashboard()]] - `contains` [EXTRACTED]
 - [[BrainDashboardProps]] - `contains` [EXTRACTED]
-- [[BrainEvent]] - `imports` [EXTRACTED]
 - [[BrainService]] - `imports` [EXTRACTED]
+- [[BrainService.ts]] - `imports_from` [EXTRACTED]
 - [[BrainState]] - `imports` [EXTRACTED]
-- [[EVENT_LABELS]] - `contains` [EXTRACTED]
-- [[EmptyHint()]] - `contains` [EXTRACTED]
-- [[EventRow()]] - `contains` [EXTRACTED]
+- [[CloudQueueService]] - `imports` [EXTRACTED]
+- [[CloudQueueService.ts]] - `imports_from` [EXTRACTED]
+- [[NEON_COLORS]] - `contains` [EXTRACTED]
 - [[ObsidianSyncService]] - `imports` [EXTRACTED]
-- [[PatternPanel()]] - `contains` [EXTRACTED]
-- [[StatCard()]] - `contains` [EXTRACTED]
+- [[ObsidianSyncService.ts]] - `imports_from` [EXTRACTED]
 - [[actionBtnStyle()]] - `contains` [EXTRACTED]
-- [[formatTime()]] - `contains` [EXTRACTED]
-- [[panelStyle]] - `contains` [EXTRACTED]
-- [[sectionTitleStyle]] - `contains` [EXTRACTED]
+- [[getNicheColor()]] - `imports` [EXTRACTED]
+- [[slugify()]] - `imports` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_13
+#graphify/code #graphify/EXTRACTED #community/Community_1

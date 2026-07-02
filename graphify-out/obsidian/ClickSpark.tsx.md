@@ -1,12 +1,12 @@
 ---
 source_file: "src/components/ClickSpark.tsx"
 type: "code"
-community: "Community 1"
+community: "Community 77"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_1
+  - community/Community_77
 ---
 
 # ClickSpark.tsx
@@ -14,7 +14,6 @@ tags:
 ## Connections
 - [[ClickSpark()]] - `contains` [EXTRACTED]
 - [[ClickSparkProps]] - `contains` [EXTRACTED]
-- [[LandingPage.tsx]] - `imports_from` [EXTRACTED]
 - [[Spark]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_1
+#graphify/code #graphify/EXTRACTED #community/Community_77

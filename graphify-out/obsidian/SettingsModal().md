@@ -1,12 +1,12 @@
 ---
 source_file: "src/components/SettingsModal.tsx"
 type: "code"
-community: "Community 17"
+community: "Community 64"
 location: "L35"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_17
+  - community/Community_64
 ---
 
 # SettingsModal()
@@ -15,4 +15,4 @@ tags:
 - [[App.tsx]] - `imports` [EXTRACTED]
 - [[SettingsModal.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_17
+#graphify/code #graphify/EXTRACTED #community/Community_64

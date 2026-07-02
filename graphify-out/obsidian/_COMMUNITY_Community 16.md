@@ -1,23 +1,37 @@
 ---
 type: community
-cohesion: 0.32
-members: 8
+cohesion: 0.09
+members: 22
 ---
 
 # Community 16
 
-**Cohesion:** 0.32 - loosely connected
-**Members:** 8 nodes
+**Cohesion:** 0.09 - loosely connected
+**Members:** 22 nodes
 
 ## Members
-- [[Auth()]] - code - src/components/Auth.tsx
-- [[Auth.tsx]] - code - src/components/Auth.tsx
-- [[AuthProps]] - code - src/components/Auth.tsx
-- [[INLINE_CONFIG]] - code - src/firebase.ts
-- [[config]] - code - src/firebase.ts
-- [[firebase.ts]] - code - src/firebase.ts
-- [[getFirebaseConfig()]] - code - src/firebase.ts
-- [[isFirebaseConfigured()]] - code - src/firebase.ts
+- [[@typesexpress]] - code - functions/package.json
+- [[@typesnode]] - code - functions/package.json
+- [[author]] - code - functions/package.json
+- [[axios]] - code - functions/package.json
+- [[build]] - code - functions/package.json
+- [[cors]] - code - functions/package.json
+- [[dependencies]] - code - functions/package.json
+- [[description]] - code - functions/package.json
+- [[dotenv]] - code - functions/package.json
+- [[express]] - code - functions/package.json
+- [[firebase-admin]] - code - functions/package.json
+- [[firebase-functions]] - code - functions/package.json
+- [[keywords]] - code - functions/package.json
+- [[license]] - code - functions/package.json
+- [[main]] - code - functions/package.json
+- [[name]] - code - functions/package.json
+- [[package.json]] - code - functions/package.json
+- [[scripts]] - code - functions/package.json
+- [[test]] - code - functions/package.json
+- [[type]] - code - functions/package.json
+- [[typescript]] - code - functions/package.json
+- [[version]] - code - functions/package.json
 
 ## Live Query (requires Dataview plugin)
 
@@ -25,12 +39,3 @@ members: 8
 TABLE source_file, type FROM #community/Community_16
 SORT file.name ASC
 ```
-
-## Connections to other communities
-- 3 edges to [[_COMMUNITY_Community 7]]
-- 1 edge to [[_COMMUNITY_Community 12]]
-
-## Top bridge nodes
-- [[firebase.ts]] - degree 7, connects to 2 communities
-- [[Auth.tsx]] - degree 5, connects to 1 community
-- [[Auth()]] - degree 3, connects to 1 community

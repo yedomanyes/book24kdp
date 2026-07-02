@@ -1,12 +1,12 @@
 ---
 source_file: "functions/package.json"
 type: "code"
-community: "Community 6"
+community: "Community 16"
 location: "L15"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_6
+  - community/Community_16
 ---
 
 # @types/node
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[dependencies]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_6
+#graphify/code #graphify/EXTRACTED #community/Community_16

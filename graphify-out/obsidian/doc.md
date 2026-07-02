@@ -1,12 +1,12 @@
 ---
 source_file: "test-align.js"
 type: "code"
-community: "Community 21"
+community: "Community 92"
 location: "L2"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_21
+  - community/Community_92
 ---
 
 # doc
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[test-align.js]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_21
+#graphify/code #graphify/EXTRACTED #community/Community_92

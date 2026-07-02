@@ -1,12 +1,12 @@
 ---
 source_file: "src/utils/PdfGenerator.ts"
 type: "code"
-community: "Community 14"
-location: "L1443"
+community: "Community 48"
+location: "L1645"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_14
+  - community/Community_48
 ---
 
 # drawBookEmblem()
@@ -15,4 +15,4 @@ tags:
 - [[PdfGenerator.ts]] - `contains` [EXTRACTED]
 - [[generateBookPdf()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_14
+#graphify/code #graphify/EXTRACTED #community/Community_48

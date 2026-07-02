@@ -1,12 +1,12 @@
 ---
 source_file: "src/services/cmie/BookMemoryStore.ts"
 type: "code"
-community: "Community 0"
+community: "Community 2"
 location: "L4"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_0
+  - community/Community_2
 ---
 
 # BookMemoryStore
@@ -18,4 +18,4 @@ tags:
 - [[CmieOrchestrator.ts]] - `imports` [EXTRACTED]
 - [[test_cmie_acceptance.ts]] - `imports` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_0
+#graphify/code #graphify/EXTRACTED #community/Community_2

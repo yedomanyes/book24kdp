@@ -1,12 +1,12 @@
 ---
 source_file: "src/types/cmie.ts"
 type: "code"
-community: "Community 0"
+community: "Community 2"
 location: "L22"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_0
+  - community/Community_2
 ---
 
 # DEFAULT_CMIE_CONFIG
@@ -15,4 +15,4 @@ tags:
 - [[CmieOrchestrator.ts]] - `imports` [EXTRACTED]
 - [[cmie.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_0
+#graphify/code #graphify/EXTRACTED #community/Community_2

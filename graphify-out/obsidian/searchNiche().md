@@ -1,12 +1,12 @@
 ---
 source_file: "src/services/NicheService.ts"
 type: "code"
-community: "Community 15"
+community: "Community 60"
 location: "L37"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_15
+  - community/Community_60
 ---
 
 # searchNiche()
@@ -16,4 +16,4 @@ tags:
 - [[NicheService.ts]] - `contains` [EXTRACTED]
 - [[delay()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_15
+#graphify/code #graphify/EXTRACTED #community/Community_60

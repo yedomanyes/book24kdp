@@ -1,12 +1,12 @@
 ---
 source_file: "src/services/cmie/DuplicateGuard.ts"
 type: "code"
-community: "Community 0"
+community: "Community 2"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_0
+  - community/Community_2
 ---
 
 # DuplicateGuard.ts
@@ -17,8 +17,7 @@ tags:
 - [[DuplicateGuard]] - `contains` [EXTRACTED]
 - [[DuplicateValidationResult]] - `contains` [EXTRACTED]
 - [[EmbeddingService]] - `imports` [EXTRACTED]
-- [[EmbeddingService.ts]] - `imports_from` [EXTRACTED]
-- [[cmie.ts]] - `imports_from` [EXTRACTED]
+- [[GlobalDiversityIndex.ts]] - `imports_from` [EXTRACTED]
 - [[test_cmie_acceptance.ts]] - `imports_from` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_0
+#graphify/code #graphify/EXTRACTED #community/Community_2

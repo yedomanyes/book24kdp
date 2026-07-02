@@ -265,6 +265,48 @@
         "a": 1,
         "rgb": 16752039
       }
+    },
+    {
+      "query": "tag:#community/Community_38",
+      "color": {
+        "a": 1,
+        "rgb": 10253663
+      }
+    },
+    {
+      "query": "tag:#community/Community_39",
+      "color": {
+        "a": 1,
+        "rgb": 12234924
+      }
+    },
+    {
+      "query": "tag:#community/Community_40",
+      "color": {
+        "a": 1,
+        "rgb": 5142951
+      }
+    },
+    {
+      "query": "tag:#community/Community_41",
+      "color": {
+        "a": 1,
+        "rgb": 15896107
+      }
+    },
+    {
+      "query": "tag:#community/Community_42",
+      "color": {
+        "a": 1,
+        "rgb": 14767961
+      }
+    },
+    {
+      "query": "tag:#community/Community_43",
+      "color": {
+        "a": 1,
+        "rgb": 7780274
+      }
     }
   ]
 }

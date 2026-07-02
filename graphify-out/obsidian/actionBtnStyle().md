@@ -1,12 +1,12 @@
 ---
 source_file: "src/components/BrainDashboard.tsx"
 type: "code"
-community: "Community 13"
-location: "L661"
+community: "Community 1"
+location: "L409"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_13
+  - community/Community_1
 ---
 
 # actionBtnStyle()
@@ -15,4 +15,4 @@ tags:
 - [[BrainDashboard()]] - `calls` [EXTRACTED]
 - [[BrainDashboard.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_13
+#graphify/code #graphify/EXTRACTED #community/Community_1

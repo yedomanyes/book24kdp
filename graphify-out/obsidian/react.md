@@ -1,17 +1,17 @@
 ---
-source_file: "package.json"
+source_file: "src/hooks/use-mobile.js"
 type: "code"
-community: "Community 2"
-location: "L19"
+community: "Community 91"
+location: "L38"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_2
+  - community/Community_91
 ---
 
-# react
+# React
 
 ## Connections
-- [[dependencies_1]] - `contains` [EXTRACTED]
+- [[use-mobile.js]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_2
+#graphify/code #graphify/EXTRACTED #community/Community_91

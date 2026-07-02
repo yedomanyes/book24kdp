@@ -1,19 +1,18 @@
 ---
 source_file: "src/types/brain.ts"
 type: "code"
-community: "Community 4"
+community: "Community 1"
 location: "L13"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_4
+  - community/Community_1
 ---
 
 # BrainEvent
 
 ## Connections
-- [[BrainDashboard.tsx]] - `imports` [EXTRACTED]
 - [[BrainService.ts]] - `imports` [EXTRACTED]
 - [[brain.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_4
+#graphify/code #graphify/EXTRACTED #community/Community_1

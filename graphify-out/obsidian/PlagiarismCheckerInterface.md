@@ -1,12 +1,12 @@
 ---
 source_file: "src/services/cmie/CopyrightGuard.ts"
 type: "code"
-community: "Community 0"
+community: "Community 2"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_0
+  - community/Community_2
 ---
 
 # PlagiarismCheckerInterface
@@ -15,4 +15,4 @@ tags:
 - [[CopyrightGuard.ts]] - `contains` [EXTRACTED]
 - [[LocalSourcePlagiarismChecker]] - `implements` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_0
+#graphify/code #graphify/EXTRACTED #community/Community_2

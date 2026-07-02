@@ -1,12 +1,12 @@
 ---
 source_file: "src/services/cmie/ConsistencyValidator.ts"
 type: "code"
-community: "Community 0"
+community: "Community 2"
 location: "L3"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_0
+  - community/Community_2
 ---
 
 # ConsistencyValidator
@@ -17,4 +17,4 @@ tags:
 - [[CmieOrchestrator.ts]] - `imports` [EXTRACTED]
 - [[ConsistencyValidator.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_0
+#graphify/code #graphify/EXTRACTED #community/Community_2

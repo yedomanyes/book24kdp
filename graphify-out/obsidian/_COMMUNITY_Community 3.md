@@ -1,48 +1,60 @@
 ---
 type: community
-cohesion: 0.14
-members: 33
+cohesion: 0.05
+members: 45
 ---
 
 # Community 3
 
-**Cohesion:** 0.14 - loosely connected
-**Members:** 33 nodes
+**Cohesion:** 0.05 - loosely connected
+**Members:** 45 nodes
 
 ## Members
-- [[.askAI()]] - code - src/services/GeminiService.ts
-- [[.condenseOutline()]] - code - src/services/GeminiService.ts
-- [[.constructor()]] - code - src/services/GeminiService.ts
-- [[.enforceEnglishOnly()]] - code - src/services/GeminiService.ts
-- [[.evaluateRawJson()]] - code - src/services/GeminiService.ts
-- [[.executeWithKeyRotation()]] - code - src/services/GeminiService.ts
-- [[.generateAmazonDescription()]] - code - src/services/GeminiService.ts
-- [[.generateChapterOpening()]] - code - src/services/GeminiService.ts
-- [[.generateKdpCategories()]] - code - src/services/GeminiService.ts
-- [[.generateKdpKeywords()]] - code - src/services/GeminiService.ts
-- [[.generateOutline()]] - code - src/services/GeminiService.ts
-- [[.generateOutlineChunk()]] - code - src/services/GeminiService.ts
-- [[.generatePage()]] - code - src/services/GeminiService.ts
-- [[.generatePageContinuation()]] - code - src/services/GeminiService.ts
-- [[.generateStructureVariations()]] - code - src/services/GeminiService.ts
-- [[.generateStyleVariations()]] - code - src/services/GeminiService.ts
-- [[.generateTitlePageOptions()]] - code - src/services/GeminiService.ts
-- [[.getLastSentences()]] - code - src/services/GeminiService.ts
-- [[.getProvider()]] - code - src/services/GeminiService.ts
-- [[.getRecentPageOpeners()]] - code - src/services/GeminiService.ts
-- [[.humanizeText()]] - code - src/services/GeminiService.ts
-- [[.lengthenPage()]] - code - src/services/GeminiService.ts
-- [[.makeTextEmotional()]] - code - src/services/GeminiService.ts
-- [[.normalizeOutlinePages()]] - code - src/services/GeminiService.ts
-- [[.regenerateChaptersFromPages()]] - code - src/services/GeminiService.ts
-- [[.rephraseText()]] - code - src/services/GeminiService.ts
-- [[.shortenText()]] - code - src/services/GeminiService.ts
-- [[.spellcheckText()]] - code - src/services/GeminiService.ts
-- [[.translateOutline()]] - code - src/services/GeminiService.ts
-- [[.translateOutlinePages()]] - code - src/services/GeminiService.ts
-- [[.translateText()]] - code - src/services/GeminiService.ts
-- [[.translateToEnglish()]] - code - src/services/GeminiService.ts
-- [[GeminiService]] - code - src/services/GeminiService.ts
+- [[ANIMATION_CONFIG]] - code - src/components/ProfileCard.tsx
+- [[FAQS]] - code - src/components/LandingPage.tsx
+- [[Grainient()]] - code - src/components/Grainient.tsx
+- [[Grainient.tsx]] - code - src/components/Grainient.tsx
+- [[GrainientProps]] - code - src/components/Grainient.tsx
+- [[KdpCalculator()]] - code - src/components/KdpCalculator.tsx
+- [[KdpCalculator.tsx]] - code - src/components/KdpCalculator.tsx
+- [[KdpCalculatorProps]] - code - src/components/KdpCalculator.tsx
+- [[LandingBadPagePreview()]] - code - src/components/LandingContentPreview.tsx
+- [[LandingBookPagePreview()]] - code - src/components/LandingContentPreview.tsx
+- [[LandingContentPreview.tsx]] - code - src/components/LandingContentPreview.tsx
+- [[LandingNavbar()]] - code - src/components/LandingNavbar.tsx
+- [[LandingNavbar.tsx]] - code - src/components/LandingNavbar.tsx
+- [[LandingNavbarProps]] - code - src/components/LandingNavbar.tsx
+- [[LandingPage()]] - code - src/components/LandingPage.tsx
+- [[LandingPage.tsx]] - code - src/components/LandingPage.tsx
+- [[LandingPageProps]] - code - src/components/LandingPage.tsx
+- [[LandingTitlePagePreview()]] - code - src/components/LandingContentPreview.tsx
+- [[NAV_ITEMS]] - code - src/components/LandingNavbar.tsx
+- [[ProfileCard]] - code - src/components/ProfileCard.tsx
+- [[ProfileCard.tsx]] - code - src/components/ProfileCard.tsx
+- [[ProfileCardComponent()]] - code - src/components/ProfileCard.tsx
+- [[ProfileCardProps]] - code - src/components/ProfileCard.tsx
+- [[ROADMAP_PHASES]] - code - src/components/LandingPage.tsx
+- [[RotatingText]] - code - src/components/RotatingText.tsx
+- [[RotatingText.tsx]] - code - src/components/RotatingText.tsx
+- [[RotatingTextProps]] - code - src/components/RotatingText.tsx
+- [[RotatingTextRef]] - code - src/components/RotatingText.tsx
+- [[TEAM]] - code - src/components/LandingPage.tsx
+- [[adjust()]] - code - src/components/ProfileCard.tsx
+- [[clamp()]] - code - src/components/ProfileCard.tsx
+- [[clsx_1]] - code - src/lib/utils.js
+- [[cn()]] - code - src/components/RotatingText.tsx
+- [[cn()_1]] - code - src/lib/utils.js
+- [[ctxMap]] - code - src/components/Grainient.tsx
+- [[debounce()]] - code - src/lib/utils.js
+- [[formatCurrency()]] - code - src/lib/utils.js
+- [[formatDate()_1]] - code - src/lib/utils.js
+- [[generateUniqueId()]] - code - src/lib/utils.js
+- [[hexToRgb()]] - code - src/components/Grainient.tsx
+- [[round()]] - code - src/components/ProfileCard.tsx
+- [[tailwind_merge_1]] - code - src/lib/utils.js
+- [[throttle()]] - code - src/lib/utils.js
+- [[truncateText()]] - code - src/lib/utils.js
+- [[utils.js]] - code - src/lib/utils.js
 
 ## Live Query (requires Dataview plugin)
 
@@ -52,8 +64,9 @@ SORT file.name ASC
 ```
 
 ## Connections to other communities
-- 1 edge to [[_COMMUNITY_Community 7]]
-- 1 edge to [[_COMMUNITY_Community 0]]
+- 3 edges to [[_COMMUNITY_Community 11]]
 
 ## Top bridge nodes
-- [[GeminiService]] - degree 34, connects to 2 communities
+- [[LandingPage.tsx]] - degree 13, connects to 1 community
+- [[KdpCalculator.tsx]] - degree 4, connects to 1 community
+- [[LandingPage()]] - degree 2, connects to 1 community

@@ -1,12 +1,12 @@
 ---
 source_file: "functions/src/index.js"
 type: "code"
-community: "Community 30"
+community: "Community 101"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_30
+  - community/Community_101
 ---
 
 # index.js
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[searchNicheAPI]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_30
+#graphify/code #graphify/EXTRACTED #community/Community_101

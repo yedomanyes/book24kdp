@@ -7747,17 +7747,25 @@ export default function App() {
                           style={{
                             display: 'flex',
                             alignItems: 'center',
+                            justifyContent: 'center',
                             gap: '8px',
                             padding: '8px 14px',
-                            borderRadius: '8px',
-                            border: `1.5px solid ${activeBook.noQuotes ? '#ef4444' : 'var(--border)'}`,
-                            background: activeBook.noQuotes ? 'rgba(239,68,68,0.12)' : 'var(--bg-card)',
-                            color: activeBook.noQuotes ? '#ef4444' : 'var(--text-muted)',
+                            borderRadius: '6px',
+                            border: theme === 'dark'
+                              ? `1px solid ${activeBook.noQuotes ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.18)'}`
+                              : `1px solid ${activeBook.noQuotes ? 'rgba(0, 0, 0, 0.08)' : 'rgba(0, 0, 0, 0.15)'}`,
+                            background: theme === 'dark'
+                              ? (activeBook.noQuotes ? 'rgba(255, 255, 255, 0.02)' : 'rgba(255, 255, 255, 0.08)')
+                              : (activeBook.noQuotes ? 'rgba(0, 0, 0, 0.02)' : 'rgba(0, 0, 0, 0.06)'),
+                            color: theme === 'dark'
+                              ? (activeBook.noQuotes ? 'var(--text-muted)' : 'var(--text-main)')
+                              : (activeBook.noQuotes ? 'rgba(0, 0, 0, 0.45)' : 'rgba(0, 0, 0, 0.8)'),
                             fontSize: '12px',
                             fontWeight: 600,
                             cursor: isPlanning || isGenerating ? 'not-allowed' : 'pointer',
-                            transition: 'all 0.2s',
+                            transition: 'all 0.15s ease',
                             width: '100%',
+                            boxShadow: 'none',
                           }}
                           title={activeBook.noQuotes 
                             ? (isDe ? 'Zitate sind deaktiviert — klicken zum Aktivieren' : 'Quotes are disabled — click to enable')
@@ -10248,11 +10256,19 @@ export default function App() {
                             }}
                             style={{
                               display: 'flex', alignItems: 'center', gap: '5px',
-                              padding: '4px 10px', borderRadius: '8px', fontSize: '10px', fontWeight: 600,
-                              border: '1px solid var(--border-color)', cursor: 'pointer',
-                              backgroundColor: (activeBook.pagesHideQuotes || []).includes(selectedPage) ? '#dc2626' : 'var(--bg-card)',
-                              color: (activeBook.pagesHideQuotes || []).includes(selectedPage) ? '#ffffff' : 'var(--text-muted)',
-                              transition: 'all 0.2s',
+                              padding: '4px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: 600,
+                              cursor: 'pointer',
+                              border: theme === 'dark'
+                                ? `1px solid ${(activeBook.pagesHideQuotes || []).includes(selectedPage) ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.18)'}`
+                                : `1px solid ${(activeBook.pagesHideQuotes || []).includes(selectedPage) ? 'rgba(0, 0, 0, 0.08)' : 'rgba(0, 0, 0, 0.15)'}`,
+                              backgroundColor: theme === 'dark'
+                                ? ((activeBook.pagesHideQuotes || []).includes(selectedPage) ? 'rgba(255, 255, 255, 0.02)' : 'rgba(255, 255, 255, 0.08)')
+                                : ((activeBook.pagesHideQuotes || []).includes(selectedPage) ? 'rgba(0, 0, 0, 0.02)' : 'rgba(0, 0, 0, 0.06)'),
+                              color: theme === 'dark'
+                                ? ((activeBook.pagesHideQuotes || []).includes(selectedPage) ? 'var(--text-muted)' : 'var(--text-main)')
+                                : ((activeBook.pagesHideQuotes || []).includes(selectedPage) ? 'rgba(0, 0, 0, 0.45)' : 'rgba(0, 0, 0, 0.8)'),
+                              transition: 'all 0.15s ease',
+                              boxShadow: 'none',
                             }}
                             title={(activeBook.pagesHideQuotes || []).includes(selectedPage) ? 'Zitat auf dieser Seite einblenden' : 'Zitat auf dieser Seite ausblenden'}
                           >

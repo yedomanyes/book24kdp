@@ -1,12 +1,12 @@
 ---
 source_file: "src/main.tsx"
 type: "code"
-community: "Community 7"
+community: "Community 11"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_7
+  - community/Community_11
 ---
 
 # main.tsx
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[App.tsx]] - `imports_from` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_7
+#graphify/code #graphify/EXTRACTED #community/Community_11

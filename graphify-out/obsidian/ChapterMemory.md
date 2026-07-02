@@ -1,28 +1,19 @@
 ---
 source_file: "src/types/cmie.ts"
 type: "code"
-community: "Community 0"
+community: "Community 2"
 location: "L3"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_0
+  - community/Community_2
 ---
 
 # ChapterMemory
 
 ## Connections
-- [[.buildMemoryContextPrompt()]] - `references` [EXTRACTED]
-- [[.createMemory()]] - `references` [EXTRACTED]
-- [[.enrichGenerationPrompt()]] - `references` [EXTRACTED]
-- [[.inspectAndStorePage()]] - `references` [EXTRACTED]
-- [[.learnFromPage()]] - `references` [EXTRACTED]
-- [[.learnFromPageInternal()]] - `references` [EXTRACTED]
-- [[.syncPageLearned()]] - `references` [EXTRACTED]
 - [[.updateGlossaryAndCheck()]] - `references` [EXTRACTED]
-- [[.validate()]] - `references` [EXTRACTED]
 - [[App.tsx]] - `imports` [EXTRACTED]
-- [[Book]] - `references` [EXTRACTED]
 - [[BookMemoryStore.ts]] - `imports` [EXTRACTED]
 - [[BrainBookInput]] - `references` [EXTRACTED]
 - [[BrainService.ts]] - `imports` [EXTRACTED]
@@ -33,4 +24,4 @@ tags:
 - [[brain.ts]] - `imports` [EXTRACTED]
 - [[cmie.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_0
+#graphify/code #graphify/EXTRACTED #community/Community_2

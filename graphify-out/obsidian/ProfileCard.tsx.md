@@ -1,12 +1,12 @@
 ---
 source_file: "src/components/ProfileCard.tsx"
 type: "code"
-community: "Community 1"
+community: "Community 3"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_1
+  - community/Community_3
 ---
 
 # ProfileCard.tsx
@@ -21,4 +21,4 @@ tags:
 - [[clamp()]] - `contains` [EXTRACTED]
 - [[round()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_1
+#graphify/code #graphify/EXTRACTED #community/Community_3

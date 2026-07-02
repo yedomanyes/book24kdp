@@ -1,12 +1,12 @@
 ---
 source_file: "src/services/graphics/NecessityDetector.ts"
 type: "code"
-community: "Community 8"
+community: "Community 23"
 location: "L3"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_8
+  - community/Community_23
 ---
 
 # NecessityDetector
@@ -19,4 +19,4 @@ tags:
 - [[NecessityDetector.ts]] - `contains` [EXTRACTED]
 - [[test_agve_acceptance.ts]] - `imports` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_8
+#graphify/code #graphify/EXTRACTED #community/Community_23

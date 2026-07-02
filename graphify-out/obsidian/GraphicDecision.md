@@ -1,12 +1,12 @@
 ---
 source_file: "src/types/graphics.ts"
 type: "code"
-community: "Community 8"
+community: "Community 23"
 location: "L27"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_8
+  - community/Community_23
 ---
 
 # GraphicDecision
@@ -15,10 +15,9 @@ tags:
 - [[.evaluateDensityPlacement()]] - `references` [EXTRACTED]
 - [[.parseAndValidateDecision()]] - `references` [EXTRACTED]
 - [[App.tsx]] - `imports` [EXTRACTED]
-- [[Book]] - `references` [EXTRACTED]
 - [[NecessityDetector.ts]] - `imports` [EXTRACTED]
 - [[SvgGraphicRenderer.tsx]] - `imports` [EXTRACTED]
 - [[SvgGraphicRendererProps]] - `references` [EXTRACTED]
 - [[graphics.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_8
+#graphify/code #graphify/EXTRACTED #community/Community_23

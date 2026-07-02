@@ -1,12 +1,12 @@
 ---
 source_file: "tsconfig.node.json"
 type: "code"
-community: "Community 10"
+community: "Community 26"
 location: "L5"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_10
+  - community/Community_26
 ---
 
 # lib
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[compilerOptions_2]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_10
+#graphify/code #graphify/EXTRACTED #community/Community_26

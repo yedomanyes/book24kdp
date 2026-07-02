@@ -1,12 +1,12 @@
 ---
 source_file: "src/firebase.ts"
 type: "code"
-community: "Community 16"
+community: "Community 63"
 location: "L37"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_16
+  - community/Community_63
 ---
 
 # isFirebaseConfigured()
@@ -16,4 +16,4 @@ tags:
 - [[Auth.tsx]] - `imports` [EXTRACTED]
 - [[firebase.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_16
+#graphify/code #graphify/EXTRACTED #community/Community_63

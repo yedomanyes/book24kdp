@@ -1,12 +1,12 @@
 ---
 source_file: "src/services/NicheService.ts"
 type: "code"
-community: "Community 15"
+community: "Community 60"
 location: "L20"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_15
+  - community/Community_60
 ---
 
 # NicheResult
@@ -17,4 +17,4 @@ tags:
 - [[NicheFinderDashboardProps]] - `references` [EXTRACTED]
 - [[NicheService.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_15
+#graphify/code #graphify/EXTRACTED #community/Community_60

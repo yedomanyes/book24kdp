@@ -1,12 +1,12 @@
 ---
 source_file: "src/services/brain/BrainService.ts"
 type: "code"
-community: "Community 4"
-location: "L97"
+community: "Community 1"
+location: "L118"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_4
+  - community/Community_1
 ---
 
 # BrainService
@@ -21,10 +21,12 @@ tags:
 - [[.markObsidianSync()]] - `method` [EXTRACTED]
 - [[.rebuildFromLibrary()]] - `method` [EXTRACTED]
 - [[.saveState()]] - `method` [EXTRACTED]
+- [[.syncCloudState()]] - `method` [EXTRACTED]
 - [[.trackBook()]] - `method` [EXTRACTED]
 - [[.trackBookInternal()]] - `method` [EXTRACTED]
 - [[App.tsx]] - `imports` [EXTRACTED]
 - [[BrainDashboard.tsx]] - `imports` [EXTRACTED]
 - [[BrainService.ts]] - `contains` [EXTRACTED]
+- [[CloudQueueService.ts]] - `imports` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_4
+#graphify/code #graphify/EXTRACTED #community/Community_1

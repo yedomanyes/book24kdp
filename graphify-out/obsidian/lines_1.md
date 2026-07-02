@@ -1,12 +1,12 @@
 ---
 source_file: "test-jspdf-spaces2.js"
 type: "code"
-community: "Community 24"
+community: "Community 95"
 location: "L5"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_24
+  - community/Community_95
 ---
 
 # lines
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[test-jspdf-spaces2.js]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_24
+#graphify/code #graphify/EXTRACTED #community/Community_95

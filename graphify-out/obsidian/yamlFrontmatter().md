@@ -1,12 +1,12 @@
 ---
 source_file: "src/services/brain/ObsidianSyncService.ts"
 type: "code"
-community: "Community 5"
-location: "L71"
+community: "Community 1"
+location: "L171"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_5
+  - community/Community_1
 ---
 
 # yamlFrontmatter()
@@ -15,8 +15,9 @@ tags:
 - [[ObsidianSyncService.ts]] - `contains` [EXTRACTED]
 - [[formatBookMetaMd()]] - `calls` [EXTRACTED]
 - [[formatChapterMd()]] - `calls` [EXTRACTED]
+- [[formatLearningLogMd()]] - `calls` [EXTRACTED]
 - [[formatNicheMd()]] - `calls` [EXTRACTED]
 - [[formatPatternsMd()]] - `calls` [EXTRACTED]
 - [[formatSystemMd()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_5
+#graphify/code #graphify/EXTRACTED #community/Community_1

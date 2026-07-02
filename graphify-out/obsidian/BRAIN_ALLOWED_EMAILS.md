@@ -1,12 +1,12 @@
 ---
 source_file: "src/config/brainAccess.ts"
 type: "code"
-community: "Community 19"
+community: "Community 90"
 location: "L2"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_19
+  - community/Community_90
 ---
 
 # BRAIN_ALLOWED_EMAILS
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[brainAccess.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_19
+#graphify/code #graphify/EXTRACTED #community/Community_90

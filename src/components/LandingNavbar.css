@@ -341,16 +341,17 @@
 }
 
 .landing-nav.theme-light .landing-nav-cta {
-  background: rgba(0, 0, 0, 0.05);
-  border-color: rgba(0, 0, 0, 0.1);
-  color: #1a1a1a;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  background: #0f172a;
+  border-color: #0f172a;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
 }
 
 .landing-nav.theme-light .landing-nav-cta:hover {
-  background: rgba(0, 0, 0, 0.08);
-  border-color: rgba(0, 0, 0, 0.15);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: #1e293b;
+  border-color: #1e293b;
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.25);
 }
 
 .landing-nav.theme-light .landing-nav-menu-btn {

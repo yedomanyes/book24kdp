@@ -1,12 +1,12 @@
 ---
 source_file: "src/components/LandingNavbar.tsx"
 type: "code"
-community: "Community 1"
+community: "Community 3"
 location: "L11"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_1
+  - community/Community_3
 ---
 
 # LandingNavbarProps
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[LandingNavbar.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_1
+#graphify/code #graphify/EXTRACTED #community/Community_3

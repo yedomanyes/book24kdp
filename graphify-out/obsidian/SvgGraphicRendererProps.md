@@ -1,12 +1,12 @@
 ---
 source_file: "src/services/graphics/SvgGraphicRenderer.tsx"
 type: "code"
-community: "Community 8"
+community: "Community 23"
 location: "L5"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_8
+  - community/Community_23
 ---
 
 # SvgGraphicRendererProps
@@ -16,4 +16,4 @@ tags:
 - [[GraphicLayoutVariant]] - `references` [EXTRACTED]
 - [[SvgGraphicRenderer.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_8
+#graphify/code #graphify/EXTRACTED #community/Community_23

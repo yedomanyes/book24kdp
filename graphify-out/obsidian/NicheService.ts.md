@@ -1,18 +1,17 @@
 ---
 source_file: "src/services/NicheService.ts"
 type: "code"
-community: "Community 15"
+community: "Community 60"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_15
+  - community/Community_60
 ---
 
 # NicheService.ts
 
 ## Connections
-- [[App.tsx]] - `imports_from` [EXTRACTED]
 - [[Competitor]] - `contains` [EXTRACTED]
 - [[NicheFinderDashboard.tsx]] - `imports_from` [EXTRACTED]
 - [[NicheMetrics]] - `contains` [EXTRACTED]
@@ -20,4 +19,4 @@ tags:
 - [[delay()]] - `contains` [EXTRACTED]
 - [[searchNiche()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_15
+#graphify/code #graphify/EXTRACTED #community/Community_60

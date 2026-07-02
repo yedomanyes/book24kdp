@@ -1,18 +1,17 @@
 ---
 source_file: "src/services/StorageService.ts"
 type: "code"
-community: "Community 12"
+community: "Community 34"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_12
+  - community/Community_34
 ---
 
 # StorageService.ts
 
 ## Connections
-- [[App.tsx]] - `imports_from` [EXTRACTED]
 - [[BackupData]] - `contains` [EXTRACTED]
 - [[KEYS]] - `contains` [EXTRACTED]
 - [[LEGACY_PREFIXES]] - `contains` [EXTRACTED]
@@ -30,4 +29,4 @@ tags:
 - [[saveBookToCloud()]] - `contains` [EXTRACTED]
 - [[syncLocalLibraryToCloud()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_12
+#graphify/code #graphify/EXTRACTED #community/Community_34

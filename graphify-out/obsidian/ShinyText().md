@@ -1,18 +1,17 @@
 ---
 source_file: "src/components/ShinyText.tsx"
 type: "code"
-community: "Community 1"
+community: "Community 89"
 location: "L19"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_1
+  - community/Community_89
 ---
 
 # ShinyText()
 
 ## Connections
-- [[LandingPage.tsx]] - `imports` [EXTRACTED]
 - [[ShinyText.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_1
+#graphify/code #graphify/EXTRACTED #community/Community_89

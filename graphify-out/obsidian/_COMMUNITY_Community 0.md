@@ -1,61 +1,180 @@
 ---
 type: community
-cohesion: 0.09
-members: 46
+cohesion: 0.01
+members: 165
 ---
 
 # Community 0
 
-**Cohesion:** 0.09 - loosely connected
-**Members:** 46 nodes
+**Cohesion:** 0.01 - loosely connected
+**Members:** 165 nodes
 
 ## Members
-- [[.buildGlossaryPrompt()]] - code - src/services/cmie/ConsistencyValidator.ts
-- [[.buildMemoryContextPrompt()]] - code - src/services/cmie/BookMemoryStore.ts
-- [[.checkExactMatch()]] - code - src/services/cmie/CopyrightGuard.ts
-- [[.computeBigramOverlap()]] - code - src/services/cmie/DuplicateGuard.ts
-- [[.computeRawVector()]] - code - src/services/cmie/EmbeddingService.ts
-- [[.computeVector()]] - code - src/services/cmie/EmbeddingService.ts
-- [[.constructor()_1]] - code - src/services/cmie/CopyrightGuard.ts
-- [[.cosineSimilarity()]] - code - src/services/cmie/EmbeddingService.ts
-- [[.createMemory()]] - code - src/services/cmie/BookMemoryStore.ts
-- [[.enrichGenerationPrompt()]] - code - src/services/cmie/CmieOrchestrator.ts
-- [[.getWordBigrams()]] - code - src/services/cmie/DuplicateGuard.ts
-- [[.hashString()]] - code - src/services/cmie/EmbeddingService.ts
-- [[.inspectAndStorePage()]] - code - src/services/cmie/CmieOrchestrator.ts
-- [[.inspectChapter()]] - code - src/services/cmie/CopyrightGuard.ts
-- [[.normalize()]] - code - src/services/cmie/EmbeddingService.ts
-- [[.processOutline()]] - code - src/services/cmie/CmieOrchestrator.ts
-- [[.updateGlossaryAndCheck()]] - code - src/services/cmie/ConsistencyValidator.ts
-- [[.validate()]] - code - src/services/cmie/DuplicateGuard.ts
-- [[.validateAndFixScopes()]] - code - src/services/cmie/OutlinePlanner.ts
-- [[Book]] - code - src/App.tsx
-- [[BookMemoryStore]] - code - src/services/cmie/BookMemoryStore.ts
-- [[BookMemoryStore.ts]] - code - src/services/cmie/BookMemoryStore.ts
-- [[BookOutline]] - code - src/services/GeminiService.ts
-- [[BookOutlinePage]] - code - src/services/GeminiService.ts
-- [[ChapterMemory]] - code - src/types/cmie.ts
-- [[CmieConfig]] - code - src/types/cmie.ts
-- [[CmieOrchestrator]] - code - src/services/cmie/CmieOrchestrator.ts
-- [[CmieOrchestrator.ts]] - code - src/services/cmie/CmieOrchestrator.ts
-- [[ConsistencyValidator]] - code - src/services/cmie/ConsistencyValidator.ts
-- [[ConsistencyValidator.ts]] - code - src/services/cmie/ConsistencyValidator.ts
-- [[CopyrightGuard]] - code - src/services/cmie/CopyrightGuard.ts
-- [[CopyrightGuard.ts]] - code - src/services/cmie/CopyrightGuard.ts
-- [[DEFAULT_CMIE_CONFIG]] - code - src/types/cmie.ts
-- [[DuplicateGuard]] - code - src/services/cmie/DuplicateGuard.ts
-- [[DuplicateGuard.ts]] - code - src/services/cmie/DuplicateGuard.ts
-- [[DuplicateValidationResult]] - code - src/services/cmie/DuplicateGuard.ts
-- [[EmbeddingService]] - code - src/services/cmie/EmbeddingService.ts
-- [[EmbeddingService.ts]] - code - src/services/cmie/EmbeddingService.ts
-- [[GeminiService.ts]] - code - src/services/GeminiService.ts
-- [[LocalSourcePlagiarismChecker]] - code - src/services/cmie/CopyrightGuard.ts
-- [[OutlinePlanner]] - code - src/services/cmie/OutlinePlanner.ts
-- [[OutlinePlanner.ts]] - code - src/services/cmie/OutlinePlanner.ts
-- [[PlagiarismCheckerInterface]] - code - src/services/cmie/CopyrightGuard.ts
-- [[cmie.ts]] - code - src/types/cmie.ts
-- [[runAcceptanceTests()]] - code - test_cmie_acceptance.ts
-- [[test_cmie_acceptance.ts]] - code - test_cmie_acceptance.ts
+- [[Ha()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[Hs()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[Me()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[Ms()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[Ul()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[V()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[Xl()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[Symbol.asyncIterator()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[Symbol.iterator()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[_2()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[_afterResize()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[_applyScrollModifier()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[_batchedMemoryCleanup()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[_checkReadonlyOptions()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[_createDeadline()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[_isReflowEnabled()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[_terminalSelector()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[_width()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[activateView()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[active()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[activeEncoding()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[addMany()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[alt()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[areMouseEventsActive()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[attachCustomKeyEventHandler()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[attachCustomWheelEventHandler()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[backgroundColorRGB()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[baseY()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[blur()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[buffers()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[carriageReturn()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[cleanup()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[cleanupMemory()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[clearErrorHandler()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[clearExecuteHandler()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[clearListener()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[clearPrintHandler()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[coalesce()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[colors()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[cols()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[compositionupdate()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[consumeWheelEvent()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[currentLink()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[cursorPosition()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[cursorX()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[cursorY()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[define()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[di()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[dimensions()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[display()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[dpr()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[element()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[explainEvents()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[ext()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[extractCharKind()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[filter()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[findFirst()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[findLast()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[findLastMaxBy()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[foregroundColorRGB()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[fromError()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[fromPromise()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[fromPromises()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[getAttrData()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[getDesiredScrollPositionFromDelta()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[getDisplayText()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[getDocument()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[getHashCode()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[getIcon()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[getOverviewRulerLayoutInfo()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[getSelectionPosition()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[getSubParamsAll()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[getUnderlineStyle()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[getUnderlineVariantOffset()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[getUnexpectedErrorHandler()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[getViewType()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[getWhitespaceCell()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[getWindow()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[getWindowsCount()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[hVPosition()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[handleCursorMove()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[handleUserInput()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[hasListeners()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[hasPendingScrollAnimation()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[hasScrollback()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[hasSelection()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[hasValidSize()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[id()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[isAttributeDefault()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[isBgDefault()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[isBgPalette()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[isBgRGB()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[isBlink()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[isCancellationRequested()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[isCellSelected()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[isComposing()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[isCursorInViewport()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[isDisposed()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[isDuplicateModifierCase()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[isErrorNoTelemetry()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[isFgPalette()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[isFocused()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[isFull()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[isModifierKey()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[isUnderlineColorPalette()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[isWrapped()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[length()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[lift()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[linkifier()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[logLevel()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[main.js]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[map()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[merge()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[ml()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[modes()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[oe()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[onBell()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[onBinary()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[onCancellationRequested()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[onTitleChange()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[onUnexpectedExternalError()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[onWillOpen()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[onWriteParsed()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[onunload()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[options()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[parser()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[removeAttribute()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[renderNow()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[resetMode()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[rows()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[selectProtected()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[selectionEnd()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[selectionStart()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[setBackgroundColor()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[setBoxShadow()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[setCss()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[setCursorStyle()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[setDisplay()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[setFontFamily()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[setFontFeatureSettings()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[setFontStyle()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[setFontVariationSettings()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[setFontWeight()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[setMode()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[setRevealOnScroll()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[setSmoothScrollDuration()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[setTextDecoration()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[setUnexpectedErrorHandler()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[size()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[some()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[strings()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[tabClear()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[tabSet()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[textarea()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[toKeyCodeChord()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[toKeybinding()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[underlineColor()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[underlineStyle()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[underlineVariantOffset()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[updateClassName()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[updateCompositionElements()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[urlId()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[viewportY()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[with()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
+- [[zones()]] - code - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js
 
 ## Live Query (requires Dataview plugin)
 
@@ -65,16 +184,65 @@ SORT file.name ASC
 ```
 
 ## Connections to other communities
-- 11 edges to [[_COMMUNITY_Community 4]]
-- 9 edges to [[_COMMUNITY_Community 7]]
-- 3 edges to [[_COMMUNITY_Community 5]]
-- 2 edges to [[_COMMUNITY_Community 14]]
-- 1 edge to [[_COMMUNITY_Community 8]]
-- 1 edge to [[_COMMUNITY_Community 3]]
+- 40 edges to [[_COMMUNITY_Community 4]]
+- 39 edges to [[_COMMUNITY_Community 6]]
+- 39 edges to [[_COMMUNITY_Community 5]]
+- 29 edges to [[_COMMUNITY_Community 9]]
+- 28 edges to [[_COMMUNITY_Community 10]]
+- 25 edges to [[_COMMUNITY_Community 12]]
+- 24 edges to [[_COMMUNITY_Community 13]]
+- 24 edges to [[_COMMUNITY_Community 14]]
+- 22 edges to [[_COMMUNITY_Community 15]]
+- 21 edges to [[_COMMUNITY_Community 17]]
+- 21 edges to [[_COMMUNITY_Community 18]]
+- 21 edges to [[_COMMUNITY_Community 19]]
+- 19 edges to [[_COMMUNITY_Community 25]]
+- 19 edges to [[_COMMUNITY_Community 20]]
+- 19 edges to [[_COMMUNITY_Community 21]]
+- 19 edges to [[_COMMUNITY_Community 22]]
+- 18 edges to [[_COMMUNITY_Community 27]]
+- 17 edges to [[_COMMUNITY_Community 28]]
+- 17 edges to [[_COMMUNITY_Community 29]]
+- 16 edges to [[_COMMUNITY_Community 32]]
+- 15 edges to [[_COMMUNITY_Community 35]]
+- 15 edges to [[_COMMUNITY_Community 36]]
+- 15 edges to [[_COMMUNITY_Community 37]]
+- 15 edges to [[_COMMUNITY_Community 38]]
+- 14 edges to [[_COMMUNITY_Community 40]]
+- 14 edges to [[_COMMUNITY_Community 41]]
+- 14 edges to [[_COMMUNITY_Community 42]]
+- 14 edges to [[_COMMUNITY_Community 43]]
+- 14 edges to [[_COMMUNITY_Community 44]]
+- 13 edges to [[_COMMUNITY_Community 47]]
+- 12 edges to [[_COMMUNITY_Community 49]]
+- 12 edges to [[_COMMUNITY_Community 50]]
+- 12 edges to [[_COMMUNITY_Community 51]]
+- 11 edges to [[_COMMUNITY_Community 53]]
+- 11 edges to [[_COMMUNITY_Community 54]]
+- 10 edges to [[_COMMUNITY_Community 56]]
+- 9 edges to [[_COMMUNITY_Community 58]]
+- 8 edges to [[_COMMUNITY_Community 61]]
+- 8 edges to [[_COMMUNITY_Community 62]]
+- 7 edges to [[_COMMUNITY_Community 65]]
+- 7 edges to [[_COMMUNITY_Community 66]]
+- 7 edges to [[_COMMUNITY_Community 67]]
+- 6 edges to [[_COMMUNITY_Community 68]]
+- 6 edges to [[_COMMUNITY_Community 69]]
+- 6 edges to [[_COMMUNITY_Community 71]]
+- 5 edges to [[_COMMUNITY_Community 73]]
+- 5 edges to [[_COMMUNITY_Community 74]]
+- 4 edges to [[_COMMUNITY_Community 75]]
+- 4 edges to [[_COMMUNITY_Community 76]]
+- 3 edges to [[_COMMUNITY_Community 80]]
+- 3 edges to [[_COMMUNITY_Community 81]]
+- 3 edges to [[_COMMUNITY_Community 82]]
+- 3 edges to [[_COMMUNITY_Community 83]]
+- 3 edges to [[_COMMUNITY_Community 84]]
+- 3 edges to [[_COMMUNITY_Community 85]]
+- 1 edge to [[_COMMUNITY_Community 70]]
 
 ## Top bridge nodes
-- [[ChapterMemory]] - degree 20, connects to 3 communities
-- [[cmie.ts]] - degree 12, connects to 3 communities
-- [[Book]] - degree 7, connects to 3 communities
-- [[GeminiService.ts]] - degree 6, connects to 3 communities
-- [[CmieOrchestrator.ts]] - degree 18, connects to 2 communities
+- [[main.js]] - degree 950, connects to 56 communities
+- [[_batchedMemoryCleanup()]] - degree 3, connects to 1 community
+- [[cursorPosition()]] - degree 3, connects to 1 community
+- [[ml()]] - degree 3, connects to 1 community

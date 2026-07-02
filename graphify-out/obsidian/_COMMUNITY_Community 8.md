@@ -1,34 +1,52 @@
 ---
 type: community
-cohesion: 0.15
-members: 19
+cohesion: 0.05
+members: 37
 ---
 
 # Community 8
 
-**Cohesion:** 0.15 - loosely connected
-**Members:** 19 nodes
+**Cohesion:** 0.05 - loosely connected
+**Members:** 37 nodes
 
 ## Members
-- [[.buildAnalysisPrompt()]] - code - src/services/graphics/NecessityDetector.ts
-- [[.evaluateDensityPlacement()]] - code - src/services/graphics/NecessityDetector.ts
-- [[.parseAndValidateDecision()]] - code - src/services/graphics/NecessityDetector.ts
-- [[GraphicDecision]] - code - src/types/graphics.ts
-- [[GraphicLayoutVariant]] - code - src/types/graphics.ts
-- [[GraphicType]] - code - src/types/graphics.ts
-- [[HierarchyConfig]] - code - src/types/graphics.ts
-- [[NecessityDetector]] - code - src/services/graphics/NecessityDetector.ts
-- [[NecessityDetector.ts]] - code - src/services/graphics/NecessityDetector.ts
-- [[ProcessConfig]] - code - src/types/graphics.ts
-- [[SvgGraphicRenderer()]] - code - src/services/graphics/SvgGraphicRenderer.tsx
-- [[SvgGraphicRenderer.tsx]] - code - src/services/graphics/SvgGraphicRenderer.tsx
-- [[SvgGraphicRendererProps]] - code - src/services/graphics/SvgGraphicRenderer.tsx
-- [[TableConfig]] - code - src/types/graphics.ts
-- [[TimelineConfig]] - code - src/types/graphics.ts
-- [[TimelineItem]] - code - src/types/graphics.ts
-- [[graphics.ts]] - code - src/types/graphics.ts
-- [[runAgveTests()]] - code - test_agve_acceptance.ts
-- [[test_agve_acceptance.ts]] - code - test_agve_acceptance.ts
+- [[@googlegenerative-ai]] - code - package.json
+- [[@gsapreact]] - code - package.json
+- [[@react-threedrei]] - code - package.json
+- [[@react-threefiber]] - code - package.json
+- [[@tsparticlesengine]] - code - package.json
+- [[@tsparticlesreact]] - code - package.json
+- [[@tsparticlesslim]] - code - package.json
+- [[@typesreact-syntax-highlighter]] - code - package.json
+- [[class-variance-authority]] - code - package.json
+- [[clsx]] - code - package.json
+- [[cobe]] - code - package.json
+- [[dependencies_1]] - code - package.json
+- [[embla-carousel-react]] - code - package.json
+- [[firebase]] - code - package.json
+- [[firebase-admin_1]] - code - package.json
+- [[framer-motion]] - code - package.json
+- [[gsap]] - code - package.json
+- [[input-otp]] - code - package.json
+- [[jspdf]] - code - package.json
+- [[lightswind]] - code - package.json
+- [[lucide-react]] - code - package.json
+- [[next-themes]] - code - package.json
+- [[ogl]] - code - package.json
+- [[react]] - code - package.json
+- [[react-day-picker]] - code - package.json
+- [[react-dom]] - code - package.json
+- [[react-flip-toolkit]] - code - package.json
+- [[react-force-graph-3d]] - code - package.json
+- [[react-hook-form]] - code - package.json
+- [[react-resizable-panels]] - code - package.json
+- [[react-syntax-highlighter]] - code - package.json
+- [[recharts]] - code - package.json
+- [[simplex-noise]] - code - package.json
+- [[tailwind-merge]] - code - package.json
+- [[three]] - code - package.json
+- [[three-spritetext]] - code - package.json
+- [[uuid]] - code - package.json
 
 ## Live Query (requires Dataview plugin)
 
@@ -38,12 +56,7 @@ SORT file.name ASC
 ```
 
 ## Connections to other communities
-- 6 edges to [[_COMMUNITY_Community 7]]
-- 1 edge to [[_COMMUNITY_Community 0]]
+- 1 edge to [[_COMMUNITY_Community 57]]
 
 ## Top bridge nodes
-- [[GraphicDecision]] - degree 8, connects to 2 communities
-- [[graphics.ts]] - degree 11, connects to 1 community
-- [[NecessityDetector]] - degree 6, connects to 1 community
-- [[SvgGraphicRenderer.tsx]] - degree 6, connects to 1 community
-- [[NecessityDetector.ts]] - degree 5, connects to 1 community
+- [[dependencies_1]] - degree 37, connects to 1 community

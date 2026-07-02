@@ -1,12 +1,12 @@
 ---
 source_file: "src/services/brain/BrainService.ts"
 type: "code"
-community: "Community 4"
-location: "L34"
+community: "Community 1"
+location: "L55"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_4
+  - community/Community_1
 ---
 
 # pushEvent()
@@ -19,4 +19,4 @@ tags:
 - [[.trackBook()]] - `calls` [EXTRACTED]
 - [[BrainService.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_4
+#graphify/code #graphify/EXTRACTED #community/Community_1

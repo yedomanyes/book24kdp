@@ -1,12 +1,12 @@
 ---
 source_file: "src/services/brain/BrainService.ts"
 type: "code"
-community: "Community 4"
-location: "L56"
+community: "Community 1"
+location: "L77"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Community_4
+  - community/Community_1
 ---
 
 # upsertNiche()
@@ -22,4 +22,4 @@ tags:
 - [[nicheKeyword()]] - `calls` [EXTRACTED]
 - [[slugify()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Community_4
+#graphify/code #graphify/EXTRACTED #community/Community_1
