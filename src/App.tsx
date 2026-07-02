@@ -6660,15 +6660,20 @@ export default function App() {
               </p>
             );
           }
-          const marginBottom = pageParagraphStyle === 'spacing' ? '0.8em' : '0';
+          // Only add top spacing after non-paragraph blocks (heading, ornament, box, quote, etc.)
+          // Consecutive paragraphs always flow together — matching PDF generator behaviour exactly
+          const prevBlock = path[0] > 0 ? blocks[path[0] - 1] : null;
+          const isAfterBreakBlock = !!(prevBlock && prevBlock.type !== 'paragraph');
+          const paraMarginTop = (pageParagraphStyle === 'spacing' && isAfterBreakBlock) ? '0.8em' : '0';
+          const paraIndent = pageParagraphStyle === 'indent' && path[0] > 0 && prevBlock?.type === 'paragraph' ? '1.5em' : '0';
           return (
             <p
               key={key}
               className="literary-paragraph"
               style={{
-                textIndent: '0',
-                marginBottom,
-                margin: '0',
+                textIndent: paraIndent,
+                marginTop: paraMarginTop,
+                marginBottom: '0',
                 padding: '0',
                 lineHeight: '1.5',
                 textAlign: activeBook.alignment === 'left' ? 'left' : 'justify',

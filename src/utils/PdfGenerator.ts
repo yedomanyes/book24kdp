@@ -1435,7 +1435,11 @@ export async function generateBookPdf(
               return;
             }
 
-            if (pageStyle === 'spacing') contentY += fontSize * 0.8;
+            // In spacing mode: only add gap AFTER a non-paragraph block (heading, ornament, box, quote, etc.)
+            // Consecutive paragraphs flow together like real book text
+            if (pageStyle === 'spacing' && blockIdx > 0 && prevBlock?.kind !== 'paragraph') {
+              contentY += fontSize * 0.8;
+            }
 
             const hasIndent = pageStyle === 'indent' && blockIdx > 0 && prevBlock?.kind !== 'heading' && prevBlock?.kind !== 'ornament';
             const indentWidth = hasIndent ? 1.5 * fontSize : 0;
