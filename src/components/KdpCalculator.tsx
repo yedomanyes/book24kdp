@@ -77,7 +77,6 @@ export default function KdpCalculator(_props: KdpCalculatorProps) {
 
   const kdpBlue = '#005276';
   const kdpTeal = '#008296';
-  const kdpBg = '#f2f2f2';
 
   const formatNumber = (num: number) => num.toLocaleString('de-DE');
   const formatCurrency = (num: number) => `${currency} ${num.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -106,122 +105,108 @@ export default function KdpCalculator(_props: KdpCalculatorProps) {
       width: '100%',
       minHeight: '100%'
     } as any}>
-      {/* --- PARAMETER SIMULATOR (Top Bar) --- */}
-      <div style={{ background: '#ffffff', color: '#0f1111', padding: '16px 16px', borderBottom: '1px solid #d5d9d9' }}>
-        <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <div style={{ fontSize: '13px', fontWeight: 700, color: '#0f1111', marginRight: '8px' }}>
-            Simulations-Parameter:
+      {/* --- COMPACT TOP ROW: Params left, Metrics right --- */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 0, borderBottom: '1px solid #d5d9d9' }}>
+        {/* Left: Simulation Parameters */}
+        <div style={{ background: '#ffffff', color: '#0f1111', padding: '14px 16px', borderRight: '1px solid #d5d9d9', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 700, color: '#0f1111', marginBottom: '2px' }}>
+            Simulations-Parameter
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '100px' }}>
-            <label style={{ fontSize: '11px', color: '#555', fontWeight: 700 }}>Zeithorizont</label>
-            <select value={projectionMonths} onChange={e => setProjectionMonths(Number(e.target.value))} style={{ background: '#fff', color: '#0f1111', border: '1px solid #d5d9d9', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', outline: 'none', cursor: 'pointer', boxShadow: '0 1px 2px rgba(15,17,17,.15)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+            <label style={{ fontSize: '10.5px', color: '#555', fontWeight: 700 }}>Zeithorizont</label>
+            <select value={projectionMonths} onChange={e => setProjectionMonths(Number(e.target.value))} style={{ background: '#fff', color: '#0f1111', border: '1px solid #d5d9d9', padding: '3px 8px', borderRadius: '4px', fontSize: '12px', outline: 'none', cursor: 'pointer' }}>
               <option value={1}>30 Tage</option>
               <option value={12}>1 Jahr</option>
               <option value={60}>5 Jahre</option>
             </select>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '130px' }}>
-            <label style={{ fontSize: '11px', color: '#555', fontWeight: 700 }}>Bücher / Monat: <strong>{booksPerMonth}</strong></label>
-            <input type="range" min="1" max="50" value={booksPerMonth} onChange={e => setBooksPerMonth(Number(e.target.value))} style={{ accentColor: '#007185', height: '4px', cursor: 'pointer' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+            <label style={{ fontSize: '10.5px', color: '#555', fontWeight: 700 }}>Bücher / Monat: <strong>{booksPerMonth}</strong></label>
+            <input type="range" min="1" max="50" value={booksPerMonth} onChange={e => setBooksPerMonth(Number(e.target.value))} style={{ accentColor: '#007185', height: '4px', cursor: 'pointer', width: '100%' }} />
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '100px' }}>
-            <label style={{ fontSize: '11px', color: '#555', fontWeight: 700 }}>Verkaufspreis</label>
-            <select value={sellingPrice} onChange={e => setSellingPrice(Number(e.target.value))} style={{ background: '#fff', color: '#0f1111', border: '1px solid #d5d9d9', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', outline: 'none', cursor: 'pointer', boxShadow: '0 1px 2px rgba(15,17,17,.15)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+            <label style={{ fontSize: '10.5px', color: '#555', fontWeight: 700 }}>Verkaufspreis</label>
+            <select value={sellingPrice} onChange={e => setSellingPrice(Number(e.target.value))} style={{ background: '#fff', color: '#0f1111', border: '1px solid #d5d9d9', padding: '3px 8px', borderRadius: '4px', fontSize: '12px', outline: 'none', cursor: 'pointer' }}>
               <option value={10.95}>10.95 {currency}</option>
               <option value={12.95}>12.95 {currency}</option>
               <option value={14.95}>14.95 {currency}</option>
             </select>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '130px' }}>
-            <label style={{ fontSize: '11px', color: '#555', fontWeight: 700 }}>Verkäufe/Buch: <strong>{salesPerBook}</strong></label>
-            <input type="range" min="5" max="100" value={salesPerBook} onChange={e => setSalesPerBook(Number(e.target.value))} style={{ accentColor: '#007185', height: '4px', cursor: 'pointer' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+            <label style={{ fontSize: '10.5px', color: '#555', fontWeight: 700 }}>Verkäufe/Buch: <strong>{salesPerBook}</strong></label>
+            <input type="range" min="5" max="100" value={salesPerBook} onChange={e => setSalesPerBook(Number(e.target.value))} style={{ accentColor: '#007185', height: '4px', cursor: 'pointer', width: '100%' }} />
+          </div>
+        </div>
+
+        {/* Right: Metrics Cards */}
+        <div style={{ background: '#fff', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {/* Timeframe Tabs & Button */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #d5d9d9', paddingBottom: '10px' }}>
+            <div style={{ display: 'flex', gap: '20px' }}>
+              {['Heute', 'Gestern', 'Diesen Monat'].map(t => (
+                <button 
+                  key={t}
+                  onClick={() => setTimeframe(t as any)}
+                  style={{ 
+                    background: 'none', border: 'none', fontSize: '13px', cursor: 'pointer',
+                    color: timeframe === t ? '#0f1111' : '#555',
+                    fontWeight: timeframe === t ? 700 : 400,
+                    borderBottom: timeframe === t ? `2px solid ${kdpTeal}` : '2px solid transparent',
+                    paddingBottom: '4px',
+                    marginBottom: '-14px'
+                  }}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+            <button style={{ 
+              display: 'flex', alignItems: 'center', gap: '6px',
+              background: kdpTeal, color: '#fff', border: 'none', borderRadius: '4px',
+              padding: '5px 10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer'
+            }}>
+              <Download size={12} />
+              Bericht herunterladen
+            </button>
+          </div>
+
+          {/* 3 Metrics in a row */}
+          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', flex: 1 }}>
+            <div style={{ flex: 1, minWidth: '120px' }}>
+              <h3 style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 8px 0' }}>Geschätzte Tantiemen</h3>
+              <div style={{ fontSize: '24px', fontWeight: 700, fontFamily: 'Bookerly, serif', margin: '0 0 2px 0' }}>
+                {formatCurrency(getMetric('royalties'))}*
+              </div>
+              <div style={{ fontSize: '11px', color: '#555', marginBottom: '8px' }}>({currency === '€' ? 'EUR' : 'USD'})</div>
+              <div style={{ borderTop: '1px solid #d5d9d9', paddingTop: '6px' }}>
+                <span style={{ color: kdpTeal, fontSize: '12px', cursor: 'pointer' }}>Tantiemenschätzung anzeigen</span>
+              </div>
+            </div>
+            
+            <div style={{ flex: 1, minWidth: '120px' }}>
+              <h3 style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 8px 0' }}>Bestellungen</h3>
+              <div style={{ fontSize: '24px', fontWeight: 700, fontFamily: 'Bookerly, serif', margin: '0 0 2px 0' }}>
+                {formatNumber(getMetric('orders'))}
+              </div>
+              <div style={{ fontSize: '11px', color: '#555', marginBottom: '8px' }}>Bearbeitete Bestellungen</div>
+              <div style={{ borderTop: '1px solid #d5d9d9', paddingTop: '6px' }}>
+                <span style={{ color: kdpTeal, fontSize: '12px', cursor: 'pointer' }}>Bestellungen anzeigen</span>
+              </div>
+            </div>
+
+            <div style={{ flex: 1, minWidth: '120px' }}>
+              <h3 style={{ fontSize: '13px', fontWeight: 700, margin: '0 0 8px 0' }}>Gelesene KENP-Seiten</h3>
+              <div style={{ fontSize: '24px', fontWeight: 700, fontFamily: 'Bookerly, serif', margin: '0 0 2px 0' }}>
+                {formatNumber(getMetric('kenp'))}
+              </div>
+              <div style={{ fontSize: '11px', color: '#555', marginBottom: '8px' }}>Gelesene Seiten</div>
+              <div style={{ borderTop: '1px solid #d5d9d9', paddingTop: '6px' }}>
+                <span style={{ color: kdpTeal, fontSize: '12px', cursor: 'pointer' }}>Gelesene KENP-Seiten anzeigen</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-
-      {/* --- KDP DASHBOARD CLONE --- */}
-      <div style={{ background: kdpBg, padding: '16px', minHeight: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <div style={{ width: '100%', maxWidth: '1400px' }}>
-
-
-          
-          <div style={{ marginBottom: '16px' }}>
-            <h1 style={{ fontFamily: 'Bookerly, serif', fontSize: '28px', fontWeight: 400, margin: '0 0 4px 0', color: '#0f1111' }}>
-              Dashboard
-            </h1>
-            <p style={{ fontSize: '11px', color: '#555', margin: 0 }}>
-              Alle Daten basieren auf der Zeitzone des Marketplace, auf dem die Bestellung aufgegeben wurde. Bitte beachten Sie, dass sich die monatlichen gelesenen KENP-Seiten ändern können. Die endgültige Anzahl steht um den 15. des Folgemonats fest. <span style={{ color: kdpTeal, textDecoration: 'none', cursor: 'pointer' }}>Erfahren Sie mehr über das Dashboard.</span>
-            </p>
-          </div>
-
-          {/* Cards Section */}
-          <div style={{ background: '#fff', border: '1px solid #d5d9d9', borderRadius: '4px', padding: '16px', marginBottom: '16px' }}>
-            {/* Timeframe Tabs & Button */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid #d5d9d9', paddingBottom: '12px', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', gap: '20px' }}>
-                {['Heute', 'Gestern', 'Diesen Monat'].map(t => (
-                  <button 
-                    key={t}
-                    onClick={() => setTimeframe(t as any)}
-                    style={{ 
-                      background: 'none', border: 'none', fontSize: '14px', cursor: 'pointer',
-                      color: timeframe === t ? '#0f1111' : '#555',
-                      fontWeight: timeframe === t ? 700 : 400,
-                      borderBottom: timeframe === t ? `2px solid ${kdpTeal}` : '2px solid transparent',
-                      paddingBottom: '4px',
-                      marginBottom: '-17px' // align with border
-                    }}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
-              <button style={{ 
-                display: 'flex', alignItems: 'center', gap: '6px',
-                background: kdpTeal, color: '#fff', border: 'none', borderRadius: '4px',
-                padding: '6px 12px', fontSize: '13px', fontWeight: 600, cursor: 'pointer'
-              }}>
-                <Download size={14} />
-                Bericht herunterladen
-              </button>
-            </div>
-
-            {/* 3 Metrics */}
-            <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, minWidth: '150px' }}>
-                <h3 style={{ fontSize: '15px', fontWeight: 700, margin: '0 0 12px 0' }}>Geschätzte Tantiemen</h3>
-                <div style={{ fontSize: '28px', fontWeight: 700, fontFamily: 'Bookerly, serif', margin: '0 0 2px 0' }}>
-                  {formatCurrency(getMetric('royalties'))}*
-                </div>
-                <div style={{ fontSize: '11px', color: '#555', marginBottom: '12px' }}>({currency === '€' ? 'EUR' : 'USD'})</div>
-                <div style={{ borderTop: '1px solid #d5d9d9', paddingTop: '8px' }}>
-                  <span style={{ color: kdpTeal, textDecoration: 'none', fontSize: '12px', cursor: 'pointer' }}>Tantiemenschätzung anzeigen</span>
-                </div>
-              </div>
-              
-              <div style={{ flex: 1, minWidth: '150px' }}>
-                <h3 style={{ fontSize: '15px', fontWeight: 700, margin: '0 0 12px 0' }}>Bestellungen</h3>
-                <div style={{ fontSize: '28px', fontWeight: 700, fontFamily: 'Bookerly, serif', margin: '0 0 2px 0' }}>
-                  {formatNumber(getMetric('orders'))}
-                </div>
-                <div style={{ fontSize: '11px', color: '#555', marginBottom: '25px' }}>Bearbeitete Bestellungen</div>
-                <div style={{ borderTop: '1px solid #d5d9d9', paddingTop: '8px' }}>
-                  <span style={{ color: kdpTeal, textDecoration: 'none', fontSize: '12px', cursor: 'pointer' }}>Bestellungen anzeigen</span>
-                </div>
-              </div>
-
-              <div style={{ flex: 1, minWidth: '150px' }}>
-                <h3 style={{ fontSize: '15px', fontWeight: 700, margin: '0 0 12px 0' }}>Gelesene KENP-Seiten</h3>
-                <div style={{ fontSize: '28px', fontWeight: 700, fontFamily: 'Bookerly, serif', margin: '0 0 2px 0' }}>
-                  {formatNumber(getMetric('kenp'))}
-                </div>
-                <div style={{ fontSize: '11px', color: '#555', marginBottom: '25px' }}>Gelesene Seiten</div>
-                <div style={{ borderTop: '1px solid #d5d9d9', paddingTop: '8px' }}>
-                  <span style={{ color: kdpTeal, textDecoration: 'none', fontSize: '12px', cursor: 'pointer' }}>Gelesene KENP-Seiten anzeigen</span>
-                </div>
-              </div>
-            </div>
-          </div>
 
           {/* Chart Section */}
           <div style={{ background: '#fff', border: '1px solid #d5d9d9', borderRadius: '4px', padding: '16px' }}>
@@ -270,7 +255,7 @@ export default function KdpCalculator(_props: KdpCalculatorProps) {
               </div>
             </div>
 
-            <div style={{ height: '200px' }}>
+            <div style={{ height: '180px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 {chartType === 'Balkendiagramm' ? (
                   <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -292,14 +277,12 @@ export default function KdpCalculator(_props: KdpCalculatorProps) {
               </ResponsiveContainer>
             </div>
             
-            <div style={{ marginTop: '16px' }}>
+            <div style={{ marginTop: '12px' }}>
               <span style={{ color: kdpTeal, textDecoration: 'none', fontSize: '13px', cursor: 'pointer' }}>
                 {activeTab === 'Tantiemen' ? 'Tantiemenschätzung anzeigen' : activeTab === 'KENP' ? 'Gelesene KENP-Seiten anzeigen' : 'Bestellungen anzeigen'}
               </span>
             </div>
           </div>
-        </div>
-      </div>
     </div>
   );
 }

@@ -528,7 +528,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
       </section>
 
       {/* Calculator Section (Hook) */}
-      <section id="rechner" style={{ position: 'relative', zIndex: 10, padding: '20px 24px 80px', maxWidth: '640px', margin: '0 auto', scrollMarginTop: '100px' }}>
+      <section id="rechner" style={{ position: 'relative', zIndex: 10, padding: '20px 24px 48px', maxWidth: '1100px', margin: '0 auto', scrollMarginTop: '100px' }}>
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
