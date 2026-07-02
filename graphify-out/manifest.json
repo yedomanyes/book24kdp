@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "src/App.tsx": {
-    "mtime": 1783002321.6532285,
-    "ast_hash": "c2b30b5c2fd39d9926fabb9f33facd55",
+    "mtime": 1783004926.691064,
+    "ast_hash": "69a7846efb654d5acc7a84eac3afffba",
     "semantic_hash": ""
   },
   "src/components/Aurora.tsx": {
@@ -550,8 +550,13 @@
     "semantic_hash": ""
   },
   "src/components/BugReportModal.tsx": {
-    "mtime": 1783002245.976156,
-    "ast_hash": "7a37d8dce89c0e2b88439ab4b12c4c25",
+    "mtime": 1783004966.921674,
+    "ast_hash": "f0e4b60af1de63ed671cb13e1a1210d1",
+    "semantic_hash": ""
+  },
+  "supabase/bug_reports.sql": {
+    "mtime": 1783004982.2713852,
+    "ast_hash": "3e06df4e1af092d0cb1465c14c691370",
     "semantic_hash": ""
   }
 }

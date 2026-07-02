@@ -1319,18 +1319,34 @@ function OwnerToolbarButton({
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        gap: '8px',
-        padding: '10px 14px',
+        gap: '7px',
+        padding: '9px 14px',
         fontSize: '12px',
-        fontWeight: 700,
-        borderRadius: '10px',
-        border: `1px solid ${active ? 'rgba(148,163,184,0.45)' : 'rgba(148,163,184,0.16)'}`,
-        background: active ? 'rgba(148,163,184,0.08)' : 'transparent',
-        color: '#cbd5e1',
+        fontWeight: 600,
+        borderRadius: '8px',
+        border: active
+          ? '1px solid rgba(255,255,255,0.25)'
+          : '1px solid rgba(255,255,255,0.12)',
+        background: active
+          ? 'rgba(255,255,255,0.12)'
+          : 'rgba(255,255,255,0.04)',
+        color: active ? '#ffffff' : '#94a3b8',
         cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.5 : 1,
-        transition: 'all 0.18s ease',
-        boxShadow: active ? '0 10px 24px rgba(148,163,184,0.08) inset, 0 8px 24px rgba(2,6,23,0.18)' : 'none',
+        opacity: disabled ? 0.4 : 1,
+        transition: 'all 0.15s ease',
+        boxShadow: active ? '0 0 0 1px rgba(255,255,255,0.08) inset' : 'none',
+      }}
+      onMouseEnter={e => {
+        if (!disabled && !active) {
+          (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.08)';
+          (e.currentTarget as HTMLButtonElement).style.color = '#e2e8f0';
+        }
+      }}
+      onMouseLeave={e => {
+        if (!disabled && !active) {
+          (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.04)';
+          (e.currentTarget as HTMLButtonElement).style.color = '#94a3b8';
+        }
       }}
     >
       {icon}

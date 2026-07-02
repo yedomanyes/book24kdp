@@ -154,22 +154,13 @@ export const BugReportModal: React.FC<Props> = ({ onClose, theme, isDe, currentU
         ) : (
           <form onSubmit={handleSubmit}>
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
-              <div style={{
-                width: '32px', height: '32px', borderRadius: '8px',
-                background: 'rgba(239,68,68,0.1)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Bug size={16} color="#ef4444" />
-              </div>
-              <div>
-                <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: textMain }}>
-                  {isDe ? 'Bug melden' : 'Report a Bug'}
-                </h2>
-                <p style={{ margin: 0, fontSize: '12px', color: textMuted }}>
-                  {isDe ? 'Hilf uns Book24 besser zu machen.' : 'Help us make Book24 better.'}
-                </p>
-              </div>
+            <div style={{ marginBottom: '24px' }}>
+              <h2 style={{ margin: '0 0 4px', fontSize: '16px', fontWeight: 700, color: textMain }}>
+                {isDe ? 'Bug melden' : 'Report a Bug'}
+              </h2>
+              <p style={{ margin: 0, fontSize: '12px', color: textMuted }}>
+                {isDe ? 'Hilf uns Book24 besser zu machen.' : 'Help us make Book24 better.'}
+              </p>
             </div>
 
             {/* Rate limit warning */}
