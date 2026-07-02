@@ -7226,17 +7226,17 @@ export default function App() {
                   fontWeight: 600,
                   height: '26px',
                   borderRadius: '6px',
-                  backgroundColor: '#2563eb',
-                  color: '#ffffff',
-                  border: 'none',
+                  backgroundColor: 'transparent',
+                  color: 'var(--text-muted)',
+                  border: '1px solid var(--border-color)',
                   cursor: 'pointer',
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  transition: 'background-color 0.15s ease',
+                  transition: 'all 0.15s ease',
                 }}
-                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1d4ed8'}
-                onMouseLeave={e => e.currentTarget.style.backgroundColor = '#2563eb'}
+                onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1d4ed8'; e.currentTarget.style.color = '#ffffff'; e.currentTarget.style.borderColor = '#1d4ed8'; }}
+                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.borderColor = 'var(--border-color)'; }}
               >
                 {isDe ? 'Abmelden' : 'Sign Out'}
               </button>
@@ -11271,7 +11271,7 @@ export default function App() {
               <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: 'var(--text-main)' }}>{confirmDialog.title}</h3>
             </div>
             <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--text-muted)', lineHeight: '1.5' }}>{confirmDialog.message}</p>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '4px' }}>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-start', marginTop: '4px' }}>
               {confirmDialog.cancelLabel !== 'none' && (
                 <button
                   onClick={() => { confirmDialog.onCancel?.(); setConfirmDialog(null); }}
