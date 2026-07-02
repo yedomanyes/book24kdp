@@ -2604,13 +2604,28 @@ export default function App() {
   const [isOverflowing, setIsOverflowing] = useState<boolean>(false);
 
   // Check if content overflows the live preview page
+  // We use requestAnimationFrame twice to ensure browser layout is complete before measuring
   useEffect(() => {
-    const el = previewContentRef.current;
-    if (el) {
-      setIsOverflowing(el.scrollHeight > el.clientHeight + 3);
-    } else {
-      setIsOverflowing(false);
-    }
+    let rafId: number;
+    let rafId2: number;
+    const check = () => {
+      const el = previewContentRef.current;
+      if (el) {
+        setIsOverflowing(el.scrollHeight > el.clientHeight + 3);
+      } else {
+        setIsOverflowing(false);
+      }
+    };
+    // First rAF: after React has flushed updates
+    rafId = requestAnimationFrame(() => {
+      check();
+      // Second rAF: after browser has painted (catches late image/font loads)
+      rafId2 = requestAnimationFrame(check);
+    });
+    return () => {
+      cancelAnimationFrame(rafId);
+      cancelAnimationFrame(rafId2);
+    };
   }, [
     (activeBook?.pagesText || {})[(selectedPage || 0) as any],
     selectedPage,
