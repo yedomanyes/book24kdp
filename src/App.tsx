@@ -314,31 +314,6 @@ interface Book {
   pagesGraphicDisabled?: { [key: number]: boolean };
 }
 
-const getProjectFormattedDate = (book: Book): string => {
-  let date: Date;
-  if (book.createdAt) {
-    date = new Date(book.createdAt);
-  } else {
-    // Try to extract timestamp from book ID
-    const parts = book.id.split('_');
-    const timestamp = Number(parts[1]);
-    if (!isNaN(timestamp) && timestamp > 0) {
-      date = new Date(timestamp);
-    } else {
-      return "Unbekannt"; // Fallback so it doesn't change on every render
-    }
-  }
-  
-  // Format as DD.MM.YYYY HH:MM
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const year = date.getFullYear();
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  
-  return `${day}.${month}.${year} um ${hours}:${minutes} Uhr`;
-};
-
 export type WorkbookBlock =
   | { type: 'paragraph'; text: string }
   | { type: 'checkbox'; text: string; checked: boolean }
@@ -7347,13 +7322,11 @@ export default function App() {
                           }}
                         >
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, color: 'var(--primary)' }}>
-                            <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
-                            <line x1="16" x2="16" y1="2" y2="6"/>
-                            <line x1="8" x2="8" y1="2" y2="6"/>
-                            <line x1="3" x2="21" y1="10" y2="10"/>
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
                           </svg>
                           <span>
-                            {isDe ? 'Erstellt:' : 'Created:'} {getProjectFormattedDate(b)}
+                            {isDe ? 'Erstellt:' : 'Created:'} {(accounts.find(a => a.id === activeAccountId)?.username) || 'Unbekannt'}
                           </span>
                         </div>
                         
