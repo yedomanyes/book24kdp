@@ -44,6 +44,7 @@ import {
   deleteBookFromCloud,
   loadBooksFromCloud,
   loadAccountsFromCloud,
+  saveAccountsToCloud,
   syncLocalLibraryToCloud,
   forcePushBooksToCloud
 } from './services/StorageService';
@@ -3103,7 +3104,11 @@ export default function App() {
       id: Date.now().toString(),
       username: newUsernameInput.trim()
     };
-    setAccounts(prev => [...prev, newAcc]);
+    const updatedAccs = [...accounts, newAcc];
+    setAccounts(updatedAccs);
+    if (currentUser?.uid) {
+      saveAccountsToCloud(currentUser.uid, updatedAccs).catch(console.error);
+    }
     setActiveAccountId(newAcc.id);
     setNewUsernameInput('');
     setShowAccountModal(false);
@@ -3122,10 +3127,14 @@ export default function App() {
       confirmLabel: 'Löschen',
       danger: true,
       onConfirm: () => {
-        setAccounts(prev => prev.filter(a => a.id !== id));
+        const updatedAccs = accounts.filter(a => a.id !== id);
+        setAccounts(updatedAccs);
+        if (currentUser?.uid) {
+          saveAccountsToCloud(currentUser.uid, updatedAccs).catch(console.error);
+        }
         localStorage.removeItem(KEYS.library(id));
         if (activeAccountId === id) {
-          setActiveAccountId(accounts.find(a => a.id !== id)?.id || 'default');
+          setActiveAccountId(updatedAccs[0]?.id || 'default');
         }
       }
     });
@@ -11188,35 +11197,43 @@ export default function App() {
       {confirmDialog && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 9999999,
-          backgroundColor: 'rgba(0,0,0,0.65)',
-          backdropFilter: 'blur(4px)',
+          backgroundColor: 'rgba(15, 23, 42, 0.45)',
           display: 'flex', alignItems: 'center', justifyContent: 'center'
         }}>
           <div style={{
-            backgroundColor: 'var(--sidebar-bg)',
+            backgroundColor: theme === 'dark' ? '#0f172a' : '#ffffff',
             border: '1px solid var(--border-color)',
-            borderRadius: '12px',
-            padding: '28px 32px',
-            maxWidth: '420px',
+            borderRadius: '6px',
+            padding: '24px 28px',
+            maxWidth: '380px',
             width: '90%',
-            boxShadow: '0 24px 60px rgba(0,0,0,0.6)',
-            display: 'flex', flexDirection: 'column', gap: '16px'
+            boxShadow: theme === 'dark' ? '0 10px 25px rgba(0,0,0,0.5)' : '0 10px 25px rgba(15,23,42,0.08)',
+            display: 'flex', flexDirection: 'column', gap: '14px'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               {confirmDialog.danger && (
-                <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(239,68,68,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <div style={{ width: '28px', height: '28px', borderRadius: '4px', backgroundColor: 'rgba(239,68,68,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                 </div>
               )}
-              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-main)' }}>{confirmDialog.title}</h3>
+              <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: 'var(--text-main)' }}>{confirmDialog.title}</h3>
             </div>
-            <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.6' }}>{confirmDialog.message}</p>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+            <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--text-muted)', lineHeight: '1.5' }}>{confirmDialog.message}</p>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '4px' }}>
               {confirmDialog.cancelLabel !== 'none' && (
                 <button
                   onClick={() => { confirmDialog.onCancel?.(); setConfirmDialog(null); }}
                   className="btn"
-                  style={{ padding: '8px 18px', fontSize: '13px', backgroundColor: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-muted)' }}
+                  style={{ 
+                    padding: '6px 14px', 
+                    fontSize: '12px', 
+                    fontWeight: 600, 
+                    backgroundColor: theme === 'dark' ? '#1e293b' : '#f1f5f9', 
+                    border: '1px solid var(--border-color)', 
+                    borderRadius: '6px', 
+                    color: 'var(--text-main)', 
+                    cursor: 'pointer' 
+                  }}
                 >
                   {confirmDialog.cancelLabel || 'Abbrechen'}
                 </button>
@@ -11225,9 +11242,9 @@ export default function App() {
                 onClick={() => { setConfirmDialog(null); confirmDialog.onConfirm(); }}
                 className="btn"
                 style={{
-                  padding: '8px 18px', fontSize: '13px', fontWeight: 600,
+                  padding: '6px 14px', fontSize: '12px', fontWeight: 600,
                   backgroundColor: confirmDialog.danger ? '#dc2626' : 'var(--primary)',
-                  color: '#fff', border: 'none'
+                  color: '#ffffff', border: 'none', borderRadius: '6px', cursor: 'pointer'
                 }}
               >
                 {confirmDialog.confirmLabel || 'Bestätigen'}
