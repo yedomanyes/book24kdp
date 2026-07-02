@@ -40,42 +40,62 @@ const CARD_SIZE = '280px';
 const getRoadmapPhases = (isDe: boolean) => [
   {
     phase: 'Phase 1',
+    emoji: '🔥',
     title: 'Foundation & Core AI',
     price: '199$',
-    status: isDe ? 'Aktuell' : 'Current',
-    desc: isDe ? 'Das Fundament: Hochwertige KI-Textgenerierung, Formatierung und KDP-Ready PDF-Exporte.' : 'The Foundation: High-quality AI text generation, formatting, and KDP-ready PDF exports.',
+    badge: 'LIVE',
+    features: isDe
+      ? ['KI-Textgenerierung', 'KDP-Ready PDF Export', 'Multi-Format Layouts', 'Unbegrenzte Bücher']
+      : ['AI Text Generation', 'KDP-Ready PDF Export', 'Multi-Format Layouts', 'Unlimited Books'],
+    desc: isDe ? 'Das Fundament ist live. Täglich besser werdend.' : 'The foundation is live. Getting better every day.',
     active: true,
   },
   {
     phase: 'Phase 2',
+    emoji: '⚡',
     title: 'Advanced Layouts & Deep Research',
     price: '300$',
-    status: isDe ? 'In Entwicklung' : 'In Development',
-    desc: isDe ? 'Komplexe Layout-Engines, Formatvorlagen und tiefe KDP-Nischenanalyse live.' : 'Complex layout engines, formatting templates, and deep KDP niche analysis live.',
+    badge: isDe ? 'BALD' : 'SOON',
+    features: isDe
+      ? ['KDP Nischen-Analyse', 'Professionelle Cover-KI', 'Erweiterte Templates', 'Deep Research Modus']
+      : ['KDP Niche Analysis', 'Professional Cover AI', 'Advanced Templates', 'Deep Research Mode'],
+    desc: isDe ? 'Nischen finden. Konkurrenz schlagen. Automatisch.' : 'Find niches. Beat competition. Automatically.',
     active: false,
   },
   {
     phase: 'Phase 3',
+    emoji: '🤖',
     title: 'Automation & Bulk Creation',
     price: '500$',
-    status: isDe ? 'Geplant' : 'Planned',
-    desc: isDe ? 'Vollständige Automatisierung von Manuskript-Erstellung und Kapitel-Strukturierung.' : 'Full automation of manuscript creation and chapter structuring.',
+    badge: '🔒 LOCKED',
+    features: isDe
+      ? ['Bulk-Buchgenerierung', 'Auto-Upload zu KDP', 'Keyword-Optimierung', 'Vollautomatisch']
+      : ['Bulk Book Generation', 'Auto-Upload to KDP', 'Keyword Optimization', 'Fully Automated'],
+    desc: isDe ? '1 Klick. 10 Bücher. Fertig.' : '1 click. 10 books. Done.',
     active: false,
   },
   {
     phase: 'Phase 4',
+    emoji: '🌍',
     title: 'Global Scaling',
     price: '1000$',
-    status: isDe ? 'Geplant' : 'Planned',
-    desc: isDe ? 'Multi-Language-Support für globale Märkte und fortgeschrittene Cover-Generierung.' : 'Multi-language support for global markets and advanced cover generation.',
+    badge: '🔒 LOCKED',
+    features: isDe
+      ? ['20+ Sprachen', 'Globale Märkte', 'Advanced Cover Gen', 'Publisher Dashboard']
+      : ['20+ Languages', 'Global Markets', 'Advanced Cover Gen', 'Publisher Dashboard'],
+    desc: isDe ? 'Dein Business. Weltweit. In jeder Sprache.' : 'Your business. Worldwide. In every language.',
     active: false,
   },
   {
     phase: 'Phase 5',
+    emoji: '👑',
     title: 'The KDP Monopoly',
     price: '2000$',
-    status: isDe ? 'Vision' : 'Vision',
-    desc: isDe ? 'Das ultimative System. Keine Grenzen. Wer jetzt einsteigt, hat all das bereits inklusive.' : 'The ultimate system. No limits. Those who join now have all of this included.',
+    badge: '🔒 ENDGAME',
+    features: isDe
+      ? ['Vollständige Kontrolle', 'KI-Empire Builder', 'Unbegrenzte Skalierung', 'No Limits']
+      : ['Full Control', 'AI Empire Builder', 'Unlimited Scaling', 'No Limits'],
+    desc: isDe ? 'Das Endgame. Wer jetzt einsteigt, hat alles inklusive.' : 'The endgame. Early adopters get everything included.',
     active: false,
   }
 ];
@@ -703,10 +723,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
 
 
       {/* Roadmap / Plan Section */}
-      <section id="roadmap" style={{ position: 'relative', zIndex: 10, padding: '120px 24px 80px', maxWidth: '1300px', margin: '0 auto', overflow: 'hidden' }}>
-        
-        {/* Background glow blob */}
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
+      <section id="roadmap" style={{ position: 'relative', zIndex: 10, padding: '120px 0 80px', overflow: 'hidden' }}>
+
+        {/* Ambient glow */}
+        <div style={{ position: 'absolute', top: '30%', left: '20%', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 65%)', pointerEvents: 'none', filter: 'blur(40px)' }} />
+        <div style={{ position: 'absolute', top: '50%', right: '10%', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(245,158,11,0.06) 0%, transparent 65%)', pointerEvents: 'none', filter: 'blur(40px)' }} />
 
         {/* Header */}
         <motion.div
@@ -714,98 +735,108 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          style={{ textAlign: 'center', marginBottom: '100px', position: 'relative' }}
+          style={{ textAlign: 'center', marginBottom: '64px', padding: '0 24px', position: 'relative' }}
         >
-          <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#7c3aed', marginBottom: '16px' }}>
-            {isDe ? 'Der Plan' : 'The Roadmap'}
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: 800, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#a78bfa', marginBottom: '20px', padding: '6px 16px', borderRadius: '999px', background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.25)' }}>
+            🗺 {isDe ? 'Der Masterplan' : 'The Masterplan'}
           </div>
-          <h2 style={{ fontSize: 'clamp(40px, 6vw, 64px)', fontWeight: 900, letterSpacing: '-0.04em', margin: '0', color: theme === 'dark' ? '#fff' : '#0f172a', lineHeight: 1.05 }}>
+          <h2 style={{ fontSize: 'clamp(40px, 6vw, 72px)', fontWeight: 900, letterSpacing: '-0.05em', margin: '0 0 16px', color: theme === 'dark' ? '#fff' : '#0f172a', lineHeight: 1.0 }}>
             Book24 Roadmap
           </h2>
-          <p style={{ marginTop: '16px', fontSize: '16px', color: theme === 'dark' ? '#71717a' : '#6b7280', maxWidth: '480px', margin: '16px auto 0' }}>
-            {isDe ? 'Von der ersten Version bis zum globalen Imperium.' : 'From the first release to a global empire.'}
+          <p style={{ fontSize: '18px', color: theme === 'dark' ? '#71717a' : '#6b7280', maxWidth: '540px', margin: '0 auto', lineHeight: 1.5 }}>
+            {isDe ? 'Früh einsteigen. Mehr kriegen. Für immer.' : 'Get in early. Get more. Forever.'}
           </p>
         </motion.div>
 
-        {/* Timeline */}
-        <div className="rm-timeline">
-
-          {/* Central spine line */}
-          <div className={`rm-spine ${theme === 'dark' ? 'dark' : 'light'}`} />
-
+        {/* Cards — horizontal scrollable on mobile, grid on desktop */}
+        <div className="rm2-grid">
           {getRoadmapPhases(isDe).map((phase, i) => {
-            const isLeft = i % 2 === 0;
             const isActive = phase.active;
-            const colors = [
-              { glow: '#8b5cf6', accent: '#a78bfa', border: 'rgba(139,92,246,0.4)' },
-              { glow: '#3b82f6', accent: '#60a5fa', border: 'rgba(59,130,246,0.35)' },
-              { glow: '#06b6d4', accent: '#22d3ee', border: 'rgba(6,182,212,0.35)' },
-              { glow: '#10b981', accent: '#34d399', border: 'rgba(16,185,129,0.35)' },
-              { glow: '#f59e0b', accent: '#fbbf24', border: 'rgba(245,158,11,0.35)' },
-            ][i % 5];
-
+            const colorSets = [
+              { glow: '#8b5cf6', accent: '#c084fc', border: 'rgba(192,132,252,0.5)', bg: 'rgba(139,92,246,0.08)', num: '#3b0764' },
+              { glow: '#3b82f6', accent: '#60a5fa', border: 'rgba(96,165,250,0.4)', bg: 'rgba(59,130,246,0.06)', num: '#1e3a8a' },
+              { glow: '#06b6d4', accent: '#22d3ee', border: 'rgba(34,211,238,0.35)', bg: 'rgba(6,182,212,0.06)', num: '#164e63' },
+              { glow: '#10b981', accent: '#34d399', border: 'rgba(52,211,153,0.35)', bg: 'rgba(16,185,129,0.06)', num: '#064e3b' },
+              { glow: '#f59e0b', accent: '#fbbf24', border: 'rgba(251,191,36,0.4)', bg: 'rgba(245,158,11,0.07)', num: '#451a03' },
+            ][i];
+            const isLocked = !isActive && i > 1;
             return (
               <motion.div
                 key={phase.phase}
-                initial={{ opacity: 0, x: isLeft ? -60 : 60 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, margin: '-80px' }}
-                transition={{ duration: 0.7, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
-                className={`rm-item ${isLeft ? 'left' : 'right'}`}
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-60px' }}
+                transition={{ duration: 0.6, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                className={`rm2-card ${isActive ? 'active' : ''} ${theme === 'dark' ? 'dark' : 'light'}`}
+                style={{ ['--c-glow' as any]: colorSets.glow, ['--c-accent' as any]: colorSets.accent, ['--c-border' as any]: colorSets.border, ['--c-bg' as any]: colorSets.bg }}
               >
-                {/* Content side */}
-                <div className={`rm-content ${theme === 'dark' ? 'dark' : 'light'} ${isActive ? 'active' : ''}`}
-                  style={{ ['--rm-glow' as any]: colors.glow, ['--rm-accent' as any]: colors.accent, ['--rm-border' as any]: colors.border }}
-                >
-                  {/* Phase label */}
-                  <div style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '0.2em', textTransform: 'uppercase', color: colors.accent, marginBottom: '10px' }}>
+                {/* Big background phase number */}
+                <div className="rm2-bg-num" style={{ color: theme === 'dark' ? `${colorSets.num}88` : `${colorSets.num}22` }}>
+                  {String(i + 1).padStart(2, '0')}
+                </div>
+
+                {/* Badge row */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', position: 'relative' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: colorSets.accent }}>
                     {phase.phase}
-                  </div>
+                  </span>
+                  <span className={`rm2-badge ${isActive ? 'live' : isLocked ? 'locked' : 'soon'}`}>
+                    {isActive && <span className="pulse-dot" style={{ width: '5px', height: '5px', flexShrink: 0 }} />}
+                    {phase.badge}
+                  </span>
+                </div>
 
-                  {/* Title */}
-                  <h3 style={{ fontSize: 'clamp(20px, 2.5vw, 26px)', fontWeight: 900, letterSpacing: '-0.03em', margin: '0 0 12px', color: theme === 'dark' ? '#ffffff' : '#0f172a', lineHeight: 1.2 }}>
-                    {phase.title}
-                  </h3>
+                {/* Emoji + Title */}
+                <div style={{ fontSize: '36px', lineHeight: 1, marginBottom: '10px' }}>{phase.emoji}</div>
+                <h3 style={{ fontSize: '18px', fontWeight: 900, letterSpacing: '-0.02em', margin: '0 0 10px', color: theme === 'dark' ? '#fff' : '#0f172a', lineHeight: 1.25, position: 'relative' }}>
+                  {phase.title}
+                </h3>
 
-                  {/* Desc */}
-                  <p style={{ fontSize: '14px', lineHeight: 1.65, margin: '0 0 20px', color: theme === 'dark' ? '#a1a1aa' : '#52525b' }}>
-                    {phase.desc}
-                  </p>
+                {/* Tagline */}
+                <p style={{ fontSize: '13px', fontWeight: 600, margin: '0 0 18px', color: colorSets.accent, lineHeight: 1.4, position: 'relative' }}>
+                  {phase.desc}
+                </p>
 
-                  {/* Footer row */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      {isActive && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 700, color: '#10b981', padding: '4px 10px', borderRadius: '999px', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)' }}>
-                        <span className="pulse-dot" style={{ width: '5px', height: '5px' }} />
-                        {isDe ? 'Live' : 'Live'}
-                      </span>}
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: theme === 'dark' ? '#52525b' : '#9ca3af', padding: '4px 10px', borderRadius: '999px', background: theme === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' }}>
-                        {phase.status}
+                {/* Feature checklist */}
+                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px', display: 'flex', flexDirection: 'column', gap: '7px', position: 'relative' }}>
+                  {phase.features.map((f: string) => (
+                    <li key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', color: theme === 'dark' ? (isLocked ? '#52525b' : '#d4d4d8') : (isLocked ? '#9ca3af' : '#374151') }}>
+                      <span style={{ color: isLocked ? '#52525b' : colorSets.accent, flexShrink: 0, fontSize: '14px' }}>
+                        {isLocked ? '🔒' : '✓'}
                       </span>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: theme === 'dark' ? '#3f3f46' : '#d1d5db', marginBottom: '2px' }}>
-                        {isDe ? 'Wert' : 'Value'}
-                      </div>
-                      <div style={{ fontSize: '22px', fontWeight: 900, letterSpacing: '-0.03em', background: `linear-gradient(135deg, ${colors.accent}, ${colors.glow})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                        {phase.price}
-                      </div>
-                    </div>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+
+                {/* Price */}
+                <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`, position: 'relative' }}>
+                  <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: theme === 'dark' ? '#52525b' : '#9ca3af', marginBottom: '4px' }}>
+                    {isDe ? 'Preis steigt auf' : 'Price rises to'}
+                  </div>
+                  <div style={{ fontSize: '28px', fontWeight: 900, letterSpacing: '-0.03em', background: `linear-gradient(135deg, ${colorSets.accent} 0%, ${colorSets.glow} 100%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: 1 }}>
+                    {phase.price}
                   </div>
                 </div>
-
-                {/* Center dot */}
-                <div className="rm-dot" style={{ ['--rm-glow' as any]: colors.glow, ['--rm-accent' as any]: colors.accent } as any}>
-                  <div className="rm-dot-inner" style={{ background: colors.accent }} />
-                </div>
-
-                {/* Empty opposite side (for spacing) */}
-                <div className="rm-spacer" />
               </motion.div>
             );
           })}
         </div>
+
+        {/* CTA below */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          style={{ textAlign: 'center', marginTop: '56px', padding: '0 24px' }}
+        >
+          <p style={{ fontSize: '14px', color: theme === 'dark' ? '#52525b' : '#9ca3af', fontWeight: 600 }}>
+            🔒 {isDe ? 'Wer jetzt bei 199$ einsteigt bekommt alles zukünftige inklusive — ohne Mehrkosten.' : 'Early access at 199$ includes everything above — no extra cost. Ever.'}
+          </p>
+        </motion.div>
       </section>
+
 
       {/* Team / Leadership */}
       <section id="team" style={{ position: 'relative', zIndex: 10, padding: '40px 24px 100px', maxWidth: '900px', margin: '0 auto', scrollMarginTop: '100px' }}>

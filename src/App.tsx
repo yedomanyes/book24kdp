@@ -3043,9 +3043,12 @@ export default function App() {
   const handleDeleteBook = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     showConfirm({
-      title: 'Buchprojekt löschen',
-      message: 'Dieses Buchprojekt unwiderruflich löschen? Alle Inhalte gehen verloren.',
-      confirmLabel: 'Löschen',
+      title: isDe ? 'Buchprojekt löschen' : 'Delete book project',
+      message: isDe 
+        ? 'Dieses Buchprojekt unwiderruflich löschen? Alle Inhalte gehen verloren.' 
+        : 'Are you sure you want to delete this book project? All content will be lost.',
+      confirmLabel: isDe ? 'Löschen' : 'Delete',
+      cancelLabel: isDe ? 'Abbrechen' : 'Cancel',
       danger: true,
       onConfirm: () => {
         setBooks(prev => prev.filter(b => b.id !== id));
