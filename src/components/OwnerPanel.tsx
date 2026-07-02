@@ -84,6 +84,11 @@ export function OwnerPanel({ currentUser, theme }: Props) {
   const [selectedReportIds, setSelectedReportIds] = useState<Set<string>>(new Set());
   const [expandedReportId, setExpandedReportId] = useState<string | null>(null);
   const [deletingReports, setDeletingReports] = useState(false);
+  const [localConfirm, setLocalConfirm] = useState<{ message: string; onConfirm: () => void } | null>(null);
+
+  const showLocalConfirm = (message: string, onConfirm: () => void) => {
+    setLocalConfirm({ message, onConfirm });
+  };
 
   useEffect(() => {
     if (!selectedUser) {
@@ -388,17 +393,18 @@ export function OwnerPanel({ currentUser, theme }: Props) {
   };
 
   const deleteCustomKey = async (key: string) => {
-    if (!window.confirm(`Möchtest du den Key ${key} wirklich löschen? Der Nutzer verliert sofort den Zugriff!`)) return;
-    setIsProcessing(true);
-    try {
-      const { error } = await supabase!.rpc('admin_delete_custom_license', { p_key: key });
-      if (error) throw error;
-      await loadData();
-    } catch (err: any) {
-      alert(`Fehler: ${err.message}`);
-    } finally {
-      setIsProcessing(false);
-    }
+    showLocalConfirm(`Key ${key} wirklich löschen? Der Nutzer verliert sofort den Zugriff!`, async () => {
+      setIsProcessing(true);
+      try {
+        const { error } = await supabase!.rpc('admin_delete_custom_license', { p_key: key });
+        if (error) throw error;
+        await loadData();
+      } catch (err: any) {
+        // error handled silently - user stays on same page
+      } finally {
+        setIsProcessing(false);
+      }
+    });
   };
 
   const changeModuleStatus = async (modKey: string, newStatus: string) => {
@@ -1166,20 +1172,21 @@ export function OwnerPanel({ currentUser, theme }: Props) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               {selectedReportIds.size > 0 && (
                 <button
-                  onClick={async () => {
-                    if (!window.confirm(`${selectedReportIds.size} Report(s) löschen?`)) return;
-                    setDeletingReports(true);
-                    try {
-                      const ids = Array.from(selectedReportIds);
-                      const { error } = await supabase!.from('bug_reports').delete().in('id', ids);
-                      if (error) throw error;
-                      setBugReports(prev => prev.filter(r => !selectedReportIds.has(r.id)));
-                      setSelectedReportIds(new Set());
-                    } catch (err: any) {
-                      alert('Fehler: ' + (err.message || 'Unbekannt'));
-                    } finally {
-                      setDeletingReports(false);
-                    }
+                  onClick={() => {
+                    showLocalConfirm(`${selectedReportIds.size} Report(s) wirklich löschen?`, async () => {
+                      setDeletingReports(true);
+                      try {
+                        const ids = Array.from(selectedReportIds);
+                        const { error } = await supabase!.from('bug_reports').delete().in('id', ids);
+                        if (error) throw error;
+                        setBugReports(prev => prev.filter(r => !selectedReportIds.has(r.id)));
+                        setSelectedReportIds(new Set());
+                      } catch (err: any) {
+                        // error handled silently
+                      } finally {
+                        setDeletingReports(false);
+                      }
+                    });
                   }}
                   disabled={deletingReports}
                   style={{ fontSize: '12px', fontWeight: 600, padding: '5px 12px', borderRadius: '6px', background: '#ef4444', color: '#fff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
@@ -1428,12 +1435,51 @@ export function OwnerPanel({ currentUser, theme }: Props) {
           </div>
         </div>
       )}
-      
+
+      {/* Local Custom Confirm Dialog */}
+      {localConfirm && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 99999,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '24px',
+        }}>
+          <div style={{
+            backgroundColor: theme === 'dark' ? '#0f172a' : '#ffffff',
+            border: `1px solid ${t.border}`,
+            borderRadius: '10px',
+            padding: '24px',
+            maxWidth: '360px',
+            width: '100%',
+            boxShadow: theme === 'dark' ? '0 20px 40px rgba(0,0,0,0.6)' : '0 10px 30px rgba(15,23,42,0.12)',
+            display: 'flex', flexDirection: 'column', gap: '16px',
+          }}>
+            <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: t.textMain }}>Bestätigen</h3>
+            <p style={{ margin: 0, fontSize: '13px', color: t.textMuted, lineHeight: 1.6 }}>{localConfirm.message}</p>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => setLocalConfirm(null)}
+                style={{ flex: 1, padding: '8px', fontSize: '12px', fontWeight: 600, borderRadius: '6px', background: theme === 'dark' ? '#1e293b' : '#f1f5f9', border: `1px solid ${t.border}`, color: t.textMain, cursor: 'pointer' }}
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={() => { setLocalConfirm(null); localConfirm.onConfirm(); }}
+                style={{ flex: 1, padding: '8px', fontSize: '12px', fontWeight: 600, borderRadius: '6px', background: '#ef4444', border: 'none', color: '#fff', cursor: 'pointer' }}
+              >
+                Bestätigen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         @keyframes spin { 100% { transform: rotate(360deg); } }
         @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .55; transform: scale(1.18); } }
       `}</style>
     </div>
+
   );
 }
 
