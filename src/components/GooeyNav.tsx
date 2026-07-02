@@ -163,7 +163,17 @@ const GooeyNav = ({
     const activeLi = navRef.current.querySelectorAll('li')[activeIndex];
     if (activeLi) {
       updateEffectPosition(activeLi as HTMLElement);
-      textRef.current?.classList.add('active');
+      
+      if (filterRef.current) {
+        filterRef.current.classList.remove('active');
+        void filterRef.current.offsetWidth;
+        filterRef.current.classList.add('active');
+      }
+      if (textRef.current) {
+        textRef.current.classList.remove('active');
+        void textRef.current.offsetWidth;
+        textRef.current.classList.add('active');
+      }
     }
 
     const resizeObserver = new ResizeObserver(() => {
