@@ -131,6 +131,10 @@ const GooeyNav = ({
     const palette = colorsByIndex?.[index] ?? colors;
 
     if (filterRef.current) {
+      filterRef.current.classList.remove('active');
+      void filterRef.current.offsetWidth;
+      filterRef.current.classList.add('active');
+
       const particles = filterRef.current.querySelectorAll('.particle');
       particles.forEach(p => filterRef.current!.removeChild(p));
       makeParticles(filterRef.current, palette);
