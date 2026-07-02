@@ -50,7 +50,7 @@
     "semantic_hash": ""
   },
   "src/App.tsx": {
-    "mtime": 1783021038.0202088,
+    "mtime": 1783021368.6424246,
     "ast_hash": "3cdd7ab8cd6529504ce616e9b23b50cb",
     "semantic_hash": ""
   },
@@ -65,7 +65,7 @@
     "semantic_hash": ""
   },
   "src/components/BrainDashboard.tsx": {
-    "mtime": 1782995027.4291198,
+    "mtime": 1783021368.6423392,
     "ast_hash": "b68e1c2cc91cfc72c80206c1493655ec",
     "semantic_hash": ""
   },
@@ -85,13 +85,13 @@
     "semantic_hash": ""
   },
   "src/components/LandingNavbar.tsx": {
-    "mtime": 1783021043.3965108,
+    "mtime": 1783021368.6422324,
     "ast_hash": "bf0b2debbf47ed1b3ac49e6cdcdfcfe4",
     "semantic_hash": ""
   },
   "src/components/LandingPage.tsx": {
-    "mtime": 1783021045.582714,
-    "ast_hash": "b104b458264b167c7abe6033af97bcde",
+    "mtime": 1783021579.0712883,
+    "ast_hash": "249b5cd736bb8e6685e2b72808a20756",
     "semantic_hash": ""
   },
   "src/components/NicheFinderDashboard.tsx": {
@@ -105,7 +105,7 @@
     "semantic_hash": "ad2f5e4d62bb5a0e8bb313abaa806beb"
   },
   "src/components/ProfileCard.tsx": {
-    "mtime": 1782864890.0325985,
+    "mtime": 1783021368.6421144,
     "ast_hash": "3d0b239f43b3cc30b677934d5d7514c7",
     "semantic_hash": "3d0b239f43b3cc30b677934d5d7514c7"
   },
@@ -415,8 +415,8 @@
     "semantic_hash": "6b05bfef1f87b38cc6f6591706200e8d"
   },
   "src/components/KdpCalculator.tsx": {
-    "mtime": 1782996842.9039857,
-    "ast_hash": "a448d89a072fed79c6ad681273e18b99",
+    "mtime": 1783021427.3412056,
+    "ast_hash": "0e187f3046c0d6e0b766bb1c6eb76216",
     "semantic_hash": ""
   },
   "src/components/LiquidEther.tsx": {

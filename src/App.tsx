@@ -7066,7 +7066,7 @@ export default function App() {
               alt="BookLab Studio Logo" 
               style={{ height: '28px', width: 'auto', display: 'block' }} 
             />
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+            <div className="header-logo-text" style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
               <span style={{
                 fontFamily: "'Poppins', 'Roboto', sans-serif",
                 fontWeight: 700,

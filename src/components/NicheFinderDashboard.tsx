@@ -22,17 +22,9 @@ export const NicheFinderDashboard: React.FC<NicheFinderDashboardProps> = ({
   handleAnalyzeNicheAI
 }) => {
   return (
-    <div style={{
-      background: 'var(--bg-card)',
-      border: '1px solid var(--border-subtle)',
-      borderRadius: '16px',
-      padding: '32px',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '24px'
-    }}>
+    <div className="niche-dashboard-container">
       {/* Search Bar */}
-      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+      <div className="niche-search-row">
         <div style={{ flex: 1, position: 'relative' }}>
           <Search style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', width: '20px', height: '20px' }} />
           <input 
@@ -88,7 +80,7 @@ export const NicheFinderDashboard: React.FC<NicheFinderDashboardProps> = ({
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', animation: 'fadeIn 0.5s ease-out' }}>
           
           {/* KPI Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+          <div className="niche-kpis-grid">
             {[
               { label: "Nischen-Score", value: `${nicheResult.metrics.nicheScore}/100`, color: nicheResult.metrics.nicheScore > 70 ? "#22c55e" : "#f59e0b" },
               { label: "Suchvolumen (mtl.)", value: nicheResult.metrics.searchVolume.toLocaleString('de-DE'), color: "var(--text-main)" },
