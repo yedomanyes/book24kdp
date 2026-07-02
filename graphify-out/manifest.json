@@ -425,8 +425,8 @@
     "semantic_hash": "4f8287d8f35ecd95fd9193dfee2dadab"
   },
   "src/components/OwnerPanel.tsx": {
-    "mtime": 1783004529.3435965,
-    "ast_hash": "ad80a1f066ca4fee4bccdfad4b2ef344",
+    "mtime": 1783005279.2912333,
+    "ast_hash": "c8adb7472d14571136725cf3842ec598",
     "semantic_hash": ""
   },
   "src/hooks/use-mobile.d.ts": {
@@ -550,8 +550,8 @@
     "semantic_hash": ""
   },
   "src/components/BugReportModal.tsx": {
-    "mtime": 1783004966.921674,
-    "ast_hash": "f0e4b60af1de63ed671cb13e1a1210d1",
+    "mtime": 1783005299.60994,
+    "ast_hash": "87f08ed4f806bf3a1acf3534a2ef3443",
     "semantic_hash": ""
   },
   "supabase/bug_reports.sql": {
