@@ -11268,11 +11268,6 @@ export default function App() {
             display: 'flex', flexDirection: 'column', gap: '14px'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              {confirmDialog.danger && (
-                <div style={{ width: '28px', height: '28px', borderRadius: '4px', backgroundColor: 'rgba(239,68,68,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                </div>
-              )}
               <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: 'var(--text-main)' }}>{confirmDialog.title}</h3>
             </div>
             <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--text-muted)', lineHeight: '1.5' }}>{confirmDialog.message}</p>
