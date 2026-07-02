@@ -1626,23 +1626,31 @@ input:focus, select:focus, textarea:focus {
 .ex-select,
 .ex-textarea {
   width: 100%;
-  padding: 9px 11px;
+  padding: 8px 12px;
   font-size: 13px;
   font-family: var(--ex-font);
   font-weight: 500;
-  border-radius: var(--ex-radius);
+  border-radius: 6px;
   background: var(--input-bg);
   border: 1px solid var(--ex-border);
   color: var(--text-main);
-  transition: border-color 0.15s, box-shadow 0.15s;
+  box-shadow: none; /* No 3D shadows */
+  transition: border-color 0.15s, background-color 0.15s;
   -webkit-appearance: none;
+}
+.ex-input:hover,
+.ex-select:hover,
+.ex-textarea:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.02);
 }
 .ex-input:focus,
 .ex-select:focus,
 .ex-textarea:focus {
   outline: none;
-  border-color: var(--text-muted);
-  box-shadow: none;
+  border-color: rgba(255, 255, 255, 0.25);
+  background: var(--input-bg);
+  box-shadow: none; /* Absolutely no blue or glow shadows */
 }
 .ex-input:disabled,
 .ex-select:disabled,
@@ -2066,27 +2074,34 @@ input:focus, select:focus, textarea:focus {
 
 /* ── BILLION DOLLAR LAYOUT VIEWER STYLING ── */
 .ex-pane select, .preview-area select {
-  background: rgba(15, 23, 42, 0.9) !important;
-  color: #f8fafc !important;
-  border: 1px solid rgba(56, 189, 248, 0.3) !important;
+  background: var(--input-bg) !important;
+  color: var(--text-main) !important;
+  border: 1px solid var(--ex-border) !important;
   border-radius: 6px !important;
   font-size: 11px !important;
   font-weight: 600 !important;
   font-family: var(--ex-font) !important;
   padding: 2px 8px !important;
   height: 26px !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+  box-shadow: none !important;
   outline: none !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
 }
 .ex-pane select:hover, .preview-area select:hover {
-  border-color: #38bdf8 !important;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  box-shadow: none !important;
+}
+.light-theme .ex-pane select, .light-theme .preview-area select {
+  background: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
+}
+.light-theme .ex-pane select:hover, .light-theme .preview-area select:hover {
+  border-color: rgba(0, 0, 0, 0.3) !important;
 }
 
 .ex-pane input[type="number"] {
-  color: #38bdf8 !important;
+  color: var(--text-main) !important;
   font-family: var(--ex-font) !important;
   font-weight: 700 !important;
   font-size: 11.5px !important;
