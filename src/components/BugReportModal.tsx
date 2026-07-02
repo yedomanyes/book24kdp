@@ -159,7 +159,7 @@ export const BugReportModal: React.FC<Props> = ({ onClose, theme, isDe, currentU
                 {isDe ? 'Bug melden' : 'Report a Bug'}
               </h2>
               <p style={{ margin: 0, fontSize: '12px', color: textMuted }}>
-                {isDe ? 'Hilf uns Book24 besser zu machen.' : 'Help us make Book24 better.'}
+                {isDe ? 'Hilf uns BookLab besser zu machen.' : 'Help us make BookLab better.'}
               </p>
             </div>
 

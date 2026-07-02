@@ -471,7 +471,7 @@ export function OwnerPanel({ currentUser, theme }: Props) {
       {/* Header Area */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '24px', gap: '14px' }}>
         <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-          <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 600, color: t.textMain, textAlign: 'center' }}>Book24 Admin</h1>
+          <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 600, color: t.textMain, textAlign: 'center' }}>BookLab Admin</h1>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', alignItems: 'center' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px', padding: '8px', borderRadius: '14px', backgroundColor: t.cardBg, border: `1px solid ${t.border}`, boxShadow: theme === 'dark' ? '0 10px 30px rgba(0,0,0,0.22)' : '0 10px 24px rgba(15,23,42,0.06)' }}>

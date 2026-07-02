@@ -133,7 +133,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onClose, language = '
         )}
 
             <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-              <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: 600, color: theme.textMain, letterSpacing: '-0.01em' }}>Book24 Workspace</h2>
+              <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: 600, color: theme.textMain, letterSpacing: '-0.01em' }}>BookLab Workspace</h2>
               <p style={{ margin: 0, fontSize: '14px', color: theme.textMuted }}>{isDe ? 'Melde dich an, um fortzufahren' : 'Sign in to continue to your dashboard'}</p>
             </div>
 

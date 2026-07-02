@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "src/App.tsx": {
-    "mtime": 1783013523.2021399,
-    "ast_hash": "9601fccc3cbb07342e78297cd46780b0",
+    "mtime": 1783020849.6971712,
+    "ast_hash": "25e88a803cd7055cddf404b9ec9dd652",
     "semantic_hash": ""
   },
   "src/components/Aurora.tsx": {
@@ -80,9 +80,9 @@
     "semantic_hash": ""
   },
   "src/components/LandingContentPreview.tsx": {
-    "mtime": 1782648675.9979684,
-    "ast_hash": "9155768a16b7d1185b17f19a370ae26b",
-    "semantic_hash": "9155768a16b7d1185b17f19a370ae26b"
+    "mtime": 1783020849.6923614,
+    "ast_hash": "4d5c707dec885d7b4e62311c277f20ed",
+    "semantic_hash": ""
   },
   "src/components/LandingNavbar.tsx": {
     "mtime": 1782994189.2162616,
@@ -90,8 +90,8 @@
     "semantic_hash": ""
   },
   "src/components/LandingPage.tsx": {
-    "mtime": 1783001506.3801997,
-    "ast_hash": "cc7b2734f3b7766c76a98b1edd6b73ec",
+    "mtime": 1783020849.691922,
+    "ast_hash": "ba9c087eb32ab1291d4adaad965c4a80",
     "semantic_hash": ""
   },
   "src/components/NicheFinderDashboard.tsx": {
@@ -425,8 +425,8 @@
     "semantic_hash": "4f8287d8f35ecd95fd9193dfee2dadab"
   },
   "src/components/OwnerPanel.tsx": {
-    "mtime": 1783006524.3944147,
-    "ast_hash": "d209e0c8661b47fed64a7a65cd1f6c05",
+    "mtime": 1783020849.6935325,
+    "ast_hash": "7574acdd6aff7c89239c562b0928f5c4",
     "semantic_hash": ""
   },
   "src/hooks/use-mobile.d.ts": {
@@ -480,13 +480,13 @@
     "semantic_hash": ""
   },
   "src/components/LegalModal.tsx": {
-    "mtime": 1782908531.2690146,
-    "ast_hash": "b940f0e3cc253261375cc118418c1fe4",
+    "mtime": 1783020849.6921797,
+    "ast_hash": "e2584a9fdde686e4c5a07381b9c2e8fe",
     "semantic_hash": ""
   },
   "src/components/LicensePrompt.tsx": {
-    "mtime": 1782935789.8335145,
-    "ast_hash": "b2129633852be32bc54d74cb502fb669",
+    "mtime": 1783020827.628554,
+    "ast_hash": "494406659c73842fd5d16a842b2f2572",
     "semantic_hash": ""
   },
   "src/components/MaintenanceView.tsx": {

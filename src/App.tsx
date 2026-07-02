@@ -7074,7 +7074,7 @@ export default function App() {
                 letterSpacing: '-0.01em',
                 color: 'var(--text-main)',
                 lineHeight: 1,
-              }}>Book24</span>
+              }}>BookLab</span>
               <span style={{
                 fontFamily: "'Poppins', 'Roboto', sans-serif",
                 fontWeight: 300,

@@ -735,7 +735,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
             {isDe ? 'PROJEKTPLAN' : 'PROJECT TIMELINE'}
           </div>
           <h2 style={{ fontSize: 'clamp(36px, 5vw, 56px)', fontWeight: 800, letterSpacing: '-0.04em', margin: '0 0 16px', color: theme === 'dark' ? '#fff' : '#0f172a', lineHeight: 1.1 }}>
-            Book24 Roadmap
+            BookLab Roadmap
           </h2>
           <p style={{ fontSize: '16px', color: theme === 'dark' ? '#a1a1aa' : '#4b5563', maxWidth: '480px', margin: '0 auto', lineHeight: 1.5 }}>
             {isDe ? 'Langfristige Wertsteigerung durch kontinuierliche Systemerweiterungen.' : 'Long-term value creation through continuous system expansions.'}
@@ -1077,7 +1077,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
           {/* Brand Info */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: '220px' }}>
             <span style={{ fontSize: '20px', fontWeight: 900, letterSpacing: '-0.03em', color: theme === 'dark' ? '#ffffff' : '#111827' }}>
-              Book24 <span style={{ fontWeight: 300, color: theme === 'dark' ? '#ffffff' : '#111827' }}>Studio</span>
+              BookLab <span style={{ fontWeight: 300, color: theme === 'dark' ? '#ffffff' : '#111827' }}>Studio</span>
             </span>
             <p style={{ color: theme === 'dark' ? '#9ca3af' : '#4b5563', fontSize: '13.5px', lineHeight: 1.6, margin: 0 }}>
               {isDe 

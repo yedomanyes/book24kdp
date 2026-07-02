@@ -64,7 +64,7 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         >
           <span className="landing-nav-brand-text">
-            <span className="brand-title">Book24</span>
+            <span className="brand-title">BookLab</span>
             <span className="brand-suffix">Studio</span>
           </span>
         </button>
