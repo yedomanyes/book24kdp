@@ -7365,18 +7365,17 @@ export default function App() {
                           return (
                             <div
                               style={{
-                                padding: '8px 10px',
-                                background: 'rgba(201,150,62,0.08)',
-                                borderRadius: '6px',
-                                border: '1px solid rgba(201,150,62,0.3)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '6px',
                                 fontSize: '11px',
-                                color: '#C9963E'
+                                fontFamily: "'Montserrat', 'Poppins', sans-serif",
+                                fontWeight: 700,
+                                color: theme === 'dark' ? '#cbd5e1' : '#1e293b',
+                                padding: '4px 0',
                               }}
                             >
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                                 <circle cx="12" cy="12" r="10"/>
                                 <polyline points="12 6 12 12 16 14"/>
                               </svg>
