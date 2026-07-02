@@ -257,7 +257,7 @@
 .light-theme .gooey-nav-app {
   --gooey-text: var(--text-muted);
   --gooey-active-text: #1e293b;
-  --gooey-pill: #ffffff;
+  --gooey-pill: #e4e4e7;
   --gooey-filter-bg: var(--bg-main);
 }
 
