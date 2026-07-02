@@ -148,8 +148,10 @@
 }
 
 .gooey-nav-container .effect.filter {
-  filter: blur(7px) contrast(100) blur(0);
+  filter: blur(8px) contrast(20);
   mix-blend-mode: lighten;
+  transform: translate3d(0, 0, 0);
+  will-change: filter;
 }
 
 .gooey-nav-container .effect.filter::before {
@@ -302,6 +304,22 @@
   --color-4: #ffffff;
 }
 
+.gooey-nav-app.gooey-tab-calculator {
+  --gooey-active-text: #1e293b;
+  --color-1: #ffffff;
+  --color-2: #ffffff;
+  --color-3: #ffffff;
+  --color-4: #ffffff;
+}
+
+.gooey-nav-app.gooey-tab-owner {
+  --gooey-active-text: #1e293b;
+  --color-1: #ffffff;
+  --color-2: #ffffff;
+  --color-3: #ffffff;
+  --color-4: #ffffff;
+}
+
 .light-theme .gooey-nav-app.gooey-tab-projects {
   --gooey-active-text: #1e293b;
 }
@@ -315,6 +333,14 @@
 }
 
 .light-theme .gooey-nav-app.gooey-tab-studio {
+  --gooey-active-text: #1e293b;
+}
+
+.light-theme .gooey-nav-app.gooey-tab-calculator {
+  --gooey-active-text: #1e293b;
+}
+
+.light-theme .gooey-nav-app.gooey-tab-owner {
   --gooey-active-text: #1e293b;
 }
 
