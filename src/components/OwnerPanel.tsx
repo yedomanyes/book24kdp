@@ -81,6 +81,9 @@ export function OwnerPanel({ currentUser, theme }: Props) {
   const [bugReports, setBugReports] = useState<any[]>([]);
   const [loadingReports, setLoadingReports] = useState(false);
   const [reportsError, setReportsError] = useState<string | null>(null);
+  const [selectedReportIds, setSelectedReportIds] = useState<Set<string>>(new Set());
+  const [expandedReportId, setExpandedReportId] = useState<string | null>(null);
+  const [deletingReports, setDeletingReports] = useState(false);
 
   useEffect(() => {
     if (!selectedUser) {
@@ -1151,7 +1154,8 @@ export function OwnerPanel({ currentUser, theme }: Props) {
       {/* Bug Reports Section */}
       {ownerToolbarTab === 'reports' && (
         <div style={{ marginBottom: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+          {/* Header */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Bug size={16} color="#ef4444" />
               <span style={{ fontSize: '15px', fontWeight: 700, color: t.textMain }}>Bug Reports</span>
@@ -1159,21 +1163,59 @@ export function OwnerPanel({ currentUser, theme }: Props) {
                 {bugReports.length}
               </span>
             </div>
-            <button
-              onClick={async () => {
-                setLoadingReports(true);
-                try {
-                  const { data, error } = await supabase!.rpc('admin_get_bug_reports');
-                  if (!error) {
-                    setBugReports(data || []);
-                  }
-                } finally { setLoadingReports(false); }
-              }}
-              style={{ fontSize: '12px', color: t.textMuted, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-            >
-              <RefreshCw size={12} style={{ animation: loadingReports ? 'spin 1s linear infinite' : 'none' }} />
-              Neu laden
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {selectedReportIds.size > 0 && (
+                <button
+                  onClick={async () => {
+                    if (!window.confirm(`${selectedReportIds.size} Report(s) löschen?`)) return;
+                    setDeletingReports(true);
+                    try {
+                      const ids = Array.from(selectedReportIds);
+                      const { error } = await supabase!.from('bug_reports').delete().in('id', ids);
+                      if (error) throw error;
+                      setBugReports(prev => prev.filter(r => !selectedReportIds.has(r.id)));
+                      setSelectedReportIds(new Set());
+                    } catch (err: any) {
+                      alert('Fehler: ' + (err.message || 'Unbekannt'));
+                    } finally {
+                      setDeletingReports(false);
+                    }
+                  }}
+                  disabled={deletingReports}
+                  style={{ fontSize: '12px', fontWeight: 600, padding: '5px 12px', borderRadius: '6px', background: '#ef4444', color: '#fff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
+                >
+                  <X size={12} />
+                  {selectedReportIds.size} löschen
+                </button>
+              )}
+              {bugReports.length > 0 && (
+                <button
+                  onClick={() => {
+                    if (selectedReportIds.size === bugReports.length) {
+                      setSelectedReportIds(new Set());
+                    } else {
+                      setSelectedReportIds(new Set(bugReports.map(r => r.id)));
+                    }
+                  }}
+                  style={{ fontSize: '11px', color: t.textMuted, background: 'none', border: `1px solid ${t.border}`, borderRadius: '6px', padding: '4px 10px', cursor: 'pointer' }}
+                >
+                  {selectedReportIds.size === bugReports.length ? 'Alle abwählen' : 'Alle auswählen'}
+                </button>
+              )}
+              <button
+                onClick={async () => {
+                  setLoadingReports(true);
+                  try {
+                    const { data, error } = await supabase!.rpc('admin_get_bug_reports');
+                    if (!error) setBugReports(data || []);
+                  } finally { setLoadingReports(false); }
+                }}
+                style={{ fontSize: '12px', color: t.textMuted, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
+                <RefreshCw size={12} style={{ animation: loadingReports ? 'spin 1s linear infinite' : 'none' }} />
+                Neu laden
+              </button>
+            </div>
           </div>
 
           {reportsError && (
@@ -1185,40 +1227,139 @@ export function OwnerPanel({ currentUser, theme }: Props) {
           ) : bugReports.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px', color: t.textMuted, fontSize: '13px' }}>Keine Bug Reports vorhanden.</div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {bugReports.map((report: any) => (
-                <div
-                  key={report.id}
-                  style={{
-                    background: t.cardBg,
-                    border: `1px solid ${t.border}`,
-                    borderRadius: '8px',
-                    padding: '14px 16px',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px', marginBottom: '6px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {bugReports.map((report: any) => {
+                const isExpanded = expandedReportId === report.id;
+                const isSelected = selectedReportIds.has(report.id);
+                return (
+                  <div
+                    key={report.id}
+                    style={{
+                      background: isSelected
+                        ? (theme === 'dark' ? 'rgba(37,99,235,0.08)' : 'rgba(37,99,235,0.05)')
+                        : t.cardBg,
+                      border: `1px solid ${isSelected ? '#2563eb' : t.border}`,
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    {/* Row header — clickable to expand */}
+                    <div
+                      onClick={() => setExpandedReportId(isExpanded ? null : report.id)}
+                      style={{ padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}
+                    >
+                      {/* Checkbox */}
+                      <div
+                        onClick={e => {
+                          e.stopPropagation();
+                          setSelectedReportIds(prev => {
+                            const next = new Set(prev);
+                            if (next.has(report.id)) next.delete(report.id);
+                            else next.add(report.id);
+                            return next;
+                          });
+                        }}
+                        style={{
+                          width: '16px', height: '16px', borderRadius: '4px', flexShrink: 0,
+                          border: `2px solid ${isSelected ? '#2563eb' : t.border}`,
+                          background: isSelected ? '#2563eb' : 'transparent',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          transition: 'all 0.12s ease', cursor: 'pointer',
+                        }}
+                      >
+                        {isSelected && (
+                          <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
+                            <path d="M1.5 4.5L3.5 6.5L7.5 2.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                      </div>
+
+                      {/* Category badge */}
                       {report.category && (
-                        <span style={{ fontSize: '10px', fontWeight: 700, color: '#f97316', background: 'rgba(249,115,22,0.1)', borderRadius: '4px', padding: '2px 6px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        <span style={{ fontSize: '9px', fontWeight: 700, color: '#f97316', background: 'rgba(249,115,22,0.12)', borderRadius: '4px', padding: '2px 6px', textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>
                           {report.category}
                         </span>
                       )}
-                      <span style={{ fontSize: '13px', fontWeight: 600, color: t.textMain }}>
+
+                      {/* Title */}
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: t.textMain, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {report.title || 'Kein Titel'}
                       </span>
+
+                      {/* User email */}
+                      <span style={{ fontSize: '11px', color: t.textMuted, flexShrink: 0, maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {report.user_email || 'Anonym'}
+                      </span>
+
+                      {/* Timestamp */}
+                      <span style={{ fontSize: '10px', color: t.textFaint, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                        {report.created_at ? new Date(report.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'}
+                      </span>
+
+                      {/* Expand arrow */}
+                      <ChevronRight size={14} color={t.textFaint} style={{ flexShrink: 0, transition: 'transform 0.15s ease', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }} />
                     </div>
-                    <span style={{ fontSize: '10px', color: t.textMuted, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
-                      {report.created_at ? new Date(report.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'}
-                    </span>
+
+                    {/* Expanded detail view */}
+                    {isExpanded && (
+                      <div style={{ borderTop: `1px solid ${t.border}`, padding: '16px 14px', background: theme === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }}>
+                        {/* User profile row */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px', padding: '10px 12px', background: t.cardBg, borderRadius: '8px', border: `1px solid ${t.border}` }}>
+                          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '13px', fontWeight: 700, color: '#fff' }}>
+                            {(report.user_email || 'A')[0].toUpperCase()}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: '13px', fontWeight: 600, color: t.textMain, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {report.user_email || 'Anonym'}
+                            </div>
+                            {report.user_id && (
+                              <div style={{ fontSize: '10px', color: t.textFaint, fontFamily: 'monospace', marginTop: '1px' }}>
+                                ID: {report.user_id}
+                              </div>
+                            )}
+                          </div>
+                          <span style={{ fontSize: '10px', color: t.textMuted, background: t.bg, border: `1px solid ${t.border}`, borderRadius: '99px', padding: '2px 8px', flexShrink: 0 }}>
+                            {report.status || 'open'}
+                          </span>
+                        </div>
+
+                        {/* Description */}
+                        <div style={{ marginBottom: '12px' }}>
+                          <div style={{ fontSize: '11px', fontWeight: 600, color: t.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>Beschreibung</div>
+                          <p style={{ fontSize: '13px', color: t.textMain, margin: 0, lineHeight: 1.7, whiteSpace: 'pre-wrap', background: t.cardBg, padding: '10px 12px', borderRadius: '6px', border: `1px solid ${t.border}` }}>
+                            {report.description}
+                          </p>
+                        </div>
+
+                        {/* Meta */}
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          {report.category && (
+                            <span style={{ fontSize: '11px', color: t.textMuted, background: t.bg, border: `1px solid ${t.border}`, borderRadius: '6px', padding: '3px 8px' }}>
+                              Kategorie: <strong>{report.category}</strong>
+                            </span>
+                          )}
+                          <span style={{ fontSize: '11px', color: t.textMuted, background: t.bg, border: `1px solid ${t.border}`, borderRadius: '6px', padding: '3px 8px' }}>
+                            {report.created_at ? new Date(report.created_at).toLocaleString('de-DE') : '—'}
+                          </span>
+                          <button
+                            onClick={() => {
+                              setSelectedReportIds(prev => {
+                                const next = new Set(prev);
+                                next.add(report.id);
+                                return next;
+                              });
+                            }}
+                            style={{ fontSize: '11px', color: '#ef4444', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '6px', padding: '3px 8px', cursor: 'pointer' }}
+                          >
+                            Zum Löschen markieren
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <p style={{ fontSize: '12px', color: t.textMuted, margin: '0 0 8px', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-                    {report.description}
-                  </p>
-                  <div style={{ fontSize: '11px', color: t.textFaint }}>
-                    {report.user_email || 'Anonym'} {report.user_id ? `· ${report.user_id.slice(0, 8)}…` : ''}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
