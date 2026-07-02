@@ -32,7 +32,6 @@ import { GeminiService } from './services/GeminiService';
 import type { BookOutline, BookOutlinePage } from './services/GeminiService';
 import type { ChapterMemory, CmieConfig, CmiePageStatus } from './types/cmie';
 import { CmieOrchestrator } from './services/cmie/CmieOrchestrator';
-import Aurora from './components/Aurora';
 import { NecessityDetector } from './services/graphics/NecessityDetector';
 import { SvgGraphicRenderer } from './services/graphics/SvgGraphicRenderer';
 import type { GraphicDecision } from './types/graphics';
@@ -7249,13 +7248,7 @@ export default function App() {
         {activeTab === 'projects' && (
           <>
             {theme === 'light' && (
-              <div style={{ position: 'fixed', inset: 0, zIndex: -1, overflow: 'hidden' }}>
-                <Aurora
-                  colorStops={["#e0e0e0","#ffffff","#ffffff"]}
-                  amplitude={1}
-                  blend={0.5}
-                />
-              </div>
+              <div style={{ position: 'fixed', inset: 0, zIndex: -1, background: '#f4f5f7' }} />
             )}
             <div className="mediathek-container" style={{ position: 'relative', zIndex: 1 }}>
               <div className="mediathek-header">
