@@ -42,22 +42,22 @@ const getRoadmapPhases = (isDe: boolean) => [
     phase: 'Phase 01',
     title: 'Core Engine & KDP-Ready Export',
     price: '199$',
-    badge: 'LIVE',
+    badge: isDe ? '6. JULI' : 'JULY 6',
     features: isDe
       ? ['Optimierte Textgenerierung', 'Druckfertiger PDF-Export (6x9)', 'Dynamische Kapitelstrukturen', 'Unbegrenzte Bucherstellung']
       : ['Optimized Text Generation', 'Print-ready PDF Export (6x9)', 'Dynamic Chapter Structures', 'Unlimited Book Creation'],
-    desc: isDe ? 'Das Fundament der Plattform ist live und einsatzbereit.' : 'The platform core is live and ready for deployment.',
+    desc: isDe ? 'Das Fundament der Plattform. Offizieller Release am 6. Juli.' : 'The foundation of the platform. Official release on July 6.',
     active: true,
   },
   {
     phase: 'Phase 02',
     title: 'Advanced Layouts & Deep Research',
     price: '300$',
-    badge: isDe ? 'AKTIV' : 'ACTIVE',
+    badge: isDe ? '6. AUG' : 'AUG 6',
     features: isDe
       ? ['KDP Nischen-Analyse', 'Cover-Design Engine', 'Erweiterte Layout-Templates', 'Deep Research Modus']
       : ['KDP Niche Analysis', 'Cover Design Engine', 'Advanced Layout Templates', 'Deep Research Mode'],
-    desc: isDe ? 'Nischenpotenziale analysieren und Buchcover visuell gestalten.' : 'Analyze niche potentials and visually design book covers.',
+    desc: isDe ? 'Nischenpotenziale analysieren und Buchcover visuell gestalten. Release am 6. August.' : 'Analyze niche potentials and visually design book covers. Release on August 6.',
     active: false,
   },
   {
