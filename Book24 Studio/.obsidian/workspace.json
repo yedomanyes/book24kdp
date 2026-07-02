@@ -1,0 +1,212 @@
+{
+  "main": {
+    "id": "f8638e15de1dcebd",
+    "type": "split",
+    "children": [
+      {
+        "id": "ac090a9e87525220",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "e3efd395f6e2d1f6",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Graph-Ansicht"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "4fd4598adea3ba89",
+    "type": "split",
+    "children": [
+      {
+        "id": "b9f6d92cd730fd5b",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "6e57d2ed01bfca69",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": true
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Dateiexplorer"
+            }
+          },
+          {
+            "id": "ef06835746599a78",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Suchen"
+            }
+          },
+          {
+            "id": "ae5725054c43226b",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Lesezeichen"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "2a3673d562222965",
+    "type": "split",
+    "children": [
+      {
+        "id": "c2dbf740491b93cf",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "d321d1aa010884ce",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "_System/Brain_System.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Rückverweise auf Brain_System"
+            }
+          },
+          {
+            "id": "efdbc356569a09c9",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "_System/Brain_System.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Ausgehende Links von Brain_System öffnen"
+            }
+          },
+          {
+            "id": "1bb5db31185105b5",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "1b8eba07422e47c1",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "Alle Eigenschaften"
+            }
+          },
+          {
+            "id": "aeac5f50d2121ce3",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Gliederung"
+            }
+          },
+          {
+            "id": "23c51c6f8c7e103b",
+            "type": "leaf",
+            "state": {
+              "type": "antigravity-terminal-view",
+              "state": {},
+              "icon": "bot",
+              "title": "Antigravity CLI"
+            }
+          }
+        ],
+        "currentTab": 4
+      }
+    ],
+    "direction": "horizontal",
+    "width": 294.5
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Schnellauswahl öffnen": false,
+      "graph:Graph-Ansicht öffnen": false,
+      "canvas:Neuen Canvas erstellen": false,
+      "daily-notes:Heutige Notiz öffnen": false,
+      "templates:Vorlage einfügen": false,
+      "command-palette:Befehlspalette öffnen": false,
+      "bases:Neue Base erstellen": false,
+      "antigravity-cli-sidebar:Open Antigravity CLI": false
+    }
+  },
+  "active": "e3efd395f6e2d1f6",
+  "lastOpenFiles": [
+    "Unbenannt.canvas",
+    "_System/Brain_System.md",
+    "Books/Trading Masterclass/meta.md",
+    "Books/Trading Masterclass/Kapitel 2 Strategien.md",
+    "Books/Trading Masterclass/Kapitel 1 Grundlagen.md",
+    "Niches/Ratgeber.md",
+    "Niches/Finanzen.md",
+    "KDP Book24.md",
+    "2026-06-27.md",
+    "Books/Trading Masterclass",
+    "Books",
+    "Niches",
+    "_System",
+    "open antigravity cli.md",
+    "Unbenannt.base",
+    "Unbenannt.md",
+    "Unbenannt"
+  ]
+}

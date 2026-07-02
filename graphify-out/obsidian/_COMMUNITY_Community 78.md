@@ -1,0 +1,23 @@
+---
+type: community
+cohesion: 0.50
+members: 4
+---
+
+# Community 78
+
+**Cohesion:** 0.50 - moderately connected
+**Members:** 4 nodes
+
+## Members
+- [[GooeyNav()]] - code - src/components/GooeyNav.tsx
+- [[GooeyNav.tsx]] - code - src/components/GooeyNav.tsx
+- [[GooeyNavItem]] - code - src/components/GooeyNav.tsx
+- [[GooeyNavProps]] - code - src/components/GooeyNav.tsx
+
+## Live Query (requires Dataview plugin)
+
+```dataview
+TABLE source_file, type FROM #community/Community_78
+SORT file.name ASC
+```

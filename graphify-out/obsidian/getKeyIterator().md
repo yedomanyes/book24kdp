@@ -1,0 +1,21 @@
+---
+source_file: "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js"
+type: "code"
+community: "Community 5"
+location: "L8132"
+tags:
+  - graphify/code
+  - graphify/EXTRACTED
+  - community/Community_5
+---
+
+# getKeyIterator()
+
+## Connections
+- [[_flushCleanupDeleted()]] - `calls` [EXTRACTED]
+- [[_flushCleanupInserted()]] - `calls` [EXTRACTED]
+- [[_search()]] - `calls` [EXTRACTED]
+- [[getDecorationsAtCell()]] - `calls` [EXTRACTED]
+- [[main.js]] - `contains` [EXTRACTED]
+
+#graphify/code #graphify/EXTRACTED #community/Community_5

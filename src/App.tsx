@@ -26,7 +26,8 @@ import {
   Image as ImageIcon,
   Sun,
   Moon,
-  Pencil
+  Pencil,
+  Bug
 } from 'lucide-react';
 import { GeminiService } from './services/GeminiService';
 import type { BookOutline, BookOutlinePage } from './services/GeminiService';
@@ -59,6 +60,7 @@ import { GilInsightsPanel } from './components/GilInsightsPanel';
 import { TrendingUp } from 'lucide-react';
 
 import { SettingsModal } from './components/SettingsModal';
+import { BugReportModal } from './components/BugReportModal';
 import KdpCalculator from './components/KdpCalculator';
 import MaintenanceView from './components/MaintenanceView';
 import GooeyNav from './components/GooeyNav';
@@ -1450,6 +1452,7 @@ export default function App() {
     activeAccountIdRef.current = id;
   };
   const [showAccountModal, setShowAccountModal] = useState<boolean>(false);
+  const [showBugReport, setShowBugReport] = useState<boolean>(false);
   const [newUsernameInput, setNewUsernameInput] = useState<string>('');
 
 
@@ -7180,6 +7183,17 @@ export default function App() {
 
           <button
             type="button"
+            className="header-icon-btn"
+            onClick={() => setShowBugReport(true)}
+            title={isDe ? 'Bug melden' : 'Found a Bug?'}
+            style={{ gap: '5px', fontSize: '11px', fontWeight: 600, padding: '0 10px', color: 'var(--text-muted)' }}
+          >
+            <Bug style={{ width: '13px', height: '13px' }} />
+            {isDe ? 'Bug?' : 'Found a Bug?'}
+          </button>
+
+          <button
+            type="button"
             className={`header-icon-btn${settingsNeedAttention ? ' has-alert' : ''}`}
             onClick={openSettings}
             title={isDe ? 'Einstellungen' : 'Settings'}
@@ -10947,6 +10961,16 @@ export default function App() {
         userEmail={currentUser?.email}
         userId={currentUser?.uid}
       />
+
+      {showBugReport && (
+        <BugReportModal
+          onClose={() => setShowBugReport(false)}
+          theme={theme}
+          isDe={isDe}
+          currentUser={currentUser}
+        />
+      )}
+
       <div 
         id="book24-measurer" 
         className="preview-content"

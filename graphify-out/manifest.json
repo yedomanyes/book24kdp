@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "src/App.tsx": {
-    "mtime": 1782955663.6983328,
-    "ast_hash": "1fdc2127393ad92a819ec384e7724b44",
+    "mtime": 1783001519.660823,
+    "ast_hash": "6fd04d59e07b01f21d2a8ab0751520e5",
     "semantic_hash": ""
   },
   "src/components/Aurora.tsx": {
@@ -65,8 +65,8 @@
     "semantic_hash": ""
   },
   "src/components/BrainDashboard.tsx": {
-    "mtime": 1782864890.0326746,
-    "ast_hash": "dd0cb45bc3e709ed8ab0a2f96b509bcc",
+    "mtime": 1782995027.4291198,
+    "ast_hash": "b68e1c2cc91cfc72c80206c1493655ec",
     "semantic_hash": ""
   },
   "src/components/ClickSpark.tsx": {
@@ -75,8 +75,8 @@
     "semantic_hash": "0d67e6665a24af9f189c9ca43497eb9b"
   },
   "src/components/GooeyNav.tsx": {
-    "mtime": 1782749703.5709045,
-    "ast_hash": "06cb7dfc4cd4d9a516b406dcc92a6ff7",
+    "mtime": 1782995834.50453,
+    "ast_hash": "633564c8043fd45a5efb5d7bc9f9872d",
     "semantic_hash": ""
   },
   "src/components/LandingContentPreview.tsx": {
@@ -85,13 +85,13 @@
     "semantic_hash": "9155768a16b7d1185b17f19a370ae26b"
   },
   "src/components/LandingNavbar.tsx": {
-    "mtime": 1782952887.3165576,
-    "ast_hash": "8d041e71237fcbb06a96c92405caf801",
+    "mtime": 1782994189.2162616,
+    "ast_hash": "39af607dddade51d8a0cacff23e07246",
     "semantic_hash": ""
   },
   "src/components/LandingPage.tsx": {
-    "mtime": 1782993552.7166822,
-    "ast_hash": "d00a88eae84d8b540bf241cb0fa08329",
+    "mtime": 1783001506.3801997,
+    "ast_hash": "cc7b2734f3b7766c76a98b1edd6b73ec",
     "semantic_hash": ""
   },
   "src/components/NicheFinderDashboard.tsx": {
@@ -415,9 +415,9 @@
     "semantic_hash": "6b05bfef1f87b38cc6f6591706200e8d"
   },
   "src/components/KdpCalculator.tsx": {
-    "mtime": 1782643352.178903,
-    "ast_hash": "012c7d8e8474ea05382495f255a84c99",
-    "semantic_hash": "012c7d8e8474ea05382495f255a84c99"
+    "mtime": 1782996842.9039857,
+    "ast_hash": "a448d89a072fed79c6ad681273e18b99",
+    "semantic_hash": ""
   },
   "src/components/LiquidEther.tsx": {
     "mtime": 1782668563.766609,

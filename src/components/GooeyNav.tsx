@@ -213,8 +213,8 @@ const GooeyNav = ({
           ))}
         </ul>
       </nav>
-      <span className="effect filter" ref={filterRef} />
-      <span className="effect text" ref={textRef} />
+      <span className="effect filter active" ref={filterRef} />
+      <span className="effect text active" ref={textRef} />
     </div>
   );
 };

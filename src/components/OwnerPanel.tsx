@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, useMemo } from 'react';
 import type { AppUser } from '../supabase';
 import { supabase } from '../supabase';
 import {
-  X, Crown, ChevronRight, ShieldAlert, PauseCircle, Settings, RefreshCw, AlertTriangle, Search, KeyRound, Calendar, Clock, BookOpen, Activity, Sliders, TerminalSquare, Wrench, Grid2X2
+  X, Crown, ChevronRight, ShieldAlert, PauseCircle, Settings, RefreshCw, AlertTriangle, Search, KeyRound, Calendar, Clock, BookOpen, Activity, Sliders, TerminalSquare, Wrench, Grid2X2, Bug
 } from 'lucide-react';
 import { isOwnerEmail } from '../lib/owner';
 
@@ -68,7 +68,7 @@ export function OwnerPanel({ currentUser, theme }: Props) {
   const [newKeyExpiresAt, setNewKeyExpiresAt] = useState('');
 
   const [activityLogs, setActivityLogs] = useState<any[]>([]);
-  const [ownerToolbarTab, setOwnerToolbarTab] = useState<'console' | 'keys' | 'modules' | 'maintenance' | 'sync'>('console');
+  const [ownerToolbarTab, setOwnerToolbarTab] = useState<'console' | 'keys' | 'modules' | 'maintenance' | 'sync' | 'reports'>('console');
   const [showConsoleModal, setShowConsoleModal] = useState(false);
   const [denseView, setDenseView] = useState(false);
   const [activeModules, setActiveModules] = useState<Record<string, any>>({ brain: true, dashboard: true, calculator: true, studio: true });
@@ -78,6 +78,9 @@ export function OwnerPanel({ currentUser, theme }: Props) {
   const [transferTargetEmail, setTransferTargetEmail] = useState('');
   const [isTransferring, setIsTransferring] = useState(false);
   const [transferResult, setTransferResult] = useState<string | null>(null);
+  const [bugReports, setBugReports] = useState<any[]>([]);
+  const [loadingReports, setLoadingReports] = useState(false);
+  const [reportsError, setReportsError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!selectedUser) {
@@ -509,6 +512,25 @@ export function OwnerPanel({ currentUser, theme }: Props) {
                 toggleMaintenance();
               }}
               disabled={isProcessing}
+            />
+            <OwnerToolbarButton
+              active={ownerToolbarTab === 'reports'}
+              icon={<Bug size={14} />}
+              label="Bug Reports"
+              onClick={async () => {
+                setOwnerToolbarTab('reports');
+                setLoadingReports(true);
+                setReportsError(null);
+                try {
+                  const { data, error } = await supabase!.from('bug_reports').select('*').order('created_at', { ascending: false }).limit(100);
+                  if (error) throw error;
+                  setBugReports(data || []);
+                } catch (err: any) {
+                  setReportsError(err.message || 'Fehler beim Laden.');
+                } finally {
+                  setLoadingReports(false);
+                }
+              }}
             />
           </div>
 
@@ -1117,6 +1139,80 @@ export function OwnerPanel({ currentUser, theme }: Props) {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Bug Reports Section */}
+      {ownerToolbarTab === 'reports' && (
+        <div style={{ marginBottom: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Bug size={16} color="#ef4444" />
+              <span style={{ fontSize: '15px', fontWeight: 700, color: t.textMain }}>Bug Reports</span>
+              <span style={{ fontSize: '11px', color: t.textMuted, background: t.cardBg, border: `1px solid ${t.border}`, borderRadius: '99px', padding: '2px 8px' }}>
+                {bugReports.length}
+              </span>
+            </div>
+            <button
+              onClick={async () => {
+                setLoadingReports(true);
+                try {
+                  const { data } = await supabase!.from('bug_reports').select('*').order('created_at', { ascending: false }).limit(100);
+                  setBugReports(data || []);
+                } finally { setLoadingReports(false); }
+              }}
+              style={{ fontSize: '12px', color: t.textMuted, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+            >
+              <RefreshCw size={12} style={{ animation: loadingReports ? 'spin 1s linear infinite' : 'none' }} />
+              Neu laden
+            </button>
+          </div>
+
+          {reportsError && (
+            <div style={{ color: '#ef4444', fontSize: '13px', marginBottom: '12px' }}>{reportsError}</div>
+          )}
+
+          {loadingReports ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: t.textMuted, fontSize: '13px' }}>Lade Reports...</div>
+          ) : bugReports.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: t.textMuted, fontSize: '13px' }}>Keine Bug Reports vorhanden.</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {bugReports.map((report: any) => (
+                <div
+                  key={report.id}
+                  style={{
+                    background: t.cardBg,
+                    border: `1px solid ${t.border}`,
+                    borderRadius: '8px',
+                    padding: '14px 16px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px', marginBottom: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      {report.category && (
+                        <span style={{ fontSize: '10px', fontWeight: 700, color: '#f97316', background: 'rgba(249,115,22,0.1)', borderRadius: '4px', padding: '2px 6px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                          {report.category}
+                        </span>
+                      )}
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: t.textMain }}>
+                        {report.title || 'Kein Titel'}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '10px', color: t.textMuted, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                      {report.created_at ? new Date(report.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '12px', color: t.textMuted, margin: '0 0 8px', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                    {report.description}
+                  </p>
+                  <div style={{ fontSize: '11px', color: t.textFaint }}>
+                    {report.user_email || 'Anonym'} {report.user_id ? `· ${report.user_id.slice(0, 8)}…` : ''}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
