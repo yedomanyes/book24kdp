@@ -470,6 +470,7 @@ export function OwnerPanel({ currentUser, theme }: Props) {
               active={ownerToolbarTab === 'console'}
               icon={<TerminalSquare size={14} />}
               label="Live Konsole"
+              isDark={theme === 'dark'}
               onClick={() => {
                 setOwnerToolbarTab('console');
                 setShowConsoleModal(true);
@@ -479,6 +480,7 @@ export function OwnerPanel({ currentUser, theme }: Props) {
               active={ownerToolbarTab === 'sync'}
               icon={<RefreshCw size={14} style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />}
               label="Neu laden"
+              isDark={theme === 'dark'}
               onClick={() => {
                 setOwnerToolbarTab('sync');
                 void loadData(true);
@@ -489,6 +491,7 @@ export function OwnerPanel({ currentUser, theme }: Props) {
               active={ownerToolbarTab === 'keys'}
               icon={<KeyRound size={14} />}
               label="Custom Keys"
+              isDark={theme === 'dark'}
               onClick={() => {
                 setOwnerToolbarTab('keys');
                 setShowCustomKeysModal(true);
@@ -498,6 +501,7 @@ export function OwnerPanel({ currentUser, theme }: Props) {
               active={ownerToolbarTab === 'modules'}
               icon={<Sliders size={14} />}
               label="Module"
+              isDark={theme === 'dark'}
               onClick={() => {
                 setOwnerToolbarTab('modules');
                 setShowModulesModal(true);
@@ -507,6 +511,7 @@ export function OwnerPanel({ currentUser, theme }: Props) {
               active={ownerToolbarTab === 'maintenance'}
               icon={<Wrench size={14} />}
               label={maintenanceMode ? 'Wartung AN' : 'Wartung AUS'}
+              isDark={theme === 'dark'}
               onClick={() => {
                 setOwnerToolbarTab('maintenance');
                 toggleMaintenance();
@@ -517,6 +522,7 @@ export function OwnerPanel({ currentUser, theme }: Props) {
               active={ownerToolbarTab === 'reports'}
               icon={<Bug size={14} />}
               label="Bug Reports"
+              isDark={theme === 'dark'}
               onClick={async () => {
                 setOwnerToolbarTab('reports');
                 setLoadingReports(true);
@@ -1305,13 +1311,24 @@ function OwnerToolbarButton({
   label,
   onClick,
   disabled = false,
+  isDark = true,
 }: {
   active: boolean;
   icon: React.ReactNode;
   label: string;
   onClick: () => void;
   disabled?: boolean;
+  isDark?: boolean;
 }) {
+  const activeBg     = isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.08)';
+  const inactiveBg   = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)';
+  const hoverBg      = isDark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.06)';
+  const activeBorder = isDark ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.18)';
+  const inactiveBorder=isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)';
+  const activeColor  = isDark ? '#ffffff'                : '#111827';
+  const inactiveColor= isDark ? '#94a3b8'                : '#6b7280';
+  const hoverColor   = isDark ? '#e2e8f0'                : '#374151';
+
   return (
     <button
       onClick={onClick}
@@ -1324,28 +1341,23 @@ function OwnerToolbarButton({
         fontSize: '12px',
         fontWeight: 600,
         borderRadius: '8px',
-        border: active
-          ? '1px solid rgba(255,255,255,0.25)'
-          : '1px solid rgba(255,255,255,0.12)',
-        background: active
-          ? 'rgba(255,255,255,0.12)'
-          : 'rgba(255,255,255,0.04)',
-        color: active ? '#ffffff' : '#94a3b8',
+        border: `1px solid ${active ? activeBorder : inactiveBorder}`,
+        background: active ? activeBg : inactiveBg,
+        color: active ? activeColor : inactiveColor,
         cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.4 : 1,
         transition: 'all 0.15s ease',
-        boxShadow: active ? '0 0 0 1px rgba(255,255,255,0.08) inset' : 'none',
       }}
       onMouseEnter={e => {
         if (!disabled && !active) {
-          (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.08)';
-          (e.currentTarget as HTMLButtonElement).style.color = '#e2e8f0';
+          (e.currentTarget as HTMLButtonElement).style.background = hoverBg;
+          (e.currentTarget as HTMLButtonElement).style.color = hoverColor;
         }
       }}
       onMouseLeave={e => {
         if (!disabled && !active) {
-          (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.04)';
-          (e.currentTarget as HTMLButtonElement).style.color = '#94a3b8';
+          (e.currentTarget as HTMLButtonElement).style.background = inactiveBg;
+          (e.currentTarget as HTMLButtonElement).style.color = inactiveColor;
         }
       }}
     >

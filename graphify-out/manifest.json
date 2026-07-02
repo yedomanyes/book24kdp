@@ -550,8 +550,8 @@
     "semantic_hash": ""
   },
   "src/components/BugReportModal.tsx": {
-    "mtime": 1783005299.60994,
-    "ast_hash": "87f08ed4f806bf3a1acf3534a2ef3443",
+    "mtime": 1783005318.846261,
+    "ast_hash": "8ba45222ed0a908ff65be0147d593176",
     "semantic_hash": ""
   },
   "supabase/bug_reports.sql": {

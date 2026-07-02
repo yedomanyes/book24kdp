@@ -7256,7 +7256,12 @@ export default function App() {
               <div>
                 <h2 className="mediathek-title">{isDe ? 'Meine Buchprojekte' : 'My Book Projects'}</h2>
                 <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                  {isDe ? 'Bibliothek des Profils:' : 'Profile Library:'} <strong>{(accounts.find(a => a.id === activeAccountId)?.username)}</strong>
+                  {isDe ? 'Bibliothek des Profils:' : 'Profile Library:'} <strong>{(() => {
+                    const username = accounts.find(a => a.id === activeAccountId)?.username;
+                    if (!username) return '';
+                    if (!isDe && username === 'Haupt-Bibliothekar') return 'Main Library';
+                    return username;
+                  })()}</strong>
                 </p>
               </div>
               <button onClick={handleCreateBook} className="btn btn-primary">
