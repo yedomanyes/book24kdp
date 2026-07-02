@@ -71,20 +71,7 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
 
         {/* Extra Container: Static Text Pill */}
         <div className="landing-nav-promo-badge">
-          <RotatingText
-            texts={isDe ? ['Jetzt starten', 'Buch erstellen'] : ['Start Now', 'Create Book']}
-            staggerFrom="last"
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "-120%" }}
-            staggerDuration={0.025}
-            splitLevelClassName="overflow-hidden pb-0.5"
-            transition={{ type: "spring", damping: 30, stiffness: 400 }}
-            rotationInterval={2500}
-            splitBy="lines"
-            auto
-            loop
-          />
+          {isDe ? 'Buch erstellen' : 'Create Book'}
         </div>
 
         <div className="landing-nav-links">
