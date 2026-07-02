@@ -51,13 +51,13 @@ const getRoadmapPhases = (isDe: boolean) => [
   },
   {
     phase: 'Phase 02',
-    title: 'Advanced Layouts & Deep Research',
+    title: 'Cover Engine & Advanced Layouts',
     price: '300$',
     badge: isDe ? '6. AUG' : 'AUG 6',
     features: isDe
-      ? ['KDP Nischen-Analyse', 'Cover-Design Engine', 'Erweiterte Layout-Templates', 'Deep Research Modus']
-      : ['KDP Niche Analysis', 'Cover Design Engine', 'Advanced Layout Templates', 'Deep Research Mode'],
-    desc: isDe ? 'Nischenpotenziale analysieren und Buchcover visuell gestalten. Release am 6. August.' : 'Analyze niche potentials and visually design book covers. Release on August 6.',
+      ? ['Cover-Design Engine', 'Erweiterte Layout-Templates', 'Custom Fonts Support', 'Kapitel-Stilvorlagen']
+      : ['Cover Design Engine', 'Advanced Layout Templates', 'Custom Fonts Support', 'Chapter Style Presets'],
+    desc: isDe ? 'Buchcover visuell gestalten und erweiterte Layout-Templates freischalten. Release am 6. August.' : 'Visually design book covers and unlock advanced layout templates. Release on August 6.',
     active: false,
   },
   {

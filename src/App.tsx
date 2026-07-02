@@ -2257,7 +2257,8 @@ export default function App() {
 
   // Layout Tab Manager
   const [activeTab, setActiveTab] = useState<NavTabId>(() => {
-    return (safeLocalStorage.getItem('b24studio_activeTab') as NavTabId) || 'projects';
+    const saved = safeLocalStorage.getItem('b24studio_activeTab') as NavTabId;
+    return (saved && saved !== 'dashboard') ? saved : 'projects';
   });
   const [brainTick, setBrainTick] = useState(0);
   const activeNavKey: NavTabId = ownerRouteActive && isOwnerClient ? 'owner' : activeTab;
@@ -7069,6 +7070,7 @@ export default function App() {
             };
 
             const currentNavTabs = NAV_TABS.filter(tab => {
+              if (tab === 'dashboard') return false; // Niche finder completely removed
               if (isOwnerClient) return true; // Owner sees all tabs
               if (tab === 'owner') return false; // Non-owner never sees owner tab
               
