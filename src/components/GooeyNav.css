@@ -366,8 +366,14 @@
   display: none !important;
 }
 
+/* Hide the sliding duplicate text overlay in light theme to prevent text glitching */
+.light-theme .gooey-nav-app .effect.text {
+  display: none !important;
+}
+
+/* Super smooth, clean ease-out transition for the active background pill */
 .light-theme .gooey-nav-app .effect {
-  transition: left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: left 0.25s cubic-bezier(0.25, 1, 0.5, 1), width 0.25s cubic-bezier(0.25, 1, 0.5, 1) !important;
 }
 
 .light-theme .gooey-nav-app .effect.filter::after {
@@ -382,12 +388,12 @@
 }
 
 .light-theme .gooey-nav-app .effect.active::after {
-  animation: lightPillPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: lightPillPop 0.22s cubic-bezier(0.25, 1, 0.5, 1) both;
 }
 
 @keyframes lightPillPop {
   0% {
-    transform: scale(0.85);
+    transform: scale(0.9);
     opacity: 0;
   }
   100% {
