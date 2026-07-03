@@ -1576,7 +1576,8 @@ ORIGINAL PROMPT SPECIFICATION:
           })
         })
       );
-      return data.choices[0].message.content;
+      const rawText = data.choices[0].message.content;
+      return jsonFormat ? rawText : rawText.replace(/^\s*-{3,}\s*$/gm, '');
     } else {
       const data = await this.executeWithKeyRotation('gemini', async (key) => {
         const useCache = systemPrompt.length > 200;
@@ -1614,7 +1615,8 @@ ORIGINAL PROMPT SPECIFICATION:
       if (!data.candidates || !data.candidates[0]?.content?.parts?.[0]?.text) {
         throw new Error('Keine Antwort von der KI erhalten.');
       }
-      return data.candidates[0].content.parts[0].text;
+      const rawText = data.candidates[0].content.parts[0].text;
+      return jsonFormat ? rawText : rawText.replace(/^\s*-{3,}\s*$/gm, '');
     }
   }
 

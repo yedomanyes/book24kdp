@@ -6,8 +6,8 @@
     "Hermes",
     "Antigravity"
   ],
-  "lastHeartbeatAt": "2026-07-03T20:33:24.683Z",
-  "lastIndexedAt": "2026-07-03T20:33:24.682Z",
+  "lastHeartbeatAt": "2026-07-03T20:41:14.840Z",
+  "lastIndexedAt": "2026-07-03T20:41:14.836Z",
   "worker": {
     "pid": 9887,
     "hostname": "Mac",
@@ -27,9 +27,9 @@
     "analysisJson": "graphify-out/.graphify_analysis.json"
   },
   "decisionEngine": {
-    "generatedAt": "2026-07-03T20:33:24.682Z",
+    "generatedAt": "2026-07-03T20:41:14.836Z",
     "thoughts": [
-      "App Shell & Studio Flow dominiert aktuell mit 23880 Zeilen und ist damit der schwerste Produktblock.",
+      "App Shell & Studio Flow dominiert aktuell mit 23882 Zeilen und ist damit der schwerste Produktblock.",
       "Das Brain selbst belegt 1913 Zeilen und hat damit genug Substanz für echte Runtime-Ausbauten.",
       "Vault und Memory liefern 53 Dateien Kontext für wiederverwendbares Wissen."
     ],
@@ -66,7 +66,7 @@
       {
         "id": "app-shell",
         "label": "Fokus 2",
-        "detail": "App Shell & Studio Flow · 31 Dateien · 23880 Zeilen",
+        "detail": "App Shell & Studio Flow · 31 Dateien · 23882 Zeilen",
         "score": 309
       },
       {
@@ -80,7 +80,7 @@
       {
         "id": "app-shell-heavy",
         "label": "App Shell ist zu schwer",
-        "detail": "23880 Zeilen in der Shell bremsen Verständnis und machen das Projekt unruhig.",
+        "detail": "23882 Zeilen in der Shell bremsen Verständnis und machen das Projekt unruhig.",
         "score": 93,
         "severity": "high"
       }
@@ -88,7 +88,7 @@
   },
   "sectionCount": 8,
   "totalFilesIndexed": 134,
-  "previousHeartbeatAt": "2026-07-03T20:33:14.759Z",
+  "previousHeartbeatAt": "2026-07-03T20:41:04.779Z",
   "sections": [
     {
       "id": "graph-intelligence",
@@ -105,7 +105,7 @@
       "id": "app-shell",
       "title": "App Shell & Studio Flow",
       "fileCount": 31,
-      "totalLines": 23880,
+      "totalLines": 23882,
       "topPaths": [
         "src/App.tsx",
         "src/components/OwnerPanel.tsx",
@@ -138,7 +138,7 @@
       "id": "generation-ai",
       "title": "AI Generation Stack",
       "fileCount": 1,
-      "totalLines": 2073,
+      "totalLines": 2075,
       "topPaths": [
         "src/services/GeminiService.ts"
       ]

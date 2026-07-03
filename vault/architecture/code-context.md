@@ -1,6 +1,6 @@
 ---
 type: "code-context-index"
-updatedAt: "2026-07-03T20:33:24.682Z"
+updatedAt: "2026-07-03T20:41:14.836Z"
 consumers: ["Hermes", "Antigravity"]
 ---
 
@@ -14,10 +14,10 @@ Dieses Dokument wird vom lokalen Brain Worker erzeugt und hält die Codebase in 
 
 ## Sektionen
 - Graph / Code Intelligence (6 Dateien, 62416 Zeilen)
-- App Shell & Studio Flow (31 Dateien, 23880 Zeilen)
+- App Shell & Studio Flow (31 Dateien, 23882 Zeilen)
 - Vault, Memory & Obsidian Context (53 Dateien, 11038 Zeilen)
 - Weitere Dateien (17 Dateien, 3426 Zeilen)
-- AI Generation Stack (1 Dateien, 2073 Zeilen)
+- AI Generation Stack (1 Dateien, 2075 Zeilen)
 - Brain Runtime (6 Dateien, 1913 Zeilen)
 - Storage, Supabase & Cloud (12 Dateien, 1182 Zeilen)
 - CMIE / Kapitel-Engine (8 Dateien, 665 Zeilen)
@@ -25,6 +25,6 @@ Dieses Dokument wird vom lokalen Brain Worker erzeugt und hält die Codebase in 
 ## Runtime
 - Worker PID: 9887
 - Host: Mac
-- Letzter Index: 2026-07-03T20:33:24.682Z
+- Letzter Index: 2026-07-03T20:41:14.836Z
 - Antigravity konfiguriert: ja
 - Graphify verfügbar: ja

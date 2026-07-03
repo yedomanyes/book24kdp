@@ -2982,7 +2982,8 @@ export default function App() {
         const updatedBook = {
           ...currentBook,
           pagesText: { ...(currentBook.pagesText || {}), [selectedPage as number]: text },
-          pagesOverflow: { ...(currentBook.pagesOverflow || {}), [selectedPage as number]: hasOverflow }
+          pagesOverflow: { ...(currentBook.pagesOverflow || {}), [selectedPage as number]: hasOverflow },
+          pagesStatus: { ...(currentBook.pagesStatus || {}), [selectedPage as number]: (text.trim().length > 0 ? 'completed' : 'idle') as 'completed' | 'idle' }
         };
         
         // INSTANTLY update state + localStorage + cloud queue on every keystroke
@@ -3036,7 +3037,8 @@ export default function App() {
         const updatedBook = {
           ...currentBook,
           pagesText: { ...(currentBook.pagesText || {}), [pageNum]: currentText },
-          pagesOverflow: { ...(currentBook.pagesOverflow || {}), [pageNum]: hasOverflow }
+          pagesOverflow: { ...(currentBook.pagesOverflow || {}), [pageNum]: hasOverflow },
+          pagesStatus: { ...(currentBook.pagesStatus || {}), [pageNum]: (currentText.trim().length > 0 ? 'completed' : 'idle') as 'completed' | 'idle' }
         };
         forceSaveSingleBook(updatedBook);
       }
