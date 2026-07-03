@@ -9,10 +9,6 @@ export const AI_MODEL_OPTIONS = [
     { value: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B — Fast' },
     { value: 'mixtral-8x7b-32768', label: 'Mixtral 8x7B' },
   ]},
-  { group: 'DeepSeek API', models: [
-    { value: 'deepseek-chat', label: 'DeepSeek V3 / Chat — Preiswert' },
-    { value: 'deepseek-reasoner', label: 'DeepSeek R1 / Reasoner — Stark für Denken' },
-  ]},
   { group: 'Google Gemini', models: [
     { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
     { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
@@ -33,15 +29,10 @@ interface SettingsModalProps {
   onGroqKeysChange: (value: string) => void;
   geminiKeys: string;
   onGeminiKeysChange: (value: string) => void;
-  deepseekKeys: string;
-  onDeepseekKeysChange: (value: string) => void;
   selectedModel: string;
   onModelChange: (value: string) => void;
-  generationTurboEnabled: boolean;
-  onGenerationTurboChange: (value: boolean) => void;
   groqConnected: boolean;
   geminiConnected: boolean;
-  deepseekConnected: boolean;
   userEmail?: string | null;
   userId?: string | null;
 }
@@ -57,15 +48,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onGroqKeysChange,
   geminiKeys,
   onGeminiKeysChange,
-  deepseekKeys,
-  onDeepseekKeysChange,
   selectedModel,
   onModelChange,
-  generationTurboEnabled,
-  onGenerationTurboChange,
   groqConnected,
   geminiConnected,
-  deepseekConnected,
   userEmail,
   userId,
 }) => {
@@ -174,7 +160,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               >
                 {t.icon}
                 {t.label}
-                {t.id === 'api' && (!groqConnected || !geminiConnected || !deepseekConnected) && (
+                {t.id === 'api' && (!groqConnected || !geminiConnected) && (
                   <span className="settings-nav-dot" />
                 )}
               </button>
@@ -349,18 +335,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   connected={geminiConnected}
                   tr={tr}
                 />
-
-                <ApiKeyBlock
-                  label="DeepSeek API Keys"
-                  hint={tr.deepseekHint}
-                  link="https://platform.deepseek.com/api_keys"
-                  linkLabel={tr.getKeys}
-                  placeholder={tr.deepseekPlaceholder}
-                  value={deepseekKeys}
-                  onChange={onDeepseekKeysChange}
-                  connected={deepseekConnected}
-                  tr={tr}
-                />
               </>
             )}
 
@@ -385,33 +359,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <div className="settings-status-row">
                   <StatusPill ok={groqConnected} label="Groq" readyLabel={tr.ready} missingLabel={tr.keyMissing} />
                   <StatusPill ok={geminiConnected} label="Gemini" readyLabel={tr.ready} missingLabel={tr.keyMissing} />
-                  <StatusPill ok={deepseekConnected} label="DeepSeek" readyLabel={tr.ready} missingLabel={tr.keyMissing} />
-                </div>
-                <div style={{
-                  marginTop: '20px',
-                  padding: '14px 16px',
-                  borderRadius: '10px',
-                  border: '1px solid var(--border-color)',
-                  background: 'var(--bg-card)',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  justifyContent: 'space-between',
-                  gap: '16px'
-                }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <span className="settings-label" style={{ margin: 0 }}>Turbo-Generierung</span>
-                    <span className="settings-hint" style={{ margin: 0 }}>
-                      Reduziert Wartezeiten zwischen Seiten. DeepSeek läuft damit deutlich schneller, ohne den sequentiellen Buchfluss komplett zu zerstören.
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => onGenerationTurboChange(!generationTurboEnabled)}
-                    className={`theme-switch-btn${generationTurboEnabled ? ' active' : ''}`}
-                    style={{ minWidth: '96px', justifyContent: 'center' }}
-                  >
-                    {generationTurboEnabled ? 'Aktiv' : 'Aus'}
-                  </button>
                 </div>
               </>
             )}
