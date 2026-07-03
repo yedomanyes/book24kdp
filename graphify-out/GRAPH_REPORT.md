@@ -1,7 +1,7 @@
 # Graph Report - KDP  (2026-07-03)
 
 ## Corpus Check
-- 118 files · ~194,399 words
+- 118 files · ~194,463 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `ec362636`
+- Built from commit: `d1d63ed0`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -545,7 +545,7 @@ Cohesion: 0.25
 Nodes (3): Ba(), O, Oa()
 
 ## Knowledge Gaps
-- **302 isolated node(s):** `name`, `private`, `version`, `type`, `dev` (+297 more)
+- **302 isolated node(s):** `NAV_TABS`, `NavTabId`, `NAV_TAB_PARTICLE_COLORS`, `COVER_FONTS`, `BoxDesign` (+297 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **29 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -555,10 +555,10 @@ _Questions this graph is uniquely positioned to answer:_
 - **Why does `O` connect `Community 135` to `Community 0`, `Community 115`, `Community 119`?**
   _High betweenness centrality (0.012) - this node is a cross-community bridge._
 - **Why does `GeminiService` connect `Community 7` to `Community 11`, `Community 75`?**
-  _High betweenness centrality (0.012) - this node is a cross-community bridge._
+  _High betweenness centrality (0.011) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `constructor()` (e.g. with `l()` and `pa()`) actually correct?**
   _`constructor()` has 2 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `name`, `private`, `version` to the rest of the system?**
+- **What connects `NAV_TABS`, `NavTabId`, `NAV_TAB_PARTICLE_COLORS` to the rest of the system?**
   _302 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
   _Cohesion score 0.012151067323481117 - nodes in this community are weakly interconnected._

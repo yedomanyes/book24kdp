@@ -2,7 +2,7 @@
 type: "code-context-section"
 id: "graph-intelligence"
 title: "Graph / Code Intelligence"
-updatedAt: "2026-07-03T17:03:33.094Z"
+updatedAt: "2026-07-03T17:08:33.114Z"
 ---
 
 # Graph / Code Intelligence

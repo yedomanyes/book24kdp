@@ -2,7 +2,7 @@
 type: "code-context-section"
 id: "project-memory"
 title: "Vault, Memory & Obsidian Context"
-updatedAt: "2026-07-03T17:03:33.094Z"
+updatedAt: "2026-07-03T17:08:33.115Z"
 ---
 
 # Vault, Memory & Obsidian Context

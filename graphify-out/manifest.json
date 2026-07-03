@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "src/App.tsx": {
-    "mtime": 1783097804.2726495,
-    "ast_hash": "4ab7325e73a945c3df6bf9cf10bd7920",
+    "mtime": 1783098208.5958717,
+    "ast_hash": "e556b48c4ae476a195b370ad3e38781d",
     "semantic_hash": ""
   },
   "src/components/Aurora.tsx": {
@@ -560,13 +560,13 @@
     "semantic_hash": ""
   },
   "public/brain/code-context.json": {
-    "mtime": 1783097853.049759,
-    "ast_hash": "1b78ba42458f3b6ad43f46110631b77a",
+    "mtime": 1783098213.0878232,
+    "ast_hash": "a3df1e540b7341bcfb4d49b9d5c67105",
     "semantic_hash": ""
   },
   "public/brain/runtime-status.json": {
-    "mtime": 1783097853.050509,
-    "ast_hash": "1b91240563204dc37d7e6bf6fb1cecb5",
+    "mtime": 1783098213.088553,
+    "ast_hash": "8454dd18d4ce6be559e3d413a6fb9f29",
     "semantic_hash": ""
   },
   "scripts/brain-worker.mjs": {

@@ -4421,9 +4421,12 @@ export default function App() {
         } catch(eGB) { console.warn("AGVE Bulk Error:", eGB); }
       }
 
+      const freshBook = booksRef.current.find(b => b.id === activeBookId);
+      if (!freshBook) throw new Error('Buch wurde während der Generierung gelöscht.');
+
       const updatedBook: Book = {
-        ...currentBook,
-        pagesText: { ...(currentBook.pagesText || {}), [pageNum]: text },
+        ...freshBook,
+        pagesText: { ...(freshBook.pagesText || {}), [pageNum]: text },
         pagesStatus: { ...(currentBook.pagesStatus || {}), [pageNum]: 'completed' },
         pagesGenerationTime: { ...(currentBook.pagesGenerationTime || {}), [pageNum]: Date.now() - startTime },
         pagesError: cmieResBulk.warningMessage ? { ...(currentBook.pagesError || {}), [pageNum]: cmieResBulk.warningMessage } : (currentBook.pagesError || {}),
@@ -4509,9 +4512,12 @@ export default function App() {
 
       const finalOverflow = checkTextOverflow(text, currentBook, pageNum);
 
+      const freshBook = booksRef.current.find(b => b.id === activeBookId);
+      if (!freshBook) throw new Error('Buch wurde während der Bearbeitung gelöscht.');
+
       const updatedBook: Book = {
-        ...currentBook,
-        pagesText: { ...(currentBook.pagesText || {}), [pageNum]: text },
+        ...freshBook,
+        pagesText: { ...(freshBook.pagesText || {}), [pageNum]: text },
         pagesStatus: { ...(currentBook.pagesStatus || {}), [pageNum]: 'completed' },
         pagesOverflow: { ...(currentBook.pagesOverflow || {}), [pageNum]: finalOverflow }
       };
@@ -4595,7 +4601,6 @@ export default function App() {
     }
 
     const finalOverflow = checkTextOverflow(processedText, currentBook, selectedPage);
-
     const updatedBook: Book = {
       ...currentBook,
       pagesText: { ...(currentBook.pagesText || {}), [selectedPage]: processedText },
@@ -4765,10 +4770,13 @@ export default function App() {
       }
       const finalOverflow = checkTextOverflow(updatedText, currentBook, selectedPage);
 
+      const freshBook = booksRef.current.find(b => b.id === activeBookId);
+      if (!freshBook) throw new Error('Buch wurde während der Bearbeitung gelöscht.');
+
       const updatedBook: Book = {
-        ...currentBook,
-        pagesText: { ...(currentBook.pagesText || {}), [selectedPage]: updatedText },
-        pagesOverflow: { ...(currentBook.pagesOverflow || {}), [selectedPage]: finalOverflow }
+        ...freshBook,
+        pagesText: { ...(freshBook.pagesText || {}), [selectedPage]: updatedText },
+        pagesOverflow: { ...(freshBook.pagesOverflow || {}), [selectedPage]: finalOverflow }
       };
       
       forceSaveSingleBook(updatedBook);
