@@ -2,7 +2,7 @@
 type: "code-context-section"
 id: "misc"
 title: "Weitere Dateien"
-updatedAt: "2026-07-03T20:20:14.705Z"
+updatedAt: "2026-07-03T20:24:44.691Z"
 ---
 
 # Weitere Dateien

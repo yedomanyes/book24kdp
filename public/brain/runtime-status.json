@@ -6,8 +6,8 @@
     "Hermes",
     "Antigravity"
   ],
-  "lastHeartbeatAt": "2026-07-03T20:20:14.700Z",
-  "lastIndexedAt": "2026-07-03T20:20:14.698Z",
+  "lastHeartbeatAt": "2026-07-03T20:24:44.684Z",
+  "lastIndexedAt": "2026-07-03T20:24:44.683Z",
   "worker": {
     "pid": 9887,
     "hostname": "Mac",
@@ -27,7 +27,7 @@
     "analysisJson": "graphify-out/.graphify_analysis.json"
   },
   "decisionEngine": {
-    "generatedAt": "2026-07-03T20:20:14.698Z",
+    "generatedAt": "2026-07-03T20:24:44.683Z",
     "thoughts": [
       "App Shell & Studio Flow dominiert aktuell mit 23784 Zeilen und ist damit der schwerste Produktblock.",
       "Das Brain selbst belegt 1913 Zeilen und hat damit genug Substanz für echte Runtime-Ausbauten.",
@@ -88,7 +88,7 @@
   },
   "sectionCount": 8,
   "totalFilesIndexed": 134,
-  "previousHeartbeatAt": "2026-07-03T20:20:04.683Z",
+  "previousHeartbeatAt": "2026-07-03T20:24:34.695Z",
   "sections": [
     {
       "id": "graph-intelligence",

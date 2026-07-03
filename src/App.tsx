@@ -1323,12 +1323,35 @@ export default function App() {
         }
 
         if (booksToSet.length > 0) {
-          const cleanBooks = booksToSet.map((b: any) => ({
-            ...b,
-            pagesStatus: Object.fromEntries(
-              Object.entries(b.pagesStatus || {}).map(([k, v]) => [k, v === 'generating' ? 'idle' : v])
-            )
-          }));
+          // Recalculate pagesOverflow from pagesText using a simple character estimate.
+          // This corrects stale cloud overflow flags that the beforeunload async save may have missed.
+          const estimateOverflow = (text: string, book: any): boolean => {
+            if (!text) return false;
+            // Rough chars-per-page thresholds based on font size and page size
+            const fs = book.fontSize || 11;
+            const ps = book.pageSize || '6x9';
+            const baseChars: Record<string, number> = {
+              '5x8': 1600, '5.5x8.5': 1900, '6x9': 2200, '8.5x11': 3200, 'a4': 3000
+            };
+            const base = baseChars[ps] || 2200;
+            // Larger font = fewer chars fit; scale inversely with font size relative to 11pt baseline
+            const limit = Math.round(base * (11 / fs));
+            return text.length > limit;
+          };
+
+          const cleanBooks = booksToSet.map((b: any) => {
+            const recomputedOverflow: Record<string, boolean> = {};
+            Object.entries(b.pagesText || {}).forEach(([pageNum, text]) => {
+              recomputedOverflow[pageNum] = estimateOverflow(text as string, b);
+            });
+            return {
+              ...b,
+              pagesStatus: Object.fromEntries(
+                Object.entries(b.pagesStatus || {}).map(([k, v]) => [k, v === 'generating' ? 'idle' : v])
+              ),
+              pagesOverflow: recomputedOverflow,
+            };
+          });
           setBooksState(cleanBooks);
           booksRef.current = cleanBooks;
           void persistLibraryEverywhere(activeAcc, cleanBooks);

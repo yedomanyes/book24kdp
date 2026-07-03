@@ -1,6 +1,6 @@
 ---
 type: "code-context-index"
-updatedAt: "2026-07-03T20:20:14.698Z"
+updatedAt: "2026-07-03T20:24:44.683Z"
 consumers: ["Hermes", "Antigravity"]
 ---
 
@@ -25,6 +25,6 @@ Dieses Dokument wird vom lokalen Brain Worker erzeugt und hält die Codebase in 
 ## Runtime
 - Worker PID: 9887
 - Host: Mac
-- Letzter Index: 2026-07-03T20:20:14.698Z
+- Letzter Index: 2026-07-03T20:24:44.683Z
 - Antigravity konfiguriert: ja
 - Graphify verfügbar: ja

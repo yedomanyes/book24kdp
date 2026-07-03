@@ -2,7 +2,7 @@
 type: "code-context-section"
 id: "brain-runtime"
 title: "Brain Runtime"
-updatedAt: "2026-07-03T20:20:14.705Z"
+updatedAt: "2026-07-03T20:24:44.693Z"
 ---
 
 # Brain Runtime
