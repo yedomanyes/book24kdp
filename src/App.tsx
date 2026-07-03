@@ -2962,11 +2962,14 @@ export default function App() {
           pagesOverflow: { ...(currentBook.pagesOverflow || {}), [selectedPage as number]: hasOverflow }
         };
         
-        // INSTANTLY write to localStorage on every keystroke — no debounce, fully synchronous
-        // This guarantees the text survives ANY refresh, even if typed 1ms before F5
+        // INSTANTLY update state + localStorage + cloud queue on every keystroke
         const updatedBooks = booksRef.current.map(b => b.id === activeBookId ? updatedBook : b);
         booksRef.current = updatedBooks;
         setBooksState(updatedBooks);
+
+        // Always queue for cloud save so beforeunload definitely persists it
+        pendingCloudSavesRef.current[activeBookId] = updatedBook;
+
         try {
           const activeAcc = safeLocalStorage.getItem(KEYS.activeAccount) || 'default';
           localStorage.setItem(KEYS.library(activeAcc), JSON.stringify(updatedBooks));

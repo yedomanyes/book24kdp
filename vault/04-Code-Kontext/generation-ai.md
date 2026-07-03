@@ -2,7 +2,7 @@
 type: "code-context-section"
 id: "generation-ai"
 title: "AI Generation Stack"
-updatedAt: "2026-07-03T17:08:33.112Z"
+updatedAt: "2026-07-03T20:20:14.703Z"
 ---
 
 # AI Generation Stack

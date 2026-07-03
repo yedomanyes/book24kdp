@@ -267,7 +267,7 @@
       "label": "cleanPageText()",
       "file_type": "code",
       "source_file": "src/App.tsx",
-      "source_location": "L11699",
+      "source_location": "L11707",
       "_origin": "ast",
       "id": "src_app_cleanpagetext",
       "community": 11,
@@ -277,7 +277,7 @@
       "label": "generateStructureVariationsLocal()",
       "file_type": "code",
       "source_file": "src/App.tsx",
-      "source_location": "L11754",
+      "source_location": "L11762",
       "_origin": "ast",
       "id": "src_app_generatestructurevariationslocal",
       "community": 11,
@@ -287,7 +287,7 @@
       "label": "ImageInsertModalInnerProps",
       "file_type": "code",
       "source_file": "src/App.tsx",
-      "source_location": "L11829",
+      "source_location": "L11837",
       "_origin": "ast",
       "id": "src_app_imageinsertmodalinnerprops",
       "community": 11,
@@ -297,7 +297,7 @@
       "label": "ImageInsertModalInner()",
       "file_type": "code",
       "source_file": "src/App.tsx",
-      "source_location": "L11834",
+      "source_location": "L11842",
       "_origin": "ast",
       "id": "src_app_imageinsertmodalinner",
       "community": 11,
@@ -58687,5 +58687,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "d1d63ed00e1e00af4aa453f28365e52ab730a81d"
+  "built_at_commit": "494f2b5f2bf6d4eedd2c7c33687e281279fcc85c"
 }
