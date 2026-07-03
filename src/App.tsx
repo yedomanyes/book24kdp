@@ -4960,6 +4960,7 @@ export default function App() {
         titlePagePublisherBold: activeBook.titlePagePublisherBold === true,
         mirrorMargins: mirrorMargins,
         images: activeBook.images || {},
+        autoChapterRecto: activeBook.autoChapterRecto === true,
       };
       const pdfBlob = await generateBookPdf(activeBook.outline, activeBook.pagesText || {}, config);
       const url = URL.createObjectURL(pdfBlob);
@@ -5028,25 +5029,12 @@ export default function App() {
 
   const getChapterPageNumbers = () => {
     if (!outline || !activeBook) return [];
-    const chapters: { title: string; pageNumber: number; outlinePage: number }[] = [];
-    const splitPageText = (text: string): string[] => {
-      if (!text) return [''];
-      return text.split(/\r?\n\s*-{3,}\s*(?:\r?\n|$)/);
-    };
-    let contentPageNumber = 1;
-    for (let i = 1; i <= outline.pages.length; i++) {
-      const pageInfo = outline.pages.find(p => p.page_number === i);
-      const isFirstPageOfChapter = pageInfo ? outline.pages.find(p => p.chapter_title === pageInfo.chapter_title)?.page_number === i : false;
-      if (isFirstPageOfChapter && pageInfo) {
-        if (!chapters.some(c => c.title === pageInfo.chapter_title)) {
-          chapters.push({ title: pageInfo.chapter_title, pageNumber: contentPageNumber, outlinePage: i });
-        }
-      }
-      const pageText = (activeBook.pagesText || {})[i] || '';
-      const parts = splitPageText(pageText);
-      contentPageNumber += parts.length;
-    }
-    return chapters;
+    const { chapterToPageList } = calculateBookPageNumbers();
+    return chapterToPageList.map(item => ({
+      title: item.title,
+      pageNumber: item.pageNum,
+      outlinePage: item.outlinePage
+    }));
   };
 
   const toRoman = (num: number): string => {
@@ -6986,22 +6974,107 @@ export default function App() {
     return null;
   };
 
-  const getPreviewPageNumber = (partIndex: number = 0) => {
-    if (!activeBook || selectedPage === null || typeof selectedPage !== 'number' || !outline) return '';
-    let contentPageNumber = 0;
+  const calculateBookPageNumbers = () => {
+    if (!activeBook || !activeBook.outline) return { pageContentNumberMap: {}, chapterToPageList: [] };
+    
+    const outline = activeBook.outline;
+    const sortedPages = [...outline.pages]
+      .map(p => ({ ...p, page_number: Number(p.page_number) }))
+      .sort((a, b) => a.page_number - b.page_number);
+    
+    const chapterStartsList: { title: string; pageNum: number }[] = [];
+    sortedPages.forEach((pageInfo, idx) => {
+      const isFirst = idx === 0 || sortedPages[idx - 1].chapter_title !== pageInfo.chapter_title;
+      if (isFirst) {
+        chapterStartsList.push({ title: pageInfo.chapter_title, pageNum: pageInfo.page_number });
+      }
+    });
+
+    let tocPagesCount = 0;
+    if (activeBook.generateTOC !== false) {
+      tocPagesCount = 1;
+      let simY = 54 + 36; 
+      const tocSpacing = activeBook.tocLineSpacing || 18;
+      let chaptersRenderedOnPage = 0;
+      const outlineChapterCount = chapterStartsList.length;
+      let usePreventativePageBreak = false;
+      let maxChaptersPerPage = 10;
+      
+      if (activeBook.id) {
+        const rules = GilService.getPreventativeRules(activeBook.id, 'TOC', outlineChapterCount);
+        const pageBreakRule = rules.find(r => r.action === 'autoPageBreakAfterChapters');
+        if (pageBreakRule) {
+          usePreventativePageBreak = true;
+          maxChaptersPerPage = pageBreakRule.value;
+        }
+      }
+
+      chapterStartsList.forEach(({ title: chapterTitle }) => {
+        const forceBreak = usePreventativePageBreak && chaptersRenderedOnPage >= maxChaptersPerPage;
+        const entryLines = Math.ceil((chapterTitle || '').length / 30);
+        const lineSpacing = 10 * 1.2;
+        const entryHeight = (entryLines - 1) * lineSpacing + tocSpacing;
+        
+        let hInches = 9;
+        if (activeBook.pageSize === '5x8') hInches = 8;
+        else if (activeBook.pageSize === '5.5x8.5') hInches = 8.5;
+        else if (activeBook.pageSize === '6x9') hInches = 9;
+        else if (activeBook.pageSize === '8.5x11') hInches = 11;
+        else if (activeBook.pageSize === 'a4') hInches = 11.69;
+        else if (activeBook.pageSize === 'custom') hInches = activeBook.customHeight || 9;
+        const pageHeight = hInches * 72;
+
+        if (simY + entryHeight - tocSpacing > pageHeight - 54 || forceBreak) {
+          tocPagesCount++;
+          simY = 54 + 36;
+          chaptersRenderedOnPage = 0;
+        }
+        simY += entryHeight;
+        chaptersRenderedOnPage++;
+      });
+    }
+
+    let firstContentPhysicalPage = 2;
+    if (activeBook.hideTitlePage && activeBook.generateTOC === false) firstContentPhysicalPage = 1;
+    else if (activeBook.hideTitlePage) firstContentPhysicalPage = 1 + tocPagesCount;
+    else if (activeBook.generateTOC !== false) firstContentPhysicalPage = 2 + tocPagesCount;
+    
+    let currentPhysicalPage = firstContentPhysicalPage;
+    const pageContentNumberMap: { [pageNum: number]: number } = {};
+    const chapterToPageList: { title: string; pageNum: number; outlinePage: number }[] = [];
+    
     const splitPageText = (text: string): string[] => {
       if (!text) return [''];
       return text.split(/\r?\n\s*-{3,}\s*(?:\r?\n|$)/);
     };
-    for (let i = 1; i <= selectedPage; i++) {
-      const pageText = (activeBook.pagesText || {})[i] || '';
-      const parts = splitPageText(pageText);
-      if (i === selectedPage) {
-        return contentPageNumber + 1 + partIndex;
+
+    sortedPages.forEach((pageInfo, idx) => {
+      const isFirstPageOfChapter = idx === 0 || sortedPages[idx - 1].chapter_title !== pageInfo.chapter_title;
+      
+      if (isFirstPageOfChapter) {
+        if (activeBook.autoChapterRecto && currentPhysicalPage % 2 === 0) {
+          currentPhysicalPage++;
+        }
+        const printedPageNum = currentPhysicalPage - (firstContentPhysicalPage - 1);
+        chapterToPageList.push({ title: pageInfo.chapter_title, pageNum: printedPageNum, outlinePage: pageInfo.page_number });
       }
-      contentPageNumber += parts.length;
-    }
-    return '';
+      
+      pageContentNumberMap[pageInfo.page_number] = currentPhysicalPage - (firstContentPhysicalPage - 1);
+      
+      const pageText = (activeBook.pagesText || {})[pageInfo.page_number] || '';
+      const partsCount = splitPageText(pageText).length;
+      currentPhysicalPage += partsCount;
+    });
+
+    return { pageContentNumberMap, chapterToPageList };
+  };
+
+  const getPreviewPageNumber = (partIndex: number = 0) => {
+    if (!activeBook || selectedPage === null || typeof selectedPage !== 'number' || !outline) return '';
+    const { pageContentNumberMap } = calculateBookPageNumbers();
+    const basePage = pageContentNumberMap[selectedPage];
+    if (basePage === undefined) return '';
+    return basePage + partIndex;
   };
 
   const [showAuthModal, setShowAuthModal] = useState(false);

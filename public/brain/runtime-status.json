@@ -6,8 +6,8 @@
     "Hermes",
     "Antigravity"
   ],
-  "lastHeartbeatAt": "2026-07-03T20:24:44.684Z",
-  "lastIndexedAt": "2026-07-03T20:24:44.683Z",
+  "lastHeartbeatAt": "2026-07-03T20:32:14.755Z",
+  "lastIndexedAt": "2026-07-03T20:32:14.754Z",
   "worker": {
     "pid": 9887,
     "hostname": "Mac",
@@ -27,9 +27,9 @@
     "analysisJson": "graphify-out/.graphify_analysis.json"
   },
   "decisionEngine": {
-    "generatedAt": "2026-07-03T20:24:44.683Z",
+    "generatedAt": "2026-07-03T20:32:14.754Z",
     "thoughts": [
-      "App Shell & Studio Flow dominiert aktuell mit 23784 Zeilen und ist damit der schwerste Produktblock.",
+      "App Shell & Studio Flow dominiert aktuell mit 23880 Zeilen und ist damit der schwerste Produktblock.",
       "Das Brain selbst belegt 1913 Zeilen und hat damit genug Substanz für echte Runtime-Ausbauten.",
       "Vault und Memory liefern 53 Dateien Kontext für wiederverwendbares Wissen."
     ],
@@ -66,8 +66,8 @@
       {
         "id": "app-shell",
         "label": "Fokus 2",
-        "detail": "App Shell & Studio Flow · 31 Dateien · 23784 Zeilen",
-        "score": 308
+        "detail": "App Shell & Studio Flow · 31 Dateien · 23880 Zeilen",
+        "score": 309
       },
       {
         "id": "project-memory",
@@ -80,7 +80,7 @@
       {
         "id": "app-shell-heavy",
         "label": "App Shell ist zu schwer",
-        "detail": "23784 Zeilen in der Shell bremsen Verständnis und machen das Projekt unruhig.",
+        "detail": "23880 Zeilen in der Shell bremsen Verständnis und machen das Projekt unruhig.",
         "score": 93,
         "severity": "high"
       }
@@ -88,7 +88,7 @@
   },
   "sectionCount": 8,
   "totalFilesIndexed": 134,
-  "previousHeartbeatAt": "2026-07-03T20:24:34.695Z",
+  "previousHeartbeatAt": "2026-07-03T20:32:04.781Z",
   "sections": [
     {
       "id": "graph-intelligence",
@@ -105,7 +105,7 @@
       "id": "app-shell",
       "title": "App Shell & Studio Flow",
       "fileCount": 31,
-      "totalLines": 23784,
+      "totalLines": 23880,
       "topPaths": [
         "src/App.tsx",
         "src/components/OwnerPanel.tsx",
@@ -127,7 +127,7 @@
       "id": "misc",
       "title": "Weitere Dateien",
       "fileCount": 17,
-      "totalLines": 3429,
+      "totalLines": 3426,
       "topPaths": [
         "src/utils/PdfGenerator.ts",
         "src/services/gil/GilService.ts",

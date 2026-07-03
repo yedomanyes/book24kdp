@@ -2,7 +2,7 @@
 type: "code-context-section"
 id: "cmie-engine"
 title: "CMIE / Kapitel-Engine"
-updatedAt: "2026-07-03T20:24:44.695Z"
+updatedAt: "2026-07-03T20:32:14.761Z"
 ---
 
 # CMIE / Kapitel-Engine

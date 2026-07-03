@@ -466,13 +466,11 @@ export async function generateBookPdf(
     .sort((a, b) => a.page_number - b.page_number);
 
   // 1. Collect all chapter start pages
-  const chapterStarts: { [title: string]: number } = {};
-  sortedPages.forEach(pageInfo => {
-    // Find the very first page in the sorted list that has this chapter title
-    const firstOfChapter = sortedPages.find(p => p.chapter_title === pageInfo.chapter_title);
-    const isFirstPageOfChapter = firstOfChapter?.page_number === pageInfo.page_number;
+  const chapterStartsList: { title: string; pageNum: number }[] = [];
+  sortedPages.forEach((pageInfo, idx) => {
+    const isFirstPageOfChapter = idx === 0 || sortedPages[idx - 1].chapter_title !== pageInfo.chapter_title;
     if (isFirstPageOfChapter) {
-      chapterStarts[pageInfo.chapter_title] = pageInfo.page_number;
+      chapterStartsList.push({ title: pageInfo.chapter_title, pageNum: pageInfo.page_number });
     }
   });
 
@@ -484,7 +482,7 @@ export async function generateBookPdf(
     const tocSpacing = config.tocLineSpacing || 18;
     
     let chaptersRenderedOnPage = 0;
-    const outlineChapterCount = Object.keys(chapterStarts).length;
+    const outlineChapterCount = chapterStartsList.length;
     let usePreventativePageBreak = false;
     let maxChaptersPerPage = 10;
     
@@ -503,7 +501,7 @@ export async function generateBookPdf(
     doc.setFontSize(baseFontSize);
     const maxTitleWidth = writableWidth - 45;
 
-    Object.keys(chapterStarts).forEach((chapterTitle) => {
+    chapterStartsList.forEach(({ title: chapterTitle }) => {
       const forceBreak = usePreventativePageBreak && chaptersRenderedOnPage >= maxChaptersPerPage;
       
       const lines = doc.splitTextToSize(chapterTitle, maxTitleWidth);
@@ -529,11 +527,10 @@ export async function generateBookPdf(
 
   const pagePhysicalMap: { [pageNum: number]: number } = {};
   const pageContentNumberMap: { [pageNum: number]: number } = {};
-  const chapterToPageMap: { [title: string]: number } = {};
+  const chapterToPageList: { title: string; pageNum: number }[] = [];
 
-  sortedPages.forEach(pageInfo => {
-    const firstOfChapter = sortedPages.find(p => p.chapter_title === pageInfo.chapter_title);
-    const isFirstPageOfChapter = firstOfChapter?.page_number === pageInfo.page_number;
+  sortedPages.forEach((pageInfo, idx) => {
+    const isFirstPageOfChapter = idx === 0 || sortedPages[idx - 1].chapter_title !== pageInfo.chapter_title;
     
     if (isFirstPageOfChapter) {
       if (config.autoChapterRecto && currentPhysicalPage % 2 === 0) {
@@ -541,7 +538,7 @@ export async function generateBookPdf(
       }
       // Printed page number relative to content start
       const printedPageNum = currentPhysicalPage - (firstContentPhysicalPage - 1);
-      chapterToPageMap[pageInfo.chapter_title] = printedPageNum;
+      chapterToPageList.push({ title: pageInfo.chapter_title, pageNum: printedPageNum });
     }
     
     pagePhysicalMap[pageInfo.page_number] = currentPhysicalPage;
@@ -556,7 +553,7 @@ export async function generateBookPdf(
   let pdfPageCounter = config.hideTitlePage ? 0 : 1; // page 1 is title page
   
   if (config.generateTOC !== false) {
-    const chaptersList = Object.entries(chapterToPageMap);
+    const chaptersList = chapterToPageList.map(item => [item.title, item.pageNum]);
     // removed totalTOCPagesCount
     
     const tocFont = resolvePdfFont(config.tocFontFamily || config.fontFamily);
@@ -695,8 +692,8 @@ export async function generateBookPdf(
       let contentY = topMargin;
       let activeFloat: { float: 'left' | 'right'; width: number; height: number; bottomY: number } | null = null;
 
-      const firstOfChapter = sortedPages.find(p => p.chapter_title === pageInfo.chapter_title);
-      const isFirstPageOfChapter = firstOfChapter?.page_number === i;
+      const idx = sortedPages.findIndex(p => p.page_number === i);
+      const isFirstPageOfChapter = idx === 0 || sortedPages[idx - 1].chapter_title !== pageInfo.chapter_title;
       const isFirstPartOfPage = partIndex === 0;
 
       // Header formatting

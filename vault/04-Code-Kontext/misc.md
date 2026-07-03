@@ -2,7 +2,7 @@
 type: "code-context-section"
 id: "misc"
 title: "Weitere Dateien"
-updatedAt: "2026-07-03T20:24:44.686Z"
+updatedAt: "2026-07-03T20:32:14.757Z"
 ---
 
 # Weitere Dateien
@@ -10,7 +10,7 @@ updatedAt: "2026-07-03T20:24:44.686Z"
 Restliche Dateien, die nicht in eine Kern-Sektion gefallen sind.
 
 - Dateien: 17
-- Gesamtzeilen: 3429
+- Gesamtzeilen: 3426
 
 ## Wichtige Symbole
 - hasBrainAccess
@@ -31,7 +31,7 @@ Restliche Dateien, die nicht in eine Kern-Sektion gefallen sind.
 - cn
 
 ## Top Dateien
-- src/utils/PdfGenerator.ts — 1780 Zeilen | Symbole: generateBookPdf, PdfConfig, BoxDesign
+- src/utils/PdfGenerator.ts — 1777 Zeilen | Symbole: generateBookPdf, PdfConfig, BoxDesign
 - src/services/gil/GilService.ts — 434 Zeilen | Symbole: GilService, GilLog, LayoutWarning, GoldenExample, EmbeddedText, GilState
 - src/i18n.ts — 323 Zeilen | Symbole: t, translations, Language, Translations
 - src/services/graphics/SvgGraphicRenderer.tsx — 310 Zeilen | Symbole: SvgGraphicRenderer
@@ -56,5 +56,5 @@ Restliche Dateien, die nicht in eine Kern-Sektion gefallen sind.
 - src/services/userProfileService.ts (22) | syncUserProfile
 - src/types/graphics.ts (50) | GraphicType, GraphicLayoutVariant, TableConfig, ProcessConfig, TimelineItem, TimelineConfig, HierarchyConfig, GraphicDecision
 - src/types/three-spritetext.d.ts (2)
-- src/utils/PdfGenerator.ts (1780) | generateBookPdf, PdfConfig, BoxDesign
+- src/utils/PdfGenerator.ts (1777) | generateBookPdf, PdfConfig, BoxDesign
 - src/utils/WebScraper.ts (54) | fetchAndExtractText
