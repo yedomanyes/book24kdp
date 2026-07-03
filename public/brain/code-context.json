@@ -6,7 +6,7 @@
     "Hermes",
     "Antigravity"
   ],
-  "lastIndexedAt": "2026-07-03T20:32:14.754Z",
+  "lastIndexedAt": "2026-07-03T20:33:24.682Z",
   "worker": {
     "pid": 9887,
     "hostname": "Mac",
@@ -26,7 +26,7 @@
     "analysisJson": "graphify-out/.graphify_analysis.json"
   },
   "decisionEngine": {
-    "generatedAt": "2026-07-03T20:32:14.754Z",
+    "generatedAt": "2026-07-03T20:33:24.682Z",
     "thoughts": [
       "App Shell & Studio Flow dominiert aktuell mit 23880 Zeilen und ist damit der schwerste Produktblock.",
       "Das Brain selbst belegt 1913 Zeilen und hat damit genug Substanz für echte Runtime-Ausbauten.",
@@ -59,7 +59,7 @@
       {
         "id": "graph-intelligence",
         "label": "Hauptfokus",
-        "detail": "Graph / Code Intelligence · 6 Dateien · 62350 Zeilen",
+        "detail": "Graph / Code Intelligence · 6 Dateien · 62416 Zeilen",
         "score": 532
       },
       {
@@ -91,12 +91,12 @@
       "title": "Graph / Code Intelligence",
       "description": "Graphify-Ausgaben und strukturierte Code-Graph-Artefakte für schnellen Überblick.",
       "fileCount": 6,
-      "totalLines": 62350,
+      "totalLines": 62416,
       "symbols": [],
       "topFiles": [
         {
           "path": "graphify-out/graph.json",
-          "lines": 58691,
+          "lines": 58741,
           "symbols": [],
           "preview": "{"
         },
@@ -108,13 +108,13 @@
         },
         {
           "path": "graphify-out/manifest.json",
-          "lines": 602,
+          "lines": 607,
           "symbols": [],
           "preview": "{"
         },
         {
           "path": "graphify-out/GRAPH_REPORT.md",
-          "lines": 568,
+          "lines": 567,
           "symbols": [],
           "preview": "# Graph Report - KDP  (2026-07-03)"
         },
@@ -126,7 +126,7 @@
         },
         {
           "path": "graphify-out/.graphify_labels.json",
-          "lines": 135,
+          "lines": 147,
           "symbols": [],
           "preview": "{"
         }

@@ -4,6 +4,36 @@
   "graph": {},
   "nodes": [
     {
+      "label": "query-temp.js",
+      "file_type": "code",
+      "source_file": "query-temp.js",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "query_temp",
+      "community": 124,
+      "norm_label": "query-temp.js"
+    },
+    {
+      "label": "supabase",
+      "file_type": "code",
+      "source_file": "query-temp.js",
+      "source_location": "L7",
+      "_origin": "ast",
+      "id": "query_temp_supabase",
+      "community": 124,
+      "norm_label": "supabase"
+    },
+    {
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "query-temp.js",
+      "source_location": "L9",
+      "_origin": "ast",
+      "id": "query_temp_main",
+      "community": 124,
+      "norm_label": "main()"
+    },
+    {
       "label": "App.tsx",
       "file_type": "code",
       "source_file": "src/App.tsx",
@@ -250,7 +280,7 @@
       "source_location": "L945",
       "_origin": "ast",
       "id": "src_app_persistlibraryeverywhere",
-      "community": 34,
+      "community": 11,
       "norm_label": "persistlibraryeverywhere()"
     },
     {
@@ -267,7 +297,7 @@
       "label": "cleanPageText()",
       "file_type": "code",
       "source_file": "src/App.tsx",
-      "source_location": "L11733",
+      "source_location": "L11806",
       "_origin": "ast",
       "id": "src_app_cleanpagetext",
       "community": 11,
@@ -277,7 +307,7 @@
       "label": "generateStructureVariationsLocal()",
       "file_type": "code",
       "source_file": "src/App.tsx",
-      "source_location": "L11788",
+      "source_location": "L11861",
       "_origin": "ast",
       "id": "src_app_generatestructurevariationslocal",
       "community": 11,
@@ -287,7 +317,7 @@
       "label": "ImageInsertModalInnerProps",
       "file_type": "code",
       "source_file": "src/App.tsx",
-      "source_location": "L11863",
+      "source_location": "L11936",
       "_origin": "ast",
       "id": "src_app_imageinsertmodalinnerprops",
       "community": 11,
@@ -297,11 +327,101 @@
       "label": "ImageInsertModalInner()",
       "file_type": "code",
       "source_file": "src/App.tsx",
-      "source_location": "L11868",
+      "source_location": "L11941",
       "_origin": "ast",
       "id": "src_app_imageinsertmodalinner",
       "community": 11,
       "norm_label": "imageinsertmodalinner()"
+    },
+    {
+      "label": "PdfGenerator.ts",
+      "file_type": "code",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "utils_pdfgenerator",
+      "community": 48,
+      "norm_label": "pdfgenerator.ts"
+    },
+    {
+      "label": "PdfConfig",
+      "file_type": "code",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L5",
+      "_origin": "ast",
+      "id": "utils_pdfgenerator_pdfconfig",
+      "community": 48,
+      "norm_label": "pdfconfig"
+    },
+    {
+      "label": "BoxDesign",
+      "file_type": "code",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L78",
+      "_origin": "ast",
+      "id": "utils_pdfgenerator_boxdesign",
+      "community": 48,
+      "norm_label": "boxdesign"
+    },
+    {
+      "label": "generateBookPdf()",
+      "file_type": "code",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L88",
+      "_origin": "ast",
+      "id": "utils_pdfgenerator_generatebookpdf",
+      "community": 48,
+      "norm_label": "generatebookpdf()"
+    },
+    {
+      "label": "toRoman()",
+      "file_type": "code",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L1688",
+      "_origin": "ast",
+      "id": "utils_pdfgenerator_toroman",
+      "community": 48,
+      "norm_label": "toroman()"
+    },
+    {
+      "label": "drawGeometricEmblem()",
+      "file_type": "code",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L1705",
+      "_origin": "ast",
+      "id": "utils_pdfgenerator_drawgeometricemblem",
+      "community": 48,
+      "norm_label": "drawgeometricemblem()"
+    },
+    {
+      "label": "drawFloralEmblem()",
+      "file_type": "code",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L1719",
+      "_origin": "ast",
+      "id": "utils_pdfgenerator_drawfloralemblem",
+      "community": 48,
+      "norm_label": "drawfloralemblem()"
+    },
+    {
+      "label": "drawStarEmblem()",
+      "file_type": "code",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L1732",
+      "_origin": "ast",
+      "id": "utils_pdfgenerator_drawstaremblem",
+      "community": 48,
+      "norm_label": "drawstaremblem()"
+    },
+    {
+      "label": "drawBookEmblem()",
+      "file_type": "code",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L1752",
+      "_origin": "ast",
+      "id": "utils_pdfgenerator_drawbookemblem",
+      "community": 48,
+      "norm_label": "drawbookemblem()"
     },
     {
       "label": "package.json",
@@ -1529,7 +1649,7 @@
       "source_file": "src/components/BrainDashboard.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 22,
+      "community": 1,
       "norm_label": "braindashboard.tsx",
       "id": "components_braindashboard"
     },
@@ -1539,7 +1659,7 @@
       "source_file": "src/components/BrainDashboard.tsx",
       "source_location": "L11",
       "_origin": "ast",
-      "community": 22,
+      "community": 1,
       "norm_label": "braindashboardprops",
       "id": "components_braindashboard_braindashboardprops"
     },
@@ -1549,7 +1669,7 @@
       "source_file": "src/components/BrainDashboard.tsx",
       "source_location": "L20",
       "_origin": "ast",
-      "community": 22,
+      "community": 1,
       "norm_label": "brainnode",
       "id": "components_braindashboard_brainnode"
     },
@@ -1559,7 +1679,7 @@
       "source_file": "src/components/BrainDashboard.tsx",
       "source_location": "L31",
       "_origin": "ast",
-      "community": 22,
+      "community": 1,
       "norm_label": "brainlink",
       "id": "components_braindashboard_brainlink"
     },
@@ -1569,7 +1689,7 @@
       "source_file": "src/components/BrainDashboard.tsx",
       "source_location": "L38",
       "_origin": "ast",
-      "community": 22,
+      "community": 1,
       "norm_label": "backgroundbrainruntime",
       "id": "components_braindashboard_backgroundbrainruntime"
     },
@@ -1579,7 +1699,7 @@
       "source_file": "src/components/BrainDashboard.tsx",
       "source_location": "L51",
       "_origin": "ast",
-      "community": 22,
+      "community": 1,
       "norm_label": "backgroundcodecontextsection",
       "id": "components_braindashboard_backgroundcodecontextsection"
     },
@@ -1589,7 +1709,7 @@
       "source_file": "src/components/BrainDashboard.tsx",
       "source_location": "L58",
       "_origin": "ast",
-      "community": 22,
+      "community": 1,
       "norm_label": "backgroundcodecontextpayload",
       "id": "components_braindashboard_backgroundcodecontextpayload"
     },
@@ -1599,7 +1719,7 @@
       "source_file": "src/components/BrainDashboard.tsx",
       "source_location": "L62",
       "_origin": "ast",
-      "community": 22,
+      "community": 1,
       "norm_label": "neon_colors",
       "id": "components_braindashboard_neon_colors"
     },
@@ -1609,7 +1729,7 @@
       "source_file": "src/components/BrainDashboard.tsx",
       "source_location": "L67",
       "_origin": "ast",
-      "community": 22,
+      "community": 1,
       "norm_label": "layer_y",
       "id": "components_braindashboard_layer_y"
     },
@@ -1619,7 +1739,7 @@
       "source_file": "src/components/BrainDashboard.tsx",
       "source_location": "L69",
       "_origin": "ast",
-      "community": 22,
+      "community": 1,
       "norm_label": "braindashboard()",
       "id": "components_braindashboard_braindashboard"
     },
@@ -1629,7 +1749,7 @@
       "source_file": "src/components/BrainDashboard.tsx",
       "source_location": "L805",
       "_origin": "ast",
-      "community": 22,
+      "community": 1,
       "norm_label": "actionbtnstyle()",
       "id": "components_braindashboard_actionbtnstyle"
     },
@@ -1639,7 +1759,7 @@
       "source_file": "src/components/BrainDashboard.tsx",
       "source_location": "L823",
       "_origin": "ast",
-      "community": 22,
+      "community": 1,
       "norm_label": "decisionsection()",
       "id": "components_braindashboard_decisionsection"
     },
@@ -1649,7 +1769,7 @@
       "source_file": "src/components/BrainDashboard.tsx",
       "source_location": "L871",
       "_origin": "ast",
-      "community": 22,
+      "community": 1,
       "norm_label": "minisignalcard()",
       "id": "components_braindashboard_minisignalcard"
     },
@@ -1659,7 +1779,7 @@
       "source_file": "src/components/BrainDashboard.tsx",
       "source_location": "L894",
       "_origin": "ast",
-      "community": 22,
+      "community": 1,
       "norm_label": "signalstat()",
       "id": "components_braindashboard_signalstat"
     },
@@ -2629,7 +2749,7 @@
       "source_file": "src/services/StorageService.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 34,
+      "community": 11,
       "norm_label": "storageservice.ts",
       "id": "services_storageservice"
     },
@@ -2639,7 +2759,7 @@
       "source_file": "src/services/StorageService.ts",
       "source_location": "L19",
       "_origin": "ast",
-      "community": 34,
+      "community": 11,
       "norm_label": "librarysnapshotrecord",
       "id": "services_storageservice_librarysnapshotrecord"
     },
@@ -2649,7 +2769,7 @@
       "source_file": "src/services/StorageService.ts",
       "source_location": "L25",
       "_origin": "ast",
-      "community": 34,
+      "community": 11,
       "norm_label": "openstoragedb()",
       "id": "services_storageservice_openstoragedb"
     },
@@ -2659,7 +2779,7 @@
       "source_file": "src/services/StorageService.ts",
       "source_location": "L44",
       "_origin": "ast",
-      "community": 34,
+      "community": 11,
       "norm_label": "savelibrarysnapshot()",
       "id": "services_storageservice_savelibrarysnapshot"
     },
@@ -2669,7 +2789,7 @@
       "source_file": "src/services/StorageService.ts",
       "source_location": "L67",
       "_origin": "ast",
-      "community": 34,
+      "community": 11,
       "norm_label": "loadlibrarysnapshot()",
       "id": "services_storageservice_loadlibrarysnapshot"
     },
@@ -2679,7 +2799,7 @@
       "source_file": "src/services/StorageService.ts",
       "source_location": "L90",
       "_origin": "ast",
-      "community": 34,
+      "community": 11,
       "norm_label": "loadalllibrarysnapshots()",
       "id": "services_storageservice_loadalllibrarysnapshots"
     },
@@ -2689,7 +2809,7 @@
       "source_file": "src/services/StorageService.ts",
       "source_location": "L118",
       "_origin": "ast",
-      "community": 34,
+      "community": 11,
       "norm_label": "deletelibrarysnapshot()",
       "id": "services_storageservice_deletelibrarysnapshot"
     },
@@ -2699,7 +2819,7 @@
       "source_file": "src/services/StorageService.ts",
       "source_location": "L141",
       "_origin": "ast",
-      "community": 34,
+      "community": 11,
       "norm_label": "keys",
       "id": "services_storageservice_keys"
     },
@@ -2709,7 +2829,7 @@
       "source_file": "src/services/StorageService.ts",
       "source_location": "L150",
       "_origin": "ast",
-      "community": 34,
+      "community": 11,
       "norm_label": "legacy_prefixes",
       "id": "services_storageservice_legacy_prefixes"
     },
@@ -2719,7 +2839,7 @@
       "source_file": "src/services/StorageService.ts",
       "source_location": "L152",
       "_origin": "ast",
-      "community": 34,
+      "community": 11,
       "norm_label": "getactiveaccountid()",
       "id": "services_storageservice_getactiveaccountid"
     },
@@ -2729,7 +2849,7 @@
       "source_file": "src/services/StorageService.ts",
       "source_location": "L160",
       "_origin": "ast",
-      "community": 34,
+      "community": 11,
       "norm_label": "migrateoldkeys()",
       "id": "services_storageservice_migrateoldkeys"
     },
@@ -2739,7 +2859,7 @@
       "source_file": "src/services/StorageService.ts",
       "source_location": "L214",
       "_origin": "ast",
-      "community": 34,
+      "community": 11,
       "norm_label": "backupdata",
       "id": "services_storageservice_backupdata"
     },
@@ -2749,7 +2869,7 @@
       "source_file": "src/services/StorageService.ts",
       "source_location": "L224",
       "_origin": "ast",
-      "community": 34,
+      "community": 11,
       "norm_label": "createbackup()",
       "id": "services_storageservice_createbackup"
     },
@@ -2759,7 +2879,7 @@
       "source_file": "src/services/StorageService.ts",
       "source_location": "L247",
       "_origin": "ast",
-      "community": 34,
+      "community": 11,
       "norm_label": "downloadbackup()",
       "id": "services_storageservice_downloadbackup"
     },
@@ -2769,7 +2889,7 @@
       "source_file": "src/services/StorageService.ts",
       "source_location": "L263",
       "_origin": "ast",
-      "community": 34,
+      "community": 11,
       "norm_label": "importbackup()",
       "id": "services_storageservice_importbackup"
     },
@@ -2779,7 +2899,7 @@
       "source_file": "src/services/StorageService.ts",
       "source_location": "L304",
       "_origin": "ast",
-      "community": 34,
+      "community": 11,
       "norm_label": "markbackuptime()",
       "id": "services_storageservice_markbackuptime"
     },
@@ -2789,7 +2909,7 @@
       "source_file": "src/services/StorageService.ts",
       "source_location": "L307",
       "_origin": "ast",
-      "community": 34,
+      "community": 11,
       "norm_label": "getlastbackuptime()",
       "id": "services_storageservice_getlastbackuptime"
     },
@@ -2799,7 +2919,7 @@
       "source_file": "src/services/StorageService.ts",
       "source_location": "L311",
       "_origin": "ast",
-      "community": 34,
+      "community": 11,
       "norm_label": "savebooktocloud()",
       "id": "services_storageservice_savebooktocloud"
     },
@@ -2809,7 +2929,7 @@
       "source_file": "src/services/StorageService.ts",
       "source_location": "L331",
       "_origin": "ast",
-      "community": 34,
+      "community": 11,
       "norm_label": "deletebookfromcloud()",
       "id": "services_storageservice_deletebookfromcloud"
     },
@@ -2819,7 +2939,7 @@
       "source_file": "src/services/StorageService.ts",
       "source_location": "L347",
       "_origin": "ast",
-      "community": 34,
+      "community": 11,
       "norm_label": "loadbooksfromcloud()",
       "id": "services_storageservice_loadbooksfromcloud"
     },
@@ -2829,7 +2949,7 @@
       "source_file": "src/services/StorageService.ts",
       "source_location": "L369",
       "_origin": "ast",
-      "community": 34,
+      "community": 11,
       "norm_label": "synclocallibrarytocloud()",
       "id": "services_storageservice_synclocallibrarytocloud"
     },
@@ -2839,7 +2959,7 @@
       "source_file": "src/services/StorageService.ts",
       "source_location": "L408",
       "_origin": "ast",
-      "community": 34,
+      "community": 11,
       "norm_label": "forcepushbookstocloud()",
       "id": "services_storageservice_forcepushbookstocloud"
     },
@@ -2849,7 +2969,7 @@
       "source_file": "src/services/StorageService.ts",
       "source_location": "L451",
       "_origin": "ast",
-      "community": 34,
+      "community": 11,
       "norm_label": "saveaccountstocloud()",
       "id": "services_storageservice_saveaccountstocloud"
     },
@@ -2859,7 +2979,7 @@
       "source_file": "src/services/StorageService.ts",
       "source_location": "L473",
       "_origin": "ast",
-      "community": 34,
+      "community": 11,
       "norm_label": "loadaccountsfromcloud()",
       "id": "services_storageservice_loadaccountsfromcloud"
     },
@@ -2869,7 +2989,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 54,
+      "community": 1,
       "norm_label": "brainservice.ts",
       "id": "brain_brainservice"
     },
@@ -2879,7 +2999,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L15",
       "_origin": "ast",
-      "community": 28,
+      "community": 1,
       "norm_label": "brain_key()",
       "id": "brain_brainservice_brain_key"
     },
@@ -2889,7 +3009,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L20",
       "_origin": "ast",
-      "community": 28,
+      "community": 1,
       "norm_label": "slugify()",
       "id": "brain_brainservice_slugify"
     },
@@ -2899,7 +3019,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L30",
       "_origin": "ast",
-      "community": 28,
+      "community": 1,
       "norm_label": "estimatetokens()",
       "id": "brain_brainservice_estimatetokens"
     },
@@ -2909,7 +3029,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L34",
       "_origin": "ast",
-      "community": 54,
+      "community": 1,
       "norm_label": "neon_colors",
       "id": "brain_brainservice_neon_colors"
     },
@@ -2919,7 +3039,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L45",
       "_origin": "ast",
-      "community": 22,
+      "community": 1,
       "norm_label": "getnichecolor()",
       "id": "brain_brainservice_getnichecolor"
     },
@@ -2929,7 +3049,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L54",
       "_origin": "ast",
-      "community": 28,
+      "community": 1,
       "norm_label": "nichekeyword()",
       "id": "brain_brainservice_nichekeyword"
     },
@@ -2939,7 +3059,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L58",
       "_origin": "ast",
-      "community": 54,
+      "community": 1,
       "norm_label": "summarizelibrary()",
       "id": "brain_brainservice_summarizelibrary"
     },
@@ -2949,7 +3069,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L80",
       "_origin": "ast",
-      "community": 54,
+      "community": 1,
       "norm_label": "collecttrackedbookids()",
       "id": "brain_brainservice_collecttrackedbookids"
     },
@@ -2959,7 +3079,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L90",
       "_origin": "ast",
-      "community": 28,
+      "community": 1,
       "norm_label": "pushevent()",
       "id": "brain_brainservice_pushevent"
     },
@@ -2969,7 +3089,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L106",
       "_origin": "ast",
-      "community": 28,
+      "community": 1,
       "norm_label": "upsertpattern()",
       "id": "brain_brainservice_upsertpattern"
     },
@@ -2979,7 +3099,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L112",
       "_origin": "ast",
-      "community": 28,
+      "community": 1,
       "norm_label": "upsertniche()",
       "id": "brain_brainservice_upsertniche"
     },
@@ -2989,7 +3109,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L153",
       "_origin": "ast",
-      "community": 28,
+      "community": 1,
       "norm_label": "upserttrackedbook()",
       "id": "brain_brainservice_upserttrackedbook"
     },
@@ -2999,7 +3119,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L175",
       "_origin": "ast",
-      "community": 54,
+      "community": 1,
       "norm_label": "scorerecommendation()",
       "id": "brain_brainservice_scorerecommendation"
     },
@@ -3009,7 +3129,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L185",
       "_origin": "ast",
-      "community": 54,
+      "community": 1,
       "norm_label": "deriverecommendations()",
       "id": "brain_brainservice_deriverecommendations"
     },
@@ -3019,7 +3139,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L250",
       "_origin": "ast",
-      "community": 54,
+      "community": 1,
       "norm_label": "normalizestate()",
       "id": "brain_brainservice_normalizestate"
     },
@@ -3029,7 +3149,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L264",
       "_origin": "ast",
-      "community": 28,
+      "community": 1,
       "norm_label": "brainservice",
       "id": "brain_brainservice_brainservice"
     },
@@ -3039,7 +3159,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L265",
       "_origin": "ast",
-      "community": 28,
+      "community": 1,
       "norm_label": ".loadstate()",
       "id": "brain_brainservice_brainservice_loadstate"
     },
@@ -3049,7 +3169,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L276",
       "_origin": "ast",
-      "community": 28,
+      "community": 1,
       "norm_label": ".savestate()",
       "id": "brain_brainservice_brainservice_savestate"
     },
@@ -3059,7 +3179,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L282",
       "_origin": "ast",
-      "community": 28,
+      "community": 1,
       "norm_label": ".synccloudstate()",
       "id": "brain_brainservice_brainservice_synccloudstate"
     },
@@ -3069,7 +3189,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L294",
       "_origin": "ast",
-      "community": 28,
+      "community": 1,
       "norm_label": ".getstate()",
       "id": "brain_brainservice_brainservice_getstate"
     },
@@ -3079,7 +3199,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L302",
       "_origin": "ast",
-      "community": 28,
+      "community": 1,
       "norm_label": ".autoinitializefromlibrary()",
       "id": "brain_brainservice_brainservice_autoinitializefromlibrary"
     },
@@ -3089,7 +3209,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L338",
       "_origin": "ast",
-      "community": 28,
+      "community": 1,
       "norm_label": ".markbooterror()",
       "id": "brain_brainservice_brainservice_markbooterror"
     },
@@ -3099,7 +3219,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L350",
       "_origin": "ast",
-      "community": 28,
+      "community": 1,
       "norm_label": ".learnfrompage()",
       "id": "brain_brainservice_brainservice_learnfrompage"
     },
@@ -3109,7 +3229,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L460",
       "_origin": "ast",
-      "community": 28,
+      "community": 1,
       "norm_label": ".learnfromoutline()",
       "id": "brain_brainservice_brainservice_learnfromoutline"
     },
@@ -3119,7 +3239,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L482",
       "_origin": "ast",
-      "community": 28,
+      "community": 1,
       "norm_label": ".trackbook()",
       "id": "brain_brainservice_brainservice_trackbook"
     },
@@ -3129,7 +3249,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L543",
       "_origin": "ast",
-      "community": 28,
+      "community": 1,
       "norm_label": ".rebuildfromlibrary()",
       "id": "brain_brainservice_brainservice_rebuildfromlibrary"
     },
@@ -3139,7 +3259,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L586",
       "_origin": "ast",
-      "community": 28,
+      "community": 1,
       "norm_label": ".learnfrompageinternal()",
       "id": "brain_brainservice_brainservice_learnfrompageinternal"
     },
@@ -3149,7 +3269,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L623",
       "_origin": "ast",
-      "community": 28,
+      "community": 1,
       "norm_label": ".trackbookinternal()",
       "id": "brain_brainservice_brainservice_trackbookinternal"
     },
@@ -3159,7 +3279,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L630",
       "_origin": "ast",
-      "community": 28,
+      "community": 1,
       "norm_label": ".buildcontextprompt()",
       "id": "brain_brainservice_brainservice_buildcontextprompt"
     },
@@ -3169,7 +3289,7 @@
       "source_file": "src/services/brain/BrainService.ts",
       "source_location": "L679",
       "_origin": "ast",
-      "community": 28,
+      "community": 1,
       "norm_label": ".markobsidiansync()",
       "id": "brain_brainservice_brainservice_markobsidiansync"
     },
@@ -3549,7 +3669,7 @@
       "source_file": "src/services/brain/ObsidianSyncService.ts",
       "source_location": "L644",
       "_origin": "ast",
-      "community": 28,
+      "community": 1,
       "norm_label": ".getcachedgenerationcontext()",
       "id": "brain_obsidiansyncservice_obsidiansyncservice_getcachedgenerationcontext"
     },
@@ -3619,7 +3739,7 @@
       "source_file": "src/types/brain.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 54,
+      "community": 1,
       "norm_label": "brain.ts",
       "id": "types_brain"
     },
@@ -3629,7 +3749,7 @@
       "source_file": "src/types/brain.ts",
       "source_location": "L3",
       "_origin": "ast",
-      "community": 54,
+      "community": 1,
       "norm_label": "braineventtype",
       "id": "types_brain_braineventtype"
     },
@@ -3639,7 +3759,7 @@
       "source_file": "src/types/brain.ts",
       "source_location": "L13",
       "_origin": "ast",
-      "community": 54,
+      "community": 1,
       "norm_label": "brainevent",
       "id": "types_brain_brainevent"
     },
@@ -3649,7 +3769,7 @@
       "source_file": "src/types/brain.ts",
       "source_location": "L25",
       "_origin": "ast",
-      "community": 54,
+      "community": 1,
       "norm_label": "nichebrainprofile",
       "id": "types_brain_nichebrainprofile"
     },
@@ -3659,7 +3779,7 @@
       "source_file": "src/types/brain.ts",
       "source_location": "L39",
       "_origin": "ast",
-      "community": 54,
+      "community": 1,
       "norm_label": "braintrackedbook",
       "id": "types_brain_braintrackedbook"
     },
@@ -3669,7 +3789,7 @@
       "source_file": "src/types/brain.ts",
       "source_location": "L50",
       "_origin": "ast",
-      "community": 54,
+      "community": 1,
       "norm_label": "brainrecommendationitem",
       "id": "types_brain_brainrecommendationitem"
     },
@@ -3679,7 +3799,7 @@
       "source_file": "src/types/brain.ts",
       "source_location": "L58",
       "_origin": "ast",
-      "community": 54,
+      "community": 1,
       "norm_label": "brainrecommendations",
       "id": "types_brain_brainrecommendations"
     },
@@ -3689,7 +3809,7 @@
       "source_file": "src/types/brain.ts",
       "source_location": "L66",
       "_origin": "ast",
-      "community": 28,
+      "community": 1,
       "norm_label": "brainstate",
       "id": "types_brain_brainstate"
     },
@@ -3699,7 +3819,7 @@
       "source_file": "src/types/brain.ts",
       "source_location": "L92",
       "_origin": "ast",
-      "community": 28,
+      "community": 1,
       "norm_label": "brainbookinput",
       "id": "types_brain_brainbookinput"
     },
@@ -3709,7 +3829,7 @@
       "source_file": "src/types/brain.ts",
       "source_location": "L113",
       "_origin": "ast",
-      "community": 54,
+      "community": 1,
       "norm_label": "empty_brain_state()",
       "id": "types_brain_empty_brain_state"
     },
@@ -3879,7 +3999,7 @@
       "source_file": "src/components/LicensePrompt.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 11,
+      "community": 65,
       "norm_label": "licenseprompt.tsx",
       "id": "components_licenseprompt"
     },
@@ -3889,7 +4009,7 @@
       "source_file": "src/components/LicensePrompt.tsx",
       "source_location": "L5",
       "_origin": "ast",
-      "community": 11,
+      "community": 65,
       "norm_label": "licensepromptprops",
       "id": "components_licenseprompt_licensepromptprops"
     },
@@ -3899,7 +4019,7 @@
       "source_file": "src/components/LicensePrompt.tsx",
       "source_location": "L11",
       "_origin": "ast",
-      "community": 11,
+      "community": 65,
       "norm_label": "licenseprompt()",
       "id": "components_licenseprompt_licenseprompt"
     },
@@ -3959,7 +4079,7 @@
       "source_file": "src/components/OwnerPanel.tsx",
       "source_location": "L1486",
       "_origin": "ast",
-      "community": 33,
+      "community": 22,
       "norm_label": "metriccard()",
       "id": "components_ownerpanel_metriccard"
     },
@@ -3972,96 +4092,6 @@
       "community": 33,
       "norm_label": "ownertoolbarbutton()",
       "id": "components_ownerpanel_ownertoolbarbutton"
-    },
-    {
-      "label": "PdfGenerator.ts",
-      "file_type": "code",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 48,
-      "norm_label": "pdfgenerator.ts",
-      "id": "utils_pdfgenerator"
-    },
-    {
-      "label": "PdfConfig",
-      "file_type": "code",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L5",
-      "_origin": "ast",
-      "community": 48,
-      "norm_label": "pdfconfig",
-      "id": "utils_pdfgenerator_pdfconfig"
-    },
-    {
-      "label": "BoxDesign",
-      "file_type": "code",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L78",
-      "_origin": "ast",
-      "community": 48,
-      "norm_label": "boxdesign",
-      "id": "utils_pdfgenerator_boxdesign"
-    },
-    {
-      "label": "generateBookPdf()",
-      "file_type": "code",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L88",
-      "_origin": "ast",
-      "community": 48,
-      "norm_label": "generatebookpdf()",
-      "id": "utils_pdfgenerator_generatebookpdf"
-    },
-    {
-      "label": "toRoman()",
-      "file_type": "code",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L1691",
-      "_origin": "ast",
-      "community": 48,
-      "norm_label": "toroman()",
-      "id": "utils_pdfgenerator_toroman"
-    },
-    {
-      "label": "drawGeometricEmblem()",
-      "file_type": "code",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L1708",
-      "_origin": "ast",
-      "community": 48,
-      "norm_label": "drawgeometricemblem()",
-      "id": "utils_pdfgenerator_drawgeometricemblem"
-    },
-    {
-      "label": "drawFloralEmblem()",
-      "file_type": "code",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L1722",
-      "_origin": "ast",
-      "community": 48,
-      "norm_label": "drawfloralemblem()",
-      "id": "utils_pdfgenerator_drawfloralemblem"
-    },
-    {
-      "label": "drawStarEmblem()",
-      "file_type": "code",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L1735",
-      "_origin": "ast",
-      "community": 48,
-      "norm_label": "drawstaremblem()",
-      "id": "utils_pdfgenerator_drawstaremblem"
-    },
-    {
-      "label": "drawBookEmblem()",
-      "file_type": "code",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L1755",
-      "_origin": "ast",
-      "community": 48,
-      "norm_label": "drawbookemblem()",
-      "id": "utils_pdfgenerator_drawbookemblem"
     },
     {
       "label": "BugReportModal.tsx",
@@ -4159,7 +4189,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L63",
       "_origin": "ast",
-      "community": 9,
+      "community": 36,
       "norm_label": "al()",
       "id": "antigravity_cli_sidebar_main_al"
     },
@@ -4169,7 +4199,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L66",
       "_origin": "ast",
-      "community": 15,
+      "community": 43,
       "norm_label": "kl()",
       "id": "antigravity_cli_sidebar_main_kl"
     },
@@ -4189,7 +4219,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L72",
       "_origin": "ast",
-      "community": 15,
+      "community": 43,
       "norm_label": "qs()",
       "id": "antigravity_cli_sidebar_main_qs"
     },
@@ -4199,7 +4229,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L78",
       "_origin": "ast",
-      "community": 15,
+      "community": 43,
       "norm_label": "cn()",
       "id": "antigravity_cli_sidebar_main_cn"
     },
@@ -4209,7 +4239,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L81",
       "_origin": "ast",
-      "community": 43,
+      "community": 14,
       "norm_label": "mn()",
       "id": "antigravity_cli_sidebar_main_mn"
     },
@@ -4229,7 +4259,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L88",
       "_origin": "ast",
-      "community": 53,
+      "community": 84,
       "norm_label": "ce()",
       "id": "antigravity_cli_sidebar_main_ce"
     },
@@ -4259,7 +4289,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L103",
       "_origin": "ast",
-      "community": 14,
+      "community": 28,
       "norm_label": "clear()",
       "id": "antigravity_cli_sidebar_main_clear"
     },
@@ -4279,7 +4309,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L212",
       "_origin": "ast",
-      "community": 124,
+      "community": 6,
       "norm_label": "tocolorrgb()",
       "id": "antigravity_cli_sidebar_main_tocolorrgb"
     },
@@ -4449,7 +4479,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L264",
       "_origin": "ast",
-      "community": 0,
+      "community": 138,
       "norm_label": "isfgpalette()",
       "id": "antigravity_cli_sidebar_main_isfgpalette"
     },
@@ -4569,7 +4599,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L325",
       "_origin": "ast",
-      "community": 0,
+      "community": 138,
       "norm_label": "isunderlinecolorpalette()",
       "id": "antigravity_cli_sidebar_main_isunderlinecolorpalette"
     },
@@ -4669,7 +4699,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L391",
       "_origin": "ast",
-      "community": 0,
+      "community": 137,
       "norm_label": "fromchardata()",
       "id": "antigravity_cli_sidebar_main_fromchardata"
     },
@@ -4719,7 +4749,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L407",
       "_origin": "ast",
-      "community": 0,
+      "community": 137,
       "norm_label": "setfromchardata()",
       "id": "antigravity_cli_sidebar_main_setfromchardata"
     },
@@ -4799,7 +4829,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L535",
       "_origin": "ast",
-      "community": 115,
+      "community": 5,
       "norm_label": "emit()",
       "id": "antigravity_cli_sidebar_main_emit"
     },
@@ -4939,7 +4969,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L620",
       "_origin": "ast",
-      "community": 51,
+      "community": 119,
       "norm_label": "s15()",
       "id": "antigravity_cli_sidebar_main_s15"
     },
@@ -4959,7 +4989,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L628",
       "_origin": "ast",
-      "community": 61,
+      "community": 54,
       "norm_label": "e()",
       "id": "antigravity_cli_sidebar_main_e"
     },
@@ -4969,7 +4999,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L632",
       "_origin": "ast",
-      "community": 61,
+      "community": 54,
       "norm_label": "i()",
       "id": "antigravity_cli_sidebar_main_i"
     },
@@ -4979,7 +5009,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L637",
       "_origin": "ast",
-      "community": 122,
+      "community": 5,
       "norm_label": "no()",
       "id": "antigravity_cli_sidebar_main_no"
     },
@@ -4989,7 +5019,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L645",
       "_origin": "ast",
-      "community": 115,
+      "community": 5,
       "norm_label": "foreach()",
       "id": "antigravity_cli_sidebar_main_foreach"
     },
@@ -5099,7 +5129,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L701",
       "_origin": "ast",
-      "community": 70,
+      "community": 21,
       "norm_label": "delete()",
       "id": "antigravity_cli_sidebar_main_delete"
     },
@@ -5119,7 +5149,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L707",
       "_origin": "ast",
-      "community": 115,
+      "community": 5,
       "norm_label": "entries()",
       "id": "antigravity_cli_sidebar_main_entries"
     },
@@ -5129,7 +5159,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L710",
       "_origin": "ast",
-      "community": 5,
+      "community": 36,
       "norm_label": "keys()",
       "id": "antigravity_cli_sidebar_main_keys"
     },
@@ -5169,7 +5199,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L747",
       "_origin": "ast",
-      "community": 13,
+      "community": 61,
       "norm_label": "kn()",
       "id": "antigravity_cli_sidebar_main_kn"
     },
@@ -5189,7 +5219,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L779",
       "_origin": "ast",
-      "community": 51,
+      "community": 54,
       "norm_label": "n()",
       "id": "antigravity_cli_sidebar_main_n"
     },
@@ -5249,7 +5279,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L860",
       "_origin": "ast",
-      "community": 27,
+      "community": 43,
       "norm_label": "getdisposabledata()",
       "id": "antigravity_cli_sidebar_main_getdisposabledata"
     },
@@ -5259,7 +5289,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L864",
       "_origin": "ast",
-      "community": 13,
+      "community": 43,
       "norm_label": "trackdisposable()",
       "id": "antigravity_cli_sidebar_main_trackdisposable"
     },
@@ -5269,7 +5299,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L868",
       "_origin": "ast",
-      "community": 15,
+      "community": 43,
       "norm_label": "setparent()",
       "id": "antigravity_cli_sidebar_main_setparent"
     },
@@ -5279,7 +5309,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L872",
       "_origin": "ast",
-      "community": 70,
+      "community": 21,
       "norm_label": "markasdisposed()",
       "id": "antigravity_cli_sidebar_main_markasdisposed"
     },
@@ -5299,7 +5329,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L878",
       "_origin": "ast",
-      "community": 27,
+      "community": 43,
       "norm_label": "getrootparent()",
       "id": "antigravity_cli_sidebar_main_getrootparent"
     },
@@ -5309,7 +5339,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L884",
       "_origin": "ast",
-      "community": 115,
+      "community": 5,
       "norm_label": "gettrackeddisposables()",
       "id": "antigravity_cli_sidebar_main_gettrackeddisposables"
     },
@@ -5319,7 +5349,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L888",
       "_origin": "ast",
-      "community": 122,
+      "community": 5,
       "norm_label": "computeleakingdisposables()",
       "id": "antigravity_cli_sidebar_main_computeleakingdisposables"
     },
@@ -5339,7 +5369,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L974",
       "_origin": "ast",
-      "community": 13,
+      "community": 43,
       "norm_label": "fr()",
       "id": "antigravity_cli_sidebar_main_fr"
     },
@@ -5349,7 +5379,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L977",
       "_origin": "ast",
-      "community": 70,
+      "community": 21,
       "norm_label": "pr()",
       "id": "antigravity_cli_sidebar_main_pr"
     },
@@ -5379,7 +5409,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L989",
       "_origin": "ast",
-      "community": 125,
+      "community": 28,
       "norm_label": "ne()",
       "id": "antigravity_cli_sidebar_main_ne"
     },
@@ -5389,7 +5419,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L1002",
       "_origin": "ast",
-      "community": 115,
+      "community": 5,
       "norm_label": "ho()",
       "id": "antigravity_cli_sidebar_main_ho"
     },
@@ -5409,7 +5439,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L1018",
       "_origin": "ast",
-      "community": 70,
+      "community": 21,
       "norm_label": "dispose()",
       "id": "antigravity_cli_sidebar_main_dispose"
     },
@@ -5449,7 +5479,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L1068",
       "_origin": "ast",
-      "community": 70,
+      "community": 17,
       "norm_label": "value()",
       "id": "antigravity_cli_sidebar_main_value"
     },
@@ -5549,7 +5579,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L1169",
       "_origin": "ast",
-      "community": 0,
+      "community": 136,
       "norm_label": "stop()",
       "id": "antigravity_cli_sidebar_main_stop"
     },
@@ -5569,7 +5599,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L1175",
       "_origin": "ast",
-      "community": 0,
+      "community": 136,
       "norm_label": "elapsed()",
       "id": "antigravity_cli_sidebar_main_elapsed"
     },
@@ -5589,7 +5619,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L1250",
       "_origin": "ast",
-      "community": 61,
+      "community": 54,
       "norm_label": "d()",
       "id": "antigravity_cli_sidebar_main_d"
     },
@@ -5629,7 +5659,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L1312",
       "_origin": "ast",
-      "community": 135,
+      "community": 5,
       "norm_label": "o",
       "id": "antigravity_cli_sidebar_main_o"
     },
@@ -5639,7 +5669,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L1313",
       "_origin": "ast",
-      "community": 135,
+      "community": 5,
       "norm_label": ".constructor()",
       "id": "antigravity_cli_sidebar_main_o_constructor"
     },
@@ -5649,7 +5679,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L1316",
       "_origin": "ast",
-      "community": 135,
+      "community": 5,
       "norm_label": ".map()",
       "id": "antigravity_cli_sidebar_main_o_map"
     },
@@ -5659,7 +5689,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L1319",
       "_origin": "ast",
-      "community": 115,
+      "community": 5,
       "norm_label": ".foreach()",
       "id": "antigravity_cli_sidebar_main_o_foreach"
     },
@@ -5669,7 +5699,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L1322",
       "_origin": "ast",
-      "community": 135,
+      "community": 5,
       "norm_label": ".filter()",
       "id": "antigravity_cli_sidebar_main_o_filter"
     },
@@ -5679,7 +5709,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L1325",
       "_origin": "ast",
-      "community": 119,
+      "community": 5,
       "norm_label": ".reduce()",
       "id": "antigravity_cli_sidebar_main_o_reduce"
     },
@@ -5689,7 +5719,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L1329",
       "_origin": "ast",
-      "community": 135,
+      "community": 5,
       "norm_label": ".latch()",
       "id": "antigravity_cli_sidebar_main_o_latch"
     },
@@ -5699,7 +5729,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L1336",
       "_origin": "ast",
-      "community": 135,
+      "community": 5,
       "norm_label": ".evaluate()",
       "id": "antigravity_cli_sidebar_main_o_evaluate"
     },
@@ -5829,7 +5859,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L1429",
       "_origin": "ast",
-      "community": 21,
+      "community": 41,
       "norm_label": "start()",
       "id": "antigravity_cli_sidebar_main_start"
     },
@@ -5859,7 +5889,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L1488",
       "_origin": "ast",
-      "community": 53,
+      "community": 84,
       "norm_label": "print()",
       "id": "antigravity_cli_sidebar_main_print"
     },
@@ -5879,7 +5909,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L1596",
       "_origin": "ast",
-      "community": 70,
+      "community": 17,
       "norm_label": "_deliver()",
       "id": "antigravity_cli_sidebar_main_deliver"
     },
@@ -5889,7 +5919,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L1610",
       "_origin": "ast",
-      "community": 70,
+      "community": 17,
       "norm_label": "_deliverqueue()",
       "id": "antigravity_cli_sidebar_main_deliverqueue"
     },
@@ -6029,7 +6059,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L1799",
       "_origin": "ast",
-      "community": 51,
+      "community": 54,
       "norm_label": "keycodetostr()",
       "id": "antigravity_cli_sidebar_main_keycodetostr"
     },
@@ -6159,7 +6189,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L1955",
       "_origin": "ast",
-      "community": 4,
+      "community": 115,
       "norm_label": "pa()",
       "id": "antigravity_cli_sidebar_main_pa"
     },
@@ -6169,7 +6199,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L1966",
       "_origin": "ast",
-      "community": 4,
+      "community": 115,
       "norm_label": "getsameoriginwindowchain()",
       "id": "antigravity_cli_sidebar_main_getsameoriginwindowchain"
     },
@@ -6179,7 +6209,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L1977",
       "_origin": "ast",
-      "community": 4,
+      "community": 115,
       "norm_label": "getpositionofchildwindowrelativetoancestorwindow()",
       "id": "antigravity_cli_sidebar_main_getpositionofchildwindowrelativetoancestorwindow"
     },
@@ -6219,7 +6249,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L2080",
       "_origin": "ast",
-      "community": 13,
+      "community": 66,
       "norm_label": "cancelandset()",
       "id": "antigravity_cli_sidebar_main_cancelandset"
     },
@@ -6229,7 +6259,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L2086",
       "_origin": "ast",
-      "community": 52,
+      "community": 116,
       "norm_label": "setifnotset()",
       "id": "antigravity_cli_sidebar_main_setifnotset"
     },
@@ -6359,7 +6389,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L2252",
       "_origin": "ast",
-      "community": 125,
+      "community": 28,
       "norm_label": "lo()",
       "id": "antigravity_cli_sidebar_main_lo"
     },
@@ -6369,7 +6399,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L2255",
       "_origin": "ast",
-      "community": 125,
+      "community": 28,
       "norm_label": "is()",
       "id": "antigravity_cli_sidebar_main_is"
     },
@@ -6379,7 +6409,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L2258",
       "_origin": "ast",
-      "community": 125,
+      "community": 28,
       "norm_label": "ao()",
       "id": "antigravity_cli_sidebar_main_ao"
     },
@@ -6389,7 +6419,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L2264",
       "_origin": "ast",
-      "community": 119,
+      "community": 5,
       "norm_label": "ns()",
       "id": "antigravity_cli_sidebar_main_ns"
     },
@@ -6399,7 +6429,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L2280",
       "_origin": "ast",
-      "community": 119,
+      "community": 5,
       "norm_label": "je()",
       "id": "antigravity_cli_sidebar_main_je"
     },
@@ -6409,7 +6439,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L2283",
       "_origin": "ast",
-      "community": 119,
+      "community": 5,
       "norm_label": "sa()",
       "id": "antigravity_cli_sidebar_main_sa"
     },
@@ -6419,7 +6449,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L2286",
       "_origin": "ast",
-      "community": 119,
+      "community": 5,
       "norm_label": "po()",
       "id": "antigravity_cli_sidebar_main_po"
     },
@@ -6429,7 +6459,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L2291",
       "_origin": "ast",
-      "community": 119,
+      "community": 5,
       "norm_label": "ea()",
       "id": "antigravity_cli_sidebar_main_ea"
     },
@@ -6439,7 +6469,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L2294",
       "_origin": "ast",
-      "community": 119,
+      "community": 5,
       "norm_label": "ta()",
       "id": "antigravity_cli_sidebar_main_ta"
     },
@@ -6489,7 +6519,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L2320",
       "_origin": "ast",
-      "community": 125,
+      "community": 28,
       "norm_label": "update()",
       "id": "antigravity_cli_sidebar_main_update"
     },
@@ -6599,7 +6629,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L2412",
       "_origin": "ast",
-      "community": 51,
+      "community": 119,
       "norm_label": "xa()",
       "id": "antigravity_cli_sidebar_main_xa"
     },
@@ -6619,7 +6649,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L2445",
       "_origin": "ast",
-      "community": 122,
+      "community": 5,
       "norm_label": "sort()",
       "id": "antigravity_cli_sidebar_main_sort"
     },
@@ -6649,7 +6679,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L2487",
       "_origin": "ast",
-      "community": 66,
+      "community": 15,
       "norm_label": "fo()",
       "id": "antigravity_cli_sidebar_main_fo"
     },
@@ -6669,7 +6699,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L2521",
       "_origin": "ast",
-      "community": 115,
+      "community": 5,
       "norm_label": "ra()",
       "id": "antigravity_cli_sidebar_main_ra"
     },
@@ -6889,7 +6919,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L2637",
       "_origin": "ast",
-      "community": 66,
+      "community": 15,
       "norm_label": "toggleclassname()",
       "id": "antigravity_cli_sidebar_main_toggleclassname"
     },
@@ -7019,7 +7049,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L2692",
       "_origin": "ast",
-      "community": 13,
+      "community": 66,
       "norm_label": "stopmonitoring()",
       "id": "antigravity_cli_sidebar_main_stopmonitoring"
     },
@@ -7029,7 +7059,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L2698",
       "_origin": "ast",
-      "community": 13,
+      "community": 66,
       "norm_label": "ismonitoring()",
       "id": "antigravity_cli_sidebar_main_ismonitoring"
     },
@@ -7039,7 +7069,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L2701",
       "_origin": "ast",
-      "community": 13,
+      "community": 66,
       "norm_label": "startmonitoring()",
       "id": "antigravity_cli_sidebar_main_startmonitoring"
     },
@@ -7259,7 +7289,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L2880",
       "_origin": "ast",
-      "community": 13,
+      "community": 66,
       "norm_label": "_arrowpointerdown()",
       "id": "antigravity_cli_sidebar_main_arrowpointerdown"
     },
@@ -7469,7 +7499,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L3030",
       "_origin": "ast",
-      "community": 21,
+      "community": 41,
       "norm_label": "combine()",
       "id": "antigravity_cli_sidebar_main_combine"
     },
@@ -7559,7 +7589,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L3075",
       "_origin": "ast",
-      "community": 52,
+      "community": 116,
       "norm_label": "_reveal()",
       "id": "antigravity_cli_sidebar_main_reveal"
     },
@@ -7659,7 +7689,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L3120",
       "_origin": "ast",
-      "community": 66,
+      "community": 15,
       "norm_label": "_domnodepointerdown()",
       "id": "antigravity_cli_sidebar_main_domnodepointerdown"
     },
@@ -7669,7 +7699,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L3123",
       "_origin": "ast",
-      "community": 66,
+      "community": 15,
       "norm_label": "delegatepointerdown()",
       "id": "antigravity_cli_sidebar_main_delegatepointerdown"
     },
@@ -7679,7 +7709,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L3127",
       "_origin": "ast",
-      "community": 66,
+      "community": 15,
       "norm_label": "_onpointerdown()",
       "id": "antigravity_cli_sidebar_main_onpointerdown"
     },
@@ -7689,7 +7719,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L3137",
       "_origin": "ast",
-      "community": 66,
+      "community": 15,
       "norm_label": "_sliderpointerdown()",
       "id": "antigravity_cli_sidebar_main_sliderpointerdown"
     },
@@ -7749,7 +7779,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L3178",
       "_origin": "ast",
-      "community": 19,
+      "community": 21,
       "norm_label": "setscrollposition()",
       "id": "antigravity_cli_sidebar_main_setscrollposition"
     },
@@ -7839,7 +7869,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L3213",
       "_origin": "ast",
-      "community": 66,
+      "community": 15,
       "norm_label": "getslidersize()",
       "id": "antigravity_cli_sidebar_main_getslidersize"
     },
@@ -7849,7 +7879,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L3216",
       "_origin": "ast",
-      "community": 66,
+      "community": 15,
       "norm_label": "getsliderposition()",
       "id": "antigravity_cli_sidebar_main_getsliderposition"
     },
@@ -7859,7 +7889,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L3219",
       "_origin": "ast",
-      "community": 66,
+      "community": 15,
       "norm_label": "getdesiredscrollpositionfromoffset()",
       "id": "antigravity_cli_sidebar_main_getdesiredscrollpositionfromoffset"
     },
@@ -7869,7 +7899,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L3224",
       "_origin": "ast",
-      "community": 66,
+      "community": 15,
       "norm_label": "getdesiredscrollpositionfromoffsetpaged()",
       "id": "antigravity_cli_sidebar_main_getdesiredscrollpositionfromoffsetpaged"
     },
@@ -7919,7 +7949,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L3250",
       "_origin": "ast",
-      "community": 66,
+      "community": 15,
       "norm_label": "_pointerdownrelativeposition()",
       "id": "antigravity_cli_sidebar_main_pointerdownrelativeposition"
     },
@@ -7929,7 +7959,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L3253",
       "_origin": "ast",
-      "community": 66,
+      "community": 15,
       "norm_label": "_sliderpointerposition()",
       "id": "antigravity_cli_sidebar_main_sliderpointerposition"
     },
@@ -7939,7 +7969,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L3256",
       "_origin": "ast",
-      "community": 66,
+      "community": 15,
       "norm_label": "_sliderorthogonalpointerposition()",
       "id": "antigravity_cli_sidebar_main_sliderorthogonalpointerposition"
     },
@@ -8049,7 +8079,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L3375",
       "_origin": "ast",
-      "community": 66,
+      "community": 15,
       "norm_label": "delegateverticalscrollbarpointerdown()",
       "id": "antigravity_cli_sidebar_main_delegateverticalscrollbarpointerdown"
     },
@@ -8119,7 +8149,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L3442",
       "_origin": "ast",
-      "community": 52,
+      "community": 116,
       "norm_label": "_ondragstart()",
       "id": "antigravity_cli_sidebar_main_ondragstart"
     },
@@ -8139,7 +8169,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L3460",
       "_origin": "ast",
-      "community": 13,
+      "community": 66,
       "norm_label": "_schedulehide()",
       "id": "antigravity_cli_sidebar_main_schedulehide"
     },
@@ -8219,7 +8249,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L3555",
       "_origin": "ast",
-      "community": 14,
+      "community": 70,
       "norm_label": "_dorefreshdecorations()",
       "id": "antigravity_cli_sidebar_main_dorefreshdecorations"
     },
@@ -8229,7 +8259,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L3559",
       "_origin": "ast",
-      "community": 14,
+      "community": 70,
       "norm_label": "_renderdecoration()",
       "id": "antigravity_cli_sidebar_main_renderdecoration"
     },
@@ -8239,7 +8269,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L3562",
       "_origin": "ast",
-      "community": 14,
+      "community": 70,
       "norm_label": "_createelement()",
       "id": "antigravity_cli_sidebar_main_createelement"
     },
@@ -8249,7 +8279,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L3569",
       "_origin": "ast",
-      "community": 14,
+      "community": 70,
       "norm_label": "_refreshstyle()",
       "id": "antigravity_cli_sidebar_main_refreshstyle"
     },
@@ -8259,7 +8289,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L3579",
       "_origin": "ast",
-      "community": 14,
+      "community": 70,
       "norm_label": "_refreshxposition()",
       "id": "antigravity_cli_sidebar_main_refreshxposition"
     },
@@ -8269,7 +8299,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L3585",
       "_origin": "ast",
-      "community": 70,
+      "community": 21,
       "norm_label": "_removedecoration()",
       "id": "antigravity_cli_sidebar_main_removedecoration"
     },
@@ -8439,7 +8469,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L3731",
       "_origin": "ast",
-      "community": 0,
+      "community": 134,
       "norm_label": "compositionupdate()",
       "id": "antigravity_cli_sidebar_main_compositionupdate"
     },
@@ -8489,7 +8519,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L3771",
       "_origin": "ast",
-      "community": 0,
+      "community": 134,
       "norm_label": "updatecompositionelements()",
       "id": "antigravity_cli_sidebar_main_updatecompositionelements"
     },
@@ -8499,7 +8529,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L3928",
       "_origin": "ast",
-      "community": 51,
+      "community": 119,
       "norm_label": "vt()",
       "id": "antigravity_cli_sidebar_main_vt"
     },
@@ -8509,7 +8539,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L3932",
       "_origin": "ast",
-      "community": 61,
+      "community": 54,
       "norm_label": "xe()",
       "id": "antigravity_cli_sidebar_main_xe"
     },
@@ -8539,7 +8569,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L3997",
       "_origin": "ast",
-      "community": 18,
+      "community": 84,
       "norm_label": "_getjoinedranges()",
       "id": "antigravity_cli_sidebar_main_getjoinedranges"
     },
@@ -8549,7 +8579,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L4012",
       "_origin": "ast",
-      "community": 53,
+      "community": 84,
       "norm_label": "_stringrangestocellranges()",
       "id": "antigravity_cli_sidebar_main_stringrangestocellranges"
     },
@@ -8559,7 +8589,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L4028",
       "_origin": "ast",
-      "community": 18,
+      "community": 84,
       "norm_label": "_mergeranges()",
       "id": "antigravity_cli_sidebar_main_mergeranges"
     },
@@ -8569,7 +8599,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L4047",
       "_origin": "ast",
-      "community": 135,
+      "community": 5,
       "norm_label": "oa()",
       "id": "antigravity_cli_sidebar_main_oa"
     },
@@ -8579,7 +8609,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L4050",
       "_origin": "ast",
-      "community": 135,
+      "community": 5,
       "norm_label": "ba()",
       "id": "antigravity_cli_sidebar_main_ba"
     },
@@ -8589,7 +8619,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L4056",
       "_origin": "ast",
-      "community": 0,
+      "community": 141,
       "norm_label": "vo()",
       "id": "antigravity_cli_sidebar_main_vo"
     },
@@ -8599,7 +8629,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L4059",
       "_origin": "ast",
-      "community": 0,
+      "community": 141,
       "norm_label": "qr()",
       "id": "antigravity_cli_sidebar_main_qr"
     },
@@ -8679,7 +8709,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L4217",
       "_origin": "ast",
-      "community": 14,
+      "community": 28,
       "norm_label": "setfont()",
       "id": "antigravity_cli_sidebar_main_setfont"
     },
@@ -8689,7 +8719,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L4236",
       "_origin": "ast",
-      "community": 0,
+      "community": 140,
       "norm_label": "_measure()",
       "id": "antigravity_cli_sidebar_main_measure"
     },
@@ -8719,7 +8749,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L4298",
       "_origin": "ast",
-      "community": 14,
+      "community": 28,
       "norm_label": "_updatedimensions()",
       "id": "antigravity_cli_sidebar_main_updatedimensions"
     },
@@ -8729,7 +8759,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L4306",
       "_origin": "ast",
-      "community": 115,
+      "community": 5,
       "norm_label": "_injectcss()",
       "id": "antigravity_cli_sidebar_main_injectcss"
     },
@@ -8739,7 +8769,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L4315",
       "_origin": "ast",
-      "community": 14,
+      "community": 28,
       "norm_label": "_setdefaultspacing()",
       "id": "antigravity_cli_sidebar_main_setdefaultspacing"
     },
@@ -8749,7 +8779,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L4319",
       "_origin": "ast",
-      "community": 14,
+      "community": 28,
       "norm_label": "handledevicepixelratiochange()",
       "id": "antigravity_cli_sidebar_main_handledevicepixelratiochange"
     },
@@ -8779,7 +8809,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L4332",
       "_origin": "ast",
-      "community": 14,
+      "community": 28,
       "norm_label": "handlecharsizechanged()",
       "id": "antigravity_cli_sidebar_main_handlecharsizechanged"
     },
@@ -8829,7 +8859,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L4364",
       "_origin": "ast",
-      "community": 14,
+      "community": 28,
       "norm_label": "_handleoptionschanged()",
       "id": "antigravity_cli_sidebar_main_handleoptionschanged"
     },
@@ -8899,7 +8929,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L4430",
       "_origin": "ast",
-      "community": 0,
+      "community": 140,
       "norm_label": "_validateandset()",
       "id": "antigravity_cli_sidebar_main_validateandset"
     },
@@ -9089,7 +9119,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L4605",
       "_origin": "ast",
-      "community": 14,
+      "community": 28,
       "norm_label": "flush()",
       "id": "antigravity_cli_sidebar_main_flush"
     },
@@ -9109,7 +9139,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L4629",
       "_origin": "ast",
-      "community": 21,
+      "community": 41,
       "norm_label": "_requestcallback()",
       "id": "antigravity_cli_sidebar_main_requestcallback"
     },
@@ -9119,7 +9149,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L4632",
       "_origin": "ast",
-      "community": 14,
+      "community": 28,
       "norm_label": "_cancelcallback()",
       "id": "antigravity_cli_sidebar_main_cancelcallback"
     },
@@ -9169,7 +9199,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L4702",
       "_origin": "ast",
-      "community": 14,
+      "community": 28,
       "norm_label": "_handleintersectionchange()",
       "id": "antigravity_cli_sidebar_main_handleintersectionchange"
     },
@@ -9179,7 +9209,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L4705",
       "_origin": "ast",
-      "community": 14,
+      "community": 28,
       "norm_label": "refreshrows()",
       "id": "antigravity_cli_sidebar_main_refreshrows"
     },
@@ -9199,7 +9229,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L4732",
       "_origin": "ast",
-      "community": 14,
+      "community": 28,
       "norm_label": "_fireoncanvasresize()",
       "id": "antigravity_cli_sidebar_main_fireoncanvasresize"
     },
@@ -9219,7 +9249,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L4738",
       "_origin": "ast",
-      "community": 14,
+      "community": 44,
       "norm_label": "setrenderer()",
       "id": "antigravity_cli_sidebar_main_setrenderer"
     },
@@ -9229,7 +9259,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L4744",
       "_origin": "ast",
-      "community": 14,
+      "community": 44,
       "norm_label": "_fullrefresh()",
       "id": "antigravity_cli_sidebar_main_fullrefresh"
     },
@@ -9239,7 +9269,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L4747",
       "_origin": "ast",
-      "community": 14,
+      "community": 44,
       "norm_label": "cleartextureatlas()",
       "id": "antigravity_cli_sidebar_main_cleartextureatlas"
     },
@@ -9249,7 +9279,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L4795",
       "_origin": "ast",
-      "community": 14,
+      "community": 28,
       "norm_label": "bufferrows()",
       "id": "antigravity_cli_sidebar_main_bufferrows"
     },
@@ -9469,7 +9499,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L4971",
       "_origin": "ast",
-      "community": 9,
+      "community": 84,
       "norm_label": "selectiontext()",
       "id": "antigravity_cli_sidebar_main_selectiontext"
     },
@@ -9479,7 +9509,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L5007",
       "_origin": "ast",
-      "community": 19,
+      "community": 6,
       "norm_label": "_isclickinselection()",
       "id": "antigravity_cli_sidebar_main_isclickinselection"
     },
@@ -9689,7 +9719,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L5124",
       "_origin": "ast",
-      "community": 70,
+      "community": 21,
       "norm_label": "_handlebufferactivate()",
       "id": "antigravity_cli_sidebar_main_handlebufferactivate"
     },
@@ -9819,7 +9849,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L5278",
       "_origin": "ast",
-      "community": 4,
+      "community": 143,
       "norm_label": "_settheme()",
       "id": "antigravity_cli_sidebar_main_settheme"
     },
@@ -9829,7 +9859,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L5286",
       "_origin": "ast",
-      "community": 124,
+      "community": 6,
       "norm_label": "restorecolor()",
       "id": "antigravity_cli_sidebar_main_restorecolor"
     },
@@ -9839,7 +9869,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L5308",
       "_origin": "ast",
-      "community": 61,
+      "community": 54,
       "norm_label": "modifycolors()",
       "id": "antigravity_cli_sidebar_main_modifycolors"
     },
@@ -9849,7 +9879,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L5311",
       "_origin": "ast",
-      "community": 4,
+      "community": 143,
       "norm_label": "_updaterestorecolors()",
       "id": "antigravity_cli_sidebar_main_updaterestorecolors"
     },
@@ -9939,7 +9969,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L5390",
       "_origin": "ast",
-      "community": 17,
+      "community": 81,
       "norm_label": "debug()",
       "id": "antigravity_cli_sidebar_main_debug"
     },
@@ -9969,7 +9999,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L5402",
       "_origin": "ast",
-      "community": 81,
+      "community": 19,
       "norm_label": "error()",
       "id": "antigravity_cli_sidebar_main_error"
     },
@@ -10109,7 +10139,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L5529",
       "_origin": "ast",
-      "community": 53,
+      "community": 84,
       "norm_label": "getstring()",
       "id": "antigravity_cli_sidebar_main_getstring"
     },
@@ -10129,7 +10159,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L5539",
       "_origin": "ast",
-      "community": 84,
+      "community": 36,
       "norm_label": "setcell()",
       "id": "antigravity_cli_sidebar_main_setcell"
     },
@@ -10149,7 +10179,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L5545",
       "_origin": "ast",
-      "community": 53,
+      "community": 84,
       "norm_label": "addcodepointtocell()",
       "id": "antigravity_cli_sidebar_main_addcodepointtocell"
     },
@@ -10169,7 +10199,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L5557",
       "_origin": "ast",
-      "community": 84,
+      "community": 10,
       "norm_label": "deletecells()",
       "id": "antigravity_cli_sidebar_main_deletecells"
     },
@@ -10179,7 +10209,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L5565",
       "_origin": "ast",
-      "community": 84,
+      "community": 36,
       "norm_label": "replacecells()",
       "id": "antigravity_cli_sidebar_main_replacecells"
     },
@@ -10189,7 +10219,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L5597",
       "_origin": "ast",
-      "community": 0,
+      "community": 132,
       "norm_label": "cleanupmemory()",
       "id": "antigravity_cli_sidebar_main_cleanupmemory"
     },
@@ -10219,7 +10249,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L5626",
       "_origin": "ast",
-      "community": 9,
+      "community": 36,
       "norm_label": "gettrimmedlength()",
       "id": "antigravity_cli_sidebar_main_gettrimmedlength"
     },
@@ -10239,7 +10269,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L5634",
       "_origin": "ast",
-      "community": 9,
+      "community": 36,
       "norm_label": "copycellsfrom()",
       "id": "antigravity_cli_sidebar_main_copycellsfrom"
     },
@@ -10249,7 +10279,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L5650",
       "_origin": "ast",
-      "community": 9,
+      "community": 84,
       "norm_label": "translatetostring()",
       "id": "antigravity_cli_sidebar_main_translatetostring"
     },
@@ -10259,7 +10289,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L5661",
       "_origin": "ast",
-      "community": 9,
+      "community": 36,
       "norm_label": "sl()",
       "id": "antigravity_cli_sidebar_main_sl"
     },
@@ -10279,7 +10309,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L5715",
       "_origin": "ast",
-      "community": 9,
+      "community": 36,
       "norm_label": "ri()",
       "id": "antigravity_cli_sidebar_main_ri"
     },
@@ -10349,7 +10379,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L5795",
       "_origin": "ast",
-      "community": 9,
+      "community": 28,
       "norm_label": "_getcorrectbufferlength()",
       "id": "antigravity_cli_sidebar_main_getcorrectbufferlength"
     },
@@ -10359,7 +10389,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L5800",
       "_origin": "ast",
-      "community": 17,
+      "community": 34,
       "norm_label": "fillviewportrows()",
       "id": "antigravity_cli_sidebar_main_fillviewportrows"
     },
@@ -10369,7 +10399,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L5826",
       "_origin": "ast",
-      "community": 0,
+      "community": 132,
       "norm_label": "_batchedmemorycleanup()",
       "id": "antigravity_cli_sidebar_main_batchedmemorycleanup"
     },
@@ -10419,7 +10449,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L5852",
       "_origin": "ast",
-      "community": 9,
+      "community": 36,
       "norm_label": "_reflowsmaller()",
       "id": "antigravity_cli_sidebar_main_reflowsmaller"
     },
@@ -10429,7 +10459,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L5904",
       "_origin": "ast",
-      "community": 9,
+      "community": 84,
       "norm_label": "translatebufferlinetostring()",
       "id": "antigravity_cli_sidebar_main_translatebufferlinetostring"
     },
@@ -10449,7 +10479,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L5914",
       "_origin": "ast",
-      "community": 41,
+      "community": 28,
       "norm_label": "setuptabstops()",
       "id": "antigravity_cli_sidebar_main_setuptabstops"
     },
@@ -10459,7 +10489,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L5917",
       "_origin": "ast",
-      "community": 41,
+      "community": 28,
       "norm_label": "prevstop()",
       "id": "antigravity_cli_sidebar_main_prevstop"
     },
@@ -10489,7 +10519,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L5930",
       "_origin": "ast",
-      "community": 14,
+      "community": 28,
       "norm_label": "clearallmarkers()",
       "id": "antigravity_cli_sidebar_main_clearallmarkers"
     },
@@ -10499,7 +10529,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L5935",
       "_origin": "ast",
-      "community": 27,
+      "community": 9,
       "norm_label": "addmarker()",
       "id": "antigravity_cli_sidebar_main_addmarker"
     },
@@ -10549,7 +10579,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L5970",
       "_origin": "ast",
-      "community": 14,
+      "community": 28,
       "norm_label": "activatenormalbuffer()",
       "id": "antigravity_cli_sidebar_main_activatenormalbuffer"
     },
@@ -10559,7 +10589,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L5973",
       "_origin": "ast",
-      "community": 17,
+      "community": 34,
       "norm_label": "activatealtbuffer()",
       "id": "antigravity_cli_sidebar_main_activatealtbuffer"
     },
@@ -10619,7 +10649,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L6072",
       "_origin": "ast",
-      "community": 0,
+      "community": 142,
       "norm_label": "_sanitizeandvalidateoption()",
       "id": "antigravity_cli_sidebar_main_sanitizeandvalidateoption"
     },
@@ -10629,7 +10659,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L6112",
       "_origin": "ast",
-      "community": 0,
+      "community": 142,
       "norm_label": "sc()",
       "id": "antigravity_cli_sidebar_main_sc"
     },
@@ -10729,7 +10759,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L6214",
       "_origin": "ast",
-      "community": 0,
+      "community": 131,
       "norm_label": "consumewheelevent()",
       "id": "antigravity_cli_sidebar_main_consumewheelevent"
     },
@@ -10739,7 +10769,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L6219",
       "_origin": "ast",
-      "community": 0,
+      "community": 131,
       "norm_label": "_applyscrollmodifier()",
       "id": "antigravity_cli_sidebar_main_applyscrollmodifier"
     },
@@ -10849,7 +10879,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L6293",
       "_origin": "ast",
-      "community": 5,
+      "community": 36,
       "norm_label": "versions()",
       "id": "antigravity_cli_sidebar_main_versions"
     },
@@ -10999,7 +11029,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L6444",
       "_origin": "ast",
-      "community": 4,
+      "community": 122,
       "norm_label": "sethandlerfallback()",
       "id": "antigravity_cli_sidebar_main_sethandlerfallback"
     },
@@ -11169,7 +11199,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L6682",
       "_origin": "ast",
-      "community": 37,
+      "community": 63,
       "norm_label": "registercsihandler()",
       "id": "antigravity_cli_sidebar_main_registercsihandler"
     },
@@ -11219,7 +11249,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L6703",
       "_origin": "ast",
-      "community": 4,
+      "community": 122,
       "norm_label": "setdcshandlerfallback()",
       "id": "antigravity_cli_sidebar_main_setdcshandlerfallback"
     },
@@ -11249,7 +11279,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L6712",
       "_origin": "ast",
-      "community": 4,
+      "community": 122,
       "norm_label": "setoschandlerfallback()",
       "id": "antigravity_cli_sidebar_main_setoschandlerfallback"
     },
@@ -11299,7 +11329,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L6870",
       "_origin": "ast",
-      "community": 124,
+      "community": 6,
       "norm_label": "hs()",
       "id": "antigravity_cli_sidebar_main_hs"
     },
@@ -11309,7 +11339,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L6883",
       "_origin": "ast",
-      "community": 124,
+      "community": 6,
       "norm_label": "ml()",
       "id": "antigravity_cli_sidebar_main_ml"
     },
@@ -11439,7 +11469,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L7112",
       "_origin": "ast",
-      "community": 58,
+      "community": 34,
       "norm_label": "_setcursor()",
       "id": "antigravity_cli_sidebar_main_setcursor"
     },
@@ -11519,7 +11549,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L7138",
       "_origin": "ast",
-      "community": 58,
+      "community": 34,
       "norm_label": "cursorcharabsolute()",
       "id": "antigravity_cli_sidebar_main_cursorcharabsolute"
     },
@@ -11529,7 +11559,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L7141",
       "_origin": "ast",
-      "community": 58,
+      "community": 135,
       "norm_label": "cursorposition()",
       "id": "antigravity_cli_sidebar_main_cursorposition"
     },
@@ -11539,7 +11569,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L7144",
       "_origin": "ast",
-      "community": 58,
+      "community": 34,
       "norm_label": "charposabsolute()",
       "id": "antigravity_cli_sidebar_main_charposabsolute"
     },
@@ -11559,7 +11589,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L7150",
       "_origin": "ast",
-      "community": 58,
+      "community": 34,
       "norm_label": "lineposabsolute()",
       "id": "antigravity_cli_sidebar_main_lineposabsolute"
     },
@@ -11579,7 +11609,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L7156",
       "_origin": "ast",
-      "community": 58,
+      "community": 135,
       "norm_label": "hvposition()",
       "id": "antigravity_cli_sidebar_main_hvposition"
     },
@@ -11609,7 +11639,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L7169",
       "_origin": "ast",
-      "community": 41,
+      "community": 28,
       "norm_label": "cursorbackwardtab()",
       "id": "antigravity_cli_sidebar_main_cursorbackwardtab"
     },
@@ -11779,7 +11809,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L7307",
       "_origin": "ast",
-      "community": 53,
+      "community": 84,
       "norm_label": "repeatprecedingcharacter()",
       "id": "antigravity_cli_sidebar_main_repeatprecedingcharacter"
     },
@@ -11819,7 +11849,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L7339",
       "_origin": "ast",
-      "community": 17,
+      "community": 34,
       "norm_label": "setmodeprivate()",
       "id": "antigravity_cli_sidebar_main_setmodeprivate"
     },
@@ -11839,7 +11869,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L7424",
       "_origin": "ast",
-      "community": 17,
+      "community": 34,
       "norm_label": "resetmodeprivate()",
       "id": "antigravity_cli_sidebar_main_resetmodeprivate"
     },
@@ -11949,7 +11979,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L7590",
       "_origin": "ast",
-      "community": 58,
+      "community": 34,
       "norm_label": "setscrollregion()",
       "id": "antigravity_cli_sidebar_main_setscrollregion"
     },
@@ -11969,7 +11999,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L7616",
       "_origin": "ast",
-      "community": 17,
+      "community": 34,
       "norm_label": "savecursor()",
       "id": "antigravity_cli_sidebar_main_savecursor"
     },
@@ -11979,7 +12009,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L7619",
       "_origin": "ast",
-      "community": 17,
+      "community": 34,
       "norm_label": "restorecursor()",
       "id": "antigravity_cli_sidebar_main_restorecursor"
     },
@@ -12139,7 +12169,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L7696",
       "_origin": "ast",
-      "community": 17,
+      "community": 81,
       "norm_label": "keypadapplicationmode()",
       "id": "antigravity_cli_sidebar_main_keypadapplicationmode"
     },
@@ -12149,7 +12179,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L7699",
       "_origin": "ast",
-      "community": 17,
+      "community": 81,
       "norm_label": "keypadnumericmode()",
       "id": "antigravity_cli_sidebar_main_keypadnumericmode"
     },
@@ -12229,7 +12259,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L7733",
       "_origin": "ast",
-      "community": 36,
+      "community": 34,
       "norm_label": "screenalignmentpattern()",
       "id": "antigravity_cli_sidebar_main_screenalignmentpattern"
     },
@@ -12239,7 +12269,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L7742",
       "_origin": "ast",
-      "community": 36,
+      "community": 51,
       "norm_label": "requeststatusstring()",
       "id": "antigravity_cli_sidebar_main_requeststatusstring"
     },
@@ -12279,7 +12309,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L7764",
       "_origin": "ast",
-      "community": 36,
+      "community": 34,
       "norm_label": "markalldirty()",
       "id": "antigravity_cli_sidebar_main_markalldirty"
     },
@@ -12299,7 +12329,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L7792",
       "_origin": "ast",
-      "community": 51,
+      "community": 54,
       "norm_label": "writesync()",
       "id": "antigravity_cli_sidebar_main_writesync"
     },
@@ -12329,7 +12359,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L7842",
       "_origin": "ast",
-      "community": 27,
+      "community": 9,
       "norm_label": "registerlink()",
       "id": "antigravity_cli_sidebar_main_registerlink"
     },
@@ -12339,7 +12369,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L7853",
       "_origin": "ast",
-      "community": 27,
+      "community": 9,
       "norm_label": "addlinetolink()",
       "id": "antigravity_cli_sidebar_main_addlinetolink"
     },
@@ -12359,7 +12389,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L7864",
       "_origin": "ast",
-      "community": 27,
+      "community": 9,
       "norm_label": "_getentryidkey()",
       "id": "antigravity_cli_sidebar_main_getentryidkey"
     },
@@ -12459,7 +12489,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L7957",
       "_origin": "ast",
-      "community": 4,
+      "community": 63,
       "norm_label": "_setup()",
       "id": "antigravity_cli_sidebar_main_setup"
     },
@@ -12469,7 +12499,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L7963",
       "_origin": "ast",
-      "community": 4,
+      "community": 63,
       "norm_label": "_handlewindowsptyoptionchange()",
       "id": "antigravity_cli_sidebar_main_handlewindowsptyoptionchange"
     },
@@ -12479,7 +12509,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L7967",
       "_origin": "ast",
-      "community": 4,
+      "community": 63,
       "norm_label": "_enablewindowswrappingheuristics()",
       "id": "antigravity_cli_sidebar_main_enablewindowswrappingheuristics"
     },
@@ -12499,7 +12529,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L8106",
       "_origin": "ast",
-      "community": 122,
+      "community": 5,
       "norm_label": "_flushinserted()",
       "id": "antigravity_cli_sidebar_main_flushinserted"
     },
@@ -12519,7 +12549,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L8123",
       "_origin": "ast",
-      "community": 122,
+      "community": 5,
       "norm_label": "_flushdeleted()",
       "id": "antigravity_cli_sidebar_main_flushdeleted"
     },
@@ -12649,7 +12679,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L8279",
       "_origin": "ast",
-      "community": 0,
+      "community": 133,
       "norm_label": "_clearliveregion()",
       "id": "antigravity_cli_sidebar_main_clearliveregion"
     },
@@ -12659,7 +12689,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L8282",
       "_origin": "ast",
-      "community": 0,
+      "community": 133,
       "norm_label": "_handlekey()",
       "id": "antigravity_cli_sidebar_main_handlekey"
     },
@@ -12689,7 +12719,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L8312",
       "_origin": "ast",
-      "community": 81,
+      "community": 19,
       "norm_label": "_handleselectionchange()",
       "id": "antigravity_cli_sidebar_main_handleselectionchange"
     },
@@ -12919,7 +12949,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L8584",
       "_origin": "ast",
-      "community": 124,
+      "community": 6,
       "norm_label": "_handlecolorevent()",
       "id": "antigravity_cli_sidebar_main_handlecolorevent"
     },
@@ -12929,7 +12959,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L8624",
       "_origin": "ast",
-      "community": 43,
+      "community": 14,
       "norm_label": "focus()",
       "id": "antigravity_cli_sidebar_main_focus"
     },
@@ -12969,7 +12999,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L8637",
       "_origin": "ast",
-      "community": 19,
+      "community": 12,
       "norm_label": "_handletextareablur()",
       "id": "antigravity_cli_sidebar_main_handletextareablur"
     },
@@ -12979,7 +13009,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L8640",
       "_origin": "ast",
-      "community": 27,
+      "community": 84,
       "norm_label": "_synctextarea()",
       "id": "antigravity_cli_sidebar_main_synctextarea"
     },
@@ -13039,7 +13069,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L8751",
       "_origin": "ast",
-      "community": 43,
+      "community": 14,
       "norm_label": "updatecursorstyle()",
       "id": "antigravity_cli_sidebar_main_updatecursorstyle"
     },
@@ -13059,7 +13089,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L8774",
       "_origin": "ast",
-      "community": 15,
+      "community": 43,
       "norm_label": "paste()",
       "id": "antigravity_cli_sidebar_main_paste"
     },
@@ -13119,7 +13149,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L8798",
       "_origin": "ast",
-      "community": 27,
+      "community": 9,
       "norm_label": "registermarker()",
       "id": "antigravity_cli_sidebar_main_registermarker"
     },
@@ -13139,7 +13169,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L8810",
       "_origin": "ast",
-      "community": 81,
+      "community": 19,
       "norm_label": "getselection()",
       "id": "antigravity_cli_sidebar_main_getselection"
     },
@@ -13169,7 +13199,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L8847",
       "_origin": "ast",
-      "community": 43,
+      "community": 14,
       "norm_label": "_keyup()",
       "id": "antigravity_cli_sidebar_main_keyup"
     },
@@ -13229,7 +13259,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L8916",
       "_origin": "ast",
-      "community": 43,
+      "community": 14,
       "norm_label": "tc()",
       "id": "antigravity_cli_sidebar_main_tc"
     },
@@ -13239,7 +13269,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L8926",
       "_origin": "ast",
-      "community": 63,
+      "community": 44,
       "norm_label": "loadaddon()",
       "id": "antigravity_cli_sidebar_main_loadaddon"
     },
@@ -13349,7 +13379,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L9016",
       "_origin": "ast",
-      "community": 37,
+      "community": 63,
       "norm_label": "addcsihandler()",
       "id": "antigravity_cli_sidebar_main_addcsihandler"
     },
@@ -13439,7 +13469,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L9083",
       "_origin": "ast",
-      "community": 63,
+      "community": 44,
       "norm_label": "ondata()",
       "id": "antigravity_cli_sidebar_main_ondata"
     },
@@ -13459,7 +13489,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L9089",
       "_origin": "ast",
-      "community": 4,
+      "community": 63,
       "norm_label": "onlinefeed()",
       "id": "antigravity_cli_sidebar_main_onlinefeed"
     },
@@ -13479,7 +13509,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L9095",
       "_origin": "ast",
-      "community": 63,
+      "community": 44,
       "norm_label": "onresize()",
       "id": "antigravity_cli_sidebar_main_onresize"
     },
@@ -13609,7 +13639,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L9282",
       "_origin": "ast",
-      "community": 63,
+      "community": 44,
       "norm_label": "activate()",
       "id": "antigravity_cli_sidebar_main_activate"
     },
@@ -13619,7 +13649,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L9287",
       "_origin": "ast",
-      "community": 63,
+      "community": 44,
       "norm_label": "fit()",
       "id": "antigravity_cli_sidebar_main_fit"
     },
@@ -13629,7 +13659,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L9293",
       "_origin": "ast",
-      "community": 63,
+      "community": 44,
       "norm_label": "proposedimensions()",
       "id": "antigravity_cli_sidebar_main_proposedimensions"
     },
@@ -13649,7 +13679,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L9330",
       "_origin": "ast",
-      "community": 63,
+      "community": 44,
       "norm_label": "spawn()",
       "id": "antigravity_cli_sidebar_main_spawn"
     },
@@ -13659,7 +13689,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L9364",
       "_origin": "ast",
-      "community": 0,
+      "community": 139,
       "norm_label": "kill()",
       "id": "antigravity_cli_sidebar_main_kill"
     },
@@ -13709,7 +13739,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L9401",
       "_origin": "ast",
-      "community": 63,
+      "community": 44,
       "norm_label": "onopen()",
       "id": "antigravity_cli_sidebar_main_onopen"
     },
@@ -13719,7 +13749,7 @@
       "source_file": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
       "source_location": "L9444",
       "_origin": "ast",
-      "community": 0,
+      "community": 139,
       "norm_label": "onclose()",
       "id": "antigravity_cli_sidebar_main_onclose"
     },
@@ -14379,7 +14409,7 @@
       "source_file": "src/components/SettingsModal.tsx",
       "source_location": "L492",
       "_origin": "ast",
-      "community": 64,
+      "community": 22,
       "norm_label": "statuspill()",
       "id": "components_settingsmodal_statuspill"
     },
@@ -14999,7 +15029,7 @@
       "source_file": "src/services/brain/CloudQueueService.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 28,
+      "community": 1,
       "norm_label": "cloudqueueservice.ts",
       "id": "brain_cloudqueueservice"
     },
@@ -15289,7 +15319,7 @@
       "source_file": "src/services/userProfileService.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 11,
+      "community": 56,
       "norm_label": "userprofileservice.ts",
       "id": "services_userprofileservice"
     },
@@ -15299,7 +15329,7 @@
       "source_file": "src/services/userProfileService.ts",
       "source_location": "L4",
       "_origin": "ast",
-      "community": 11,
+      "community": 56,
       "norm_label": "syncuserprofile()",
       "id": "services_userprofileservice_syncuserprofile"
     },
@@ -15389,7 +15419,7 @@
       "source_file": "src/supabase.ts",
       "source_location": "L88",
       "_origin": "ast",
-      "community": 22,
+      "community": 1,
       "norm_label": "appuser",
       "id": "src_supabase_appuser"
     },
@@ -16143,7 +16173,7 @@
       "source_file": "src/services/cmie/ConsistencyValidator.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 2,
+      "community": 1,
       "norm_label": "consistencyvalidator.ts",
       "community_name": "Community 2",
       "id": "cmie_consistencyvalidator"
@@ -16154,7 +16184,7 @@
       "source_file": "src/services/cmie/ConsistencyValidator.ts",
       "source_location": "L3",
       "_origin": "ast",
-      "community": 2,
+      "community": 1,
       "norm_label": "consistencyvalidator",
       "community_name": "Community 2",
       "id": "cmie_consistencyvalidator_consistencyvalidator"
@@ -16165,7 +16195,7 @@
       "source_file": "src/services/cmie/ConsistencyValidator.ts",
       "source_location": "L8",
       "_origin": "ast",
-      "community": 2,
+      "community": 1,
       "norm_label": ".updateglossaryandcheck()",
       "community_name": "Community 2",
       "id": "cmie_consistencyvalidator_consistencyvalidator_updateglossaryandcheck"
@@ -16176,7 +16206,7 @@
       "source_file": "src/services/cmie/ConsistencyValidator.ts",
       "source_location": "L51",
       "_origin": "ast",
-      "community": 2,
+      "community": 1,
       "norm_label": ".buildglossaryprompt()",
       "community_name": "Community 2",
       "id": "cmie_consistencyvalidator_consistencyvalidator_buildglossaryprompt"
@@ -16462,7 +16492,7 @@
       "source_file": "src/types/cmie.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 2,
+      "community": 1,
       "norm_label": "cmie.ts",
       "community_name": "Community 2",
       "id": "types_cmie"
@@ -16473,7 +16503,7 @@
       "source_file": "src/types/cmie.ts",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 2,
+      "community": 1,
       "norm_label": "cmiepagestatus",
       "community_name": "Community 1",
       "id": "types_cmie_cmiepagestatus"
@@ -16484,7 +16514,7 @@
       "source_file": "src/types/cmie.ts",
       "source_location": "L3",
       "_origin": "ast",
-      "community": 2,
+      "community": 1,
       "norm_label": "chaptermemory",
       "community_name": "Community 2",
       "id": "types_cmie_chaptermemory"
@@ -17988,6 +18018,26 @@
   ],
   "links": [
     {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "query-temp.js",
+      "source_location": "L9",
+      "weight": 1.0,
+      "source": "query_temp",
+      "target": "query_temp_main",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "query-temp.js",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "query_temp",
+      "target": "query_temp_supabase",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
@@ -19145,6 +19195,207 @@
       "weight": 1.0,
       "source": "src_app_app",
       "target": "lib_owner_isownerroute"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "test-pdf-gen.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "test_pdf_gen",
+      "target": "utils_pdfgenerator"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator",
+      "target": "gil_gilservice"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator",
+      "target": "gil_gilservice_gilservice"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator",
+      "target": "services_geminiservice"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator",
+      "target": "services_geminiservice_bookoutline"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L77",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator",
+      "target": "utils_pdfgenerator_boxdesign"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L1645",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator",
+      "target": "utils_pdfgenerator_drawbookemblem"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L1612",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator",
+      "target": "utils_pdfgenerator_drawfloralemblem"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L1598",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator",
+      "target": "utils_pdfgenerator_drawgeometricemblem"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L1625",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator",
+      "target": "utils_pdfgenerator_drawstaremblem"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L87",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator",
+      "target": "utils_pdfgenerator_generatebookpdf"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator",
+      "target": "utils_pdfgenerator_pdfconfig"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L1581",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator",
+      "target": "utils_pdfgenerator_toroman"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "test-pdf-gen.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "test_pdf_gen",
+      "target": "utils_pdfgenerator_generatebookpdf"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L380",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator_generatebookpdf",
+      "target": "utils_pdfgenerator_drawbookemblem"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L376",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator_generatebookpdf",
+      "target": "utils_pdfgenerator_drawfloralemblem"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L366",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator_generatebookpdf",
+      "target": "utils_pdfgenerator_drawgeometricemblem"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L378",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator_generatebookpdf",
+      "target": "utils_pdfgenerator_drawstaremblem"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/PdfGenerator.ts",
+      "source_location": "L630",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "utils_pdfgenerator_generatebookpdf",
+      "target": "utils_pdfgenerator_toroman"
     },
     {
       "relation": "contains",
@@ -22044,17 +22295,6 @@
       "target": "services_geminiservice_geminiservice"
     },
     {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L2",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator",
-      "target": "services_geminiservice"
-    },
-    {
       "relation": "imports",
       "context": "import",
       "confidence": "EXTRACTED",
@@ -22074,17 +22314,6 @@
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "cmie_outlineplanner_outlineplanner_validateandfixscopes",
-      "target": "services_geminiservice_bookoutline"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L2",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator",
       "target": "services_geminiservice_bookoutline"
     },
     {
@@ -26773,185 +27002,6 @@
       "weight": 1.0,
       "source": "components_supabasestatusbox_supabasestatusbox",
       "target": "components_ownerpanel_metriccard"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "test-pdf-gen.ts",
-      "source_location": "L1",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "test_pdf_gen",
-      "target": "utils_pdfgenerator"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator",
-      "target": "gil_gilservice"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L3",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator",
-      "target": "gil_gilservice_gilservice"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L77",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator",
-      "target": "utils_pdfgenerator_boxdesign"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L1645",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator",
-      "target": "utils_pdfgenerator_drawbookemblem"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L1612",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator",
-      "target": "utils_pdfgenerator_drawfloralemblem"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L1598",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator",
-      "target": "utils_pdfgenerator_drawgeometricemblem"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L1625",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator",
-      "target": "utils_pdfgenerator_drawstaremblem"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L87",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator",
-      "target": "utils_pdfgenerator_generatebookpdf"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L5",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator",
-      "target": "utils_pdfgenerator_pdfconfig"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L1581",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator",
-      "target": "utils_pdfgenerator_toroman"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "test-pdf-gen.ts",
-      "source_location": "L1",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "test_pdf_gen",
-      "target": "utils_pdfgenerator_generatebookpdf"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L380",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator_generatebookpdf",
-      "target": "utils_pdfgenerator_drawbookemblem"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L376",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator_generatebookpdf",
-      "target": "utils_pdfgenerator_drawfloralemblem"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L366",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator_generatebookpdf",
-      "target": "utils_pdfgenerator_drawgeometricemblem"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L378",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator_generatebookpdf",
-      "target": "utils_pdfgenerator_drawstaremblem"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "src/utils/PdfGenerator.ts",
-      "source_location": "L630",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "utils_pdfgenerator_generatebookpdf",
-      "target": "utils_pdfgenerator_toroman"
     },
     {
       "relation": "contains",
@@ -58687,5 +58737,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "da2e296ddec2cc8d7fe2734bba0f8a207b94bbae"
+  "built_at_commit": "5fb844e5101e472b93ce47bebdb273ad5c7334a2"
 }

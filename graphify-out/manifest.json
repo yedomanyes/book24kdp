@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "src/App.tsx": {
-    "mtime": 1783110285.6761162,
-    "ast_hash": "5e29e493c3756ebc0c306b10019ae963",
+    "mtime": 1783110729.6614373,
+    "ast_hash": "a6612becc2ce2b42031ba3f21c34d8ed",
     "semantic_hash": ""
   },
   "src/components/Aurora.tsx": {
@@ -220,8 +220,8 @@
     "semantic_hash": "2472b1c1c9c6779e3e1dfb467d475c9a"
   },
   "src/utils/PdfGenerator.ts": {
-    "mtime": 1783013480.538901,
-    "ast_hash": "5ba9210160683cf230dc7e3a1abed284",
+    "mtime": 1783110716.0837395,
+    "ast_hash": "1d82b3d1b8ac93f3265cea43159a7166",
     "semantic_hash": ""
   },
   "src/utils/WebScraper.ts": {
@@ -560,13 +560,13 @@
     "semantic_hash": ""
   },
   "public/brain/code-context.json": {
-    "mtime": 1783110284.684019,
-    "ast_hash": "32a797dbad3f375b0490ccaac5a48392",
+    "mtime": 1783110734.75495,
+    "ast_hash": "5c5b52f1115c9fafd902a8277658ce58",
     "semantic_hash": ""
   },
   "public/brain/runtime-status.json": {
-    "mtime": 1783110284.6845121,
-    "ast_hash": "0862e2be94efbe053ca1b435a2541542",
+    "mtime": 1783110734.7558753,
+    "ast_hash": "f7396cc287e8055c25300cefc2d1e6cd",
     "semantic_hash": ""
   },
   "scripts/brain-worker.mjs": {
@@ -597,6 +597,11 @@
   "public/IMG_5060.mov": {
     "mtime": 1783080229.1424565,
     "ast_hash": "ed59885fe99ca4c8806d066728d0add5",
+    "semantic_hash": ""
+  },
+  "query-temp.js": {
+    "mtime": 1783110608.476184,
+    "ast_hash": "9b6ddab46c8b83262fd4d08065550442",
     "semantic_hash": ""
   }
 }

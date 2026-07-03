@@ -2,7 +2,7 @@
 type: "code-context-section"
 id: "app-shell"
 title: "App Shell & Studio Flow"
-updatedAt: "2026-07-03T20:32:14.756Z"
+updatedAt: "2026-07-03T20:33:24.684Z"
 ---
 
 # App Shell & Studio Flow

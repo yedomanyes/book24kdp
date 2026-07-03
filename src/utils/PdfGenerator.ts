@@ -553,7 +553,7 @@ export async function generateBookPdf(
   let pdfPageCounter = config.hideTitlePage ? 0 : 1; // page 1 is title page
   
   if (config.generateTOC !== false) {
-    const chaptersList = chapterToPageList.map(item => [item.title, item.pageNum]);
+    const chaptersList = chapterToPageList.map(item => [item.title, item.pageNum] as [string, number]);
     // removed totalTOCPagesCount
     
     const tocFont = resolvePdfFont(config.tocFontFamily || config.fontFamily);
