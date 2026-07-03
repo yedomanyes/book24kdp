@@ -54,7 +54,7 @@ import {
   loadAllLibrarySnapshots,
   deleteLibrarySnapshot
 } from './services/StorageService';
-import { supabase, toAppUser } from './supabase';
+import { isSupabaseConfigured, supabase, toAppUser } from './supabase';
 import { Auth } from './components/Auth';
 import { LandingPage } from './components/LandingPage';
 import { LicensePrompt } from './components/LicensePrompt';
@@ -86,6 +86,7 @@ migrateOldKeys();
 
 const NAV_TABS = ['projects', 'dashboard', 'brain', 'studio', 'calculator', 'owner'] as const;
 type NavTabId = typeof NAV_TABS[number];
+type ModelProvider = 'groq' | 'gemini' | 'deepseek';
 
 const NAV_TAB_PARTICLE_COLORS: Record<NavTabId, number[]> = {
   projects: [1, 2, 3, 4],
@@ -98,6 +99,57 @@ const NAV_TAB_PARTICLE_COLORS: Record<NavTabId, number[]> = {
 
 const getScopedActiveBookStorageKey = (accountId: string) => `b24studio_activeBookId_${accountId}`;
 const getScopedSelectedPageStorageKey = (accountId: string, bookId: string) => `b24studio_selectedPage_${accountId}_${bookId}`;
+
+const getModelProvider = (modelName: string): ModelProvider => {
+  if (modelName.startsWith('gemini-')) return 'gemini';
+  if (modelName.startsWith('deepseek-')) return 'deepseek';
+  return 'groq';
+};
+
+const getProviderName = (modelName: string): string => {
+  const provider = getModelProvider(modelName);
+  if (provider === 'gemini') return 'Google Gemini';
+  if (provider === 'deepseek') return 'DeepSeek';
+  return 'Groq';
+};
+
+const usesCompactProviderContext = (modelName: string): boolean => getModelProvider(modelName) === 'groq';
+
+const getSourceExtractionCharLimit = (modelName: string): number => {
+  const provider = getModelProvider(modelName);
+  if (provider === 'groq') return 5000;
+  if (provider === 'deepseek') return 18000;
+  return 25000;
+};
+
+const getSourceGuidelineCharLimit = (modelName: string): number => {
+  const provider = getModelProvider(modelName);
+  if (provider === 'groq') return 6000;
+  if (provider === 'deepseek') return 40000;
+  return 80000;
+};
+
+const getThrottleDelayMs = (
+  modelName: string,
+  turboEnabled: boolean,
+  mode: 'generation' | 'translation' = 'generation'
+): number => {
+  const provider = getModelProvider(modelName);
+
+  if (mode === 'translation') {
+    if (provider === 'deepseek') return turboEnabled ? 1200 : 1800;
+    if (provider === 'gemini') return turboEnabled ? 2800 : 4500;
+    return turboEnabled ? 1800 : 2500;
+  }
+
+  if (provider === 'deepseek') return turboEnabled ? 1600 : 2800;
+  if (provider === 'gemini') return turboEnabled ? 3200 : 4500;
+  return turboEnabled ? 5500 : 8500;
+};
+
+const getChapterTransitionDelayMs = (turboEnabled: boolean): number => (
+  turboEnabled ? 800 : 1500
+);
 
 const COVER_FONTS = [
   { value: 'playfair', label: 'Playfair Display (Serif)' },
@@ -191,6 +243,12 @@ interface Account {
   id: string;
   username: string;
 }
+
+const LOCAL_WORKSPACE_USER = {
+  uid: 'local-workspace-user',
+  email: 'local@book24.studio',
+  displayName: 'Lokaler Workspace',
+};
 
 export interface TitlePageCustomText {
   id: string;
@@ -987,6 +1045,14 @@ export default function App() {
   const [activeModules, setActiveModules] = useState<Record<string, any>>({ brain: true, dashboard: true, calculator: true, studio: true });
   const [showBanModal, setShowBanModal] = useState(false);
 
+  const bootLocalWorkspace = React.useCallback(() => {
+    setCurrentUser(LOCAL_WORKSPACE_USER);
+    setUserHasValidLicense(true);
+    setShowAuthModal(false);
+    setAuthError(null);
+    safeLocalStorage.setItem('b24_returning_user', 'true');
+  }, []);
+
   // Tracks whether books were already loaded for the current user session.
   // Prevents onAuthStateChange re-runs (e.g. token refresh) from overwriting books.
   const booksLoadedForUidRef = React.useRef<string | null>(null);
@@ -1323,32 +1389,32 @@ export default function App() {
         }
 
         if (booksToSet.length > 0) {
-          // Recalculate pagesOverflow from pagesText using a simple character estimate.
-          // This corrects stale cloud overflow flags that the beforeunload async save may have missed.
-          const estimateOverflow = (text: string, book: any): boolean => {
-            if (!text) return false;
-            // Rough chars-per-page thresholds based on font size and page size
-            const fs = book.fontSize || 11;
-            const ps = book.pageSize || '6x9';
-            const baseChars: Record<string, number> = {
-              '5x8': 1600, '5.5x8.5': 1900, '6x9': 2200, '8.5x11': 3200, 'a4': 3000
-            };
-            const base = baseChars[ps] || 2200;
-            // Larger font = fewer chars fit; scale inversely with font size relative to 11pt baseline
-            const limit = Math.round(base * (11 / fs));
-            return text.length > limit;
-          };
-
+          // Recompute overflow with the SAME layout logic used by the editor/preview.
+          // A rough character estimate can incorrectly turn manually-fixed pages red again after refresh.
           const cleanBooks = booksToSet.map((b: any) => {
             const recomputedOverflow: Record<string, boolean> = {};
+            const normalizedStatus: Record<string, any> = { ...(b.pagesStatus || {}) };
+            const normalizedErrors: Record<string, any> = { ...(b.pagesError || {}) };
+
             Object.entries(b.pagesText || {}).forEach(([pageNum, text]) => {
-              recomputedOverflow[pageNum] = estimateOverflow(text as string, b);
+              const numericPageNum = Number(pageNum);
+              const pageText = typeof text === 'string' ? text : '';
+              const hasOverflow = checkTextOverflow(pageText, b, numericPageNum);
+              recomputedOverflow[pageNum] = hasOverflow;
+
+              if (normalizedStatus[pageNum] === 'generating') {
+                normalizedStatus[pageNum] = pageText.trim().length > 0 ? 'completed' : 'idle';
+              }
+
+              if (pageText.trim().length > 0 && normalizedStatus[pageNum] === 'failed' && !normalizedErrors[pageNum]) {
+                normalizedStatus[pageNum] = 'completed';
+              }
             });
+
             return {
               ...b,
-              pagesStatus: Object.fromEntries(
-                Object.entries(b.pagesStatus || {}).map(([k, v]) => [k, v === 'generating' ? 'idle' : v])
-              ),
+              pagesStatus: normalizedStatus,
+              pagesError: normalizedErrors,
               pagesOverflow: recomputedOverflow,
             };
           });
@@ -1553,27 +1619,39 @@ export default function App() {
   const [geminiKeysInput, setGeminiKeysInput] = useState<string>(() => {
     return safeLocalStorage.getItem('gemini_api_keys') || '';
   });
+  const [deepseekKeysInput, setDeepseekKeysInput] = useState<string>(() => {
+    return safeLocalStorage.getItem('deepseek_api_keys') || '';
+  });
   const [showSettings, setShowSettings] = useState<boolean>(() => {
     const groqEmpty = !(safeLocalStorage.getItem('groq_api_keys') || safeLocalStorage.getItem('groq_api_key'));
     const geminiEmpty = !safeLocalStorage.getItem('gemini_api_keys');
-    return groqEmpty && geminiEmpty;
+    const deepseekEmpty = !safeLocalStorage.getItem('deepseek_api_keys');
+    return groqEmpty && geminiEmpty && deepseekEmpty;
   });
 
   const [selectedModel, setSelectedModel] = useState<string>(() => {
     return safeLocalStorage.getItem(KEYS.selectedModel) || 'llama-3.3-70b-versatile';
+  });
+  const [generationTurboEnabled, setGenerationTurboEnabled] = useState<boolean>(() => {
+    return safeLocalStorage.getItem(KEYS.generationTurbo) === 'true';
   });
 
   useEffect(() => {
     localStorage.setItem(KEYS.selectedModel, selectedModel);
   }, [selectedModel]);
 
+  useEffect(() => {
+    localStorage.setItem(KEYS.generationTurbo, generationTurboEnabled ? 'true' : 'false');
+  }, [generationTurboEnabled]);
+
   // Explorer and Marketing tabs state
   const [explorerTab, setExplorerTab] = useState<'settings' | 'marketing'>('settings');
   const [isGeneratingMarketing, setIsGeneratingMarketing] = useState<boolean>(false);
 
   const getActiveKeys = (modelName: string) => {
-    const isGemini = modelName.startsWith('gemini-');
-    const inputVal = isGemini ? geminiKeysInput : groqKeysInput;
+    let inputVal = groqKeysInput;
+    if (modelName.startsWith('gemini-')) inputVal = geminiKeysInput;
+    else if (modelName.startsWith('deepseek-')) inputVal = deepseekKeysInput;
     return inputVal.split(/[\n,]+/).map(k => k.trim()).filter(Boolean);
   };
 
@@ -1583,7 +1661,8 @@ export default function App() {
 
   const groqConnected = getActiveKeys('llama-3.3-70b-versatile').length > 0;
   const geminiConnected = getActiveKeys('gemini-2.0-flash').length > 0;
-  const settingsNeedAttention = !groqConnected || !geminiConnected;
+  const deepseekConnected = getActiveKeys('deepseek-chat').length > 0;
+  const settingsNeedAttention = !groqConnected || !geminiConnected || !deepseekConnected;
 
   const handleGroqKeysChange = (value: string) => {
     setGroqKeysInput(value);
@@ -1595,12 +1674,18 @@ export default function App() {
     localStorage.setItem('gemini_api_keys', value);
   };
 
+  const handleDeepseekKeysChange = (value: string) => {
+    setDeepseekKeysInput(value);
+    localStorage.setItem('deepseek_api_keys', value);
+  };
+
   const openSettings = () => setShowSettings(true);
 
   const getServiceInstance = () => {
     const groqList = groqKeysInput.split(/[\n,]+/).map(k => k.trim()).filter(Boolean);
     const geminiList = geminiKeysInput.split(/[\n,]+/).map(k => k.trim()).filter(Boolean);
-    return new GeminiService({ groq: groqList, gemini: geminiList }, selectedModel);
+    const deepseekList = deepseekKeysInput.split(/[\n,]+/).map(k => k.trim()).filter(Boolean);
+    return new GeminiService({ groq: groqList, gemini: geminiList, deepseek: deepseekList }, selectedModel);
   };
 
   const checkTextOverflow = (text: string, book: Book, pageNum?: number): boolean => {
@@ -2338,14 +2423,9 @@ export default function App() {
         if (bookId && pageNum !== null && text !== undefined) {
           const currentBook = booksRef.current.find(b => b.id === bookId);
           if (currentBook) {
-            const hasOverflow = checkTextOverflow(text, currentBook, pageNum);
-            const updatedBook = {
-              ...currentBook,
-              pagesText: { ...(currentBook.pagesText || {}), [pageNum]: text },
-              pagesOverflow: { ...(currentBook.pagesOverflow || {}), [pageNum]: hasOverflow }
-            };
+            const updatedBook = buildManualPageUpdate(currentBook, pageNum, text);
             // Instantly write to localStorage so checkUser sees it on next load
-            const activeAcc = safeLocalStorage.getItem(KEYS.activeAccount) || 'default';
+            const activeAcc = activeAccountIdRef.current || safeLocalStorage.getItem(KEYS.activeAccount) || 'default';
             const currentBooks = booksRef.current.map(b => b.id === bookId ? updatedBook : b);
             try {
               localStorage.setItem(KEYS.library(activeAcc), JSON.stringify(currentBooks));
@@ -2472,7 +2552,7 @@ export default function App() {
   };
 
   const buildBrainEnrichedPrompt = (book: Book, repromptInstruction?: string) => {
-    const isGroq = !selectedModel.startsWith('gemini-');
+    const isGroq = usesCompactProviderContext(selectedModel);
     const cmieCtx = CmieOrchestrator.enrichGenerationPrompt(
       book.cmieStore,
       book.cmieGlossary,
@@ -2698,14 +2778,35 @@ export default function App() {
   const [isFetchingSources, setIsFetchingSources] = useState<boolean>(false);
   const [planningProgress, setPlanningProgress] = useState<{percent: number, message: string} | null>(null);
 
+  const buildManualPageUpdate = (book: Book, pageNum: number, text: string): Book => {
+    const hasOverflow = checkTextOverflow(text, book, pageNum);
+    const nextStatus: 'completed' | 'idle' = text.trim().length > 0 ? 'completed' : 'idle';
+    const nextErrors = { ...(book.pagesError || {}) };
+    if (nextStatus === 'completed') {
+      delete nextErrors[pageNum];
+    }
+
+    return {
+      ...book,
+      pagesText: { ...(book.pagesText || {}), [pageNum]: text },
+      pagesOverflow: { ...(book.pagesOverflow || {}), [pageNum]: hasOverflow },
+      pagesStatus: { ...(book.pagesStatus || {}), [pageNum]: nextStatus },
+      pagesError: nextErrors
+    };
+  };
+
+  const sanitizeTocTitle = (title: string | undefined): string => {
+    if (!title) return '';
+    return title.replace(/^\s*>\s*(?=["'“„‚«»])/u, '').trim();
+  };
+
   const handleFetchSources = async () => {
     if (!activeBookId || !activeBook?.sourceUrls) return;
     setIsFetchingSources(true);
     try {
       const { fetchAndExtractText } = await import('./utils/WebScraper');
       const urls = activeBook.sourceUrls.split('\n').map(u => u.trim()).filter(Boolean);
-      const isGroq = selectedModel.startsWith('groq-') || selectedModel.includes('llama');
-      const maxChars = isGroq ? 5000 : 25000;
+      const maxChars = getSourceExtractionCharLimit(selectedModel);
       const text = await fetchAndExtractText(urls, maxChars);
       setBooks(prev => prev.map(b => {
         if (b.id === activeBookId) {
@@ -2963,6 +3064,7 @@ export default function App() {
   }, [selectedPage, activeBookId, activeBook?.pagesText]);
 
   // Handle manual edits — debounced save to prevent re-render flicker on every keystroke
+  const editorTypingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleEditorChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value;
     setEditorText(text);
@@ -2970,21 +3072,15 @@ export default function App() {
 
     // Mark as typing so the pagesText useEffect doesn't overwrite the textarea
     isTypingRef.current = true;
-    if (editorSaveTimerRef.current) clearTimeout(editorSaveTimerRef.current);
-    editorSaveTimerRef.current = setTimeout(() => {
+    if (editorTypingTimerRef.current) clearTimeout(editorTypingTimerRef.current);
+    editorTypingTimerRef.current = setTimeout(() => {
       isTypingRef.current = false;
     }, 1000);
 
     if (activeBookId && selectedPage !== null && typeof selectedPage === 'number') {
       const currentBook = booksRef.current.find(b => b.id === activeBookId);
       if (currentBook) {
-        const hasOverflow = checkTextOverflow(text, currentBook, selectedPage as number);
-        const updatedBook = {
-          ...currentBook,
-          pagesText: { ...(currentBook.pagesText || {}), [selectedPage as number]: text },
-          pagesOverflow: { ...(currentBook.pagesOverflow || {}), [selectedPage as number]: hasOverflow },
-          pagesStatus: { ...(currentBook.pagesStatus || {}), [selectedPage as number]: (text.trim().length > 0 ? 'completed' : 'idle') as 'completed' | 'idle' }
-        };
+        const updatedBook = buildManualPageUpdate(currentBook, selectedPage as number, text);
         
         // INSTANTLY update state + localStorage + cloud queue on every keystroke
         const updatedBooks = booksRef.current.map(b => b.id === activeBookId ? updatedBook : b);
@@ -2995,7 +3091,7 @@ export default function App() {
         pendingCloudSavesRef.current[activeBookId] = updatedBook;
 
         try {
-          const activeAcc = safeLocalStorage.getItem(KEYS.activeAccount) || 'default';
+          const activeAcc = activeAccountIdRef.current || safeLocalStorage.getItem(KEYS.activeAccount) || 'default';
           localStorage.setItem(KEYS.library(activeAcc), JSON.stringify(updatedBooks));
         } catch (err) {
           console.warn('localStorage write failed:', err);
@@ -3019,6 +3115,10 @@ export default function App() {
 
   // Instantly flush manual edits if user clicks away or focuses elsewhere
   const handleEditorBlur = () => {
+    if (editorTypingTimerRef.current) {
+      clearTimeout(editorTypingTimerRef.current);
+      editorTypingTimerRef.current = null;
+    }
     if ((handleEditorChange as any)._saveTimer) {
       clearTimeout((handleEditorChange as any)._saveTimer);
       (handleEditorChange as any)._saveTimer = null;
@@ -3033,13 +3133,7 @@ export default function App() {
     if (bookId && pageNum !== null) {
       const currentBook = booksRef.current.find(b => b.id === bookId);
       if (currentBook) {
-        const hasOverflow = checkTextOverflow(currentText, currentBook, pageNum);
-        const updatedBook = {
-          ...currentBook,
-          pagesText: { ...(currentBook.pagesText || {}), [pageNum]: currentText },
-          pagesOverflow: { ...(currentBook.pagesOverflow || {}), [pageNum]: hasOverflow },
-          pagesStatus: { ...(currentBook.pagesStatus || {}), [pageNum]: (currentText.trim().length > 0 ? 'completed' : 'idle') as 'completed' | 'idle' }
-        };
+        const updatedBook = buildManualPageUpdate(currentBook, pageNum, currentText);
         forceSaveSingleBook(updatedBook);
       }
     }
@@ -3462,9 +3556,7 @@ export default function App() {
     }
     if (book.extractedSourceText) {
       let safeSourceText = book.extractedSourceText;
-      const isGroq = selectedModel.startsWith('groq-') || selectedModel.includes('llama');
-      // Groq has a 6000 TPM limit (llama-3.1-8b-instant). 6000 chars is ~1500 tokens, very safe.
-      const TOTAL_MAX_CHARS = isGroq ? 6000 : 80000;
+      const TOTAL_MAX_CHARS = getSourceGuidelineCharLimit(selectedModel);
       if (safeSourceText.length > TOTAL_MAX_CHARS) {
         safeSourceText = safeSourceText.substring(0, TOTAL_MAX_CHARS) + '\n\n... (Restliches Quellenmaterial aus Kapazitätsgründen (Token-Limit) gekürzt um System-Abstürze zu verhindern)';
       }
@@ -3478,7 +3570,7 @@ export default function App() {
   const handleGenerateTitlePageOptions = async () => {
     if (!activeBook) return;
     if (!hasKeysForModel(selectedModel)) {
-      const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
+      const providerName = getProviderName(selectedModel);
       alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} in den Einstellungen ein.`);
       openSettings();
       return;
@@ -3507,7 +3599,7 @@ export default function App() {
   // Plan book outline
   const handlePlanBook = async () => {
     if (!hasKeysForModel(selectedModel)) {
-      const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
+      const providerName = getProviderName(selectedModel);
       alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} in den Einstellungen ein.`);
       openSettings();
       return;
@@ -3528,8 +3620,7 @@ export default function App() {
           setPlanningProgress({ percent: 10, message: 'Websites werden eingelesen...' });
           const { fetchAndExtractText } = await import('./utils/WebScraper');
           const urls = currentActiveBook.sourceUrls.split('\n').map(u => u.trim()).filter(Boolean);
-          const isGroq = selectedModel.startsWith('groq-') || selectedModel.includes('llama');
-          const maxChars = isGroq ? 5000 : 25000;
+          const maxChars = getSourceExtractionCharLimit(selectedModel);
           const text = await fetchAndExtractText(urls, maxChars);
           
           setBooks(prev => prev.map(b => {
@@ -3689,7 +3780,7 @@ export default function App() {
   const handleCondenseOutline = async () => {
     if (!activeBook || !activeBook.outline) return;
     if (!hasKeysForModel(selectedModel)) {
-      const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
+      const providerName = getProviderName(selectedModel);
       alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} in den Einstellungen ein.`);
       openSettings();
       return;
@@ -3706,30 +3797,25 @@ export default function App() {
         activeBook.subtitle || '',
         activeBook.idea,
         activeBook.language,
-        originalPages
+        originalPages,
+        getEffectiveGuidelines(activeBook),
+        activeBook.pagesText || {}
       );
 
-      // ─── SAFETY NET: never reduce page count ───────────────────────────
-      if (condensedPages.length < originalCount) {
-        console.error(`Condense returned ${condensedPages.length} pages but original had ${originalCount}. Rejecting.`);
-        alert(`Fehler: Die KI hat ${condensedPages.length} statt ${originalCount} Seiten zurückgegeben. Keine Änderung vorgenommen.`);
-        return;
-      }
+      const latestBooks = booksRef.current;
+      const latestBook = latestBooks.find(b => b.id === activeBookId);
+      if (!latestBook) return;
 
       const updatedBook = {
-        ...activeBook,
+        ...latestBook,
         outlineBackup: originalPages,
         outline: {
-          ...activeBook.outline!,
+          ...latestBook.outline!,
           pages: condensedPages
         }
       };
 
-      setBooks(prev => prev.map(b => b.id === activeBookId ? updatedBook : b));
-
-      if (currentUser) {
-        await saveBookToCloud(currentUser.uid, updatedBook);
-      }
+      setBooks(latestBooks.map(b => b.id === activeBookId ? updatedBook : b));
 
       showConfirm({
         title: 'Erfolg',
@@ -3755,7 +3841,7 @@ export default function App() {
   const handleRegenerateChaptersFromContent = async () => {
     if (!activeBook || !activeBook.outline) return;
     if (!hasKeysForModel(selectedModel)) {
-      const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
+      const providerName = getProviderName(selectedModel);
       alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} in den Einstellungen ein.`);
       openSettings();
       return;
@@ -3776,7 +3862,8 @@ export default function App() {
       const service = getServiceInstance();
       const updatedPages = await service.regenerateChaptersFromPages(
         activeBook.outline,
-        activeBook.pagesText || {}
+        activeBook.pagesText || {},
+        getEffectiveGuidelines(activeBook)
       );
 
       setBooks(prev => prev.map(b => {
@@ -3898,7 +3985,7 @@ export default function App() {
   const handleTranslateToEnglish = async () => {
     if (!activeBook || !activeBook.outline) return;
     if (!hasKeysForModel(selectedModel)) {
-      const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
+      const providerName = getProviderName(selectedModel);
       alert(`Bitte zuerst einen API Key für ${providerName} in den Einstellungen eintragen.`);
       openSettings();
       return;
@@ -3953,8 +4040,7 @@ export default function App() {
         setTranslationProgress(`Übersetze Buchseite ${i + 1} von ${totalTextPages}...`);
         
         if (i > 0) {
-          const isGroq = !selectedModel.startsWith('gemini-');
-          const delayMs = isGroq ? 2500 : 4500;
+          const delayMs = getThrottleDelayMs(selectedModel, generationTurboEnabled, 'translation');
           await new Promise(resolve => setTimeout(resolve, delayMs));
         }
 
@@ -4016,7 +4102,7 @@ export default function App() {
   // Emergency: extend an incomplete outline with the missing pages
   const handleExtendOutline = async () => {
     if (!hasKeysForModel(selectedModel)) {
-      const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
+      const providerName = getProviderName(selectedModel);
       alert(`Bitte zuerst einen API Key für ${providerName} in den Einstellungen eintragen.`);
       openSettings();
       return;
@@ -4111,7 +4197,7 @@ export default function App() {
     targetBookId: string
   ) => {
     if (!hasKeysForModel(selectedModel)) {
-      const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
+      const providerName = getProviderName(selectedModel);
       alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} in den Einstellungen ein.`);
       openSettings();
       return;
@@ -4148,11 +4234,10 @@ export default function App() {
         try {
           // Delay to reduce rate limits (only if it's not the very first page of a chapter, or minimal delay)
           if (lastChapter === page.chapter_title) {
-            const isGroq = !selectedModel.startsWith('gemini-');
-            const delayMs = isGroq ? 8500 : 4500;
+            const delayMs = getThrottleDelayMs(selectedModel, generationTurboEnabled, 'generation');
             await new Promise(resolve => setTimeout(resolve, delayMs));
           } else if (lastChapter !== '') {
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            await new Promise(resolve => setTimeout(resolve, getChapterTransitionDelayMs(generationTurboEnabled)));
           }
           lastChapter = page.chapter_title;
           
@@ -4348,9 +4433,32 @@ export default function App() {
   };
 
   // Retry generating single page
+  const handleClearPage = async (pageNum: number) => {
+    if (!activeBook) return;
+    if (!confirm('Möchtest du den Text dieser Seite wirklich löschen?')) return;
+    
+    const updatedBook = {
+      ...activeBook,
+      pagesText: {
+        ...(activeBook.pagesText || {}),
+        [pageNum]: ''
+      }
+    };
+    
+    // clear the status too, so it looks like it's fresh
+    if (updatedBook.pagesStatus && updatedBook.pagesStatus[pageNum]) {
+      updatedBook.pagesStatus[pageNum] = 'idle';
+    }
+
+    setBooks(prev => prev.map(b => b.id === activeBookId ? updatedBook : b));
+    if (currentUser) {
+      await saveBookToCloud(currentUser.uid, updatedBook);
+    }
+  };
+
   const handleRetryPage = async (pageNum: number) => {
     if (!hasKeysForModel(selectedModel)) {
-      const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
+      const providerName = getProviderName(selectedModel);
       alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} in den Einstellungen ein.`);
       openSettings();
       return;
@@ -4412,15 +4520,14 @@ export default function App() {
           );
           const retryText = cleanPageText(retryRawText);
           if (checkTextOverflow(retryText, currentBook, pageNum)) {
-            console.log(`Page ${pageNum} STILL overflows. Spilling remainder to next page...`);
-            LayoutFixDB.logWarning(currentBook.pageSize || '6x9', 'chapter_page', 'Text overflow even after retry. Spilling to next page.');
-            text = spillOverflowToNextPage(retryText, currentBook, pageNum, setBooks);
+            console.log(`Page ${pageNum} STILL overflows. Skipping spill to next page to prevent corruption.`);
+            LayoutFixDB.logWarning(currentBook.pageSize || '6x9', 'chapter_page', 'Text overflow even after retry.');
+            text = retryText;
           } else {
             text = retryText;
           }
         } catch (retryErr) {
-          console.warn(`Shorter retry failed for page ${pageNum}, spilling overflow to next page:`, retryErr);
-          text = spillOverflowToNextPage(text, currentBook, pageNum, setBooks);
+          console.warn(`Shorter retry failed for page ${pageNum}:`, retryErr);
         }
       }
 
@@ -4497,7 +4604,7 @@ export default function App() {
   // Lengthen single page text
   const handleLengthenPage = async (pageNum: number) => {
     if (!hasKeysForModel(selectedModel)) {
-      const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
+      const providerName = getProviderName(selectedModel);
       alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} in den Einstellungen ein.`);
       openSettings();
       return;
@@ -4530,12 +4637,11 @@ export default function App() {
       );
       let text = cleanPageText(rawText);
 
-      // Check overflow: spill remainder to next page instead of truncating
+      // Check overflow: skip spill for single-page edits to prevent cascading corruption
       const hasOverflow = checkTextOverflow(text, currentBook, pageNum);
       if (hasOverflow) {
-        console.log(`Lengthened text overflows page ${pageNum}. Spilling to next page...`);
-        LayoutFixDB.logWarning(currentBook.pageSize || '6x9', 'chapter_page', 'Overflow on user-triggered lengthening — spilling to next page.');
-        text = spillOverflowToNextPage(text, currentBook, pageNum, setBooks);
+        console.log(`Lengthened text overflows page ${pageNum}. Skipping spill to next page...`);
+        LayoutFixDB.logWarning(currentBook.pageSize || '6x9', 'chapter_page', 'Overflow on user-triggered lengthening.');
       }
 
       const finalOverflow = checkTextOverflow(text, currentBook, pageNum);
@@ -4570,7 +4676,7 @@ export default function App() {
   // Generate three different style versions of the current page text
   const handleGenerateStyleOptions = async (pageNum: number) => {
     if (!hasKeysForModel(selectedModel)) {
-      const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
+      const providerName = getProviderName(selectedModel);
       alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} in den Einstellungen ein.`);
       openSettings();
       return;
@@ -4670,7 +4776,7 @@ export default function App() {
   const handleGenerateStructureOptionsAI = async () => {
     if (selectedPage === null || typeof selectedPage !== 'number') return;
     if (!hasKeysForModel(selectedModel)) {
-      const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
+      const providerName = getProviderName(selectedModel);
       alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} in den Einstellungen ein.`);
       openSettings();
       return;
@@ -4741,7 +4847,7 @@ export default function App() {
   const handleEditorAIAction = async (action: 'rephrase' | 'emotional' | 'shorten' | 'spellcheck' | 'humanize') => {
     if (selectedPage === null || typeof selectedPage !== 'number') return;
     if (!hasKeysForModel(selectedModel)) {
-      const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
+      const providerName = getProviderName(selectedModel);
       alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} in den Einstellungen ein.`);
       openSettings();
       return;
@@ -4777,7 +4883,14 @@ export default function App() {
       } else if (action === 'emotional') {
         result = await service.makeTextEmotional(textToProcess);
       } else if (action === 'shorten') {
-        result = await service.shortenText(textToProcess);
+        const outlinePage = currentBook.outline?.pages.find(p => p.page_number === selectedPage);
+        result = await service.shortenText(textToProcess, {
+          language: currentBook.language === 'de' ? 'de' : 'en',
+          chapterTitle: outlinePage?.chapter_title,
+          pageFocus: outlinePage?.focus,
+          keyPoints: outlinePage?.key_points,
+          customGuidelines: getEffectiveGuidelines(currentBook)
+        });
       } else if (action === 'spellcheck') {
         result = await service.spellcheckText(textToProcess);
       } else if (action === 'humanize') {
@@ -4820,7 +4933,7 @@ export default function App() {
   const handleGenerateAmazonDescription = async () => {
     if (!activeBook) return;
     if (!hasKeysForModel(selectedModel)) {
-      const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
+      const providerName = getProviderName(selectedModel);
       alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} in den Einstellungen ein.`);
       openSettings();
       return;
@@ -4847,7 +4960,7 @@ export default function App() {
   const handleGenerateKdpKeywords = async () => {
     if (!activeBook) return;
     if (!hasKeysForModel(selectedModel)) {
-      const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
+      const providerName = getProviderName(selectedModel);
       alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} in den Einstellungen ein.`);
       openSettings();
       return;
@@ -4874,7 +4987,7 @@ export default function App() {
   const handleGenerateKdpCategories = async () => {
     if (!activeBook) return;
     if (!hasKeysForModel(selectedModel)) {
-      const providerName = selectedModel.startsWith('gemini-') ? 'Google Gemini' : 'Groq';
+      const providerName = getProviderName(selectedModel);
       alert(`Bitte tragen Sie zuerst einen API Key für ${providerName} in den Einstellungen ein.`);
       openSettings();
       return;
@@ -5033,7 +5146,7 @@ export default function App() {
     if (!outline || !activeBook) return [];
     const { chapterToPageList } = calculateBookPageNumbers();
     return chapterToPageList.map(item => ({
-      title: item.title,
+      title: sanitizeTocTitle(item.title),
       pageNumber: item.pageNum,
       outlinePage: item.outlinePage
     }));
@@ -7223,7 +7336,13 @@ export default function App() {
           </div>
         )}
         <LandingPage 
-          onLoginClick={() => setShowAuthModal(true)} 
+          onLoginClick={() => {
+            if (isSupabaseConfigured()) {
+              setShowAuthModal(true);
+              return;
+            }
+            bootLocalWorkspace();
+          }} 
           theme={theme}
           setTheme={setTheme}
           language={language}
@@ -7232,6 +7351,7 @@ export default function App() {
         {showAuthModal && (
           <Auth 
             language={language}
+            onLocalMode={bootLocalWorkspace}
             onAuthSuccess={() => setShowAuthModal(false)} 
             onClose={() => setShowAuthModal(false)} 
           />
@@ -9961,93 +10081,125 @@ export default function App() {
 
                         {/* Segmented controls for Lengthen / Rewrite / Regenerate */}
                         {(activeBook.pagesStatus || {})[selectedPage as number] === 'completed' && (
-                          <div style={{ 
-                            display: 'flex', 
-                            gap: '4px', 
-                            padding: '2px', 
-                            backgroundColor: 'var(--bg-card)', 
-                            borderRadius: '6px', 
-                            border: '1px solid var(--border-color)', 
-                            alignItems: 'center' 
-                          }}>
-                            <button 
-                              onClick={() => handleLengthenPage(selectedPage as number)}
-                              className="btn"
-                              style={{ 
-                                padding: '2px 8px', 
-                                fontSize: '9px', 
-                                height: '20px', 
-                                borderRadius: '4px',
-                                border: 'none', 
-                                backgroundColor: 'transparent',
-                                color: 'var(--text-main)',
-                                cursor: 'pointer',
-                                fontWeight: 500,
-                                transition: 'background-color 0.15s ease'
-                              }}
-                              disabled={isGenerating || isPlanning || isGeneratingStyleOptions}
-                              onMouseOver={(e) => { if (!isGenerating && !isPlanning && !isGeneratingStyleOptions) e.currentTarget.style.backgroundColor = 'var(--bg-main)'; }}
-                              onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-                            >
-                              Text verlängern
-                            </button>
-                            
-                            <div style={{ width: '1px', height: '10px', backgroundColor: 'var(--border-color)' }}></div>
-                            
-                            <button 
-                              onClick={() => handleGenerateStyleOptions(selectedPage as number)}
-                              className="btn"
-                              style={{ 
-                                padding: '2px 8px', 
-                                fontSize: '9px', 
-                                height: '20px', 
-                                borderRadius: '4px',
-                                border: 'none', 
-                                backgroundColor: 'transparent',
-                                color: 'var(--text-main)',
-                                cursor: 'pointer',
-                                fontWeight: 500,
-                                transition: 'background-color 0.15s ease'
-                              }}
-                              disabled={isGenerating || isPlanning || isGeneratingStyleOptions}
-                              onMouseOver={(e) => { if (!isGenerating && !isPlanning && !isGeneratingStyleOptions) e.currentTarget.style.backgroundColor = 'var(--bg-main)'; }}
-                              onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-                            >
-                              {isGeneratingStyleOptions ? 'Stile laden...' : 'Stile umschreiben'}
-                            </button>
-                            
-                            <div style={{ width: '1px', height: '10px', backgroundColor: 'var(--border-color)' }}></div>
-                            
-                            <button 
-                              onClick={() => handleRetryPage(selectedPage as number)}
-                              className="btn"
-                              style={{ 
-                                padding: '2px 8px', 
-                                fontSize: '9px', 
-                                height: '20px', 
-                                borderRadius: '4px',
-                                border: 'none', 
-                                backgroundColor: 'transparent',
-                                color: 'var(--text-main)',
-                                cursor: 'pointer',
-                                fontWeight: 500,
-                                transition: 'background-color 0.15s ease'
-                              }}
-                              disabled={isGenerating || isPlanning || isGeneratingStyleOptions}
-                              onMouseOver={(e) => { if (!isGenerating && !isPlanning && !isGeneratingStyleOptions) e.currentTarget.style.backgroundColor = 'var(--bg-main)'; }}
-                              onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-                            >
-                              Neu generieren
-                            </button>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
+                            <div style={{ 
+                              display: 'flex', 
+                              gap: '4px', 
+                              padding: '2px', 
+                              backgroundColor: 'var(--bg-card)', 
+                              borderRadius: '6px', 
+                              border: '1px solid var(--border-color)', 
+                              alignItems: 'center' 
+                            }}>
+                              <button 
+                                onClick={() => handleLengthenPage(selectedPage as number)}
+                                className="btn"
+                                style={{ 
+                                  padding: '2px 8px', 
+                                  fontSize: '9px', 
+                                  height: '20px', 
+                                  borderRadius: '4px',
+                                  border: 'none', 
+                                  backgroundColor: 'transparent',
+                                  color: 'var(--text-main)',
+                                  cursor: 'pointer',
+                                  fontWeight: 500,
+                                  transition: 'background-color 0.15s ease'
+                                }}
+                                disabled={isGenerating || isPlanning || isGeneratingStyleOptions}
+                                onMouseOver={(e) => { if (!isGenerating && !isPlanning && !isGeneratingStyleOptions) e.currentTarget.style.backgroundColor = 'var(--bg-main)'; }}
+                                onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                              >
+                                Text verlängern
+                              </button>
+                              
+                              <div style={{ width: '1px', height: '10px', backgroundColor: 'var(--border-color)' }}></div>
+                              
+                              <button 
+                                onClick={() => handleGenerateStyleOptions(selectedPage as number)}
+                                className="btn"
+                                style={{ 
+                                  padding: '2px 8px', 
+                                  fontSize: '9px', 
+                                  height: '20px', 
+                                  borderRadius: '4px',
+                                  border: 'none', 
+                                  backgroundColor: 'transparent',
+                                  color: 'var(--text-main)',
+                                  cursor: 'pointer',
+                                  fontWeight: 500,
+                                  transition: 'background-color 0.15s ease'
+                                }}
+                                disabled={isGenerating || isPlanning || isGeneratingStyleOptions}
+                                onMouseOver={(e) => { if (!isGenerating && !isPlanning && !isGeneratingStyleOptions) e.currentTarget.style.backgroundColor = 'var(--bg-main)'; }}
+                                onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                              >
+                                {isGeneratingStyleOptions ? 'Stile laden...' : 'Stile umschreiben'}
+                              </button>
+                              
+                              <div style={{ width: '1px', height: '10px', backgroundColor: 'var(--border-color)' }}></div>
+                              
+                              <button 
+                                onClick={() => handleRetryPage(selectedPage as number)}
+                                className="btn"
+                                style={{ 
+                                  padding: '2px 8px', 
+                                  fontSize: '9px', 
+                                  height: '20px', 
+                                  borderRadius: '4px',
+                                  border: 'none', 
+                                  backgroundColor: 'transparent',
+                                  color: 'var(--text-main)',
+                                  cursor: 'pointer',
+                                  fontWeight: 500,
+                                  transition: 'background-color 0.15s ease'
+                                }}
+                                disabled={isGenerating || isPlanning || isGeneratingStyleOptions}
+                                onMouseOver={(e) => { if (!isGenerating && !isPlanning && !isGeneratingStyleOptions) e.currentTarget.style.backgroundColor = 'var(--bg-main)'; }}
+                                onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                              >
+                                Neu generieren
+                              </button>
 
-                            {activeBook.pagesGenerationTime?.[selectedPage as number] && (
-                              <>
-                                <div style={{ width: '1px', height: '10px', backgroundColor: 'var(--border-color)' }}></div>
-                                <span style={{ fontSize: '8.5px', color: 'var(--text-muted)', padding: '0 6px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center' }} title={`Generierungszeit: ${activeBook.pagesGenerationTime[selectedPage as number]}ms`}>
-                                  ⏱ {(activeBook.pagesGenerationTime[selectedPage as number] / 1000).toFixed(1)}s
-                                </span>
-                              </>
-                            )}
+                              {activeBook.pagesGenerationTime?.[selectedPage as number] && (
+                                <>
+                                  <div style={{ width: '1px', height: '10px', backgroundColor: 'var(--border-color)' }}></div>
+                                  <span style={{ fontSize: '8.5px', color: 'var(--text-muted)', padding: '0 6px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center' }} title={`Generierungszeit: ${activeBook.pagesGenerationTime[selectedPage as number]}ms`}>
+                                    ⏱ {(activeBook.pagesGenerationTime[selectedPage as number] / 1000).toFixed(1)}s
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                            
+                            <button 
+                              onClick={() => handleClearPage(selectedPage as number)}
+                              className="btn"
+                              style={{ 
+                                padding: '2px 8px', 
+                                fontSize: '9px', 
+                                height: '20px', 
+                                borderRadius: '4px',
+                                border: '1px solid rgba(239, 68, 68, 0.3)', 
+                                backgroundColor: 'transparent',
+                                color: '#ef4444',
+                                cursor: 'pointer',
+                                fontWeight: 500,
+                                transition: 'all 0.15s ease',
+                                marginLeft: '2px'
+                              }}
+                              disabled={isGenerating || isPlanning || isGeneratingStyleOptions}
+                              onMouseOver={(e) => { 
+                                if (!isGenerating && !isPlanning && !isGeneratingStyleOptions) {
+                                  e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'; 
+                                }
+                              }}
+                              onMouseOut={(e) => { 
+                                e.currentTarget.style.backgroundColor = 'transparent'; 
+                              }}
+                              title={isDe ? 'Text auf dieser Seite komplett löschen' : 'Clear text on this page completely'}
+                            >
+                              {isDe ? 'Seite leeren (Achtung)' : 'Clear page (Warning)'}
+                            </button>
                           </div>
                         )}
 
@@ -11464,10 +11616,15 @@ export default function App() {
         onGroqKeysChange={handleGroqKeysChange}
         geminiKeys={geminiKeysInput}
         onGeminiKeysChange={handleGeminiKeysChange}
+        deepseekKeys={deepseekKeysInput}
+        onDeepseekKeysChange={handleDeepseekKeysChange}
         selectedModel={selectedModel}
         onModelChange={setSelectedModel}
+        generationTurboEnabled={generationTurboEnabled}
+        onGenerationTurboChange={setGenerationTurboEnabled}
         groqConnected={groqConnected}
         geminiConnected={geminiConnected}
+        deepseekConnected={deepseekConnected}
         userEmail={currentUser?.email}
         userId={currentUser?.uid}
       />

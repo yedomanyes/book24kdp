@@ -5,11 +5,12 @@ import { logActivity } from '../lib/activity';
 
 interface AuthProps {
   onAuthSuccess: () => void;
+  onLocalMode?: () => void;
   onClose?: () => void;
   language?: 'de' | 'en';
 }
 
-export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onClose, language = 'de' }) => {
+export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onLocalMode, onClose, language = 'de' }) => {
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -116,10 +117,28 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onClose, language = '
     return (
       <div style={{ display: 'flex', minHeight: '100vh', width: '100vw', backgroundColor: '#f0f2f5', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, system-ui, sans-serif', padding: '24px', boxSizing: 'border-box', position: 'fixed', top: 0, left: 0, zIndex: 9999 }}>
         <div style={{ backgroundColor: theme.bg, borderRadius: '8px', border: `1px solid ${theme.panelBorder}`, width: '100%', maxWidth: '450px', padding: '32px', color: theme.textMain, boxShadow: '0 4px 12px rgba(0,0,0,0.05)', boxSizing: 'border-box' }}>
-          <h2 style={{ margin: '0 0 8px 0', fontSize: '22px', fontWeight: 600 }}>{isDe ? 'Systemkonfiguration erforderlich' : 'System Setup Required'}</h2>
-          <p style={{ margin: 0, fontSize: '14px', lineHeight: 1.5, color: theme.textMuted }}>
-            {isDe ? 'Supabase ist nicht konfiguriert. Bitte hinterlege VITE_SUPABASE_URL und VITE_SUPABASE_ANON_KEY in deiner .env.local Datei.' : 'Supabase is not configured. Please provide VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env.local file.'}
+          <h2 style={{ margin: '0 0 8px 0', fontSize: '22px', fontWeight: 600 }}>{isDe ? 'Lokaler Modus aktiv' : 'Local Mode Active'}</h2>
+          <p style={{ margin: '0 0 18px 0', fontSize: '14px', lineHeight: 1.5, color: theme.textMuted }}>
+            {isDe ? 'Supabase ist in diesem Build nicht hinterlegt. Cloud-Login und Online-Sync sind deshalb gerade deaktiviert.' : 'Supabase is not configured in this build, so cloud login and online sync are currently disabled.'}
           </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <button
+              type="button"
+              onClick={() => onLocalMode?.()}
+              style={{ width: '100%', padding: '12px 16px', fontSize: '14px', fontWeight: 600, backgroundColor: theme.primaryBtn, border: 'none', borderRadius: '6px', color: '#ffffff', cursor: 'pointer' }}
+            >
+              {isDe ? 'Workspace lokal öffnen' : 'Open local workspace'}
+            </button>
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                style={{ width: '100%', padding: '12px 16px', fontSize: '14px', fontWeight: 500, backgroundColor: '#ffffff', border: `1px solid ${theme.panelBorder}`, borderRadius: '6px', color: theme.textMain, cursor: 'pointer' }}
+              >
+                {isDe ? 'Schließen' : 'Close'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );

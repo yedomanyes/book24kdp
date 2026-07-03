@@ -39,7 +39,7 @@ export class GeminiService {
   }
 
   constructor(
-    apiKeys: string | { groq?: string[]; gemini?: string[] } | string[],
+    apiKeys: string | { groq?: string[]; gemini?: string[]; deepseek?: string[] } | string[],
     model: string = 'llama-3.3-70b-versatile'
   ) {
     this.model = model;
@@ -1730,8 +1730,20 @@ Antworte ausschließlich im JSON-Format mit folgender Struktur: { "categories": 
     return (await this.askAI(systemPrompt, text, false)).trim();
   }
 
-  async shortenText(text: string): Promise<string> {
-    const systemPrompt = `Du bist ein Redakteur. Kürze den folgenden Text prägnant, um Platz zu sparen und Überlauf zu verhindern, während die wichtigsten Details und Kernaussagen erhalten bleiben. Antworte ausschließlich mit dem überarbeiteten Text, ohne Einleitung, Kommentar oder Anführungszeichen.`;
+  async shortenText(text: string, context?: { language?: string, chapterTitle?: string, pageFocus?: string, keyPoints?: string[], customGuidelines?: string }): Promise<string> {
+    const langStr = context?.language === 'en' ? 'ENGLISH' : 'Deutsch';
+    const systemPrompt = `Du bist ein professioneller Redakteur. Kürze den folgenden Text prägnant, um Platz zu sparen und Überlauf zu verhindern.
+Die wichtigsten Details und Kernaussagen müssen erhalten bleiben.
+
+Kontext zum Kapitel:
+Titel: ${context?.chapterTitle || 'Unbekannt'}
+Fokus: ${context?.pageFocus || 'Unbekannt'}
+Wichtige Punkte: ${context?.keyPoints?.join(', ') || 'Keine'}
+
+${context?.customGuidelines ? `RICHTLINIEN:\n${context.customGuidelines}\n` : ''}
+
+Sprache der Antwort: ${langStr}
+Antworte ausschließlich mit dem überarbeiteten Text, ohne Einleitung, Kommentar oder Anführungszeichen.`;
     return (await this.askAI(systemPrompt, text, false)).trim();
   }
 
@@ -1798,14 +1810,30 @@ Antworte AUSSCHLIESSLICH als JSON-Array:
     subtitle: string,
     idea: string,
     language: string,
-    currentPages: BookOutlinePage[]
+    currentPages: BookOutlinePage[],
+    guidelines: string = '',
+    pagesText: { [key: number]: string } = {}
   ): Promise<BookOutlinePage[]> {
 
     // --- Step 1: collect unique chapters in order ---
-    const uniqueChapters: string[] = [];
+    const uniqueChapters: { title: string, focus: string, snippets: string[] }[] = [];
+    
     for (const p of currentPages) {
-      if (!uniqueChapters.includes(p.chapter_title)) {
-        uniqueChapters.push(p.chapter_title);
+      let chapterObj = uniqueChapters.find(c => c.title === p.chapter_title);
+      if (!chapterObj) {
+        chapterObj = { title: p.chapter_title, focus: p.focus, snippets: [] };
+        uniqueChapters.push(chapterObj);
+      }
+      
+      const pText = pagesText[p.page_number];
+      if (pText && pText.trim().length > 0) {
+        // Grab first ~150 chars of text to give AI a sense of what's inside
+        const plainText = pText.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+        if (plainText) {
+          chapterObj.snippets.push(`S.${p.page_number}: ${plainText.substring(0, 150)}...`);
+        }
+      } else {
+        chapterObj.snippets.push(`S.${p.page_number}: [Kein Text / Geplant]`);
       }
     }
     const numOriginal = uniqueChapters.length;
@@ -1816,7 +1844,11 @@ Antworte AUSSCHLIESSLICH als JSON-Array:
     const lang = language === 'de' ? 'Deutsch' : 'ENGLISH (CRITICAL: ALL TITLES MUST BE IN ENGLISH)';
 
     const systemPrompt = `Du bist ein professioneller Bucheditor. Das Buch heißt "${title}" (${subtitle}), Thema: "${idea}".
-Du bekommst eine nummerierte Liste der aktuellen Kapitel. Fasse diese in ca. ${targetChapters} breitere Oberkapitel zusammen.
+Du bekommst eine Liste der aktuellen Kapitel mit ihren Fokuspunkten und kurzen Textausschnitten.
+DEINE AUFGABE: Fasse diese ${numOriginal} Kapitel in ca. ${targetChapters} breitere Oberkapitel zusammen, sodass der rote Faden und die Logik des Buches verbessert werden.
+Berücksichtige die Textausschnitte, um sinnvolle Gruppen zu bilden!
+
+${guidelines ? `ZIELGRUPPE & RICHTLINIEN:\n${guidelines}\n` : ''}
 Antworte AUSSCHLIESSLICH mit einem validen JSON-Array dieses Formats – kein Markdown, kein Kommentar:
 [
   {
@@ -1832,7 +1864,9 @@ Regeln:
 - Die Gruppen sollen inhaltlich zusammengehörige Kapitel vereinen.
 - Gib so viele Gruppen zurück wie nötig (Ziel: ~${targetChapters}).`;
 
-    const userPrompt = `Aktuelle Kapitel (in Reihenfolge):\n${uniqueChapters.map((t, i) => `${i + 1}. ${t}`).join('\n')}`;
+    const userPrompt = `Aktuelle Kapitel (in Reihenfolge):\n\n${uniqueChapters.map((c, i) => 
+      `${i + 1}. TITEL: ${c.title}\n   FOKUS: ${c.focus}\n   INHALT: ${c.snippets.join(' | ')}`
+    ).join('\n\n')}`;
 
     try {
       const response = await this.askAI(systemPrompt, userPrompt, true);
@@ -1881,7 +1915,8 @@ Regeln:
    */
   async regenerateChaptersFromPages(
     outline: BookOutline,
-    pagesText: { [key: number]: string }
+    pagesText: { [key: number]: string },
+    guidelines: string = ''
   ): Promise<BookOutlinePage[]> {
     // 1. Gather all pages that have text
     const pagesWithText = Object.entries(pagesText)
@@ -1916,6 +1951,7 @@ Regeln:
     const systemPrompt = `Du bist ein erfahrener Buch-Redakteur. Deine Aufgabe ist es, das Inhaltsverzeichnis (die Kapitel) eines Buches komplett neu zu strukturieren und zu benennen.
 Dazu liest du Ausschnitte/Inhalte aller Seiten des Buches durch.
 
+${guidelines ? `ZIELGRUPPE & RICHTLINIEN:\n${guidelines}\n` : ''}
 Analysiere den inhaltlichen Fluss der Seiten und teile das Buch in sinnvolle Kapitel ein.
 Ziele:
 1. Erstelle aussagekräftige, professionelle Kapitelnamen (keine langweiligen Standardtitel, sondern ansprechend).

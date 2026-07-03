@@ -6,7 +6,7 @@
     "Hermes",
     "Antigravity"
   ],
-  "lastIndexedAt": "2026-07-03T20:41:14.836Z",
+  "lastIndexedAt": "2026-07-03T23:31:13.152Z",
   "worker": {
     "pid": 9887,
     "hostname": "Mac",
@@ -26,9 +26,9 @@
     "analysisJson": "graphify-out/.graphify_analysis.json"
   },
   "decisionEngine": {
-    "generatedAt": "2026-07-03T20:41:14.836Z",
+    "generatedAt": "2026-07-03T23:31:13.152Z",
     "thoughts": [
-      "App Shell & Studio Flow dominiert aktuell mit 23882 Zeilen und ist damit der schwerste Produktblock.",
+      "App Shell & Studio Flow dominiert aktuell mit 24111 Zeilen und ist damit der schwerste Produktblock.",
       "Das Brain selbst belegt 1913 Zeilen und hat damit genug Substanz für echte Runtime-Ausbauten.",
       "Vault und Memory liefern 53 Dateien Kontext für wiederverwendbares Wissen."
     ],
@@ -65,8 +65,8 @@
       {
         "id": "app-shell",
         "label": "Fokus 2",
-        "detail": "App Shell & Studio Flow · 31 Dateien · 23882 Zeilen",
-        "score": 309
+        "detail": "App Shell & Studio Flow · 31 Dateien · 24111 Zeilen",
+        "score": 311
       },
       {
         "id": "project-memory",
@@ -79,7 +79,7 @@
       {
         "id": "app-shell-heavy",
         "label": "App Shell ist zu schwer",
-        "detail": "23882 Zeilen in der Shell bremsen Verständnis und machen das Projekt unruhig.",
+        "detail": "24111 Zeilen in der Shell bremsen Verständnis und machen das Projekt unruhig.",
         "score": 93,
         "severity": "high"
       }
@@ -137,7 +137,7 @@
       "title": "App Shell & Studio Flow",
       "description": "Zentrale App-Struktur, Routing-artige Tabs, Screen-Komposition und globaler Studio-Flow.",
       "fileCount": 31,
-      "totalLines": 23882,
+      "totalLines": 24111,
       "symbols": [
         "DEFAULT_BOX1_DESIGN",
         "DEFAULT_BOX2_DESIGN",
@@ -159,7 +159,7 @@
       "topFiles": [
         {
           "path": "src/App.tsx",
-          "lines": 12076,
+          "lines": 12233,
           "symbols": [
             "DEFAULT_BOX1_DESIGN",
             "DEFAULT_BOX2_DESIGN",
@@ -219,7 +219,7 @@
         },
         {
           "path": "src/components/SettingsModal.tsx",
-          "lines": 502,
+          "lines": 555,
           "symbols": [
             "AI_MODEL_OPTIONS",
             "SettingsModal",
@@ -322,7 +322,7 @@
       "title": "Weitere Dateien",
       "description": "Restliche Dateien, die nicht in eine Kern-Sektion gefallen sind.",
       "fileCount": 17,
-      "totalLines": 3426,
+      "totalLines": 3430,
       "symbols": [
         "hasBrainAccess",
         "BRAIN_ALLOWED_EMAILS",
@@ -367,7 +367,7 @@
         },
         {
           "path": "src/i18n.ts",
-          "lines": 323,
+          "lines": 327,
           "symbols": [
             "t",
             "translations",
@@ -424,7 +424,7 @@
       "title": "AI Generation Stack",
       "description": "Gemini-/Prompt-/Content-Generierung und angrenzende Schreiblogik.",
       "fileCount": 1,
-      "totalLines": 2075,
+      "totalLines": 2111,
       "symbols": [
         "GeminiService",
         "BookOutlinePage",
@@ -433,7 +433,7 @@
       "topFiles": [
         {
           "path": "src/services/GeminiService.ts",
-          "lines": 2075,
+          "lines": 2111,
           "symbols": [
             "GeminiService",
             "BookOutlinePage",
@@ -534,7 +534,7 @@
       "title": "Storage, Supabase & Cloud",
       "description": "Lokale Persistenz, Supabase-Verbindung, Cloud-Sync und Backend-Definitionen.",
       "fileCount": 12,
-      "totalLines": 1182,
+      "totalLines": 1187,
       "symbols": [
         "saveLibrarySnapshot",
         "loadLibrarySnapshot",
@@ -554,7 +554,7 @@
       "topFiles": [
         {
           "path": "src/services/StorageService.ts",
-          "lines": 489,
+          "lines": 494,
           "symbols": [
             "saveLibrarySnapshot",
             "loadLibrarySnapshot",

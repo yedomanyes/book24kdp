@@ -73,8 +73,7 @@ html, body {
 
 /* ── Header ── */
 .header {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  display: flex;
   align-items: center;
   gap: 20px;
   padding: 0 24px;
@@ -88,6 +87,7 @@ html, body {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
 }
 
 .header-nav-wrap {
@@ -95,10 +95,12 @@ html, body {
   align-items: center;
   justify-content: center;
   min-width: 0;
+  flex: 1 1 auto;
 }
 
 .header-right {
-  justify-self: end;
+  flex: 0 0 auto;
+  justify-content: flex-end;
 }
 
 .header-nav {

@@ -143,6 +143,7 @@ export const KEYS = {
   accounts: `${STORAGE_PREFIX}_accounts`,
   activeAccount: `${STORAGE_PREFIX}_active_account`,
   selectedModel: `${STORAGE_PREFIX}_selected_model`,
+  generationTurbo: `${STORAGE_PREFIX}_generation_turbo`,
   library: (accountId: string) => `${STORAGE_PREFIX}_library_${accountId}`,
 };
 
@@ -165,6 +166,7 @@ export function migrateOldKeys(): void {
     { newKey: KEYS.accounts, oldSuffixes: ['accounts'] },
     { newKey: KEYS.activeAccount, oldSuffixes: ['active_account'] },
     { newKey: KEYS.selectedModel, oldSuffixes: ['selected_model'] },
+    { newKey: KEYS.generationTurbo, oldSuffixes: ['generation_turbo'] },
   ];
 
   for (const { newKey, oldSuffixes } of migrations) {
@@ -218,6 +220,7 @@ export interface BackupData {
   accounts: string | null;
   activeAccount: string | null;
   selectedModel: string | null;
+  generationTurbo: string | null;
   libraries: Record<string, string>;
 }
 
@@ -240,6 +243,7 @@ export function createBackup(): BackupData {
     accounts: localStorage.getItem(KEYS.accounts),
     activeAccount: localStorage.getItem(KEYS.activeAccount),
     selectedModel: localStorage.getItem(KEYS.selectedModel),
+    generationTurbo: localStorage.getItem(KEYS.generationTurbo),
     libraries,
   };
 }
@@ -276,6 +280,7 @@ export function importBackup(file: File): Promise<void> {
         if (backup.accounts) localStorage.setItem(KEYS.accounts, backup.accounts);
         if (backup.activeAccount) localStorage.setItem(KEYS.activeAccount, backup.activeAccount);
         if (backup.selectedModel) localStorage.setItem(KEYS.selectedModel, backup.selectedModel);
+        if (backup.generationTurbo) localStorage.setItem(KEYS.generationTurbo, backup.generationTurbo);
 
         for (const [accountId, data] of Object.entries(backup.libraries)) {
           localStorage.setItem(KEYS.library(accountId), data);
