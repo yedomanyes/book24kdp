@@ -36,6 +36,33 @@ export interface NicheBrainProfile {
   linkedBookIds: string[];
 }
 
+export interface BrainTrackedBook {
+  bookId: string;
+  title: string;
+  niche: string;
+  marketScore: number;
+  completedPages: number;
+  targetPages: number;
+  status: string;
+  lastUpdated: string;
+}
+
+export interface BrainRecommendationItem {
+  id: string;
+  label: string;
+  detail: string;
+  score?: number;
+  severity?: 'low' | 'medium' | 'high';
+}
+
+export interface BrainRecommendations {
+  generatedAt: string;
+  thoughts: string[];
+  nextActions: BrainRecommendationItem[];
+  priorities: BrainRecommendationItem[];
+  issues: BrainRecommendationItem[];
+}
+
 export interface BrainState {
   version: 1;
   totalPagesLearned: number;
@@ -46,12 +73,20 @@ export interface BrainState {
   obsidianConnected: boolean;
   obsidianLastSync?: string;
   obsidianFilesWritten: number;
+  brainStatus?: 'idle' | 'booting' | 'ready' | 'error';
+  brainStatusMessage?: string;
+  brainLastBootAt?: string;
+  brainLastRebuildAt?: string;
+  brainLibraryBookCount?: number;
+  brainLibraryPageCount?: number;
   niches: Record<string, NicheBrainProfile>;
+  trackedBooks: Record<string, BrainTrackedBook>;
   events: BrainEvent[];
   patterns: {
     success: string[];
     avoid: string[];
   };
+  recommendations: BrainRecommendations;
 }
 
 export interface BrainBookInput {
@@ -84,7 +119,17 @@ export const EMPTY_BRAIN_STATE = (): BrainState => ({
   tokenSamples: 0,
   obsidianConnected: false,
   obsidianFilesWritten: 0,
+  brainStatus: 'idle',
+  brainStatusMessage: 'Brain wartet auf Initialisierung',
   niches: {},
+  trackedBooks: {},
   events: [],
   patterns: { success: [], avoid: [] },
+  recommendations: {
+    generatedAt: '',
+    thoughts: [],
+    nextActions: [],
+    priorities: [],
+    issues: [],
+  },
 });

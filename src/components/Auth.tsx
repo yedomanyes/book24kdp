@@ -53,7 +53,7 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onClose, language = '
         await logActivity('Login', isDe ? 'Nutzer hat sich eingeloggt (Email/Passwort).' : 'User logged in (Email/Password).');
         onAuthSuccess();
       } else {
-        const { error: signUpError } = await supabase.auth.signUp({
+        const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: { emailRedirectTo: window.location.origin },
@@ -61,6 +61,12 @@ export const Auth: React.FC<AuthProps> = ({ onAuthSuccess, onClose, language = '
         if (signUpError) throw signUpError;
         
         await logActivity('Registration', isDe ? 'Neuer Nutzer hat sich registriert.' : 'New user registered.');
+        
+        if (data?.user && !data?.session) {
+          setError(isDe ? 'Bitte überprüfe deine E-Mails, um die Registrierung abzuschließen.' : 'Please check your email to verify your account.');
+          return;
+        }
+
         onAuthSuccess();
       }
     } catch (err: any) {

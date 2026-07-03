@@ -5,7 +5,7 @@ import type { AppUser } from '../supabase';
 import { BrainService, getNicheColor, slugify } from '../services/brain/BrainService';
 import { ObsidianSyncService } from '../services/brain/ObsidianSyncService';
 import { CloudQueueService } from '../services/brain/CloudQueueService';
-import type { BrainState, BrainBookInput } from '../types/brain';
+import type { BrainState, BrainBookInput, BrainRecommendations, BrainRecommendationItem } from '../types/brain';
 import { SupabaseStatusBox } from './SupabaseStatusBox';
 
 interface BrainDashboardProps {
@@ -35,6 +35,30 @@ type BrainLink = {
   color: string;
 };
 
+type BackgroundBrainRuntime = {
+  status: string;
+  mode: string;
+  consumers?: string[];
+  lastHeartbeatAt?: string;
+  lastIndexedAt?: string;
+  sectionCount?: number;
+  totalFilesIndexed?: number;
+  antigravity?: { configured?: boolean };
+  worker?: { intervalMs?: number };
+  decisionEngine?: BrainRecommendations;
+};
+
+type BackgroundCodeContextSection = {
+  id: string;
+  title: string;
+  fileCount: number;
+  totalLines: number;
+};
+
+type BackgroundCodeContextPayload = {
+  sections: BackgroundCodeContextSection[];
+};
+
 const NEON_COLORS = ['#5eead4', '#60a5fa', '#818cf8', '#22d3ee', '#38bdf8', '#c084fc', '#f0abfc', '#67e8f9'];
 const VIEWBOX_W = 1600;
 const VIEWBOX_H = 920;
@@ -53,14 +77,92 @@ export const BrainDashboard: React.FC<BrainDashboardProps> = ({
   const [state, setState] = useState<BrainState>(() => BrainService.getState(accountId));
   const [obsidianBusy, setObsidianBusy] = useState(false);
   const [selectedNode, setSelectedNode] = useState<BrainNode | null>(null);
+  const [backgroundRuntime, setBackgroundRuntime] = useState<BackgroundBrainRuntime | null>(null);
+  const [backgroundContext, setBackgroundContext] = useState<BackgroundCodeContextPayload | null>(null);
+  const [runtimeNow, setRuntimeNow] = useState(() => Date.now());
 
   const isDark = theme === 'dark';
+  const brainStatusTone = state.brainStatus === 'error'
+    ? { dot: '#f87171', border: 'rgba(248,113,113,0.25)', bg: isDark ? 'rgba(48,12,18,0.78)' : 'rgba(255,241,242,0.96)', text: isDark ? '#fecdd3' : '#7f1d1d' }
+    : state.brainStatus === 'ready'
+      ? { dot: '#22c55e', border: 'rgba(34,197,94,0.25)', bg: isDark ? 'rgba(6,24,16,0.78)' : 'rgba(240,253,244,0.96)', text: isDark ? '#bbf7d0' : '#14532d' }
+      : { dot: '#38bdf8', border: 'rgba(56,189,248,0.25)', bg: isDark ? 'rgba(8,23,39,0.78)' : 'rgba(239,246,255,0.96)', text: isDark ? '#bae6fd' : '#0c4a6e' };
+  const formatBrainTime = (value?: string) => {
+    if (!value) return '—';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return '—';
+    return parsed.toLocaleString('de-DE', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+  const formatRelativeRuntime = (value?: string) => {
+    if (!value) return '—';
+    const parsed = new Date(value).getTime();
+    if (Number.isNaN(parsed)) return '—';
+    const diffSeconds = Math.max(0, Math.floor((runtimeNow - parsed) / 1000));
+    if (diffSeconds < 60) return `vor ${diffSeconds}s`;
+    const minutes = Math.floor(diffSeconds / 60);
+    if (minutes < 60) return `vor ${minutes}m`;
+    const hours = Math.floor(minutes / 60);
+    return `vor ${hours}h`;
+  };
 
   useEffect(() => {
     void ObsidianSyncService.init().then(() => {
       setState(BrainService.getState(accountId));
     });
   }, [accountId, refreshKey]);
+
+  useEffect(() => {
+    const ticker = window.setInterval(() => {
+      setRuntimeNow(Date.now());
+    }, 1000);
+
+    return () => {
+      window.clearInterval(ticker);
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadBackgroundSignals = async () => {
+      try {
+        const [runtimeRes, contextRes] = await Promise.all([
+          fetch(`/brain/runtime-status.json?ts=${Date.now()}`),
+          fetch(`/brain/code-context.json?ts=${Date.now()}`),
+        ]);
+
+        if (!cancelled && runtimeRes.ok) {
+          const runtimeData = await runtimeRes.json() as BackgroundBrainRuntime;
+          setBackgroundRuntime(runtimeData);
+        }
+
+        if (!cancelled && contextRes.ok) {
+          const contextData = await contextRes.json() as BackgroundCodeContextPayload;
+          setBackgroundContext(contextData);
+        }
+      } catch {
+        if (!cancelled) {
+          setBackgroundRuntime(null);
+          setBackgroundContext(null);
+        }
+      }
+    };
+
+    void loadBackgroundSignals();
+    const interval = window.setInterval(() => {
+      void loadBackgroundSignals();
+    }, 5000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, []);
 
   const handleConnectObsidian = async () => {
     setObsidianBusy(true);
@@ -277,16 +379,27 @@ export const BrainDashboard: React.FC<BrainDashboardProps> = ({
       })
       .filter(Boolean) as Array<{ id: string; path: string; color: string; width: number; delay: number }>;
   }, [graphData.links, nodePositions]);
-
   const neuralStats = useMemo(() => {
     const activeNiches = Object.keys(state.niches).length;
     return {
+      pulse: state.totalEvents,
+      memory: Math.max(state.totalPagesLearned, books.length),
       waves: activeNiches + books.length,
       links: graphData.links.length,
-      pulse: state.totalEvents,
     };
-  }, [books.length, graphData.links.length, state.niches, state.totalEvents]);
+  }, [books.length, graphData.links.length, state.niches, state.totalEvents, state.totalPagesLearned]);
 
+  const backgroundSections = backgroundContext?.sections?.slice(0, 4) || [];
+  const backgroundReady = backgroundRuntime?.status === 'healthy';
+  const heartbeatAgeSeconds = backgroundRuntime?.lastHeartbeatAt
+    ? Math.max(0, Math.floor((runtimeNow - new Date(backgroundRuntime.lastHeartbeatAt).getTime()) / 1000))
+    : null;
+  const backgroundFresh = heartbeatAgeSeconds !== null && heartbeatAgeSeconds < Math.max(20, Math.ceil((backgroundRuntime?.worker?.intervalMs ?? 10000) / 1000) * 2);
+  const pulseColor = !backgroundReady ? '#64748b' : backgroundFresh ? '#22c55e' : '#f59e0b';
+  const pulseScale = heartbeatAgeSeconds !== null && heartbeatAgeSeconds < 2 ? 1.18 : heartbeatAgeSeconds !== null && heartbeatAgeSeconds < 5 ? 1.08 : 1;
+  const localBrainFeed = state.recommendations;
+  const workerBrainFeed = backgroundRuntime?.decisionEngine;
+ 
   return (
     <div
       style={{
@@ -329,6 +442,182 @@ export const BrainDashboard: React.FC<BrainDashboardProps> = ({
               Obsidian Vault verbinden
             </button>
           )}
+        </div>
+
+        <div
+          style={{
+            width: 'min(420px, calc(100vw - 40px))',
+            borderRadius: '18px',
+            border: `1px solid ${brainStatusTone.border}`,
+            background: brainStatusTone.bg,
+            color: brainStatusTone.text,
+            padding: '12px 14px',
+            boxShadow: isDark ? '0 16px 40px rgba(2,6,23,0.28)' : '0 12px 32px rgba(15,23,42,0.08)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ width: 10, height: 10, borderRadius: 999, background: brainStatusTone.dot, boxShadow: `0 0 18px ${brainStatusTone.dot}` }} />
+              <div>
+                <div style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.8 }}>
+                  Brain Runtime
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 800 }}>
+                  {state.brainStatus === 'error' ? 'Fehler' : state.brainStatus === 'ready' ? 'Aktiv' : 'Initialisiert'}
+                </div>
+              </div>
+            </div>
+            <div style={{ fontSize: 11, opacity: 0.8, textAlign: 'right' }}>
+              Vault {state.obsidianConnected ? 'verbunden' : 'lokal'}
+            </div>
+          </div>
+
+          <div style={{ fontSize: 12, lineHeight: 1.45, opacity: 0.95 }}>
+            {state.brainStatusMessage || 'Brain wartet auf Initialisierung'}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px' }}>
+            <div style={{ borderRadius: '12px', padding: '8px 10px', background: isDark ? 'rgba(2,6,23,0.35)' : 'rgba(255,255,255,0.72)' }}>
+              <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', opacity: 0.7 }}>Library</div>
+              <div style={{ fontSize: 13, fontWeight: 700 }}>{state.brainLibraryBookCount ?? books.length} Bücher</div>
+              <div style={{ fontSize: 11, opacity: 0.75 }}>{state.brainLibraryPageCount ?? state.totalPagesLearned} Seiten</div>
+            </div>
+            <div style={{ borderRadius: '12px', padding: '8px 10px', background: isDark ? 'rgba(2,6,23,0.35)' : 'rgba(255,255,255,0.72)' }}>
+              <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', opacity: 0.7 }}>Zuletzt</div>
+              <div style={{ fontSize: 13, fontWeight: 700 }}>Boot {formatBrainTime(state.brainLastBootAt)}</div>
+              <div style={{ fontSize: 11, opacity: 0.75 }}>Rebuild {formatBrainTime(state.brainLastRebuildAt)}</div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            width: 'min(420px, calc(100vw - 40px))',
+            borderRadius: '18px',
+            border: `1px solid ${backgroundReady ? 'rgba(34,197,94,0.22)' : 'rgba(148,163,184,0.18)'}`,
+            background: isDark ? 'rgba(3, 7, 18, 0.82)' : 'rgba(255,255,255,0.90)',
+            color: isDark ? '#e2e8f0' : '#0f172a',
+            padding: '12px 14px',
+            boxShadow: isDark ? '0 16px 40px rgba(2,6,23,0.24)' : '0 12px 32px rgba(15,23,42,0.08)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span
+                style={{
+                  width: 11,
+                  height: 11,
+                  borderRadius: 999,
+                  background: pulseColor,
+                  boxShadow: `0 0 18px ${pulseColor}`,
+                  transform: `scale(${pulseScale})`,
+                  transition: 'transform 180ms ease, background 180ms ease, box-shadow 180ms ease',
+                }}
+              />
+              <div>
+                <div style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.78 }}>
+                  Background Worker
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 800 }}>
+                  {backgroundReady ? (backgroundFresh ? 'Arbeitet jetzt live' : 'Läuft, aber Heartbeat ist alt') : 'Noch kein Live-Snapshot'}
+                </div>
+              </div>
+            </div>
+            <div style={{ fontSize: 11, opacity: 0.76, textAlign: 'right' }}>
+              {backgroundRuntime?.antigravity?.configured ? 'Antigravity bereit' : 'Antigravity offen'}
+            </div>
+          </div>
+
+          <div style={{ fontSize: 12, lineHeight: 1.45, opacity: 0.92 }}>
+            {backgroundReady
+              ? `Heartbeat ${formatBrainTime(backgroundRuntime?.lastHeartbeatAt)} (${formatRelativeRuntime(backgroundRuntime?.lastHeartbeatAt)}) • ${backgroundRuntime?.totalFilesIndexed ?? 0} Dateien in ${backgroundRuntime?.sectionCount ?? 0} Sektionen`
+              : 'Sobald der lokale Brain-Worker läuft, indexiert er Code, Vault und Graph-Kontext weiter — auch wenn kein Browser-Tab offen ist.'}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px' }}>
+            <div style={{ borderRadius: '12px', padding: '8px 10px', background: isDark ? 'rgba(2,6,23,0.35)' : 'rgba(248,250,252,0.9)' }}>
+              <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', opacity: 0.7 }}>Consumer</div>
+              <div style={{ fontSize: 13, fontWeight: 700 }}>{backgroundRuntime?.consumers?.join(' + ') || 'Hermes + Antigravity'}</div>
+              <div style={{ fontSize: 11, opacity: 0.75 }}>{backgroundRuntime?.mode || 'local-background-worker'}</div>
+            </div>
+            <div style={{ borderRadius: '12px', padding: '8px 10px', background: isDark ? 'rgba(2,6,23,0.35)' : 'rgba(248,250,252,0.9)' }}>
+              <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', opacity: 0.7 }}>Letzter Index</div>
+              <div style={{ fontSize: 13, fontWeight: 700 }}>{formatBrainTime(backgroundRuntime?.lastIndexedAt)}</div>
+              <div style={{ fontSize: 11, opacity: 0.75 }}>{backgroundRuntime?.worker?.intervalMs ? `${Math.round(backgroundRuntime.worker.intervalMs / 1000)}s Takt` : `${backgroundSections.length} Schnell-Sektionen sichtbar`}</div>
+            </div>
+          </div>
+
+          {backgroundSections.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {backgroundSections.map((section) => (
+                <div
+                  key={section.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '10px',
+                    borderRadius: '12px',
+                    padding: '8px 10px',
+                    background: isDark ? 'rgba(15,23,42,0.52)' : 'rgba(248,250,252,0.95)',
+                    border: `1px solid ${isDark ? 'rgba(51,65,85,0.6)' : 'rgba(226,232,240,0.95)'}`,
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700 }}>{section.title}</div>
+                    <div style={{ fontSize: 10, opacity: 0.68 }}>{section.fileCount} Dateien • {section.totalLines} Zeilen</div>
+                  </div>
+                  <div style={{ fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', opacity: 0.58 }}>
+                    Kontext
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div
+          style={{
+            width: 'min(420px, calc(100vw - 40px))',
+            borderRadius: '18px',
+            border: `1px solid ${isDark ? 'rgba(94,234,212,0.18)' : 'rgba(56,189,248,0.16)'}`,
+            background: isDark ? 'rgba(4, 10, 22, 0.88)' : 'rgba(255,255,255,0.94)',
+            color: isDark ? '#e2e8f0' : '#0f172a',
+            padding: '12px 14px',
+            boxShadow: isDark ? '0 18px 44px rgba(2,6,23,0.26)' : '0 12px 32px rgba(15,23,42,0.08)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+            <div>
+              <div style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.78 }}>
+                Brain Decision Layer
+              </div>
+              <div style={{ fontSize: 15, fontWeight: 800 }}>
+                Was Brain gerade denkt und als Nächstes tun will
+              </div>
+            </div>
+            <div style={{ fontSize: 11, opacity: 0.74, textAlign: 'right' }}>
+              {workerBrainFeed?.generatedAt ? `Worker ${formatRelativeRuntime(workerBrainFeed.generatedAt)}` : 'State live'}
+            </div>
+          </div>
+
+          <DecisionSection title="Denkt gerade" items={(localBrainFeed?.thoughts || []).map((thought, index) => ({ id: `thought-${index}`, label: `Gedanke ${index + 1}`, detail: thought }))} empty="Noch keine klaren Brain-Gedanken vorhanden." />
+          <DecisionSection title="Als Nächstes tun" items={localBrainFeed?.nextActions || []} empty="Noch keine nächste Aktion formuliert." />
+          <DecisionSection title="Priorisierte Bücher" items={localBrainFeed?.priorities || []} empty="Noch keine Buch-Prioritäten erkannt." />
+          <DecisionSection title="Erkannte Probleme" items={localBrainFeed?.issues || []} empty="Aktuell keine harten Probleme erkannt." severity />
+
+          <div style={{ height: 1, background: isDark ? 'rgba(51,65,85,0.6)' : 'rgba(226,232,240,0.9)', margin: '2px 0' }} />
+
+          <DecisionSection title="Worker-Hypothesen" items={(workerBrainFeed?.thoughts || []).map((thought, index) => ({ id: `worker-thought-${index}`, label: `Worker ${index + 1}`, detail: thought }))} empty="Worker hat noch keine eigenen Hypothesen ausgegeben." compact />
         </div>
 
         <div
@@ -530,6 +819,54 @@ function actionBtnStyle(bg: string, border: string, color: string): React.CSSPro
     boxShadow: '0 12px 30px rgba(2, 6, 23, 0.18)',
   };
 }
+
+const DecisionSection: React.FC<{
+  title: string;
+  items: Array<BrainRecommendationItem | { id: string; label: string; detail: string; severity?: 'low' | 'medium' | 'high' }>;
+  empty: string;
+  compact?: boolean;
+  severity?: boolean;
+}> = ({ title, items, empty, compact = false, severity = false }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+    <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.14em', opacity: 0.7 }}>{title}</div>
+    {items.length === 0 ? (
+      <div style={{ fontSize: 11, opacity: 0.66 }}>{empty}</div>
+    ) : (
+      items.slice(0, compact ? 2 : 4).map((item) => {
+        const tone = severity
+          ? item.severity === 'high'
+            ? { bg: 'rgba(127,29,29,0.18)', border: 'rgba(248,113,113,0.24)', text: '#fca5a5' }
+            : item.severity === 'medium'
+              ? { bg: 'rgba(120,53,15,0.16)', border: 'rgba(251,191,36,0.22)', text: '#fcd34d' }
+              : { bg: 'rgba(8,47,73,0.16)', border: 'rgba(56,189,248,0.20)', text: '#7dd3fc' }
+          : { bg: 'rgba(15,23,42,0.42)', border: 'rgba(148,163,184,0.16)', text: '#e2e8f0' };
+
+        return (
+          <div
+            key={item.id}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '3px',
+              padding: compact ? '7px 9px' : '8px 10px',
+              borderRadius: '12px',
+              background: tone.bg,
+              border: `1px solid ${tone.border}`,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+              <span style={{ fontSize: compact ? 11 : 12, fontWeight: 700, color: tone.text }}>{item.label}</span>
+              {'score' in item && typeof item.score === 'number' && (
+                <span style={{ fontSize: 10, opacity: 0.72 }}>{item.score}</span>
+              )}
+            </div>
+            <div style={{ fontSize: compact ? 10 : 11, lineHeight: 1.4, opacity: 0.84 }}>{item.detail}</div>
+          </div>
+        );
+      })
+    )}
+  </div>
+);
 
 const MiniSignalCard: React.FC<{ icon: React.ReactNode; label: string; value: string }> = ({ icon, label, value }) => (
   <div

@@ -27,7 +27,8 @@ import {
   Sun,
   Moon,
   Pencil,
-  Bug
+  Bug,
+  Menu
 } from 'lucide-react';
 import { GeminiService } from './services/GeminiService';
 import type { BookOutline, BookOutlinePage } from './services/GeminiService';
@@ -47,7 +48,11 @@ import {
   loadAccountsFromCloud,
   saveAccountsToCloud,
   syncLocalLibraryToCloud,
-  forcePushBooksToCloud
+  forcePushBooksToCloud,
+  saveLibrarySnapshot,
+  loadLibrarySnapshot,
+  loadAllLibrarySnapshots,
+  deleteLibrarySnapshot
 } from './services/StorageService';
 import { supabase, toAppUser } from './supabase';
 import { Auth } from './components/Auth';
@@ -900,6 +905,60 @@ const safeLocalStorage = {
   }
 };
 
+
+const mergeBookSnapshots = (baseBook: any, incomingBook: any) => ({
+  ...baseBook,
+  ...incomingBook,
+  images: { ...(baseBook?.images || {}), ...(incomingBook?.images || {}) },
+  imagesTransform: { ...(baseBook?.imagesTransform || {}), ...(incomingBook?.imagesTransform || {}) },
+  pagesText: { ...(baseBook?.pagesText || {}), ...(incomingBook?.pagesText || {}) },
+  pagesOverflow: { ...(baseBook?.pagesOverflow || {}), ...(incomingBook?.pagesOverflow || {}) },
+  pagesStatus: { ...(baseBook?.pagesStatus || {}), ...(incomingBook?.pagesStatus || {}) },
+  pagesError: { ...(baseBook?.pagesError || {}), ...(incomingBook?.pagesError || {}) },
+  pagesReprompt: { ...(baseBook?.pagesReprompt || {}), ...(incomingBook?.pagesReprompt || {}) },
+  pagesGenerationTime: { ...(baseBook?.pagesGenerationTime || {}), ...(incomingBook?.pagesGenerationTime || {}) },
+  cmieStore: { ...(baseBook?.cmieStore || {}), ...(incomingBook?.cmieStore || {}) },
+  cmieStatus: { ...(baseBook?.cmieStatus || {}), ...(incomingBook?.cmieStatus || {}) },
+  pagesGraphic: { ...(baseBook?.pagesGraphic || {}), ...(incomingBook?.pagesGraphic || {}) },
+});
+
+const mergeBookLists = (...sources: any[][]): any[] => {
+  // Sources are in ASCENDING priority order — LAST source wins.
+  // Called as mergeBookLists(cloudBooks, localBooks) → local always wins.
+  const map = new Map<string, any>();
+  sources.forEach((source) => {
+    (source || []).forEach((book) => {
+      if (!book?.id) return;
+      const existing = map.get(book.id);
+      if (!existing) {
+        map.set(book.id, book);
+        return;
+      }
+      // Always merge with the incoming (later source) winning over existing (earlier source)
+      // This guarantees local wins over cloud when called as mergeBookLists(cloud, local)
+      map.set(book.id, mergeBookSnapshots(existing, book));
+    });
+  });
+  return Array.from(map.values());
+};
+
+const persistLibraryEverywhere = async (accountId: string, books: any[]): Promise<void> => {
+  try {
+    if (books.length > 0) {
+      localStorage.setItem(KEYS.library(accountId), JSON.stringify(books));
+    } else {
+      localStorage.removeItem(KEYS.library(accountId));
+    }
+  } catch (err) {
+    console.warn('localStorage quota exceeded, persisting library to IndexedDB fallback:', err);
+  }
+
+  const ok = await saveLibrarySnapshot(accountId, books);
+  if (!ok) {
+    console.warn('IndexedDB snapshot write failed for account', accountId);
+  }
+};
+
 export default function App() {
   // Supabase Auth states
   const [currentUser, setCurrentUser] = useState<any>(() => {
@@ -1169,32 +1228,52 @@ export default function App() {
           return;
         }
 
-        // ── RESCUE SCAN: lese ALLE b24studio_v1_library_* Keys, nicht nur den aktiven ──
-        // Das verhindert Datenverlust wenn activeAcc sich geändert hat
+        // ── RESCUE SCAN: lese ALLE lokalen Snapshots aus localStorage + IndexedDB ──
+        // Das verhindert Datenverlust wenn activeAcc sich geändert hat oder localStorage zu klein wurde.
         let localBooks: any[] | null = null;
         try {
-          const allLibraryBooks: any[] = [];
-          const seenIds = new Set<string>();
+          const localBooksMap = new Map<string, any>();
+          const pushBooks = (books: any[] | null | undefined) => {
+            (books || []).forEach((b: any) => {
+              if (b?.id) {
+                const existing = localBooksMap.get(b.id);
+                if (existing) {
+                  localBooksMap.set(b.id, mergeBookSnapshots(existing, b));
+                } else {
+                  localBooksMap.set(b.id, b);
+                }
+              }
+            });
+          };
+
+          // 1. Process all fallback keys first (arbitrary order)
           for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            if (key && key.startsWith('b24studio_v1_library_')) {
+            if (key && key.startsWith('b24studio_v1_library_') && key !== KEYS.library(activeAcc)) {
               try {
                 const raw = localStorage.getItem(key);
                 if (raw) {
                   const parsed = JSON.parse(raw);
-                  if (Array.isArray(parsed)) {
-                    parsed.forEach((b: any) => {
-                      if (b?.id && !seenIds.has(b.id)) {
-                        seenIds.add(b.id);
-                        allLibraryBooks.push(b);
-                      }
-                    });
-                  }
+                  if (Array.isArray(parsed)) pushBooks(parsed);
                 }
               } catch { /* skip corrupt key */ }
             }
           }
-          if (allLibraryBooks.length > 0) localBooks = allLibraryBooks;
+
+          // 2. Process IndexedDB
+          const indexedSnapshots = await loadAllLibrarySnapshots();
+          Object.values(indexedSnapshots).forEach((books) => pushBooks(books));
+
+          // 3. CRITICAL: Process the active account LAST so its data overwrites any older fallbacks!
+          try {
+            const activeRaw = localStorage.getItem(KEYS.library(activeAcc));
+            if (activeRaw) {
+               const activeParsed = JSON.parse(activeRaw);
+               if (Array.isArray(activeParsed)) pushBooks(activeParsed);
+            }
+          } catch { /* skip corrupt active key */ }
+
+          if (localBooksMap.size > 0) localBooks = Array.from(localBooksMap.values());
         } catch (e) {}
 
         const cloudBooks = await loadBooksFromCloud(user.uid);
@@ -1207,23 +1286,7 @@ export default function App() {
             // Same user, cloud empty — use local as source of truth
             finalBooks = localBooks;
           } else {
-            // Merge: local wins for content, cloud fills in missing books
-            const merged = localBooks.map((localBook: any) => {
-              const cloudBook = cloudBooks.find((cb: any) => cb.id === localBook.id);
-              if (!cloudBook) return localBook;
-              return {
-                ...cloudBook,
-                ...localBook,
-                images: { ...(cloudBook.images || {}), ...(localBook.images || {}) },
-                imagesTransform: { ...(cloudBook.imagesTransform || {}), ...(localBook.imagesTransform || {}) },
-                pagesText: { ...(cloudBook.pagesText || {}), ...(localBook.pagesText || {}) },
-                pagesOverflow: { ...(cloudBook.pagesOverflow || {}), ...(localBook.pagesOverflow || {}) }
-              };
-            });
-            cloudBooks.forEach((cb: any) => {
-              if (!merged.find((fb: any) => fb.id === cb.id)) merged.push(cb);
-            });
-            finalBooks = merged;
+            finalBooks = mergeBookLists(cloudBooks, localBooks);
           }
         } else if (!isSameUser) {
           // Different user — cloud is the ONLY source of truth (security: no cross-account leak)
@@ -1267,8 +1330,10 @@ export default function App() {
             )
           }));
           setBooksState(cleanBooks);
-          safeLocalStorage.setItem(KEYS.library(activeAcc), JSON.stringify(cleanBooks));
+          booksRef.current = cleanBooks;
+          void persistLibraryEverywhere(activeAcc, cleanBooks);
         } else {
+          booksRef.current = [];
           setBooksState([]);
         }
 
@@ -1420,6 +1485,8 @@ export default function App() {
     return (safeLocalStorage.getItem(KEYS.theme) as 'dark' | 'light') || 'dark';
   });
 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
+
   const [language, setLanguageState] = useState<'de' | 'en'>(() => {
     const saved = safeLocalStorage.getItem('b24studio_language') as 'de' | 'en' | null;
     if (saved === 'de' || saved === 'en') return saved;
@@ -1540,8 +1607,8 @@ export default function App() {
     const outsideMarginPx = 45 * previewScaleX; // matches PDF: outsideMargin = 45pt
 
     const contentWidth = previewWidth - (insideMarginPx + outsideMarginPx);
-    // Use a precise safety margin (12px) to account for footer page numbers and minor font rendering differences
-    const contentHeight = previewHeight - (topMarginPx + bottomMarginPx) - 12;
+    // Use a precise safety margin (24px) to account for header heights, footer page numbers and minor font rendering differences
+    const contentHeight = previewHeight - (topMarginPx + bottomMarginPx) - 24;
     const previewFontSize = book.fontSize * previewScaleY;
 
     measurer.style.width = `${contentWidth}px`;
@@ -1998,7 +2065,7 @@ export default function App() {
       }
 
       measurer.innerHTML = '';
-      measurer.style.height = `${effectiveContentHeight}px`;
+      measurer.style.height = 'auto';
 
       const blocks = parsePageLines(part.split('\n'));
       let dropCapUsed = false;
@@ -2010,7 +2077,7 @@ export default function App() {
         }
       });
 
-      if (measurer.scrollHeight > effectiveContentHeight + 3) {
+      if (measurer.scrollHeight > effectiveContentHeight) {
         anyOverflow = true;
         break;
       }
@@ -2123,17 +2190,9 @@ export default function App() {
     booksRef.current = next;
     setBooksState(next);
     const currentAcc = activeAccountIdRef.current;
-    try {
-      if (next.length > 0) {
-        localStorage.setItem(KEYS.library(currentAcc), JSON.stringify(next));
-      } else {
-        localStorage.removeItem(KEYS.library(currentAcc));
-      }
-    } catch (err) {
-      console.warn("localStorage quota exceeded, relying on Firestore cloud save:", err);
-    }
+    void persistLibraryEverywhere(currentAcc, next);
 
-    // Sync updates and deletions to Firestore (Debounced)
+    // Sync updates and deletions to Firestore (Debounced for content, Instant for structure)
     if (currentUser) {
       const prevIds = prev.map(b => b.id);
       const nextIds = next.map(b => b.id);
@@ -2148,11 +2207,44 @@ export default function App() {
         }
       });
 
+      let hasStructuralChange = false;
+
       // Queue updated books
       next.forEach(book => {
         const prevBook = prev.find(b => b.id === book.id);
         if (!prevBook || JSON.stringify(prevBook) !== JSON.stringify(book)) {
           pendingCloudSavesRef.current[book.id] = book;
+          if (prevBook) {
+            // Check structural changes
+            const outlineChanged = JSON.stringify(prevBook.outline) !== JSON.stringify(book.outline);
+            const targetPagesChanged = prevBook.targetPages !== book.targetPages;
+            const titleChanged = prevBook.title !== book.title;
+            const subtitleChanged = prevBook.subtitle !== book.subtitle;
+            
+            // Check if any page status transitioned to 'completed'
+            const prevStatus = prevBook.pagesStatus || {};
+            const nextStatus = book.pagesStatus || {};
+            const completedCountPrev = Object.values(prevStatus).filter(s => s === 'completed').length;
+            const completedCountNext = Object.values(nextStatus).filter(s => s === 'completed').length;
+            const pageCompleted = completedCountNext > completedCountPrev;
+
+            // Check if pageText was newly generated (was empty, now populated)
+            const prevText: Record<number, string> = prevBook.pagesText || {};
+            const nextText: Record<number, string> = book.pagesText || {};
+            let hasNewGeneratedPageText = false;
+            Object.keys(nextText).forEach(key => {
+              const pageKey = Number(key);
+              if (nextText[pageKey] && !prevText[pageKey]) {
+                hasNewGeneratedPageText = true;
+              }
+            });
+
+            if (outlineChanged || targetPagesChanged || titleChanged || subtitleChanged || pageCompleted || hasNewGeneratedPageText) {
+              hasStructuralChange = true;
+            }
+          } else {
+            hasStructuralChange = true;
+          }
         }
       });
 
@@ -2160,13 +2252,38 @@ export default function App() {
       if (cloudSaveTimeoutRef.current) {
         clearTimeout(cloudSaveTimeoutRef.current);
       }
-      cloudSaveTimeoutRef.current = setTimeout(async () => {
+
+      const executeSave = async () => {
         const booksToSave = Object.values(pendingCloudSavesRef.current);
         pendingCloudSavesRef.current = {};
         for (const book of booksToSave) {
           await saveBookToCloud(currentUser.uid, book);
         }
-      }, 500);
+      };
+
+      if (hasStructuralChange) {
+        executeSave();
+      } else {
+        cloudSaveTimeoutRef.current = setTimeout(executeSave, 500);
+      }
+    }
+  };
+
+  /**
+   * Forces an immediate, synchronous update to localStorage and an immediate push to Supabase Cloud.
+   * Crucial for page generation where user might refresh right after a page completes.
+   */
+  const forceSaveSingleBook = async (updatedBook: Book) => {
+    // CRITICAL: Update booksRef.current FIRST before writing persistent storage
+    const updatedBooks = booksRef.current.map(b => b.id === updatedBook.id ? updatedBook : b);
+    booksRef.current = updatedBooks;
+    setBooksState(updatedBooks);
+
+    const activeAcc = activeAccountIdRef.current || safeLocalStorage.getItem(KEYS.activeAccount) || 'default';
+    await persistLibraryEverywhere(activeAcc, updatedBooks);
+
+    if (currentUser) {
+      await saveBookToCloud(currentUser.uid, updatedBook);
     }
   };
 
@@ -2190,6 +2307,33 @@ export default function App() {
     }, 30000);
 
     const handleBeforeUnload = () => {
+      // 1. Flush any pending manual text edit from the editor if user was typing
+      if (isTypingRef.current || document.activeElement?.tagName === 'TEXTAREA') {
+        const bookId = activeBookIdRef.current;
+        const pageNum = selectedPageRef.current;
+        const text = editorTextRef.current;
+        if (bookId && pageNum !== null && text !== undefined) {
+          const currentBook = booksRef.current.find(b => b.id === bookId);
+          if (currentBook) {
+            const hasOverflow = checkTextOverflow(text, currentBook, pageNum);
+            const updatedBook = {
+              ...currentBook,
+              pagesText: { ...(currentBook.pagesText || {}), [pageNum]: text },
+              pagesOverflow: { ...(currentBook.pagesOverflow || {}), [pageNum]: hasOverflow }
+            };
+            // Instantly write to localStorage so checkUser sees it on next load
+            const activeAcc = safeLocalStorage.getItem(KEYS.activeAccount) || 'default';
+            const currentBooks = booksRef.current.map(b => b.id === bookId ? updatedBook : b);
+            try {
+              localStorage.setItem(KEYS.library(activeAcc), JSON.stringify(currentBooks));
+            } catch(e) {}
+            // Queue it for cloud save in this unload event
+            pendingCloudSavesRef.current[bookId] = updatedBook;
+          }
+        }
+      }
+
+      // 2. Flush pending cloud saves via sendBeacon / direct update
       if (currentUser && Object.keys(pendingCloudSavesRef.current).length > 0) {
         const booksToSave = Object.values(pendingCloudSavesRef.current);
         pendingCloudSavesRef.current = {};
@@ -2235,19 +2379,20 @@ export default function App() {
       return;
     }
 
-    // If we already have a valid activeBookId, do NOT override it (prevents state-sync race conditions)
+    // If we already have a valid activeBookId in state, keep it — do NOT override
     if (activeBookId && books.some(b => b.id === activeBookId)) {
       return;
     }
 
+    // Try scoped key first, then legacy global key
     const savedScopedId = localStorage.getItem(getScopedActiveBookStorageKey(activeAccountId));
     const savedGlobalId = localStorage.getItem('b24studio_activeBookId');
     const savedId = savedScopedId || savedGlobalId;
 
     if (savedId && books.some(b => b.id === savedId)) {
       setActiveBookId(savedId);
-    } else {
-      // Fallback: select the first book if none selected or the selected one is gone
+    } else if (!activeBookId) {
+      // Only fall back to first book if truly nothing is selected
       setActiveBookId(books[0].id);
     }
   }, [books, activeAccountId]);
@@ -2319,6 +2464,35 @@ export default function App() {
   useEffect(() => {
     if (brainEnabled) void ObsidianSyncService.init();
   }, [brainEnabled]);
+
+  useEffect(() => {
+    if (!brainEnabled) return;
+
+    let cancelled = false;
+
+    const bootBrain = async () => {
+      const liveAccountId = activeAccountIdRef.current || activeAccountId;
+      try {
+        BrainService.autoInitializeFromLibrary(liveAccountId, books);
+        if (ObsidianSyncService.isConnected()) {
+          await CloudQueueService.processQueue(liveAccountId);
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Brain-Initialisierung fehlgeschlagen';
+        BrainService.markBootError(liveAccountId, message);
+      }
+
+      if (!cancelled) {
+        refreshBrain();
+      }
+    };
+
+    void bootBrain();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [brainEnabled, books, activeAccountId]);
 
   useEffect(() => {
     if (!brainEnabled) return;
@@ -2447,20 +2621,29 @@ export default function App() {
   }, [activeBookId, activeAccountId]);
 
   useEffect(() => {
+    const scopedKey = activeAccountId && activeBookId ? getScopedSelectedPageStorageKey(activeAccountId, activeBookId) : null;
     if (selectedPage !== null) {
       const serializedPage = JSON.stringify(selectedPage);
       localStorage.setItem('b24studio_selectedPage', serializedPage);
-      if (activeBookId) {
-        localStorage.setItem(getScopedSelectedPageStorageKey(activeAccountId, activeBookId), serializedPage);
-      }
-    } else {
-      localStorage.removeItem('b24studio_selectedPage');
-      if (activeBookId) {
-        localStorage.removeItem(getScopedSelectedPageStorageKey(activeAccountId, activeBookId));
-      }
+      if (scopedKey) localStorage.setItem(scopedKey, serializedPage);
     }
+    // We REMOVED the `else { localStorage.removeItem(...) }` block here!
+    // Why? If selectedPage temporarily becomes null (e.g. during a refresh when books are loading),
+    // it would wipe out the saved page from localStorage, causing the user to jump back to 'title'.
   }, [selectedPage, activeBookId, activeAccountId]);
   const [editorText, setEditorText] = useState<string>('');
+  const editorTextRef = React.useRef<string>('');
+  const activeBookIdRef = React.useRef<string | null>(null);
+  const selectedPageRef = React.useRef<number | null>(null);
+  
+  useEffect(() => {
+    activeBookIdRef.current = activeBookId;
+  }, [activeBookId]);
+
+  useEffect(() => {
+    selectedPageRef.current = typeof selectedPage === 'number' ? selectedPage : null;
+  }, [selectedPage]);
+
   const isTypingRef = React.useRef(false);
   const editorSaveTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const [styleOptions, setStyleOptions] = useState<{ 
@@ -2652,47 +2835,75 @@ export default function App() {
   // Sync active account selection
   useEffect(() => {
     localStorage.setItem(KEYS.activeAccount, activeAccountId);
-    const savedBooks = localStorage.getItem(KEYS.library(activeAccountId));
-    if (savedBooks) {
-      const parsed = JSON.parse(savedBooks) as Book[];
-      // Reset any stuck 'generating' status from previous session
-      const cleaned = parsed.map(b => ({
-        ...b,
-        pagesStatus: Object.fromEntries(
-          Object.entries(b.pagesStatus || {}).map(([k, v]) => [k, v === 'generating' ? 'idle' : v])
-        )
-      }));
-      setBooks(cleaned);
-      if (parsed.length > 0) {
-        const savedBookId = localStorage.getItem(getScopedActiveBookStorageKey(activeAccountId));
-        const resolvedBookId = savedBookId && parsed.some(b => b.id == savedBookId) ? savedBookId : parsed[0].id;
+
+    let cancelled = false;
+    const applyBooksForAccount = async () => {
+      const savedBooks = localStorage.getItem(KEYS.library(activeAccountId));
+      const localParsed = savedBooks ? (JSON.parse(savedBooks) as Book[]) : [];
+      const indexedBooks = ((await loadLibrarySnapshot(activeAccountId)) || []) as Book[];
+      const mergedBooks = mergeBookLists(localParsed, indexedBooks) as Book[];
+
+      if (cancelled) return;
+
+      if (mergedBooks.length > 0) {
+        const cleaned = mergedBooks.map(b => ({
+          ...b,
+          pagesStatus: Object.fromEntries(
+            Object.entries(b.pagesStatus || {}).map(([k, v]) => [k, v === 'generating' ? 'idle' : v])
+          )
+        }));
+        setBooks(cleaned);
+        void persistLibraryEverywhere(activeAccountId, cleaned);
+        const savedScopedId = localStorage.getItem(getScopedActiveBookStorageKey(activeAccountId));
+        const savedGlobalId = localStorage.getItem('b24studio_activeBookId');
+        
+        // Priority: Current activeBookId (if valid) > Scoped ID > Global ID > First book
+        let resolvedBookId = cleaned[0].id;
+        
+        // React batching: if activeBookId state is already set and valid in this account, use it
+        if (activeBookId && cleaned.some(b => b.id === activeBookId)) {
+          resolvedBookId = activeBookId;
+        } else if (savedScopedId && cleaned.some(b => b.id === savedScopedId)) {
+          resolvedBookId = savedScopedId;
+        } else if (savedGlobalId && cleaned.some(b => b.id === savedGlobalId)) {
+          resolvedBookId = savedGlobalId;
+        }
+
         setActiveBookId(resolvedBookId);
       } else {
+        setBooks([]);
         setActiveBookId(null);
         setSelectedPage(null);
       }
-    } else {
-      setBooks([]);
-      setActiveBookId(null);
-      setSelectedPage(null);
-    }
+    };
+
+    void applyBooksForAccount();
+    return () => {
+      cancelled = true;
+    };
   }, [activeAccountId]);
 
   useEffect(() => {
     if (!activeBookId) {
-      setSelectedPage(null);
       return;
     }
 
     const scopedPageKey = getScopedSelectedPageStorageKey(activeAccountId, activeBookId);
     const savedPage = localStorage.getItem(scopedPageKey) || localStorage.getItem('b24studio_selectedPage');
-    if (!savedPage) {
+    
+    // If the saved page was explicitly "null" as a string, ignore it.
+    if (!savedPage || savedPage === 'null' || savedPage === '"null"') {
       setSelectedPage('title');
       return;
     }
 
     try {
-      setSelectedPage(JSON.parse(savedPage));
+      const parsed = JSON.parse(savedPage);
+      if (parsed !== null) {
+        setSelectedPage(parsed);
+      } else {
+        setSelectedPage('title');
+      }
     } catch {
       setSelectedPage('title');
     }
@@ -2732,6 +2943,7 @@ export default function App() {
   const handleEditorChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value;
     setEditorText(text);
+    editorTextRef.current = text;
 
     // Mark as typing so the pagesText useEffect doesn't overwrite the textarea
     isTypingRef.current = true;
@@ -2741,21 +2953,67 @@ export default function App() {
     }, 1000);
 
     if (activeBookId && selectedPage !== null && typeof selectedPage === 'number') {
-      // Debounce the expensive setBooks call (300ms) so we don't re-render on every keystroke
-      if ((handleEditorChange as any)._saveTimer) clearTimeout((handleEditorChange as any)._saveTimer);
-      (handleEditorChange as any)._saveTimer = setTimeout(() => {
-        setBooks(prev => prev.map(b => {
-          if (b.id === activeBookId) {
-            const hasOverflow = checkTextOverflow(text, b, selectedPage as number);
-            return {
-              ...b,
-              pagesText: { ...(b.pagesText || {}), [selectedPage as number]: text },
-              pagesOverflow: { ...(b.pagesOverflow || {}), [selectedPage as number]: hasOverflow }
-            };
+      const currentBook = booksRef.current.find(b => b.id === activeBookId);
+      if (currentBook) {
+        const hasOverflow = checkTextOverflow(text, currentBook, selectedPage as number);
+        const updatedBook = {
+          ...currentBook,
+          pagesText: { ...(currentBook.pagesText || {}), [selectedPage as number]: text },
+          pagesOverflow: { ...(currentBook.pagesOverflow || {}), [selectedPage as number]: hasOverflow }
+        };
+        
+        // INSTANTLY write to localStorage on every keystroke — no debounce, fully synchronous
+        // This guarantees the text survives ANY refresh, even if typed 1ms before F5
+        const updatedBooks = booksRef.current.map(b => b.id === activeBookId ? updatedBook : b);
+        booksRef.current = updatedBooks;
+        setBooksState(updatedBooks);
+        try {
+          const activeAcc = safeLocalStorage.getItem(KEYS.activeAccount) || 'default';
+          localStorage.setItem(KEYS.library(activeAcc), JSON.stringify(updatedBooks));
+        } catch (err) {
+          console.warn('localStorage write failed:', err);
+        }
+        
+        // Debounce the cloud save (1.5s) to avoid hammering Firestore on every keystroke
+        if (editorSaveTimerRef.current) clearTimeout(editorSaveTimerRef.current);
+        editorSaveTimerRef.current = setTimeout(() => {
+          if (currentUser) {
+            const latestBook = booksRef.current.find(b => b.id === activeBookId);
+            if (latestBook) {
+              saveBookToCloud(currentUser.uid, latestBook).catch(err => {
+                console.error('Cloud save failed:', err);
+              });
+            }
           }
-          return b;
-        }));
-      }, 300);
+        }, 1500);
+      }
+    }
+  };
+
+  // Instantly flush manual edits if user clicks away or focuses elsewhere
+  const handleEditorBlur = () => {
+    if ((handleEditorChange as any)._saveTimer) {
+      clearTimeout((handleEditorChange as any)._saveTimer);
+      (handleEditorChange as any)._saveTimer = null;
+    }
+    isTypingRef.current = false;
+    
+    // Use editorTextRef.current (always up-to-date ref) instead of editorText state (stale closure)
+    const currentText = editorTextRef.current;
+    const bookId = activeBookIdRef.current;
+    const pageNum = selectedPageRef.current;
+    
+    if (bookId && pageNum !== null) {
+      const currentBook = booksRef.current.find(b => b.id === bookId);
+      if (currentBook) {
+        const hasOverflow = checkTextOverflow(currentText, currentBook, pageNum);
+        const updatedBook = {
+          ...currentBook,
+          pagesText: { ...(currentBook.pagesText || {}), [pageNum]: currentText },
+          pagesOverflow: { ...(currentBook.pagesOverflow || {}), [pageNum]: hasOverflow }
+        };
+        forceSaveSingleBook(updatedBook);
+      }
     }
   };
 
@@ -3095,9 +3353,8 @@ export default function App() {
 
     setBooks(prev => {
       const updated = [newBook, ...prev];
-      // Save updated list in local storage
       const activeAcc = activeAccountIdRef.current || 'default';
-      localStorage.setItem(KEYS.library(activeAcc), JSON.stringify(updated));
+      void persistLibraryEverywhere(activeAcc, updated);
       return updated;
     });
 
@@ -3155,6 +3412,7 @@ export default function App() {
           saveAccountsToCloud(currentUser.uid, updatedAccs).catch(console.error);
         }
         localStorage.removeItem(KEYS.library(id));
+        void deleteLibrarySnapshot(id);
         if (activeAccountId === id) {
           setActiveAccountId(updatedAccs[0]?.id || 'default');
         }
@@ -3430,19 +3688,20 @@ export default function App() {
         return;
       }
 
-      setBooks(prev => prev.map(b => {
-        if (b.id === activeBookId && b.outline) {
-          return {
-            ...b,
-            outlineBackup: originalPages, // ← save undo snapshot
-            outline: {
-              ...b.outline,
-              pages: condensedPages
-            }
-          };
+      const updatedBook = {
+        ...activeBook,
+        outlineBackup: originalPages,
+        outline: {
+          ...activeBook.outline!,
+          pages: condensedPages
         }
-        return b;
-      }));
+      };
+
+      setBooks(prev => prev.map(b => b.id === activeBookId ? updatedBook : b));
+
+      if (currentUser) {
+        await saveBookToCloud(currentUser.uid, updatedBook);
+      }
 
       showConfirm({
         title: 'Erfolg',
@@ -3634,7 +3893,7 @@ export default function App() {
     setBooks(prev => {
       const updated = [duplicateBook, ...prev];
       const activeAcc = activeAccountIdRef.current || 'default';
-      localStorage.setItem(KEYS.library(activeAcc), JSON.stringify(updated));
+      void persistLibraryEverywhere(activeAcc, updated);
       return updated;
     });
     setActiveBookId(duplicateBook.id);
@@ -3703,9 +3962,8 @@ export default function App() {
           return b;
         });
 
-        // Save updated list in local storage
         const activeAcc = activeAccountIdRef.current || 'default';
-        localStorage.setItem(KEYS.library(activeAcc), JSON.stringify(updated));
+        void persistLibraryEverywhere(activeAcc, updated);
 
         // Sync translated book to cloud
         const activeItem = updated.find(b => b.id === bookToTranslate.id);
@@ -3995,25 +4253,27 @@ export default function App() {
                   } catch(eG) { console.warn("AGVE Error:", eG); }
                 }
 
-                // Update book pages state
-                setBooks(prev => prev.map(b => {
-                  if (b.id === targetBookId) {
-                    return {
-                      ...b,
-                      pagesText: { ...(b.pagesText || {}), [pageNum]: text },
-                      pagesStatus: { ...(b.pagesStatus || {}), [pageNum]: 'completed' },
-                      pagesGenerationTime: { ...(b.pagesGenerationTime || {}), [pageNum]: Date.now() - startTime },
-                      pagesError: cmieRes.warningMessage ? { ...(b.pagesError || {}), [pageNum]: cmieRes.warningMessage } : (b.pagesError || {}),
-                      pagesReprompt: cmieRes.repromptInstruction ? { ...(b.pagesReprompt || {}), [pageNum]: cmieRes.repromptInstruction } : (b.pagesReprompt || {}),
-                      pagesOverflow: { ...(b.pagesOverflow || {}), [pageNum]: finalOverflow },
-                      cmieStore: { ...(b.cmieStore || {}), [pageNum]: cmieRes.memory },
-                      cmieStatus: { ...(b.cmieStatus || {}), [pageNum]: cmieRes.pageStatus },
-                      cmieGlossary: cmieRes.updatedGlossary,
-                      pagesGraphic: graphicDecisionSingle.grafik_sinnvoll ? { ...(b.pagesGraphic || {}), [pageNum]: graphicDecisionSingle } : (b.pagesGraphic || {})
-                    };
-                  }
-                  return b;
-                }));
+                // CRITICAL FIX: Fetch the absolute latest book state from the ref right before updating!
+                // Since this API call takes 10+ seconds, other pages might have finished and updated the book state.
+                // If we use the old `currentBook`, we OVERWRITE and DESTROY their text and 'completed' green status!
+                const freshBook = booksRef.current.find(b => b.id === targetBookId);
+                if (!freshBook) throw new Error('Buch wurde während der Generierung gelöscht.');
+
+                const updatedBook: Book = {
+                  ...freshBook,
+                  pagesText: { ...(freshBook.pagesText || {}), [pageNum]: text },
+                  pagesStatus: { ...(freshBook.pagesStatus || {}), [pageNum]: 'completed' },
+                  pagesGenerationTime: { ...(freshBook.pagesGenerationTime || {}), [pageNum]: Date.now() - startTime },
+                  pagesError: cmieRes.warningMessage ? { ...(freshBook.pagesError || {}), [pageNum]: cmieRes.warningMessage } : (freshBook.pagesError || {}),
+                  pagesReprompt: cmieRes.repromptInstruction ? { ...(freshBook.pagesReprompt || {}), [pageNum]: cmieRes.repromptInstruction } : (freshBook.pagesReprompt || {}),
+                  pagesOverflow: { ...(freshBook.pagesOverflow || {}), [pageNum]: finalOverflow },
+                  cmieStore: { ...(freshBook.cmieStore || {}), [pageNum]: cmieRes.memory },
+                  cmieStatus: { ...(freshBook.cmieStatus || {}), [pageNum]: cmieRes.pageStatus },
+                  cmieGlossary: cmieRes.updatedGlossary,
+                  pagesGraphic: graphicDecisionSingle.grafik_sinnvoll ? { ...(freshBook.pagesGraphic || {}), [pageNum]: graphicDecisionSingle } : (freshBook.pagesGraphic || {})
+                };
+                
+                await forceSaveSingleBook(updatedBook);
 
                 pageStatuses[pageNum] = 'completed';
 
@@ -4161,24 +4421,21 @@ export default function App() {
         } catch(eGB) { console.warn("AGVE Bulk Error:", eGB); }
       }
 
-      setBooks(prev => prev.map(b => {
-        if (b.id === activeBookId) {
-          return {
-            ...b,
-            pagesText: { ...(b.pagesText || {}), [pageNum]: text },
-            pagesStatus: { ...(b.pagesStatus || {}), [pageNum]: 'completed' },
-            pagesGenerationTime: { ...(b.pagesGenerationTime || {}), [pageNum]: Date.now() - startTime },
-            pagesError: cmieResBulk.warningMessage ? { ...(b.pagesError || {}), [pageNum]: cmieResBulk.warningMessage } : (b.pagesError || {}),
-            pagesReprompt: cmieResBulk.repromptInstruction ? { ...(b.pagesReprompt || {}), [pageNum]: cmieResBulk.repromptInstruction } : (b.pagesReprompt || {}),
-            pagesOverflow: { ...(b.pagesOverflow || {}), [pageNum]: finalOverflow },
-            cmieStore: { ...(b.cmieStore || {}), [pageNum]: cmieResBulk.memory },
-            cmieStatus: { ...(b.cmieStatus || {}), [pageNum]: cmieResBulk.pageStatus },
-            cmieGlossary: cmieResBulk.updatedGlossary,
-            pagesGraphic: graphicDecisionBulk.grafik_sinnvoll ? { ...(b.pagesGraphic || {}), [pageNum]: graphicDecisionBulk } : (b.pagesGraphic || {})
-          };
-        }
-        return b;
-      }));
+      const updatedBook: Book = {
+        ...currentBook,
+        pagesText: { ...(currentBook.pagesText || {}), [pageNum]: text },
+        pagesStatus: { ...(currentBook.pagesStatus || {}), [pageNum]: 'completed' },
+        pagesGenerationTime: { ...(currentBook.pagesGenerationTime || {}), [pageNum]: Date.now() - startTime },
+        pagesError: cmieResBulk.warningMessage ? { ...(currentBook.pagesError || {}), [pageNum]: cmieResBulk.warningMessage } : (currentBook.pagesError || {}),
+        pagesReprompt: cmieResBulk.repromptInstruction ? { ...(currentBook.pagesReprompt || {}), [pageNum]: cmieResBulk.repromptInstruction } : (currentBook.pagesReprompt || {}),
+        pagesOverflow: { ...(currentBook.pagesOverflow || {}), [pageNum]: finalOverflow },
+        cmieStore: { ...(currentBook.cmieStore || {}), [pageNum]: cmieResBulk.memory },
+        cmieStatus: { ...(currentBook.cmieStatus || {}), [pageNum]: cmieResBulk.pageStatus },
+        cmieGlossary: cmieResBulk.updatedGlossary,
+        pagesGraphic: graphicDecisionBulk.grafik_sinnvoll ? { ...(currentBook.pagesGraphic || {}), [pageNum]: graphicDecisionBulk } : (currentBook.pagesGraphic || {})
+      };
+      
+      await forceSaveSingleBook(updatedBook);
       await runBrainPageLearn(currentBook, pageNum, cmieResBulk.memory, cmieResBulk.pageStatus, text);
       setSelectedPage(pageNum);
 
@@ -4252,17 +4509,14 @@ export default function App() {
 
       const finalOverflow = checkTextOverflow(text, currentBook, pageNum);
 
-      setBooks(prev => prev.map(b => {
-        if (b.id === activeBookId) {
-          return {
-            ...b,
-            pagesText: { ...(b.pagesText || {}), [pageNum]: text },
-            pagesStatus: { ...(b.pagesStatus || {}), [pageNum]: 'completed' },
-            pagesOverflow: { ...(b.pagesOverflow || {}), [pageNum]: finalOverflow }
-          };
-        }
-        return b;
-      }));
+      const updatedBook: Book = {
+        ...currentBook,
+        pagesText: { ...(currentBook.pagesText || {}), [pageNum]: text },
+        pagesStatus: { ...(currentBook.pagesStatus || {}), [pageNum]: 'completed' },
+        pagesOverflow: { ...(currentBook.pagesOverflow || {}), [pageNum]: finalOverflow }
+      };
+      
+      await forceSaveSingleBook(updatedBook);
       setSelectedPage(pageNum);
     } catch (err: any) {
       console.error(err);
@@ -4342,16 +4596,13 @@ export default function App() {
 
     const finalOverflow = checkTextOverflow(processedText, currentBook, selectedPage);
 
-    setBooks(prev => prev.map(b => {
-      if (b.id === activeBookId) {
-        return {
-          ...b,
-          pagesText: { ...(b.pagesText || {}), [selectedPage]: processedText },
-          pagesOverflow: { ...(b.pagesOverflow || {}), [selectedPage]: finalOverflow }
-        };
-      }
-      return b;
-    }));
+    const updatedBook: Book = {
+      ...currentBook,
+      pagesText: { ...(currentBook.pagesText || {}), [selectedPage]: processedText },
+      pagesOverflow: { ...(currentBook.pagesOverflow || {}), [selectedPage]: finalOverflow }
+    };
+    
+    forceSaveSingleBook(updatedBook);
 
     // Update local editor field state
     setEditorText(processedText);
@@ -4439,16 +4690,13 @@ export default function App() {
 
     const finalOverflow = checkTextOverflow(processedText, currentBook, selectedPage);
 
-    setBooks(prev => prev.map(b => {
-      if (b.id === activeBookId) {
-        return {
-          ...b,
-          pagesText: { ...(b.pagesText || {}), [selectedPage]: processedText },
-          pagesOverflow: { ...(b.pagesOverflow || {}), [selectedPage]: finalOverflow }
-        };
-      }
-      return b;
-    }));
+    const updatedBook: Book = {
+      ...currentBook,
+      pagesText: { ...(currentBook.pagesText || {}), [selectedPage]: processedText },
+      pagesOverflow: { ...(currentBook.pagesOverflow || {}), [selectedPage]: finalOverflow }
+    };
+    
+    forceSaveSingleBook(updatedBook);
 
     // Update local editor field state
     setEditorText(processedText);
@@ -4517,16 +4765,13 @@ export default function App() {
       }
       const finalOverflow = checkTextOverflow(updatedText, currentBook, selectedPage);
 
-      setBooks(prev => prev.map(b => {
-        if (b.id === activeBookId) {
-          return {
-            ...b,
-            pagesText: { ...(b.pagesText || {}), [selectedPage]: updatedText },
-            pagesOverflow: { ...(b.pagesOverflow || {}), [selectedPage]: finalOverflow }
-          };
-        }
-        return b;
-      }));
+      const updatedBook: Book = {
+        ...currentBook,
+        pagesText: { ...(currentBook.pagesText || {}), [selectedPage]: updatedText },
+        pagesOverflow: { ...(currentBook.pagesOverflow || {}), [selectedPage]: finalOverflow }
+      };
+      
+      forceSaveSingleBook(updatedBook);
       setEditorText(updatedText);
     } catch (err: any) {
       console.error(err);
@@ -7117,21 +7362,62 @@ export default function App() {
               return { label: '' };
             });
 
+            const activeTabIndex = currentNavTabs.indexOf(activeNavKey);
+            const activeTabLabel = navItems[activeTabIndex >= 0 ? activeTabIndex : 0]?.label || '';
             return (
-              <GooeyNav
-                items={navItems}
-                activeIndex={Math.max(0, currentNavTabs.indexOf(activeNavKey))}
-                themeClassName={`gooey-tab-${activeNavKey}`}
-                colorsByIndex={currentNavTabs.map(tab => NAV_TAB_PARTICLE_COLORS[tab])}
-                onSelect={(index) => {
-                  const tab = currentNavTabs[index];
-                  handleSelectNavTab(tab);
-                }}
-                particleCount={12}
-                particleDistances={[70, 8]}
-                particleR={80}
-                animationTime={550}
-              />
+              <>
+                {/* Desktop Gooey Navigation */}
+                <div className="desktop-nav-wrap">
+                  <GooeyNav
+                    items={navItems}
+                    activeIndex={Math.max(0, currentNavTabs.indexOf(activeNavKey))}
+                    themeClassName={`gooey-tab-${activeNavKey}`}
+                    colorsByIndex={currentNavTabs.map(tab => NAV_TAB_PARTICLE_COLORS[tab])}
+                    onSelect={(index) => {
+                      const tab = currentNavTabs[index];
+                      handleSelectNavTab(tab);
+                    }}
+                    particleCount={12}
+                    particleDistances={[70, 8]}
+                    particleR={80}
+                    animationTime={550}
+                  />
+                </div>
+
+                {/* Mobile Burger Navigation */}
+                <div className="mobile-nav-wrap">
+                  <button 
+                    type="button" 
+                    className="mobile-burger-trigger"
+                    onClick={() => setMobileMenuOpen(prev => !prev)}
+                  >
+                    <Menu style={{ width: '16px', height: '16px' }} />
+                    <span>{activeTabLabel}</span>
+                    <ChevronDown style={{ width: '12px', height: '12px', transform: mobileMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                  </button>
+
+                  {mobileMenuOpen && (
+                    <div className="mobile-burger-dropdown">
+                      {currentNavTabs.map((tab, idx) => {
+                        const label = navItems[idx]?.label || '';
+                        return (
+                          <button
+                            key={tab}
+                            type="button"
+                            className={`mobile-burger-item${activeNavKey === tab ? ' active' : ''}`}
+                            onClick={() => {
+                              handleSelectNavTab(tab);
+                              setMobileMenuOpen(false);
+                            }}
+                          >
+                            <span>{label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </>
             );
           })()}
         </div>
@@ -7725,7 +8011,54 @@ export default function App() {
                             min={5} max={200}
                             value={activeBook.targetPages}
                             onFocus={e => e.target.select()}
-                            onChange={e => updateActiveBookConfig('targetPages', Math.max(5, Math.min(200, Number(e.target.value))))}
+                            onChange={async (e) => {
+                              const newTarget = Math.max(5, Math.min(200, Number(e.target.value)));
+                              let updatedOutline = activeBook.outline;
+                              let updatedPagesText = { ...(activeBook.pagesText || {}) };
+                              let updatedPagesStatus = { ...(activeBook.pagesStatus || {}) };
+                              let updatedPagesOverflow = { ...(activeBook.pagesOverflow || {}) };
+                              
+                              if (activeBook.outline) {
+                                if (activeBook.outline.pages.length > newTarget) {
+                                  const shortenedPages = activeBook.outline.pages.slice(0, newTarget).map((p, idx) => ({
+                                    ...p,
+                                    page_number: idx + 1
+                                  }));
+                                  updatedOutline = {
+                                    ...activeBook.outline,
+                                    pages: shortenedPages,
+                                    target_pages: newTarget
+                                  };
+                                  Object.keys(updatedPagesText).forEach(key => {
+                                    if (Number(key) > newTarget) {
+                                      delete updatedPagesText[Number(key)];
+                                      delete updatedPagesStatus[Number(key)];
+                                      delete updatedPagesOverflow[Number(key)];
+                                    }
+                                  });
+                                } else if (activeBook.outline.pages.length < newTarget) {
+                                  updatedOutline = {
+                                    ...activeBook.outline,
+                                    target_pages: newTarget
+                                  };
+                                }
+                              }
+
+                              const updatedBook = {
+                                ...activeBook,
+                                targetPages: newTarget,
+                                outline: updatedOutline,
+                                pagesText: updatedPagesText,
+                                pagesStatus: updatedPagesStatus,
+                                pagesOverflow: updatedPagesOverflow
+                              };
+
+                              setBooks(prev => prev.map(b => b.id === activeBookId ? updatedBook : b));
+
+                              if (currentUser) {
+                                await saveBookToCloud(currentUser.uid, updatedBook);
+                              }
+                            }}
                             disabled={isPlanning || isGenerating}
                           />
                         </div>
@@ -8402,22 +8735,21 @@ export default function App() {
                 <button
                   onClick={() => setMirrorMargins(m => !m)}
                   title={mirrorMargins ? 'Spiegel-Ränder aktiv (KDP-optimal) — klicken für gleiche Ränder' : 'Gleiche Ränder aktiv — klicken für Spiegel-Ränder (KDP-optimal)'}
+                  className="btn"
                   style={{
                     padding: '4px 8px',
                     fontSize: '10px',
-                    border: '1px solid var(--border)',
-                    borderRadius: '4px',
-                    background: mirrorMargins ? 'var(--accent-light, #f0f4ff)' : 'transparent',
-                    color: mirrorMargins ? 'var(--accent, #4f6ef7)' : 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    flexShrink: 0,
                     display: 'flex',
                     alignItems: 'center',
                     gap: '4px',
+                    flexShrink: 0,
+                    backgroundColor: 'transparent',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--text-main)',
                   }}
                 >
-                  <span style={{ fontSize: '10px' }}>{mirrorMargins ? '⇌' : '='}</span>
-                  {mirrorMargins ? 'Spiegel' : 'Gleich'}
+                  <BookOpen style={{ width: '12px', height: '12px', opacity: mirrorMargins ? 1 : 0.4 }} />
+                  <span>{mirrorMargins ? (isDe ? 'Spiegel-Ränder' : 'Mirrored') : (isDe ? 'Gleiche Ränder' : 'Equal Margins')}</span>
                 </button>
                 <button 
                   onClick={handleDownloadPdf} 
@@ -9962,6 +10294,7 @@ export default function App() {
                         <textarea
                           value={editorText}
                           onChange={handleEditorChange}
+                          onBlur={handleEditorBlur}
                           placeholder="Inhalt wird geladen/generiert. Du kannst auch direkt losschreiben..."
                           className="editor-textarea"
                           style={{ borderTop: 'none', height: '420px', background: theme === 'dark' ? '#0f172a' : '#ffffff', color: theme === 'dark' ? '#f8fafc' : 'var(--text-main)', border: '1px solid var(--border-color)', borderBottomLeftRadius: '10px', borderBottomRightRadius: '10px', padding: '16px', fontFamily: 'var(--ex-font)', fontSize: '13.5px', lineHeight: '1.7', boxShadow: 'none' }}
@@ -10014,6 +10347,16 @@ export default function App() {
                     </select>
 
                     <select 
+                      value={activeBook.alignment || 'justify'}
+                      onChange={e => updateActiveBookConfig('alignment', e.target.value)}
+                      style={{ fontSize: '9px', padding: '1px 4px', height: '18px', width: '85px', border: '1px solid var(--border-color)', borderRadius: '2px', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', cursor: 'pointer' }}
+                      title={isDe ? 'Ausrichtung' : 'Alignment'}
+                    >
+                      <option value="justify">{isDe ? 'Blocksatz' : 'Justified'}</option>
+                      <option value="left">{isDe ? 'Linksbündig' : 'Left'}</option>
+                    </select>
+
+                    <select 
                       value={activeBook.paragraphStyle || 'indent'}
                       onChange={e => updateActiveBookConfig('paragraphStyle', e.target.value)}
                       style={{ fontSize: '9px', padding: '1px 4px', height: '18px', width: '105px', border: '1px solid var(--border-color)', borderRadius: '2px', backgroundColor: 'var(--bg-card)', color: 'var(--text-main)', cursor: 'pointer' }}
@@ -10021,7 +10364,7 @@ export default function App() {
                     >
                       <option value="indent">Absatz: Einzug</option>
                       <option value="spacing">Absatz: Leerzeile</option>
-                      <option value="block">Absatz: Block</option>
+                      <option value="block">Absatz: Bündig (kein Einzug)</option>
                     </select>
                   </div>
                 )}

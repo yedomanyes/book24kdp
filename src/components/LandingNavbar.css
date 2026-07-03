@@ -284,7 +284,7 @@
   justify-content: center;
   padding: 10px 16px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #fbbf24 0%, #ea580c 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #0b57d0 100%);
   border: 1px solid rgba(255, 255, 255, 0.15);
   margin: 6px 12px 12px;
   font-size: 13px;
@@ -299,6 +299,32 @@
   .landing-nav-promo-badge {
     display: none;
   }
+}
+
+/* Mobile menu light theme overrides */
+.landing-nav-mobile.theme-light {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08) !important;
+}
+
+.landing-nav-mobile.theme-light .landing-nav-mobile-link {
+  color: rgba(0, 0, 0, 0.85) !important;
+}
+
+.landing-nav-mobile.theme-light .landing-nav-mobile-link:hover {
+  background: rgba(0, 0, 0, 0.04) !important;
+}
+
+.landing-nav-mobile.theme-light .landing-nav-mobile-link svg {
+  color: rgba(0, 0, 0, 0.6) !important;
+}
+
+.landing-nav-mobile.theme-light .landing-nav-mobile-cta {
+  background: #0f172a !important;
+  border-color: #0f172a !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15) !important;
 }
 
 /* Light Theme Overrides */

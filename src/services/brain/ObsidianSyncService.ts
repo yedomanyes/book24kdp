@@ -523,7 +523,8 @@ function formatCodebaseMd(): string {
   body += `- src/services/brain/CloudQueueService.ts — Cloud/Warteschlange für Brain/Obsidian-Sync\n`;
   body += `- src/services/StorageService.ts — Buch-/Account-Speicherung lokal + Cloud\n`;
   body += `- src/components/BrainDashboard.tsx — 3D Brain UI\n`;
-  body += `- vault/CLAUDE.md + vault/architecture/*.md — dauerhaftes Projektwissen\n\n`;
+  body += `- vault/CLAUDE.md + vault/architecture/*.md — dauerhaftes Projektwissen\n`;
+  body += `- vault/04-Code-Kontext/*.md — schnelle Code-Unterteilung für Hermes und Antigravity\n\n`;
 
   body += `## Coding-Regeln\n`;
   body += `- Vor Änderungen Vault-Kontext lesen.\n`;
@@ -687,9 +688,11 @@ export class ObsidianSyncService {
       brainArchitecture,
       cmieArchitecture,
       graphicsArchitecture,
+      generatedCodeContext,
       nicheFiles,
       logFiles,
       bookDirs,
+      codeContextFiles,
     ] = await Promise.all([
       readTextFile(this.rootHandle, ['CLAUDE.md']),
       readTextFile(this.rootHandle, ['99-Brain-State', 'system.md']),
@@ -702,9 +705,11 @@ export class ObsidianSyncService {
       readTextFile(this.rootHandle, ['architecture', 'brain.md']),
       readTextFile(this.rootHandle, ['architecture', 'cmie.md']),
       readTextFile(this.rootHandle, ['architecture', 'graphics.md']),
+      readTextFile(this.rootHandle, ['architecture', 'code-context.md']),
       listMarkdownFiles(this.rootHandle, ['01-Nischen']),
       listMarkdownFiles(this.rootHandle, ['logs']),
       listDirectories(this.rootHandle, ['02-Buecher']),
+      listMarkdownFiles(this.rootHandle, ['04-Code-Kontext']),
     ]);
 
     const niches: Record<string, string> = {};
@@ -731,6 +736,17 @@ export class ObsidianSyncService {
       }
     }
 
+    const extraArchitecture: string[] = [];
+    if (generatedCodeContext) {
+      extraArchitecture.push(generatedCodeContext);
+    }
+    for (const fileName of codeContextFiles.slice(0, 12)) {
+      const content = await readTextFile(this.rootHandle, ['04-Code-Kontext', fileName]);
+      if (content) {
+        extraArchitecture.push(content);
+      }
+    }
+
     saveContextCache({
       updatedAt: new Date().toISOString(),
       claude: claude || '',
@@ -741,7 +757,7 @@ export class ObsidianSyncService {
       progress: progress || '',
       summary: summary || '',
       codebase: codebase || '',
-      architecture: [brainArchitecture, cmieArchitecture, graphicsArchitecture].filter(Boolean) as string[],
+      architecture: [brainArchitecture, cmieArchitecture, graphicsArchitecture, ...extraArchitecture].filter(Boolean) as string[],
       recentLogs,
       niches,
       books,

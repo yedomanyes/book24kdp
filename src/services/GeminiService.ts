@@ -379,12 +379,19 @@ Stelle sicher, dass die "pages"-Liste EXAKT ${targetPages} Einträge enthält!`;
           onProgress(progressPercent, `Generiere Seiten ${start} bis ${end} von ${targetPages}...`);
         }
 
+        let previousPagesContext = '';
+        if (allPages.length > 0) {
+          previousPagesContext = `\n\nBisherige Seiten-Planung (Seiten 1 bis ${start - 1}):\n` +
+            allPages.map(p => `- Seite ${p.page_number}: Kapitel "${p.chapter_title}" - Fokus: "${p.focus}"`).join('\n') +
+            `\n\nSETZE DIESE PLANUNG NAHTLOS FORT. Plane jetzt NUR die Seiten ${start} bis ${end} (${chunkSize} Seiten). Es ist STRENGSTENS VERBOTEN, die oben gelisteten Kapitelüberschriften, Fokuspunkte oder behandelten Aspekte zu wiederholen oder zu doppeln!\n`;
+        }
+
         const chunkPrompt = `Du bist ein professioneller Buch-Redakteur. Erstelle die Seiten-Planung für folgendes Buch.
 Buchtitel: "${title}"
 Untertitel: "${subtitle}"
 Hauptidee/Beschreibung: "${safeIdea}"
 Sprache des Buches: "${language === 'de' ? 'Deutsch' : 'ENGLISH (CRITICAL: All generated output MUST be completely in English, including chapter titles and key points!)'}"
-Das Buch hat insgesamt ${targetPages} Seiten. Du planst jetzt NUR die Seiten ${start} bis ${end} (${chunkSize} Seiten).
+Das Buch hat insgesamt ${targetPages} Seiten. Du planst jetzt NUR die Seiten ${start} bis ${end} (${chunkSize} Seiten).${previousPagesContext}
 ${safeGuidelines && safeGuidelines.trim() ? `\nAutoren-Richtlinien: "${safeGuidelines}"\n` : ''}
 KRITISCHSTE REGEL – SEITEN-FOKUS & EIGENSTÄNDIGKEIT (PFLICHT):
 Jede einzelne Seite MUSS einen absolut einzigartigen, trennscharfen und unverwechselbaren Fokus haben!
@@ -931,15 +938,17 @@ Setze den Text absolut nahtlos fort. Der allererste Satz dieser neuen Seite ${pa
     const templateIndex = (pageNumber + outline.title.length) % layoutTemplates.length;
     const selectedTemplate = layoutTemplates[templateIndex];
 
+    const noQuotes = customGuidelines.includes('KEINERLEI Zitate') || customGuidelines.includes('Zitate sind in diesem Buch vollständig verboten');
+
     let systemPrompt = `Du bist ein professioneller Buchautor. Du schreibst im folgenden Stil: "${writingStyle}".
 Deine Sprache ist exakt: ${outline.language === 'de' ? 'Deutsch (korrekte Rechtschreibung und Grammatik)' : 'ENGLISH (CRITICAL: YOU MUST WRITE THE ENTIRE TEXT IN ENGLISH ONLY!)'}.
 Achte peinlich genau auf folgende Regeln:
-1. ${isChapterOpening ? `Zitate sind auf dieser Seite (Beginn eines neuen Kapitels!) als feierlicher Einstieg sehr erwünscht. ABER ACHTUNG: Ein Zitat darf NIEMALS ganz oben am Anfang der Seite stehen! Beginne die Seite IMMER zuerst mit mindestens einem eleganten Absatz Fließtext als Einleitung in das Thema, bevor du weiter unten ein Zitat einfügst. Das Zitat muss gemeinfrei/legal sein, in einer eigenen Zeile stehen, eingeleitet mit "> ", und MUSS am Ende immer eine Autorenangabe enthalten (Format: — Vorname Nachname). Beispiel:
+1. ${(isChapterOpening && !noQuotes) ? `Zitate sind auf dieser Seite (Beginn eines neuen Kapitels!) als feierlicher Einstieg sehr erwünscht. ABER ACHTUNG: Ein Zitat darf NIEMALS ganz oben am Anfang der Seite stehen! Beginne die Seite IMMER zuerst mit mindestens einem eleganten Absatz Fließtext als Einleitung in das Thema, bevor du weiter unten ein Zitat einfügst. Das Zitat muss gemeinfrei/legal sein, in einer eigenen Zeile stehen, eingeleitet mit "> ", und MUSS am Ende immer eine Autorenangabe enthalten (Format: — Vorname Nachname). Beispiel:
 > "Wissen ist Macht." — Francis Bacon
-EIN ZITAT OHNE — AUTORENANGABE AM ENDE IST STRENGSTENS VERBOTEN.` : `Es ist dir STRENGSTENS VERBOTEN, Zitate auf dieser Seite zu generieren! Verwende kein Zitat (keine Zeile mit "> "). Zitate dürfen ausschließlich auf der allerersten Seite eines Kapitels verwendet werden, dies ist jedoch eine normale Inhaltsseite.`}
+EIN ZITAT OHNE — AUTORENANGABE AM ENDE IST STRENGSTENS VERBOTEN.` : `Es ist dir STRENGSTENS VERBOTEN, Zitate auf dieser Seite zu generieren! Verwende kein Zitat (keine Zeile mit "> "). Zitate sind in diesem Buch vollständig verboten und deaktiviert.`}
 2. KRITISCHES REDUNDANZ-VERBOT: Vermeide absolut jegliche Wiederholungen von Fakten, Beispielen, Formulierungen, Phrasen oder Ideen, die bereits auf den vorherigen Seiten behandelt wurden. Jede Seite muss das Thema progressiv vorantreiben. Plane und schreibe exklusiv über den neuen Fokus dieser Seite und bringe neue Informationen ein, statt bereits Gesagtes neu zu formulieren.
-3. Formatiere den Text lesbar durch klare Absätze. Teile den Text unbedingt in mehrere Absätze (durch Zeilenumbrüche getrennt) auf, um das Lesen zu erleichtern! Ein einziger großer Textblock ist verboten. Verwende KEINE Markdown-Überschriften (wie # oder ##) oder Sternchen (wie **fett**). Einzige Ausnahme sind Zitate, die mit "> " beginnen. Überschriften werden vom Layout-System automatisch eingefügt.
-4. Schreibe so viel Text, wie das Thema auf dieser Seite natürlich erfordert — orientiere dich am Richtwert von ca. ${minWords} bis ${maxWords} Wörtern. WICHTIG: Beende den Text NIEMALS mitten im Satz oder mitten in einer Aufzählung; führe jeden Gedanken sauber zu Ende. Wenn ein Layout-Element (z. B. eine Tabelle, eine Box, eine Checkliste, ein Zitat, eine Liste oder Schreiblinien) die Seite thematisch abschließt, ist es vollkommen in Ordnung, danach nicht mehr weiterzuschreiben — füge dann KEINEN künstlichen Fülltext hinzu. Wenn die Seite hingegen reinen Fließtext enthält und das Thema noch nicht abgeschlossen ist, nutze den Raum und schreibe bis in den unteren Bereich der Seite.
+3. Formatiere den Text lesbar durch klare Absätze. Teile den Text unbedingt in mehrere Absätze (durch Zeilenumbrüche getrennt) auf, um das Lesen zu erleichtern! Ein einziger großer Textblock ist verboten. Verwende KEINE Markdown-Überschriften (wie # oder ##) oder Sternchen (wie **fett**). ${noQuotes ? 'Verwende absolut keine Zitate.' : 'Einzige Ausnahme sind Zitate, die mit "> " beginnen.'} Überschriften werden vom Layout-System automatisch eingefügt.
+4. Schreibe so viel Text, wie das Thema auf dieser Seite natürlich erfordert — orientiere dich am Richtwert von ca. ${minWords} bis ${maxWords} Wörtern. WICHTIG: Beende den Text NIEMALS mitten im Satz oder mitten in einer Aufzählung; führe jeden Gedanken sauber zu Ende. Wenn ein Layout-Element (z. B. eine Tabelle, eine Box, eine Checkliste, ${noQuotes ? '' : 'ein Zitat, '}eine Liste oder Schreiblinien) die Seite thematisch abschließt, ist es vollkommen in Ordnung, danach nicht mehr weiterzuschreiben — füge dann KEINEN künstlichen Fülltext hinzu. Wenn die Seite hingegen reinen Fließtext enthält und das Thema noch nicht abgeschlossen ist, nutze den Raum und schreibe bis in den unteren Bereich der Seite.
 6. Vermeide typische KI-Floskeln und künstliche oder extrem repetitive Übergänge wie 'Zusammenfassend...', 'Es ist wichtig zu betonen...', 'Abschließend...', 'Nicht nur..., sondern auch...', 'Daher...', 'Deshalb...', 'Folglich...'. Es ist dir absolut VERBOTEN, Absätze oder Sätze mehrfach hintereinander mit den exakt selben Wörtern wie "Daher" oder "Deshalb" zu beginnen! Schreibe stattdessen literarisch elegant, extrem abwechslungsreich, mit sauberem Vokabular und organisch fließend.
 7. ZWINGENDE LAYOUT-STRUKTUR FÜR DIESE SEITE (Um das Buch abwechslungsreich und visuell einzigartig wie Handarbeit zu gestalten, MUSS diese Seite exakt folgendem Layout folgen):
    👉 "${selectedTemplate}"

@@ -1,0 +1,180 @@
+{
+  "project": "Book24 Studio / KDP",
+  "mode": "local-background-worker",
+  "status": "healthy",
+  "consumers": [
+    "Hermes",
+    "Antigravity"
+  ],
+  "lastHeartbeatAt": "2026-07-03T16:57:33.050Z",
+  "lastIndexedAt": "2026-07-03T16:57:33.049Z",
+  "worker": {
+    "pid": 9887,
+    "hostname": "Mac",
+    "startedAt": "2026-07-03T13:34:54.928Z",
+    "intervalMs": 10000,
+    "projectRoot": "/Users/yedo/Desktop/KDP"
+  },
+  "antigravity": {
+    "configured": true,
+    "command": "agy",
+    "args": "--dangerously-skip-permissions --continue",
+    "source": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/data.json"
+  },
+  "graphify": {
+    "available": true,
+    "graphHtml": "graphify-out/graph.html",
+    "analysisJson": "graphify-out/.graphify_analysis.json"
+  },
+  "decisionEngine": {
+    "generatedAt": "2026-07-03T16:57:33.049Z",
+    "thoughts": [
+      "App Shell & Studio Flow dominiert aktuell mit 23755 Zeilen und ist damit der schwerste Produktblock.",
+      "Das Brain selbst belegt 1913 Zeilen und hat damit genug Substanz für echte Runtime-Ausbauten.",
+      "Vault und Memory liefern 53 Dateien Kontext für wiederverwendbares Wissen."
+    ],
+    "nextActions": [
+      {
+        "id": "split-app-shell",
+        "label": "App Shell entlasten",
+        "detail": "OwnerPanel/Landing/Studio-Flows weiter entkoppeln, damit Änderungen schneller und sauberer werden.",
+        "score": 91,
+        "severity": "high"
+      },
+      {
+        "id": "grow-brain-runtime",
+        "label": "Brain-Aktionslogik ausbauen",
+        "detail": "Mehr echte Decisions, Ziele und ausführbare Empfehlungen in die Brain-Runtime legen.",
+        "score": 88,
+        "severity": "high"
+      },
+      {
+        "id": "use-vault-more-hard",
+        "label": "Vault-Wissen aggressiver nutzen",
+        "detail": "Die große Vault-/Memory-Sektion sollte für Prompts, Alerts und Brain-Feeds stärker ausgespielt werden.",
+        "score": 66,
+        "severity": "low"
+      }
+    ],
+    "priorities": [
+      {
+        "id": "graph-intelligence",
+        "label": "Hauptfokus",
+        "detail": "Graph / Code Intelligence · 6 Dateien · 58412 Zeilen",
+        "score": 499
+      },
+      {
+        "id": "app-shell",
+        "label": "Fokus 2",
+        "detail": "App Shell & Studio Flow · 31 Dateien · 23755 Zeilen",
+        "score": 308
+      },
+      {
+        "id": "project-memory",
+        "label": "Fokus 3",
+        "detail": "Vault, Memory & Obsidian Context · 53 Dateien · 11038 Zeilen",
+        "score": 222
+      }
+    ],
+    "issues": [
+      {
+        "id": "app-shell-heavy",
+        "label": "App Shell ist zu schwer",
+        "detail": "23755 Zeilen in der Shell bremsen Verständnis und machen das Projekt unruhig.",
+        "score": 93,
+        "severity": "high"
+      }
+    ]
+  },
+  "sectionCount": 8,
+  "totalFilesIndexed": 134,
+  "previousHeartbeatAt": "2026-07-03T16:57:23.182Z",
+  "sections": [
+    {
+      "id": "graph-intelligence",
+      "title": "Graph / Code Intelligence",
+      "fileCount": 6,
+      "totalLines": 58412,
+      "topPaths": [
+        "graphify-out/graph.json",
+        "graphify-out/.graphify_analysis.json",
+        "graphify-out/manifest.json"
+      ]
+    },
+    {
+      "id": "app-shell",
+      "title": "App Shell & Studio Flow",
+      "fileCount": 31,
+      "totalLines": 23755,
+      "topPaths": [
+        "src/App.tsx",
+        "src/components/OwnerPanel.tsx",
+        "src/components/LandingPage.tsx"
+      ]
+    },
+    {
+      "id": "project-memory",
+      "title": "Vault, Memory & Obsidian Context",
+      "fileCount": 53,
+      "totalLines": 11038,
+      "topPaths": [
+        "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
+        "Book24 Studio/.obsidian/workspace.json",
+        "vault/CLAUDE.md"
+      ]
+    },
+    {
+      "id": "misc",
+      "title": "Weitere Dateien",
+      "fileCount": 17,
+      "totalLines": 3429,
+      "topPaths": [
+        "src/utils/PdfGenerator.ts",
+        "src/services/gil/GilService.ts",
+        "src/i18n.ts"
+      ]
+    },
+    {
+      "id": "generation-ai",
+      "title": "AI Generation Stack",
+      "fileCount": 1,
+      "totalLines": 2073,
+      "topPaths": [
+        "src/services/GeminiService.ts"
+      ]
+    },
+    {
+      "id": "brain-runtime",
+      "title": "Brain Runtime",
+      "fileCount": 6,
+      "totalLines": 1913,
+      "topPaths": [
+        "src/services/brain/ObsidianSyncService.ts",
+        "src/services/brain/BrainService.ts",
+        "src/types/brain.ts"
+      ]
+    },
+    {
+      "id": "storage-cloud",
+      "title": "Storage, Supabase & Cloud",
+      "fileCount": 12,
+      "totalLines": 1182,
+      "topPaths": [
+        "src/services/StorageService.ts",
+        "src/supabase.ts",
+        "supabase/book24_schema.sql"
+      ]
+    },
+    {
+      "id": "cmie-engine",
+      "title": "CMIE / Kapitel-Engine",
+      "fileCount": 8,
+      "totalLines": 665,
+      "topPaths": [
+        "src/services/cmie/CmieOrchestrator.ts",
+        "src/services/cmie/DuplicateGuard.ts",
+        "src/services/cmie/EmbeddingService.ts"
+      ]
+    }
+  ]
+}

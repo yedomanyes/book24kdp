@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "src/App.tsx": {
-    "mtime": 1783021368.6424246,
-    "ast_hash": "3cdd7ab8cd6529504ce616e9b23b50cb",
+    "mtime": 1783021824.221845,
+    "ast_hash": "20a3776aadedd5d0239fb95e69e8607f",
     "semantic_hash": ""
   },
   "src/components/Aurora.tsx": {
@@ -95,9 +95,9 @@
     "semantic_hash": ""
   },
   "src/components/NicheFinderDashboard.tsx": {
-    "mtime": 1782490595.5837772,
-    "ast_hash": "5790eb834e569642c22ccd069bd3329c",
-    "semantic_hash": "5790eb834e569642c22ccd069bd3329c"
+    "mtime": 1783021817.7578115,
+    "ast_hash": "40159d7a2a3169a00ba36fc7c54d34f0",
+    "semantic_hash": ""
   },
   "src/components/PixelSnow.tsx": {
     "mtime": 1782506831.4903789,

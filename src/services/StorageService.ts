@@ -12,6 +12,130 @@ import { supabase } from '../supabase';
  */
 
 const STORAGE_PREFIX = 'b24studio_v1';
+const IDB_DB_NAME = 'book24studio_storage';
+const IDB_DB_VERSION = 1;
+const IDB_LIBRARY_STORE = 'libraries';
+
+type LibrarySnapshotRecord = {
+  accountId: string;
+  data: any[];
+  updatedAt: string;
+};
+
+function openStorageDb(): Promise<IDBDatabase | null> {
+  if (typeof window === 'undefined' || !('indexedDB' in window)) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    try {
+      const request = window.indexedDB.open(IDB_DB_NAME, IDB_DB_VERSION);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(IDB_LIBRARY_STORE)) {
+          db.createObjectStore(IDB_LIBRARY_STORE, { keyPath: 'accountId' });
+        }
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => resolve(null);
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+export async function saveLibrarySnapshot(accountId: string, books: any[]): Promise<boolean> {
+  const db = await openStorageDb();
+  if (!db) return false;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(IDB_LIBRARY_STORE, 'readwrite');
+      const store = tx.objectStore(IDB_LIBRARY_STORE);
+      store.put({ accountId, data: books, updatedAt: new Date().toISOString() } satisfies LibrarySnapshotRecord);
+      tx.oncomplete = () => {
+        db.close();
+        resolve(true);
+      };
+      tx.onerror = () => {
+        db.close();
+        resolve(false);
+      };
+    } catch {
+      db.close();
+      resolve(false);
+    }
+  });
+}
+
+export async function loadLibrarySnapshot(accountId: string): Promise<any[] | null> {
+  const db = await openStorageDb();
+  if (!db) return null;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(IDB_LIBRARY_STORE, 'readonly');
+      const store = tx.objectStore(IDB_LIBRARY_STORE);
+      const request = store.get(accountId);
+      request.onsuccess = () => {
+        db.close();
+        resolve(Array.isArray(request.result?.data) ? request.result.data : null);
+      };
+      request.onerror = () => {
+        db.close();
+        resolve(null);
+      };
+    } catch {
+      db.close();
+      resolve(null);
+    }
+  });
+}
+
+export async function loadAllLibrarySnapshots(): Promise<Record<string, any[]>> {
+  const db = await openStorageDb();
+  if (!db) return {};
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(IDB_LIBRARY_STORE, 'readonly');
+      const store = tx.objectStore(IDB_LIBRARY_STORE);
+      const request = store.getAll();
+      request.onsuccess = () => {
+        const rows = Array.isArray(request.result) ? request.result : [];
+        const out = rows.reduce<Record<string, any[]>>((acc, row: LibrarySnapshotRecord) => {
+          if (row?.accountId && Array.isArray(row.data)) acc[row.accountId] = row.data;
+          return acc;
+        }, {});
+        db.close();
+        resolve(out);
+      };
+      request.onerror = () => {
+        db.close();
+        resolve({});
+      };
+    } catch {
+      db.close();
+      resolve({});
+    }
+  });
+}
+
+export async function deleteLibrarySnapshot(accountId: string): Promise<void> {
+  const db = await openStorageDb();
+  if (!db) return;
+  await new Promise<void>((resolve) => {
+    try {
+      const tx = db.transaction(IDB_LIBRARY_STORE, 'readwrite');
+      tx.objectStore(IDB_LIBRARY_STORE).delete(accountId);
+      tx.oncomplete = () => {
+        db.close();
+        resolve();
+      };
+      tx.onerror = () => {
+        db.close();
+        resolve();
+      };
+    } catch {
+      db.close();
+      resolve();
+    }
+  });
+}
 
 /** Feste Key-Namen — werden NIE mehr geändert */
 export const KEYS = {
@@ -140,7 +264,7 @@ export function importBackup(file: File): Promise<void> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const backup = JSON.parse(e.target?.result as string) as BackupData;
 
@@ -155,6 +279,14 @@ export function importBackup(file: File): Promise<void> {
 
         for (const [accountId, data] of Object.entries(backup.libraries)) {
           localStorage.setItem(KEYS.library(accountId), data);
+          try {
+            const parsed = JSON.parse(data);
+            if (Array.isArray(parsed)) {
+              await saveLibrarySnapshot(accountId, parsed);
+            }
+          } catch {
+            // ignore malformed snapshot during import; localStorage still has raw backup
+          }
         }
 
         resolve();
@@ -212,14 +344,19 @@ export async function deleteBookFromCloud(uid: string, bookId: string): Promise<
   }
 }
 
-export async function loadBooksFromCloud(uid: string): Promise<any[]> {
+export async function loadBooksFromCloud(uid: string, accountId: string = getActiveAccountId()): Promise<any[]> {
   if (!supabase || !uid) return [];
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('books')
       .select('payload, updated_at')
-      .eq('user_id', uid)
-      .order('updated_at', { ascending: true });
+      .eq('user_id', uid);
+
+    if (accountId) {
+      query = query.eq('account_id', accountId);
+    }
+
+    const { data, error } = await query.order('updated_at', { ascending: true });
 
     if (error) throw error;
     return (data || []).map((row: any) => row.payload).filter(Boolean);

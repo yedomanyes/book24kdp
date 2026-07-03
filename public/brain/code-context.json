@@ -1,0 +1,718 @@
+{
+  "project": "Book24 Studio / KDP",
+  "mode": "local-background-worker",
+  "status": "healthy",
+  "consumers": [
+    "Hermes",
+    "Antigravity"
+  ],
+  "lastIndexedAt": "2026-07-03T16:57:33.049Z",
+  "worker": {
+    "pid": 9887,
+    "hostname": "Mac",
+    "startedAt": "2026-07-03T13:34:54.928Z",
+    "intervalMs": 10000,
+    "projectRoot": "/Users/yedo/Desktop/KDP"
+  },
+  "antigravity": {
+    "configured": true,
+    "command": "agy",
+    "args": "--dangerously-skip-permissions --continue",
+    "source": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/data.json"
+  },
+  "graphify": {
+    "available": true,
+    "graphHtml": "graphify-out/graph.html",
+    "analysisJson": "graphify-out/.graphify_analysis.json"
+  },
+  "decisionEngine": {
+    "generatedAt": "2026-07-03T16:57:33.049Z",
+    "thoughts": [
+      "App Shell & Studio Flow dominiert aktuell mit 23755 Zeilen und ist damit der schwerste Produktblock.",
+      "Das Brain selbst belegt 1913 Zeilen und hat damit genug Substanz für echte Runtime-Ausbauten.",
+      "Vault und Memory liefern 53 Dateien Kontext für wiederverwendbares Wissen."
+    ],
+    "nextActions": [
+      {
+        "id": "split-app-shell",
+        "label": "App Shell entlasten",
+        "detail": "OwnerPanel/Landing/Studio-Flows weiter entkoppeln, damit Änderungen schneller und sauberer werden.",
+        "score": 91,
+        "severity": "high"
+      },
+      {
+        "id": "grow-brain-runtime",
+        "label": "Brain-Aktionslogik ausbauen",
+        "detail": "Mehr echte Decisions, Ziele und ausführbare Empfehlungen in die Brain-Runtime legen.",
+        "score": 88,
+        "severity": "high"
+      },
+      {
+        "id": "use-vault-more-hard",
+        "label": "Vault-Wissen aggressiver nutzen",
+        "detail": "Die große Vault-/Memory-Sektion sollte für Prompts, Alerts und Brain-Feeds stärker ausgespielt werden.",
+        "score": 66,
+        "severity": "low"
+      }
+    ],
+    "priorities": [
+      {
+        "id": "graph-intelligence",
+        "label": "Hauptfokus",
+        "detail": "Graph / Code Intelligence · 6 Dateien · 58412 Zeilen",
+        "score": 499
+      },
+      {
+        "id": "app-shell",
+        "label": "Fokus 2",
+        "detail": "App Shell & Studio Flow · 31 Dateien · 23755 Zeilen",
+        "score": 308
+      },
+      {
+        "id": "project-memory",
+        "label": "Fokus 3",
+        "detail": "Vault, Memory & Obsidian Context · 53 Dateien · 11038 Zeilen",
+        "score": 222
+      }
+    ],
+    "issues": [
+      {
+        "id": "app-shell-heavy",
+        "label": "App Shell ist zu schwer",
+        "detail": "23755 Zeilen in der Shell bremsen Verständnis und machen das Projekt unruhig.",
+        "score": 93,
+        "severity": "high"
+      }
+    ]
+  },
+  "sections": [
+    {
+      "id": "graph-intelligence",
+      "title": "Graph / Code Intelligence",
+      "description": "Graphify-Ausgaben und strukturierte Code-Graph-Artefakte für schnellen Überblick.",
+      "fileCount": 6,
+      "totalLines": 58412,
+      "symbols": [],
+      "topFiles": [
+        {
+          "path": "graphify-out/graph.json",
+          "lines": 54865,
+          "symbols": [],
+          "preview": "{"
+        },
+        {
+          "path": "graphify-out/.graphify_analysis.json",
+          "lines": 2047,
+          "symbols": [],
+          "preview": "{"
+        },
+        {
+          "path": "graphify-out/manifest.json",
+          "lines": 562,
+          "symbols": [],
+          "preview": "{"
+        },
+        {
+          "path": "graphify-out/GRAPH_REPORT.md",
+          "lines": 510,
+          "symbols": [],
+          "preview": "# Graph Report - KDP  (2026-07-02)"
+        },
+        {
+          "path": "graphify-out/graph.html",
+          "lines": 307,
+          "symbols": [],
+          "preview": "<!DOCTYPE html>"
+        },
+        {
+          "path": "graphify-out/.graphify_labels.json",
+          "lines": 121,
+          "symbols": [],
+          "preview": "{"
+        }
+      ]
+    },
+    {
+      "id": "app-shell",
+      "title": "App Shell & Studio Flow",
+      "description": "Zentrale App-Struktur, Routing-artige Tabs, Screen-Komposition und globaler Studio-Flow.",
+      "fileCount": 31,
+      "totalLines": 23755,
+      "symbols": [
+        "DEFAULT_BOX1_DESIGN",
+        "DEFAULT_BOX2_DESIGN",
+        "DEFAULT_BOX3_DESIGN",
+        "parsePageLines",
+        "serializeBlocksToMarkdown",
+        "WorkbookBlock",
+        "BoxDesign",
+        "TitlePageCustomText",
+        "Aurora",
+        "Auth",
+        "BrainDashboard",
+        "DecisionSection",
+        "MiniSignalCard",
+        "SignalStat",
+        "BugReportModal",
+        "CircularGallery"
+      ],
+      "topFiles": [
+        {
+          "path": "src/App.tsx",
+          "lines": 11949,
+          "symbols": [
+            "DEFAULT_BOX1_DESIGN",
+            "DEFAULT_BOX2_DESIGN",
+            "DEFAULT_BOX3_DESIGN",
+            "parsePageLines",
+            "serializeBlocksToMarkdown",
+            "WorkbookBlock",
+            "BoxDesign",
+            "TitlePageCustomText"
+          ],
+          "preview": "import React, { useState, useEffect, useRef } from 'react';"
+        },
+        {
+          "path": "src/components/OwnerPanel.tsx",
+          "lines": 1558,
+          "symbols": [
+            "OwnerPanel",
+            "MetricCard",
+            "OwnerToolbarButton"
+          ],
+          "preview": "import { useCallback, useEffect, useState, useMemo } from 'react';"
+        },
+        {
+          "path": "src/components/LandingPage.tsx",
+          "lines": 1542,
+          "symbols": [
+            "LandingPage"
+          ],
+          "preview": "import React from 'react';"
+        },
+        {
+          "path": "src/components/LiquidEther.tsx",
+          "lines": 1242,
+          "symbols": [
+            "LiquidEther"
+          ],
+          "preview": "// @ts-nocheck"
+        },
+        {
+          "path": "src/components/BrainDashboard.tsx",
+          "lines": 913,
+          "symbols": [
+            "BrainDashboard",
+            "DecisionSection",
+            "MiniSignalCard",
+            "SignalStat"
+          ],
+          "preview": "import React, { useEffect, useMemo, useState } from 'react';"
+        },
+        {
+          "path": "src/components/CircularGallery.tsx",
+          "lines": 824,
+          "symbols": [
+            "CircularGallery"
+          ],
+          "preview": "import { Camera, Mesh, Plane, Program, Renderer, Texture, Transform } from 'ogl';"
+        },
+        {
+          "path": "src/components/SettingsModal.tsx",
+          "lines": 502,
+          "symbols": [
+            "AI_MODEL_OPTIONS",
+            "SettingsModal",
+            "SectionTitle",
+            "ApiKeyBlock",
+            "StatusPill"
+          ],
+          "preview": "import React, { useState, useEffect } from 'react';"
+        },
+        {
+          "path": "src/components/GilInsightsPanel.tsx",
+          "lines": 421,
+          "symbols": [
+            "GilInsightsPanel",
+            "TallyMarks",
+            "Sparkline"
+          ],
+          "preview": "import React, { useEffect, useState, useRef } from 'react';"
+        }
+      ]
+    },
+    {
+      "id": "project-memory",
+      "title": "Vault, Memory & Obsidian Context",
+      "description": "Langzeitwissen, Patterns, Logs, Vault-Kontext und Obsidian-Zielstruktur.",
+      "fileCount": 53,
+      "totalLines": 11038,
+      "symbols": [
+        "Al",
+        "Vs",
+        "Cn",
+        "Mn",
+        "Pn",
+        "Ce",
+        "It",
+        "Xs"
+      ],
+      "topFiles": [
+        {
+          "path": "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js",
+          "lines": 9570,
+          "symbols": [
+            "Al",
+            "Vs",
+            "Cn",
+            "Mn",
+            "Pn",
+            "Ce",
+            "It",
+            "Xs"
+          ],
+          "preview": "/*"
+        },
+        {
+          "path": "Book24 Studio/.obsidian/workspace.json",
+          "lines": 222,
+          "symbols": [],
+          "preview": "{"
+        },
+        {
+          "path": "vault/CLAUDE.md",
+          "lines": 47,
+          "symbols": [],
+          "preview": "# Book24 Studio - Agent & Project Context"
+        },
+        {
+          "path": "vault/logs/2026-06-28_session_01.md",
+          "lines": 38,
+          "symbols": [],
+          "preview": "# Session Log: 28. Juni 2026"
+        },
+        {
+          "path": "Book24 Studio/.obsidian/core-plugins.json",
+          "lines": 33,
+          "symbols": [],
+          "preview": "{"
+        },
+        {
+          "path": "vault/02-Buecher/schmuck-business-fur-einsteiger/kapitel/02.md",
+          "lines": 30,
+          "symbols": [],
+          "preview": "---"
+        },
+        {
+          "path": "vault/02-Buecher/schmuck-business-fur-einsteiger/kapitel/03.md",
+          "lines": 30,
+          "symbols": [],
+          "preview": "---"
+        },
+        {
+          "path": "vault/02-Buecher/schmuck-business-fur-einsteiger/kapitel/04.md",
+          "lines": 30,
+          "symbols": [],
+          "preview": "---"
+        }
+      ]
+    },
+    {
+      "id": "misc",
+      "title": "Weitere Dateien",
+      "description": "Restliche Dateien, die nicht in eine Kern-Sektion gefallen sind.",
+      "fileCount": 17,
+      "totalLines": 3429,
+      "symbols": [
+        "hasBrainAccess",
+        "BRAIN_ALLOWED_EMAILS",
+        "LanguageContext",
+        "useLanguage",
+        "LanguageProvider",
+        "t",
+        "translations",
+        "Language",
+        "Translations",
+        "logActivity",
+        "OWNER_EMAIL_FALLBACK",
+        "getOwnerEmailClient",
+        "isOwnerEmail",
+        "OWNER_ROUTES",
+        "isOwnerRoute",
+        "cn"
+      ],
+      "topFiles": [
+        {
+          "path": "src/utils/PdfGenerator.ts",
+          "lines": 1780,
+          "symbols": [
+            "generateBookPdf",
+            "PdfConfig",
+            "BoxDesign"
+          ],
+          "preview": "import { jsPDF } from 'jspdf';"
+        },
+        {
+          "path": "src/services/gil/GilService.ts",
+          "lines": 434,
+          "symbols": [
+            "GilService",
+            "GilLog",
+            "LayoutWarning",
+            "GoldenExample",
+            "EmbeddedText",
+            "GilState"
+          ],
+          "preview": "import { getCurrentAppUser, supabase } from '../../supabase';"
+        },
+        {
+          "path": "src/i18n.ts",
+          "lines": 323,
+          "symbols": [
+            "t",
+            "translations",
+            "Language",
+            "Translations"
+          ],
+          "preview": "export type Language = 'de' | 'en';"
+        },
+        {
+          "path": "src/services/graphics/SvgGraphicRenderer.tsx",
+          "lines": 310,
+          "symbols": [
+            "SvgGraphicRenderer"
+          ],
+          "preview": "import React from 'react';"
+        },
+        {
+          "path": "src/services/graphics/NecessityDetector.ts",
+          "lines": 199,
+          "symbols": [
+            "NecessityDetector"
+          ],
+          "preview": "import type { GraphicDecision } from '../../types/graphics';"
+        },
+        {
+          "path": "src/services/NicheService.ts",
+          "lines": 79,
+          "symbols": [
+            "searchNiche",
+            "Competitor",
+            "NicheMetrics",
+            "NicheResult"
+          ],
+          "preview": "export interface Competitor {"
+        },
+        {
+          "path": "src/lib/utils.js",
+          "lines": 70,
+          "symbols": [],
+          "preview": "\"use strict\";"
+        },
+        {
+          "path": "src/utils/WebScraper.ts",
+          "lines": 54,
+          "symbols": [
+            "fetchAndExtractText"
+          ],
+          "preview": "export const fetchAndExtractText = async (urls: string[], maxCharsPerUrl: number = 25000): Promise<string> => {"
+        }
+      ]
+    },
+    {
+      "id": "generation-ai",
+      "title": "AI Generation Stack",
+      "description": "Gemini-/Prompt-/Content-Generierung und angrenzende Schreiblogik.",
+      "fileCount": 1,
+      "totalLines": 2073,
+      "symbols": [
+        "GeminiService",
+        "BookOutlinePage",
+        "BookOutline"
+      ],
+      "topFiles": [
+        {
+          "path": "src/services/GeminiService.ts",
+          "lines": 2073,
+          "symbols": [
+            "GeminiService",
+            "BookOutlinePage",
+            "BookOutline"
+          ],
+          "preview": "export interface BookOutlinePage {"
+        }
+      ]
+    },
+    {
+      "id": "brain-runtime",
+      "title": "Brain Runtime",
+      "description": "BrainService, Dashboard, Runtime-Zustand, Obsidian-Sync und Queue-Logik.",
+      "fileCount": 6,
+      "totalLines": 1913,
+      "symbols": [
+        "slugify",
+        "getNicheColor",
+        "BrainService",
+        "CloudQueueService",
+        "GlobalDiversityIndex",
+        "GlobalOpening",
+        "LayoutFixDB",
+        "LayoutWarning",
+        "ObsidianSyncService",
+        "EMPTY_BRAIN_STATE",
+        "BrainEventType",
+        "BrainEvent",
+        "NicheBrainProfile",
+        "BrainTrackedBook",
+        "BrainRecommendationItem",
+        "BrainRecommendations"
+      ],
+      "topFiles": [
+        {
+          "path": "src/services/brain/ObsidianSyncService.ts",
+          "lines": 856,
+          "symbols": [
+            "ObsidianSyncService"
+          ],
+          "preview": "import type { ChapterMemory } from '../../types/cmie';"
+        },
+        {
+          "path": "src/services/brain/BrainService.ts",
+          "lines": 697,
+          "symbols": [
+            "slugify",
+            "getNicheColor",
+            "BrainService"
+          ],
+          "preview": "import type { ChapterMemory, CmiePageStatus } from '../../types/cmie';"
+        },
+        {
+          "path": "src/types/brain.ts",
+          "lines": 136,
+          "symbols": [
+            "EMPTY_BRAIN_STATE",
+            "BrainEventType",
+            "BrainEvent",
+            "NicheBrainProfile",
+            "BrainTrackedBook",
+            "BrainRecommendationItem",
+            "BrainRecommendations",
+            "BrainState"
+          ],
+          "preview": "import type { ChapterMemory, CmiePageStatus } from './cmie';"
+        },
+        {
+          "path": "src/services/brain/CloudQueueService.ts",
+          "lines": 128,
+          "symbols": [
+            "CloudQueueService"
+          ],
+          "preview": "import { getCurrentAppUser, supabase } from '../../supabase';"
+        },
+        {
+          "path": "src/services/brain/GlobalDiversityIndex.ts",
+          "lines": 58,
+          "symbols": [
+            "GlobalDiversityIndex",
+            "GlobalOpening"
+          ],
+          "preview": "import { DuplicateGuard } from '../cmie/DuplicateGuard';"
+        },
+        {
+          "path": "src/services/brain/LayoutFixDB.ts",
+          "lines": 38,
+          "symbols": [
+            "LayoutFixDB",
+            "LayoutWarning"
+          ],
+          "preview": "export interface LayoutWarning {"
+        }
+      ]
+    },
+    {
+      "id": "storage-cloud",
+      "title": "Storage, Supabase & Cloud",
+      "description": "Lokale Persistenz, Supabase-Verbindung, Cloud-Sync und Backend-Definitionen.",
+      "fileCount": 12,
+      "totalLines": 1182,
+      "symbols": [
+        "saveLibrarySnapshot",
+        "loadLibrarySnapshot",
+        "loadAllLibrarySnapshots",
+        "deleteLibrarySnapshot",
+        "migrateOldKeys",
+        "createBackup",
+        "downloadBackup",
+        "importBackup",
+        "isSupabaseConfigured",
+        "supabase",
+        "toAppUser",
+        "getCurrentAppUser",
+        "AppUser",
+        "searchNicheAPI"
+      ],
+      "topFiles": [
+        {
+          "path": "src/services/StorageService.ts",
+          "lines": 489,
+          "symbols": [
+            "saveLibrarySnapshot",
+            "loadLibrarySnapshot",
+            "loadAllLibrarySnapshots",
+            "deleteLibrarySnapshot",
+            "migrateOldKeys",
+            "createBackup",
+            "downloadBackup",
+            "importBackup"
+          ],
+          "preview": "import { supabase } from '../supabase';"
+        },
+        {
+          "path": "src/supabase.ts",
+          "lines": 140,
+          "symbols": [
+            "isSupabaseConfigured",
+            "supabase",
+            "toAppUser",
+            "getCurrentAppUser",
+            "AppUser"
+          ],
+          "preview": "import { createClient, type User as SupabaseAuthUser } from '@supabase/supabase-js';"
+        },
+        {
+          "path": "supabase/book24_schema.sql",
+          "lines": 101,
+          "symbols": [],
+          "preview": "create table if not exists public.profiles ("
+        },
+        {
+          "path": "supabase/fix_owner_dashboard_stats.sql",
+          "lines": 74,
+          "symbols": [],
+          "preview": "-- Updated get_owner_dashboard_data function"
+        },
+        {
+          "path": "supabase/bug_reports.sql",
+          "lines": 69,
+          "symbols": [],
+          "preview": "-- Run this in the Supabase SQL Editor"
+        },
+        {
+          "path": "supabase/activity_logs.sql",
+          "lines": 66,
+          "symbols": [],
+          "preview": "-- Tabelle für Aktivitäten erstellen"
+        },
+        {
+          "path": "supabase/admin_get_all_books_stats.sql",
+          "lines": 58,
+          "symbols": [],
+          "preview": "-- SCHRITT 1: Führe dieses SQL im Supabase Dashboard aus"
+        },
+        {
+          "path": "functions/src/index.ts",
+          "lines": 53,
+          "symbols": [
+            "searchNicheAPI"
+          ],
+          "preview": "import { onCall, HttpsError } from 'firebase-functions/v2/https';"
+        }
+      ]
+    },
+    {
+      "id": "cmie-engine",
+      "title": "CMIE / Kapitel-Engine",
+      "description": "Kapitelwissen, Duplicate-Guards, Orchestrierung und Lernspeicher pro Seite.",
+      "fileCount": 8,
+      "totalLines": 665,
+      "symbols": [
+        "BookMemoryStore",
+        "CmieOrchestrator",
+        "ConsistencyValidator",
+        "LocalSourcePlagiarismChecker",
+        "CopyrightGuard",
+        "PlagiarismCheckerInterface",
+        "DuplicateGuard",
+        "DuplicateValidationResult",
+        "EmbeddingService",
+        "OutlinePlanner",
+        "DEFAULT_CMIE_CONFIG",
+        "CmiePageStatus",
+        "ChapterMemory",
+        "CmieConfig"
+      ],
+      "topFiles": [
+        {
+          "path": "src/services/cmie/CmieOrchestrator.ts",
+          "lines": 138,
+          "symbols": [
+            "CmieOrchestrator"
+          ],
+          "preview": "import type { ChapterMemory, CmieConfig, CmiePageStatus } from '../../types/cmie';"
+        },
+        {
+          "path": "src/services/cmie/DuplicateGuard.ts",
+          "lines": 103,
+          "symbols": [
+            "DuplicateGuard",
+            "DuplicateValidationResult"
+          ],
+          "preview": "import type { ChapterMemory } from '../../types/cmie';"
+        },
+        {
+          "path": "src/services/cmie/EmbeddingService.ts",
+          "lines": 100,
+          "symbols": [
+            "EmbeddingService"
+          ],
+          "preview": "export class EmbeddingService {"
+        },
+        {
+          "path": "src/services/cmie/BookMemoryStore.ts",
+          "lines": 96,
+          "symbols": [
+            "BookMemoryStore"
+          ],
+          "preview": "import type { ChapterMemory } from '../../types/cmie';"
+        },
+        {
+          "path": "src/services/cmie/CopyrightGuard.ts",
+          "lines": 68,
+          "symbols": [
+            "LocalSourcePlagiarismChecker",
+            "CopyrightGuard",
+            "PlagiarismCheckerInterface"
+          ],
+          "preview": "export interface PlagiarismCheckerInterface {"
+        },
+        {
+          "path": "src/services/cmie/OutlinePlanner.ts",
+          "lines": 68,
+          "symbols": [
+            "OutlinePlanner"
+          ],
+          "preview": "import type { BookOutline } from '../GeminiService';"
+        },
+        {
+          "path": "src/services/cmie/ConsistencyValidator.ts",
+          "lines": 63,
+          "symbols": [
+            "ConsistencyValidator"
+          ],
+          "preview": "import type { ChapterMemory } from '../../types/cmie';"
+        },
+        {
+          "path": "src/types/cmie.ts",
+          "lines": 29,
+          "symbols": [
+            "DEFAULT_CMIE_CONFIG",
+            "CmiePageStatus",
+            "ChapterMemory",
+            "CmieConfig"
+          ],
+          "preview": "export type CmiePageStatus = 'ok' | 'similar' | 'copyright_warn' | 'review_needed';"
+        }
+      ]
+    }
+  ]
+}

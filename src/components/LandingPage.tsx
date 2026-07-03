@@ -3,13 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check, ChevronDown, Search, Frown } from 'lucide-react';
 import ShinyText from './ShinyText';
 import ProfileCard from './ProfileCard';
-import TiltedCard from './TiltedCard';
-import { LandingBadPagePreview, LandingBookPagePreview } from './LandingContentPreview';
+import CircularGallery from './CircularGallery';
+
 
 import LiquidEther from './LiquidEther';
 import ClickSpark from './ClickSpark';
 import { LandingNavbar } from './LandingNavbar';
-import KdpCalculator from './KdpCalculator';
+
 import { LegalModal } from './LegalModal';
 import type { LegalPage } from './LegalModal';
 
@@ -35,7 +35,7 @@ const TEAM = [
   },
 ];
 
-const CARD_SIZE = '280px';
+
 
 const getRoadmapPhases = (isDe: boolean) => [
   {
@@ -148,6 +148,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
   };
   const [openFaq, setOpenFaq] = React.useState<number | null>(null);
   const [legalPage, setLegalPage] = React.useState<LegalPage>(null);
+  const [showStickyCta, setShowStickyCta] = React.useState(false);
+  const [stickyCtaDismissed, setStickyCtaDismissed] = React.useState(false);
   const [cookieConsent, setCookieConsent] = React.useState<boolean>(() => {
     try {
       const val = localStorage.getItem('cookie-consent');
@@ -156,6 +158,26 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
       return false;
     }
   });
+
+  React.useEffect(() => {
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentScroll = window.scrollY;
+          setShowStickyCta(prev => {
+            if (currentScroll > 750) return true;
+            if (currentScroll < 550) return false;
+            return prev;
+          });
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const toggleFaq = (index: number) => {
     setOpenFaq((prev: number | null) => prev === index ? null : index);
@@ -232,7 +254,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
           style={{ 
-            fontSize: 'clamp(46px, 6.5vw, 92px)', 
+            fontSize: 'clamp(28px, 6.8vw, 92px)', 
             fontWeight: 900, 
             lineHeight: 1.02, 
             letterSpacing: '-0.05em', 
@@ -242,7 +264,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
             textTransform: 'uppercase'
           }}
         >
-          {isDe ? <>Ein echtes Buch <br/> in <span className="slogan-accent">3 Minuten</span></> : <>A real book <br/> in <span className="slogan-accent">3 Minutes</span></>}
+          {isDe ? (
+            <>
+              <span className="hero-title-line" style={{ display: 'inline-block' }}>Upload fertige Bücher</span> <br/>
+              <span>in <span className="slogan-accent">3 Minuten</span></span>
+            </>
+          ) : (
+            <>
+              <span className="hero-title-line" style={{ display: 'inline-block' }}>Upload ready books</span> <br/>
+              <span>in <span className="slogan-accent">3 Minutes</span></span>
+            </>
+          )}
         </motion.h1>
 
 
@@ -328,6 +360,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
           </button>
         </motion.div>
 
+
+
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -335,56 +369,59 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
           style={{ 
             marginTop: '32px', 
             display: 'flex', 
+            flexDirection: 'column',
             alignItems: 'center', 
             justifyContent: 'center',
-            gap: '16px', 
-            flexWrap: 'wrap',
+            gap: '8px', 
             background: theme === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', 
-            padding: '12px 24px', 
-            borderRadius: '30px', 
+            padding: '16px 24px', 
+            borderRadius: '24px', 
             border: theme === 'dark' ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)',
-            boxShadow: theme === 'dark' ? '0 10px 30px rgba(0,0,0,0.2)' : '0 10px 30px rgba(0,0,0,0.02)'
+            boxShadow: theme === 'dark' ? '0 10px 30px rgba(0,0,0,0.2)' : '0 10px 30px rgba(0,0,0,0.02)',
+            maxWidth: '380px',
+            margin: '32px auto 0'
           }}
         >
-          {/* Overlapping Avatars */}
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            {[
-              'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=128&h=128&q=80',
-              'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=128&h=128&q=80',
-              'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=128&h=128&q=80',
-              'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=128&h=128&q=80'
-            ].map((src, idx) => (
-              <img
-                key={idx}
-                src={src}
-                alt={`User ${idx + 1}`}
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  border: theme === 'dark' ? '2px solid #0a0a0a' : '2px solid #ffffff',
-                  marginLeft: idx > 0 ? '-10px' : '0px',
-                  objectFit: 'cover',
-                  boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
-                  zIndex: 4 - idx
-                }}
-              />
-            ))}
-          </div>
-
-          {/* Stars & Text */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px', textAlign: 'left' }}>
+          {/* Stars & Avatars Side-by-Side */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{ display: 'flex', gap: '2px' }}>
               {[...Array(5)].map((_, i) => (
-                <svg key={i} width="14" height="14" viewBox="0 0 24 24" fill="#fbbf24" stroke="#fbbf24" strokeWidth="1">
+                <svg key={i} width="15" height="15" viewBox="0 0 24 24" fill="#fbbf24" stroke="#fbbf24" strokeWidth="1">
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                 </svg>
               ))}
             </div>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: theme === 'dark' ? '#a3a3a3' : '#4b5563', lineHeight: 1.2 }}>
-              {isDe ? <>Bereits <strong style={{ color: theme === 'dark' ? '#fff' : '#1a1a1a', fontWeight: 800 }}>1.350+</strong> Bücher erfolgreich veröffentlicht</> : <><strong style={{ color: theme === 'dark' ? '#fff' : '#1a1a1a', fontWeight: 800 }}>1,350+</strong> books successfully published</>}
-            </span>
+
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              {[
+                'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=128&h=128&q=80',
+                'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=128&h=128&q=80',
+                'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=128&h=128&q=80',
+                'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=128&h=128&q=80'
+              ].map((src, idx) => (
+                <img
+                  key={idx}
+                  src={src}
+                  alt={`User ${idx + 1}`}
+                  style={{
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '50%',
+                    border: theme === 'dark' ? '2px solid #0a0a0a' : '2px solid #ffffff',
+                    marginLeft: idx > 0 ? '-8px' : '0px',
+                    objectFit: 'cover',
+                    boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
+                    zIndex: 4 - idx
+                  }}
+                />
+              ))}
+            </div>
           </div>
+
+          {/* Publishing count text centered below */}
+          <span style={{ fontSize: '13px', fontWeight: 600, color: theme === 'dark' ? '#a3a3a3' : '#4b5563', lineHeight: 1.3, textAlign: 'center' }}>
+            {isDe ? <>Bereits <strong style={{ color: theme === 'dark' ? '#fff' : '#1a1a1a', fontWeight: 800 }}>1.350+</strong> Bücher erfolgreich veröffentlicht</> : <><strong style={{ color: theme === 'dark' ? '#fff' : '#1a1a1a', fontWeight: 800 }}>1,350+</strong> books successfully published</>}
+          </span>
         </motion.div>
 
         {/* Cover Preview Mini */}
@@ -454,12 +491,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
 
       {/* AI Slop Problem Section */}
       <section style={{ 
-        background: '#ffffff', 
-        color: '#1a1a1a', 
+        background: theme === 'dark' ? '#0a0a0a' : '#f9fafb', 
+        color: theme === 'dark' ? '#ffffff' : '#111827', 
         padding: '100px 24px', 
         position: 'relative', 
         zIndex: 10,
-        borderBottom: '1px solid rgba(0, 0, 0, 0.05)'
+        borderBottom: `1px solid ${theme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'}`,
+        transition: 'background-color 0.3s ease'
       }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <motion.div
@@ -469,7 +507,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
             transition={{ duration: 0.6 }}
             style={{ textAlign: 'center', marginBottom: '60px' }}
           >
-            <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, letterSpacing: '-0.02em', margin: '0', color: '#1a1a1a' }}>
+            <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, letterSpacing: '-0.02em', margin: '0', color: theme === 'dark' ? '#ffffff' : '#111827' }}>
               {isDe ? 'Du kennst das:' : 'You know this:'}
             </h2>
           </motion.div>
@@ -488,14 +526,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
               ]).map((text, i) => (
                 <motion.div 
                   key={i}
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={{ opacity: 0, x: -30 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: i * 0.1 }}
+                  transition={{ duration: 0.5, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
                   className="slop-tag"
+                  style={{
+                    background: theme === 'dark' ? 'rgba(255, 255, 255, 0.03)' : '#ffffff',
+                    border: theme === 'dark' ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.06)',
+                    color: theme === 'dark' ? '#e4e4e7' : '#374151',
+                    boxShadow: theme === 'dark' ? '0 10px 30px rgba(0, 0, 0, 0.3)' : '0 10px 30px rgba(0, 0, 0, 0.02)',
+                    borderRadius: '16px',
+                    padding: '16px 24px'
+                  }}
                 >
-                  <div className="slop-icon">
-                    <Frown size={14} />
+                  <div className="slop-icon" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444' }}>
+                    <Frown size={15} />
                   </div>
                   <span>{text}</span>
                 </motion.div>
@@ -504,14 +550,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
             
             {/* Center Image Placeholder */}
             <div className="slop-center">
-              <div className="slop-circle-bg">
-                <div className="slop-circle-inner">
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', color: '#9ca3af' }}>
-                    <Search size={32} />
-                    <span style={{ fontSize: '12px', fontWeight: 600 }}>KI-SLOP</span>
+              <motion.div 
+                className="slop-circle-bg"
+                animate={{ scale: [1, 1.03, 1] }}
+                transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+                style={{
+                  background: theme === 'dark' ? 'rgba(239, 68, 68, 0.03)' : 'rgba(239, 68, 68, 0.01)',
+                  border: `1px solid ${theme === 'dark' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(239, 68, 68, 0.08)'}`,
+                  boxShadow: theme === 'dark' ? '0 0 40px rgba(239, 68, 68, 0.05)' : 'none'
+                }}
+              >
+                <div className="slop-circle-inner" style={{
+                  background: theme === 'dark' ? '#141414' : '#ffffff',
+                  border: `1px solid ${theme === 'dark' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)'}`,
+                  boxShadow: theme === 'dark' ? '0 10px 40px rgba(0, 0, 0, 0.4)' : '0 10px 40px rgba(0, 0, 0, 0.02)'
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', color: theme === 'dark' ? '#ef4444' : '#ef4444' }}>
+                    <Search size={36} strokeWidth={2} style={{ filter: 'drop-shadow(0 0 8px rgba(239,68,68,0.3))' }} />
+                    <span style={{ fontSize: '13px', fontWeight: 800, letterSpacing: '0.05em', color: theme === 'dark' ? '#f87171' : '#b91c1c' }}>KI-SLOP</span>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </div>
             
             {/* Right Column */}
@@ -527,14 +586,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
               ]).map((text, i) => (
                 <motion.div 
                   key={i}
-                  initial={{ opacity: 0, x: 20 }}
+                  initial={{ opacity: 0, x: 30 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: i * 0.1 }}
+                  transition={{ duration: 0.5, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
                   className="slop-tag"
+                  style={{
+                    background: theme === 'dark' ? 'rgba(255, 255, 255, 0.03)' : '#ffffff',
+                    border: theme === 'dark' ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.06)',
+                    color: theme === 'dark' ? '#e4e4e7' : '#374151',
+                    boxShadow: theme === 'dark' ? '0 10px 30px rgba(0, 0, 0, 0.3)' : '0 10px 30px rgba(0, 0, 0, 0.02)',
+                    borderRadius: '16px',
+                    padding: '16px 24px'
+                  }}
                 >
-                  <div className="slop-icon">
-                    <Frown size={14} />
+                  <div className="slop-icon" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444' }}>
+                    <Frown size={15} />
                   </div>
                   <span>{text}</span>
                 </motion.div>
@@ -544,98 +611,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
         </div>
       </section>
 
-      {/* Calculator Section (Hook) */}
-      <section id="rechner" style={{ position: 'relative', zIndex: 10, padding: '20px 24px 48px', maxWidth: '1100px', margin: '0 auto', scrollMarginTop: '100px' }}>
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          style={{ textAlign: 'center', marginBottom: '40px' }}
-        >
-          <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, letterSpacing: '-0.03em', margin: '0', color: theme === 'dark' ? '#fff' : '#1a1a1a' }}>
-            {isDe ? 'Das könntest DU sein!' : 'This could be YOU!'}
-          </h2>
-        </motion.div>
-        
-        <div style={{ background: '#0a0a0a', borderRadius: '24px', border: '1px solid #262626', overflow: 'hidden', boxShadow: theme === 'dark' ? '0 25px 50px -12px rgba(0, 0, 0, 0.5)' : '0 25px 50px -12px rgba(0, 0, 0, 0.15)' }}>
-          <KdpCalculator theme="dark" language={language} />
-        </div>
-      </section>
-
-      {/* Pain & Agitation Section */}
-      <section style={{ position: 'relative', zIndex: 10, padding: '80px 24px', maxWidth: '900px', margin: '0 auto' }}>
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          style={{ textAlign: 'center' }}
-        >
-          <h2 style={{ fontSize: 'clamp(32px, 5vw, 48px)', fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 40px', color: theme === 'dark' ? '#fff' : '#1a1a1a' }}>
-            {isDe ? 'KDP war bisher ein Albtraum.' : 'KDP used to be a nightmare.'}
-          </h2>
-          
-          <div style={{ 
-            background: theme === 'dark' ? 'rgba(255, 255, 255, 0.02)' : '#ffffff',
-            border: theme === 'dark' ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid rgba(0, 0, 0, 0.05)',
-            borderRadius: '24px',
-            overflow: 'hidden',
-            boxShadow: theme === 'dark' ? '0 20px 40px -10px rgba(0,0,0,0.5)' : '0 20px 40px -10px rgba(0,0,0,0.05)'
-          }}>
-            {/* Headers */}
-            <div className="comparison-header-grid" style={{ borderBottom: theme === 'dark' ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid rgba(0, 0, 0, 0.05)' }}>
-              <div style={{ padding: '24px', textAlign: 'center', background: theme === 'dark' ? 'rgba(239, 68, 68, 0.05)' : 'rgba(239, 68, 68, 0.02)' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#ef4444', margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                  <X size={20} strokeWidth={3} /> {isDe ? 'Ohne BookLab Studio' : 'Without BookLab Studio'}
-                </h3>
-              </div>
-              <div style={{ padding: '24px', textAlign: 'center', background: theme === 'dark' ? 'rgba(34, 197, 94, 0.05)' : 'rgba(34, 197, 94, 0.02)', position: 'relative' }}>
-                <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '1px', background: theme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)' }} />
-                <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#22c55e', margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                  <Check size={20} strokeWidth={3} /> {isDe ? 'Mit BookLab Studio' : 'With BookLab Studio'}
-                </h3>
-              </div>
-            </div>
-
-            {/* Rows */}
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {(isDe ? [
-                { bad: 'Stundenlanges Scrollen durch Amazon ohne verlässliche Daten', good: 'Profitable Nischen in Sekunden durch KI-Analyse finden' },
-                { bad: 'Hunderte Euros für Ghostwriter & wochenlanges Warten', good: 'Hochwertige Bücher in 3 Minuten generieren lassen' },
-                { bad: 'Kaputte Ränder und ständige KDP-Fehlermeldungen', good: 'Perfektes Print-Layout per Klick (KDP-kompatibel)' },
-                { bad: 'Teure Designer bezahlen oder stundenlanger Canva-Frust', good: 'Professionelle, verkaufspsychologische Cover sofort erstellt' }
-              ] : [
-                { bad: 'Hours of scrolling Amazon without reliable data', good: 'Find profitable niches in seconds with AI analysis' },
-                { bad: 'Hundreds of dollars for ghostwriters & weeks of waiting', good: 'Generate high-quality books in 3 minutes' },
-                { bad: 'Broken margins and constant KDP error messages', good: 'Perfect print layout with one click (KDP-compatible)' },
-                { bad: 'Pay expensive designers or hours of Canva frustration', good: 'Professional, sales-optimized covers created instantly' }
-              ]).map((row, i, arr) => (
-                <div key={i} className="comparison-row-grid" style={{ 
-                  borderBottom: i < arr.length - 1 ? (theme === 'dark' ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid rgba(0, 0, 0, 0.05)') : 'none',
-                  background: i % 2 === 0 ? 'transparent' : (theme === 'dark' ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.01)')
-                }}>
-                  {/* Bad */}
-                  <div style={{ padding: '24px', display: 'flex', alignItems: 'flex-start', gap: '16px', color: theme === 'dark' ? '#a3a3a3' : '#666', fontSize: '15px', lineHeight: 1.6 }}>
-                    <X size={18} strokeWidth={2.5} color="#ef4444" style={{ flexShrink: 0, marginTop: '3px', opacity: 0.8 }} />
-                    <span style={{ fontWeight: 500 }}>{row.bad}</span>
-                  </div>
-                  {/* Good */}
-                  <div style={{ padding: '24px', display: 'flex', alignItems: 'flex-start', gap: '16px', color: theme === 'dark' ? '#e5e5e5' : '#1a1a1a', fontSize: '15px', lineHeight: 1.6, position: 'relative' }}>
-                    <div className="comparison-row-divider" style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '1px', background: theme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)' }} />
-
-                    <Check size={18} strokeWidth={3} color="#22c55e" style={{ flexShrink: 0, marginTop: '3px' }} />
-                    <span style={{ fontWeight: 600 }}>{row.good}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* AI Content Showcase — Tilted Cards */}
-      <section id="produkt" style={{ position: 'relative', zIndex: 10, padding: '40px 24px 80px', maxWidth: '1200px', margin: '0 auto', scrollMarginTop: '100px' }}>
+      {/* Before / After Comparison Section */}
+      <section id="vergleich" style={{ position: 'relative', zIndex: 10, padding: '20px 24px 80px', maxWidth: '1200px', margin: '0 auto', scrollMarginTop: '100px' }}>
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -643,78 +620,251 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           style={{ textAlign: 'center', marginBottom: '48px' }}
         >
-          <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: theme === 'dark' ? '#737373' : '#666', marginBottom: '10px' }}>
-            {isDe ? 'So sieht dein Buch aus' : 'See what your book looks like'}
-          </div>
-          <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 12px', color: theme === 'dark' ? '#fff' : '#1a1a1a' }}>
-            {isDe ? 'KI-Content, der wie ein echtes Buch wirkt' : 'AI content that reads like a real book'}
+          <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 12px', color: theme === 'dark' ? '#fff' : '#1a1a1a' }}>
+            {isDe ? 'Der Unterschied ist' : 'The difference is'}{' '}
+            <span style={{ color: '#3b82f6', textDecoration: 'underline', textDecorationThickness: '3px', textUnderlineOffset: '4px' }}>
+              {isDe ? 'offensichtlich' : 'obvious'}
+            </span>
           </h2>
-          <p style={{ color: '#a3a3a3', fontSize: '16px', margin: '0 auto', lineHeight: 1.6, maxWidth: '560px' }}>
-            {isDe ? 'Roher KI-Text vs. professionelles Buchlayout — der Unterschied auf einen Blick.' : 'Raw AI text vs. professional book layout — the difference at a glance.'}
+          <p style={{ color: theme === 'dark' ? '#9ca3af' : '#6b7280', fontSize: '18px', margin: 0 }}>
+            {isDe ? 'ChatGPT & andere KI vs. BookLab Studio' : 'ChatGPT & other AI vs. BookLab Studio'}
           </p>
         </motion.div>
 
-        <div className="landing-showcase-grid">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', alignItems: 'start', maxWidth: '900px', margin: '0 auto' }}>
+          
+          {/* Left: ChatGPT / other AI */}
           <motion.div
-            className="landing-showcase-card-wrap left"
-            initial={{ opacity: 0, x: -40 }}
+            initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: '-60px' }}
-            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            viewport={{ once: true, margin: '-80px' }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           >
-            <TiltedCard
-              captionText="Roher KI-Output"
-              containerHeight={CARD_SIZE}
-              containerWidth={CARD_SIZE}
-              imageHeight={CARD_SIZE}
-              imageWidth={CARD_SIZE}
-              rotateAmplitude={12}
-              scaleOnHover={1.06}
-              showMobileWarning={false}
-              showTooltip
-              displayOverlayContent
-              overlayContent={
-                <span className="landing-compare-badge bad" aria-label="So nicht">
-                  <X size={20} strokeWidth={3} />
-                </span>
-              }
-            >
-              <LandingBadPagePreview />
-            </TiltedCard>
-            <span className="landing-compare-label bad">{isDe ? 'So nicht' : 'Not like this'}</span>
+            <div style={{ marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{
+                background: '#dc2626',
+                color: '#fff',
+                fontSize: '12px',
+                fontWeight: 700,
+                padding: '7px 14px',
+                borderRadius: '8px',
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '7px',
+                boxShadow: 'none'
+              }}>
+                <X size={13} strokeWidth={3} />
+                {isDe ? 'So nicht' : 'Not like this'}
+              </span>
+            </div>
+            <div style={{
+              borderRadius: '12px',
+              overflow: 'hidden',
+              border: '1px solid rgba(255,255,255,0.08)',
+              aspectRatio: '210 / 297',
+            }}>
+              <img
+                src="/Bild 03.07.26 um 02.36.jpg"
+                alt="ChatGPT KI Buchvorschau"
+                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block' }}
+              />
+            </div>
           </motion.div>
 
+          {/* Right: BookLab Studio */}
           <motion.div
-            className="landing-showcase-card-wrap right"
-            initial={{ opacity: 0, x: 40 }}
+            initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: '-60px' }}
-            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            viewport={{ once: true, margin: '-80px' }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
           >
-            <TiltedCard
-              captionText="BookLab Studio · KDP-ready"
-              containerHeight={CARD_SIZE}
-              containerWidth={CARD_SIZE}
-              imageHeight={CARD_SIZE}
-              imageWidth={CARD_SIZE}
-              rotateAmplitude={14}
-              scaleOnHover={1.08}
-              showMobileWarning={false}
-              showTooltip
-              displayOverlayContent
-              overlayContent={
-                <span className="landing-compare-badge good" aria-label="So soll es sein">
-                  <Check size={20} strokeWidth={3} />
-                </span>
-              }
-            >
-              <LandingBookPagePreview />
-            </TiltedCard>
-            <span className="landing-compare-label good">{isDe ? 'So soll es sein' : 'This is the way'}</span>
+            <div style={{ marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{
+                background: '#1d4ed8',
+                color: '#fff',
+                fontSize: '12px',
+                fontWeight: 700,
+                padding: '7px 14px',
+                borderRadius: '8px',
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '7px',
+                boxShadow: 'none'
+              }}>
+                <Check size={13} strokeWidth={3} />
+                {isDe ? 'So soll es sein' : 'This is the way'}
+              </span>
+            </div>
+            <div style={{
+              borderRadius: '12px',
+              overflow: 'hidden',
+              border: '1px solid rgba(255,255,255,0.08)',
+              aspectRatio: '210 / 297',
+            }}>
+              <img
+                src="/Bild 03.07.26 um 02.41.jpg"
+                alt="BookLab Studio Buchvorschau"
+                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block' }}
+              />
+            </div>
           </motion.div>
+
         </div>
       </section>
 
+      {/* SaaS Dashboard Mockup Showcase */}
+      <section style={{ 
+        position: 'relative', 
+        zIndex: 10, 
+        padding: '100px 24px', 
+        maxWidth: '1200px', 
+        margin: '0 auto',
+        borderBottom: `1px solid ${theme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'}`
+      }}>
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          style={{ textAlign: 'center', marginBottom: '64px' }}
+        >
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#2563eb', marginBottom: '16px' }}>
+            {isDe ? 'DAS WORKSPACE' : 'THE WORKSPACE'}
+          </div>
+          <h2 style={{ fontSize: 'clamp(32px, 5vw, 48px)', fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 16px', color: theme === 'dark' ? '#fff' : '#1a1a1a' }}>
+            {isDe ? 'Ein Blick ins Studio' : 'A Look Inside the Studio'}
+          </h2>
+          <p style={{ color: theme === 'dark' ? '#a3a3a3' : '#6b7280', fontSize: '16px', margin: '0 auto', maxWidth: '580px', lineHeight: 1.6 }}>
+            {isDe 
+              ? 'Kein mühsames Herumschieben in Word. BookLab Studio vereint Schreibstudio, Struktur und KDP-Formatierung in einer Oberfläche.' 
+              : 'No painful tweaking in Word. BookLab Studio combines writing studio, structure, and KDP formatting in one screen.'}
+          </p>
+        </motion.div>
+
+        {/* Circular Gallery instead of Dashboard Mockup */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          style={{ height: '600px', position: 'relative', overflow: 'hidden' }}
+        >
+          <CircularGallery
+            bend={1}
+            textColor={theme === 'dark' ? '#ffffff' : '#111827'}
+            borderRadius={0.05}
+            scrollEase={0.05}
+            fontUrl="https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap"
+            font="bold 30px Poppins"
+            scrollSpeed={2}
+            isDe={isDe}
+            items={[
+              { image: "/foto1liabary.png", text: isDe ? "unsere Bibliothek" : "our library" },
+              { image: "/foto2schreibstudiobildkaursell.png", text: isDe ? "unser Schreibstudio" : "our Writing Studio" },
+              { image: "/foto1liabary.png", text: isDe ? "unsere Bibliothek" : "our library" },
+              { image: "/foto2schreibstudiobildkaursell.png", text: isDe ? "unser Schreibstudio" : "our Writing Studio" },
+              { image: "/foto1liabary.png", text: isDe ? "unsere Bibliothek" : "our library" },
+              { image: "/foto2schreibstudiobildkaursell.png", text: isDe ? "unser Schreibstudio" : "our Writing Studio" }
+            ]}
+          />
+        </motion.div>
+      </section>
+
+
+
+      {/* Pain & Agitation Section (Comparison Table) */}
+      <section style={{ position: 'relative', zIndex: 10, padding: '100px 24px 120px', maxWidth: '1000px', margin: '0 auto' }}>
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <div style={{ textAlign: 'center', marginBottom: '56px' }}>
+            <h2 style={{ fontSize: 'clamp(32px, 5vw, 48px)', fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 14px', color: theme === 'dark' ? '#fff' : '#1a1a1a' }}>
+              {isDe ? 'KDP war bisher ein Albtraum.' : 'KDP used to be a nightmare.'}
+            </h2>
+            <p style={{ color: theme === 'dark' ? '#71717a' : '#6b7280', fontSize: '16px', margin: 0 }}>
+              {isDe ? 'BookLab Studio ändert das — für immer.' : 'BookLab Studio changes that — for good.'}
+            </p>
+          </div>
+
+          {/* Column headers */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '16px', padding: '0 4px' }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <span style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', fontSize: '11px', fontWeight: 800, padding: '6px 12px', borderRadius: '6px', letterSpacing: '0.08em', textTransform: 'uppercase', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                <X size={12} strokeWidth={3} style={{ display: 'inline', marginRight: '6px', verticalAlign: 'middle' }} />
+                {isDe ? 'Ohne BookLab Studio' : 'Without BookLab Studio'}
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <span style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', fontSize: '11px', fontWeight: 800, padding: '6px 12px', borderRadius: '6px', letterSpacing: '0.08em', textTransform: 'uppercase', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                <Check size={12} strokeWidth={3} style={{ display: 'inline', marginRight: '6px', verticalAlign: 'middle' }} />
+                {isDe ? 'Mit BookLab Studio' : 'With BookLab Studio'}
+              </span>
+            </div>
+          </div>
+
+          {/* Rows */}
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {(isDe ? [
+              { bad: 'Stunden damit verbringen, Kapitel manuell zu schreiben oder zu diktieren', good: 'Vollständige Buchkapitel in Sekunden mit dem Schreibstudio generieren' },
+              { bad: 'KDP lehnt dein PDF wegen falscher Ränder immer wieder ab', good: 'KDP-konformes Print-Layout auf Knopfdruck — kein Nacharbeiten nötig' },
+              { bad: 'Kapitel ohne roten Faden — KI vergisst vorherige Inhalte sofort', good: 'Brain-System merkt sich jedes Kapitel und hält den Stil konsistent' },
+              { bad: 'Teure Designer oder stundenlanger Canva-Frust für das Cover', good: 'Professionelle, druckfertige Cover direkt in der Mediathek erstellen' },
+              { bad: 'Manuelles Formatieren von Absätzen, Einzügen und Überschriften', good: 'Automatisches Buchlayout: Blocksatz, Drop Caps, Zitate — alles perfekt' },
+            ] : [
+              { bad: 'Spending hours manually writing or dictating every chapter', good: 'Generate complete book chapters in seconds with the Writing Studio' },
+              { bad: 'KDP keeps rejecting your PDF because of wrong margins', good: 'KDP-ready print layout at the click of a button — no rework needed' },
+              { bad: 'Chapters without a thread — AI forgets previous content instantly', good: 'Brain system remembers every chapter and keeps the style consistent' },
+              { bad: 'Expensive designers or hours of Canva frustration for your cover', good: 'Create professional, print-ready covers directly in the Media Library' },
+              { bad: 'Manually formatting paragraphs, indents and headings', good: 'Automatic book layout: justified text, drop caps, quotes — all perfect' },
+            ]).map((row, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-20px' }}
+                transition={{ duration: 0.5, delay: i * 0.08 }}
+                style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: '1fr 1fr', 
+                  gap: '24px', 
+                  borderBottom: i < 4 ? `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` : 'none',
+                  padding: '24px 0'
+                }}
+              >
+                {/* Bad */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '14px',
+                  paddingRight: '12px'
+                }}>
+                  <div style={{ width: '3px', minHeight: '32px', background: '#dc2626', borderRadius: '4px', alignSelf: 'stretch', flexShrink: 0 }} />
+                  <X size={16} strokeWidth={2.5} color="#ef4444" style={{ flexShrink: 0, marginTop: '4px' }} />
+                  <span style={{ fontSize: '15px', lineHeight: 1.6, color: theme === 'dark' ? '#a1a1aa' : '#4b5563', fontWeight: 400 }}>{row.bad}</span>
+                </div>
+                {/* Good */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '14px',
+                  paddingLeft: '12px'
+                }}>
+                  <div style={{ width: '3px', minHeight: '32px', background: '#3b82f6', borderRadius: '4px', alignSelf: 'stretch', flexShrink: 0 }} />
+                  <Check size={16} strokeWidth={3} color="#3b82f6" style={{ flexShrink: 0, marginTop: '4px' }} />
+                  <span style={{ fontSize: '15px', lineHeight: 1.6, color: theme === 'dark' ? '#e5e5e5' : '#111827', fontWeight: 600 }}>{row.good}</span>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      </section>
 
 
 
@@ -1296,6 +1446,91 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
               >
                 {isDe ? 'Akzeptieren' : 'Accept'}
               </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* Sticky Bottom CTA Bar */}
+      <AnimatePresence>
+        {showStickyCta && !stickyCtaDismissed && (
+          <motion.div
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 80, opacity: 0 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            className={`sticky-cta-banner theme-${theme}`}
+            style={{
+              background: theme === 'dark' ? 'rgba(15, 15, 15, 0.88)' : 'rgba(255, 255, 255, 0.94)',
+              border: theme === 'dark' ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 0, 0, 0.08)',
+              boxShadow: theme === 'dark' ? '0 20px 45px rgba(0, 0, 0, 0.5)' : '0 20px 45px rgba(0, 0, 0, 0.06)',
+            }}
+          >
+            <div className="sticky-cta-banner-text-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span className="sticky-cta-banner-title" style={{ fontSize: '13.5px', fontWeight: 800, color: theme === 'dark' ? '#fff' : '#111' }}>
+                  BookLab Studio Lifetime Pass
+                </span>
+                <span className="sticky-cta-banner-desc" style={{ fontSize: '12px', color: theme === 'dark' ? '#a3a3a3' : '#666' }}>
+                  {isDe ? 'Lebenslanger Zugriff · Alle künftigen Updates' : 'Lifetime Access · All Future Updates'}
+                </span>
+              </div>
+            </div>
+
+            <div className="sticky-cta-banner-actions">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
+                <span style={{ textDecoration: 'line-through', opacity: 0.5, color: theme === 'dark' ? '#737373' : '#888' }}>300$</span>
+                <span style={{ fontWeight: 900, color: '#22c55e' }}>199$</span>
+              </div>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  onClick={() => window.location.href = 'https://book24studio.gumroad.com/l/booklabstudio'}
+                  style={{
+                    background: '#2563eb',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '10px',
+                    padding: '10px 18px',
+                    fontSize: '13px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 14px rgba(37, 99, 213, 0.35)',
+                    transition: 'all 0.2s',
+                    whiteSpace: 'nowrap'
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = '#1d4ed8';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = '#2563eb';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  {isDe ? 'Jetzt sichern' : 'Get Access'}
+                </button>
+
+                <button
+                  onClick={() => setStickyCtaDismissed(true)}
+                  title={isDe ? 'Schließen' : 'Close'}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: theme === 'dark' ? '#737373' : '#888',
+                    cursor: 'pointer',
+                    padding: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: '8px',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.color = theme === 'dark' ? '#fff' : '#111'}
+                  onMouseLeave={e => e.currentTarget.style.color = theme === 'dark' ? '#737373' : '#888'}
+                >
+                  <X size={16} />
+                </button>
+              </div>
             </div>
           </motion.div>
         )}

@@ -7,7 +7,11 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "brain:index": "node scripts/brain-worker.mjs --once",
+    "brain:worker": "node scripts/brain-worker.mjs --loop",
+    "brain:worker:install": "node scripts/install-brain-worker.mjs",
+    "brain:worker:uninstall": "node scripts/uninstall-brain-worker.mjs"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

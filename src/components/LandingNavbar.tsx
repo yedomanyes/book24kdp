@@ -24,7 +24,8 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
   const [mobileOpen, setMobileOpen] = useState(false);
   const isDe = language === 'de';
   const navItems = [
-    { label: isDe ? 'Produkt' : 'Product', target: 'produkt' },
+    { label: isDe ? 'Vergleich' : 'Comparison', target: 'vergleich' },
+    { label: 'Roadmap', target: 'roadmap' },
     { label: 'Team', target: 'team' },
   ];
 
@@ -138,11 +139,11 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
-            className="landing-nav-mobile"
-            initial={{ opacity: 0, y: -8, height: 0 }}
-            animate={{ opacity: 1, y: 0, height: 'auto' }}
-            exit={{ opacity: 0, y: -8, height: 0 }}
-            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            className={`landing-nav-mobile theme-${theme}`}
+            initial={{ opacity: 0, scale: 0.96, y: -12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: -12 }}
+            transition={{ type: 'spring', damping: 26, stiffness: 360 }}
           >
             <div className="landing-nav-mobile-promo-badge">
               <RotatingText
