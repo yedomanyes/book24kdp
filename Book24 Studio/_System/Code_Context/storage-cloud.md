@@ -2,7 +2,7 @@
 type: "code-context-section"
 id: "storage-cloud"
 title: "Storage, Supabase & Cloud"
-updatedAt: "2026-07-03T16:57:33.053Z"
+updatedAt: "2026-07-03T17:03:33.095Z"
 ---
 
 # Storage, Supabase & Cloud

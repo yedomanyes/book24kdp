@@ -45,13 +45,13 @@
     "semantic_hash": "2b1814804e9694df3b2c199f6e8e6444"
   },
   "package.json": {
-    "mtime": 1782952786.637724,
-    "ast_hash": "cda8815481b1adf8df1399098137a19d",
+    "mtime": 1783078664.9210997,
+    "ast_hash": "f46b15e7e43a2e6b93fad14701736ada",
     "semantic_hash": ""
   },
   "src/App.tsx": {
-    "mtime": 1783021824.221845,
-    "ast_hash": "20a3776aadedd5d0239fb95e69e8607f",
+    "mtime": 1783097804.2726495,
+    "ast_hash": "4ab7325e73a945c3df6bf9cf10bd7920",
     "semantic_hash": ""
   },
   "src/components/Aurora.tsx": {
@@ -60,19 +60,19 @@
     "semantic_hash": "57359b07ddbe0d7071dcc153b25283c5"
   },
   "src/components/Auth.tsx": {
-    "mtime": 1783021049.4526098,
-    "ast_hash": "aae034f161779183c942daa994e40736",
+    "mtime": 1783097811.8524005,
+    "ast_hash": "e03d1c6ec8891cd68715caea406fa616",
     "semantic_hash": ""
   },
   "src/components/BrainDashboard.tsx": {
-    "mtime": 1783021368.6423392,
-    "ast_hash": "b68e1c2cc91cfc72c80206c1493655ec",
+    "mtime": 1783085671.9719527,
+    "ast_hash": "9491def7af12a0a8b9a0e9822dd2a512",
     "semantic_hash": ""
   },
   "src/components/ClickSpark.tsx": {
-    "mtime": 1782491261.9883065,
-    "ast_hash": "0d67e6665a24af9f189c9ca43497eb9b",
-    "semantic_hash": "0d67e6665a24af9f189c9ca43497eb9b"
+    "mtime": 1783041066.412193,
+    "ast_hash": "e58ade56d3a0b5c50b56601b2c0df9b4",
+    "semantic_hash": ""
   },
   "src/components/GooeyNav.tsx": {
     "mtime": 1782995834.50453,
@@ -85,13 +85,13 @@
     "semantic_hash": ""
   },
   "src/components/LandingNavbar.tsx": {
-    "mtime": 1783021368.6422324,
-    "ast_hash": "bf0b2debbf47ed1b3ac49e6cdcdfcfe4",
+    "mtime": 1783080147.5155828,
+    "ast_hash": "62ee9d4ed436ba428966493d07b62483",
     "semantic_hash": ""
   },
   "src/components/LandingPage.tsx": {
-    "mtime": 1783021579.0712883,
-    "ast_hash": "249b5cd736bb8e6685e2b72808a20756",
+    "mtime": 1783080220.3894413,
+    "ast_hash": "203dd98dc54e8433f0da771969846c73",
     "semantic_hash": ""
   },
   "src/components/NicheFinderDashboard.tsx": {
@@ -135,8 +135,8 @@
     "semantic_hash": "787e5a07efeb2bf6209d5937195f2f68"
   },
   "src/services/GeminiService.ts": {
-    "mtime": 1782954938.4837186,
-    "ast_hash": "c00a390c74fe2902a7eef7b78c57ac0c",
+    "mtime": 1783085665.2214887,
+    "ast_hash": "ab5e6b7029bcfa51576fe372b0944989",
     "semantic_hash": ""
   },
   "src/services/NicheService.ts": {
@@ -145,18 +145,18 @@
     "semantic_hash": ""
   },
   "src/services/StorageService.ts": {
-    "mtime": 1782909335.4205117,
-    "ast_hash": "f1a59032f11563e38118d26a84470ba9",
+    "mtime": 1783088288.4451568,
+    "ast_hash": "a4ec8b373bb9684369c5f65ce2c84d0b",
     "semantic_hash": ""
   },
   "src/services/brain/BrainService.ts": {
-    "mtime": 1782670723.386324,
-    "ast_hash": "cf00b4de935182c82d748904c1be3fc9",
-    "semantic_hash": "cf00b4de935182c82d748904c1be3fc9"
+    "mtime": 1783085507.8914635,
+    "ast_hash": "e7b61752ebc7e4b0081f830424f8ea82",
+    "semantic_hash": ""
   },
   "src/services/brain/ObsidianSyncService.ts": {
-    "mtime": 1782825866.3827994,
-    "ast_hash": "005c1848689c4edec4852fc4908430c6",
+    "mtime": 1783078905.5419939,
+    "ast_hash": "c15e473759056f47132b03d692ca7986",
     "semantic_hash": ""
   },
   "src/services/cmie/BookMemoryStore.ts": {
@@ -205,9 +205,9 @@
     "semantic_hash": "6bfb5da1898f2ee753d8f669d5f08883"
   },
   "src/types/brain.ts": {
-    "mtime": 1782648675.9980145,
-    "ast_hash": "28d5eb92766a35397d5e4480b3ced6c0",
-    "semantic_hash": "28d5eb92766a35397d5e4480b3ced6c0"
+    "mtime": 1783085335.5059383,
+    "ast_hash": "67707087ff491ea5d12a815a8d063de7",
+    "semantic_hash": ""
   },
   "src/types/cmie.ts": {
     "mtime": 1782473423.5551355,
@@ -310,28 +310,28 @@
     "semantic_hash": "88439104b3c207f17d33ef3160e3b080"
   },
   "Book24 Studio/.obsidian/app.json": {
-    "mtime": 1782670369.5480738,
+    "mtime": 1783076289.1630905,
     "ast_hash": "f373ec8aa03898e2bfcbb6ec14d7055c",
     "semantic_hash": "f373ec8aa03898e2bfcbb6ec14d7055c"
   },
   "Book24 Studio/.obsidian/appearance.json": {
-    "mtime": 1782670369.5494854,
+    "mtime": 1783076289.16327,
     "ast_hash": "8d7e9dba7d42deef53232c7e62467cdf",
     "semantic_hash": "8d7e9dba7d42deef53232c7e62467cdf"
   },
   "Book24 Studio/.obsidian/community-plugins.json": {
-    "mtime": 1782670369.5916283,
+    "mtime": 1783076289.1625264,
     "ast_hash": "ead6aec76f6ef25cd76af5100244fd86",
     "semantic_hash": "ead6aec76f6ef25cd76af5100244fd86"
   },
   "Book24 Studio/.obsidian/core-plugins.json": {
-    "mtime": 1782670369.0619767,
+    "mtime": 1783076289.161703,
     "ast_hash": "7c877bea49eaeabb100563bd157b9051",
     "semantic_hash": "7c877bea49eaeabb100563bd157b9051"
   },
   "Book24 Studio/.obsidian/graph.json": {
-    "mtime": 1782681701.901,
-    "ast_hash": "12058e73487584b92198c5e082a33ab0",
+    "mtime": 1783085350.388999,
+    "ast_hash": "43d4537236b3541121abd9c54c9c34fe",
     "semantic_hash": ""
   },
   "Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/data.json": {
@@ -350,8 +350,8 @@
     "semantic_hash": "dce6fcb92b0a44ca60273873416b0e9e"
   },
   "Book24 Studio/.obsidian/workspace.json": {
-    "mtime": 1782681704.3467455,
-    "ast_hash": "b16ae64fa7500e1db2fa6a178c99d11e",
+    "mtime": 1783085345.29532,
+    "ast_hash": "4df4919874ef917ee6c09f2f491cce9c",
     "semantic_hash": ""
   },
   "src/components/GilInsightsPanel.tsx": {
@@ -557,6 +557,46 @@
   "supabase/bug_reports.sql": {
     "mtime": 1783005795.4050708,
     "ast_hash": "f8b4ef10e16feea97ccca04768fece57",
+    "semantic_hash": ""
+  },
+  "public/brain/code-context.json": {
+    "mtime": 1783097853.049759,
+    "ast_hash": "1b78ba42458f3b6ad43f46110631b77a",
+    "semantic_hash": ""
+  },
+  "public/brain/runtime-status.json": {
+    "mtime": 1783097853.050509,
+    "ast_hash": "1b91240563204dc37d7e6bf6fb1cecb5",
+    "semantic_hash": ""
+  },
+  "scripts/brain-worker.mjs": {
+    "mtime": 1783085577.7098646,
+    "ast_hash": "6bd24429694ddde299551b5ee61ccead",
+    "semantic_hash": ""
+  },
+  "scripts/install-brain-worker.mjs": {
+    "mtime": 1783079217.7154593,
+    "ast_hash": "a2bdbc6a8758136c9f41772c4763533c",
+    "semantic_hash": ""
+  },
+  "scripts/uninstall-brain-worker.mjs": {
+    "mtime": 1783078767.461709,
+    "ast_hash": "70895e3ad13065660b17fac7c9d1f6d3",
+    "semantic_hash": ""
+  },
+  "src/components/CircularGallery.tsx": {
+    "mtime": 1783078533.7098308,
+    "ast_hash": "e78b1a26b1f34be4c5ad18e374555515",
+    "semantic_hash": ""
+  },
+  "public/IMG_5057.mov": {
+    "mtime": 1783079286.7110095,
+    "ast_hash": "6956dce50daa39551f508d84aa732ed5",
+    "semantic_hash": ""
+  },
+  "public/IMG_5060.mov": {
+    "mtime": 1783080229.1424565,
+    "ast_hash": "ed59885fe99ca4c8806d066728d0add5",
     "semantic_hash": ""
   }
 }

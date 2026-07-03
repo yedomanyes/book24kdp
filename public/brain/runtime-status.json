@@ -6,8 +6,8 @@
     "Hermes",
     "Antigravity"
   ],
-  "lastHeartbeatAt": "2026-07-03T16:57:33.050Z",
-  "lastIndexedAt": "2026-07-03T16:57:33.049Z",
+  "lastHeartbeatAt": "2026-07-03T17:03:33.088Z",
+  "lastIndexedAt": "2026-07-03T17:03:33.087Z",
   "worker": {
     "pid": 9887,
     "hostname": "Mac",
@@ -27,9 +27,9 @@
     "analysisJson": "graphify-out/.graphify_analysis.json"
   },
   "decisionEngine": {
-    "generatedAt": "2026-07-03T16:57:33.049Z",
+    "generatedAt": "2026-07-03T17:03:33.087Z",
     "thoughts": [
-      "App Shell & Studio Flow dominiert aktuell mit 23755 Zeilen und ist damit der schwerste Produktblock.",
+      "App Shell & Studio Flow dominiert aktuell mit 23773 Zeilen und ist damit der schwerste Produktblock.",
       "Das Brain selbst belegt 1913 Zeilen und hat damit genug Substanz für echte Runtime-Ausbauten.",
       "Vault und Memory liefern 53 Dateien Kontext für wiederverwendbares Wissen."
     ],
@@ -60,13 +60,13 @@
       {
         "id": "graph-intelligence",
         "label": "Hauptfokus",
-        "detail": "Graph / Code Intelligence · 6 Dateien · 58412 Zeilen",
-        "score": 499
+        "detail": "Graph / Code Intelligence · 6 Dateien · 62350 Zeilen",
+        "score": 532
       },
       {
         "id": "app-shell",
         "label": "Fokus 2",
-        "detail": "App Shell & Studio Flow · 31 Dateien · 23755 Zeilen",
+        "detail": "App Shell & Studio Flow · 31 Dateien · 23773 Zeilen",
         "score": 308
       },
       {
@@ -80,7 +80,7 @@
       {
         "id": "app-shell-heavy",
         "label": "App Shell ist zu schwer",
-        "detail": "23755 Zeilen in der Shell bremsen Verständnis und machen das Projekt unruhig.",
+        "detail": "23773 Zeilen in der Shell bremsen Verständnis und machen das Projekt unruhig.",
         "score": 93,
         "severity": "high"
       }
@@ -88,13 +88,13 @@
   },
   "sectionCount": 8,
   "totalFilesIndexed": 134,
-  "previousHeartbeatAt": "2026-07-03T16:57:23.182Z",
+  "previousHeartbeatAt": "2026-07-03T17:03:23.065Z",
   "sections": [
     {
       "id": "graph-intelligence",
       "title": "Graph / Code Intelligence",
       "fileCount": 6,
-      "totalLines": 58412,
+      "totalLines": 62350,
       "topPaths": [
         "graphify-out/graph.json",
         "graphify-out/.graphify_analysis.json",
@@ -105,7 +105,7 @@
       "id": "app-shell",
       "title": "App Shell & Studio Flow",
       "fileCount": 31,
-      "totalLines": 23755,
+      "totalLines": 23773,
       "topPaths": [
         "src/App.tsx",
         "src/components/OwnerPanel.tsx",

@@ -2,7 +2,7 @@
 type: "code-context-section"
 id: "app-shell"
 title: "App Shell & Studio Flow"
-updatedAt: "2026-07-03T16:57:33.051Z"
+updatedAt: "2026-07-03T17:03:33.090Z"
 ---
 
 # App Shell & Studio Flow
@@ -10,7 +10,7 @@ updatedAt: "2026-07-03T16:57:33.051Z"
 Zentrale App-Struktur, Routing-artige Tabs, Screen-Komposition und globaler Studio-Flow.
 
 - Dateien: 31
-- Gesamtzeilen: 23755
+- Gesamtzeilen: 23773
 
 ## Wichtige Symbole
 - DEFAULT_BOX1_DESIGN
@@ -31,7 +31,7 @@ Zentrale App-Struktur, Routing-artige Tabs, Screen-Komposition und globaler Stud
 - CircularGallery
 
 ## Top Dateien
-- src/App.tsx — 11949 Zeilen | Symbole: DEFAULT_BOX1_DESIGN, DEFAULT_BOX2_DESIGN, DEFAULT_BOX3_DESIGN, parsePageLines, serializeBlocksToMarkdown, WorkbookBlock, BoxDesign, TitlePageCustomText
+- src/App.tsx — 11967 Zeilen | Symbole: DEFAULT_BOX1_DESIGN, DEFAULT_BOX2_DESIGN, DEFAULT_BOX3_DESIGN, parsePageLines, serializeBlocksToMarkdown, WorkbookBlock, BoxDesign, TitlePageCustomText
 - src/components/OwnerPanel.tsx — 1558 Zeilen | Symbole: OwnerPanel, MetricCard, OwnerToolbarButton
 - src/components/LandingPage.tsx — 1542 Zeilen | Symbole: LandingPage
 - src/components/LiquidEther.tsx — 1242 Zeilen | Symbole: LiquidEther
@@ -41,7 +41,7 @@ Zentrale App-Struktur, Routing-artige Tabs, Screen-Komposition und globaler Stud
 - src/components/GilInsightsPanel.tsx — 421 Zeilen | Symbole: GilInsightsPanel, TallyMarks, Sparkline
 
 ## Vollständige Dateiübersicht
-- src/App.tsx (11949) | DEFAULT_BOX1_DESIGN, DEFAULT_BOX2_DESIGN, DEFAULT_BOX3_DESIGN, parsePageLines, serializeBlocksToMarkdown, WorkbookBlock, BoxDesign, TitlePageCustomText
+- src/App.tsx (11967) | DEFAULT_BOX1_DESIGN, DEFAULT_BOX2_DESIGN, DEFAULT_BOX3_DESIGN, parsePageLines, serializeBlocksToMarkdown, WorkbookBlock, BoxDesign, TitlePageCustomText
 - src/components/Aurora.tsx (212) | Aurora
 - src/components/Auth.tsx (250) | Auth
 - src/components/BrainDashboard.tsx (913) | BrainDashboard, DecisionSection, MiniSignalCard, SignalStat
