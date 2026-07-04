@@ -1000,22 +1000,45 @@ const mergeBookLists = (...sources: any[][]): any[] => {
   return Array.from(map.values());
 };
 
+/** Always sort outline.pages by page_number so stored data is never out-of-order */
+const ensurePageOrder = (books: any[]): any[] =>
+  books.map(b => {
+    if (!b?.outline?.pages || !Array.isArray(b.outline.pages)) return b;
+    const sorted = [...b.outline.pages].sort(
+      (a: any, b2: any) => Number(a.page_number) - Number(b2.page_number)
+    );
+    // Only re-assign if actually out-of-order (avoid needless object churn)
+    const needsSort = sorted.some((p: any, i: number) => p.page_number !== b.outline.pages[i].page_number);
+    if (!needsSort) return b;
+    return { ...b, outline: { ...b.outline, pages: sorted } };
+  });
+
 const persistLibraryEverywhere = async (accountId: string, books: any[]): Promise<void> => {
+  const orderedBooks = ensurePageOrder(books);
+  // 1. Save FULL data to IndexedDB (source of truth, unlimited size)
+  const ok = await saveLibrarySnapshot(accountId, orderedBooks);
+  if (!ok) {
+    console.warn('IndexedDB snapshot write failed for account', accountId);
+  }
+
+  // 2. Save LIGHT data to LocalStorage (metadata fallback, keeps size tiny)
   try {
-    if (books.length > 0) {
-      localStorage.setItem(KEYS.library(accountId), JSON.stringify(books));
+    if (orderedBooks.length > 0) {
+      const lightBooks = orderedBooks.map(book => ({
+        ...book,
+        images: {},
+        pagesGraphic: {},
+        imagesTransform: {}
+      }));
+      localStorage.setItem(KEYS.library(accountId), JSON.stringify(lightBooks));
     } else {
       localStorage.removeItem(KEYS.library(accountId));
     }
   } catch (err) {
-    console.warn('localStorage quota exceeded, persisting library to IndexedDB fallback:', err);
-  }
-
-  const ok = await saveLibrarySnapshot(accountId, books);
-  if (!ok) {
-    console.warn('IndexedDB snapshot write failed for account', accountId);
+    console.warn('localStorage quota exceeded even with light data fallback:', err);
   }
 };
+
 
 export default function App() {
   // Supabase Auth states
@@ -1067,6 +1090,63 @@ export default function App() {
         setAuthError(decodeURIComponent(err));
       }
     } catch (e) {}
+  }, []);
+
+  // One-time cleanup to migrate massive libraries from localStorage to IndexedDB
+  // and replace the localStorage entries with light versions.
+  useEffect(() => {
+    const cleanQuota = async () => {
+      try {
+        const keysToClean: string[] = [];
+        for (let i = 0; i < window.localStorage.length; i++) {
+          const key = window.localStorage.key(i);
+          if (key && (
+            key.startsWith('b24studio_v1_library_') ||
+            key.startsWith('b24studio_library_') ||
+            key.startsWith('kryork_library_') ||
+            key.startsWith('book24_library_')
+          )) {
+            keysToClean.push(key);
+          }
+        }
+
+        for (const key of keysToClean) {
+          const raw = window.localStorage.getItem(key);
+          if (!raw) continue;
+          try {
+            const books = JSON.parse(raw);
+            if (Array.isArray(books) && books.length > 0) {
+              // Extract account ID
+              let accountId = 'default';
+              if (key.includes('library_')) {
+                accountId = key.split('library_')[1] || 'default';
+              }
+
+              // Load full books from IndexedDB, merge with localStorage
+              const existingIndexed = await loadLibrarySnapshot(accountId);
+              const merged = mergeBookLists(books, existingIndexed || []);
+
+              // Save full merged books to IndexedDB (unlimited storage)
+              await saveLibrarySnapshot(accountId, merged);
+
+              // Overwrite LocalStorage with light version to free up space
+              const lightBooks = merged.map((b: any) => ({
+                ...b,
+                images: {},
+                pagesGraphic: {},
+                imagesTransform: {}
+              }));
+              window.localStorage.setItem(key, JSON.stringify(lightBooks));
+            }
+          } catch (e) {
+            console.error('Error cleaning localStorage key:', key, e);
+          }
+        }
+      } catch (e) {
+        console.error('localStorage quota cleanup failed:', e);
+      }
+    };
+    cleanQuota();
   }, []);
 
   // Sync state with Supabase auth status
@@ -1418,9 +1498,10 @@ export default function App() {
               pagesOverflow: recomputedOverflow,
             };
           });
-          setBooksState(cleanBooks);
-          booksRef.current = cleanBooks;
-          void persistLibraryEverywhere(activeAcc, cleanBooks);
+          const orderedCleanBooks = ensurePageOrder(cleanBooks);
+          setBooksState(orderedCleanBooks);
+          booksRef.current = orderedCleanBooks;
+          void persistLibraryEverywhere(activeAcc, orderedCleanBooks);
         } else {
           booksRef.current = [];
           setBooksState([]);
@@ -1630,18 +1711,22 @@ export default function App() {
   });
 
   const [selectedModel, setSelectedModel] = useState<string>(() => {
-    return safeLocalStorage.getItem(KEYS.selectedModel) || 'llama-3.3-70b-versatile';
+    const saved = safeLocalStorage.getItem(KEYS.selectedModel);
+    if (saved && saved.startsWith('deepseek')) {
+      return 'llama-3.3-70b-versatile';
+    }
+    return saved || 'llama-3.3-70b-versatile';
   });
   const [generationTurboEnabled, setGenerationTurboEnabled] = useState<boolean>(() => {
     return safeLocalStorage.getItem(KEYS.generationTurbo) === 'true';
   });
 
   useEffect(() => {
-    localStorage.setItem(KEYS.selectedModel, selectedModel);
+    safeLocalStorage.setItem(KEYS.selectedModel, selectedModel);
   }, [selectedModel]);
 
   useEffect(() => {
-    localStorage.setItem(KEYS.generationTurbo, generationTurboEnabled ? 'true' : 'false');
+    safeLocalStorage.setItem(KEYS.generationTurbo, generationTurboEnabled ? 'true' : 'false');
   }, [generationTurboEnabled]);
 
   // Explorer and Marketing tabs state
@@ -1711,7 +1796,16 @@ export default function App() {
 
     const topMarginPx = 54 * previewScaleY;
     const bottomMarginPx = 54 * previewScaleY;
-    const insideMarginPx = 54 * previewScaleX;  // matches PDF: 45pt base (can be up to 72pt for thick books, 54 is safe average)
+    let insideMargin = 54;
+    const totalBookPages = book.outline?.pages?.length || 0;
+    if (totalBookPages > 500) {
+      insideMargin = 72;
+    } else if (totalBookPages > 300) {
+      insideMargin = 67.5;
+    } else if (totalBookPages > 150) {
+      insideMargin = 63;
+    }
+    const insideMarginPx = insideMargin * previewScaleX;
     const outsideMarginPx = 45 * previewScaleX; // matches PDF: outsideMargin = 45pt
 
     const contentWidth = previewWidth - (insideMarginPx + outsideMarginPx);
@@ -1723,19 +1817,21 @@ export default function App() {
     measurer.style.fontSize = `${previewFontSize}px`;
     
     const resolvedFont = book.fontFamily === 'times' 
-      ? '"Times New Roman", Times, serif' 
-      : book.fontFamily === 'courier'
-        ? '"Courier New", Courier, monospace'
-        : 'Arial, Helvetica, sans-serif';
+      ? '"Libre Baskerville", "Times New Roman", Times, serif' 
+      : book.fontFamily === 'playfair'
+        ? '"Playfair Display", Georgia, serif'
+        : book.fontFamily === 'courier'
+          ? '"Courier Prime", "Courier New", Courier, monospace'
+          : '"Lato", Arial, Helvetica, sans-serif';
 
     measurer.style.fontFamily = resolvedFont;
     measurer.style.lineHeight = String((book as any).lineHeightMultiplier || 1.4);
     measurer.style.textAlign = book.alignment === 'left' ? 'left' : 'justify';
     measurer.style.textAlignLast = 'left';
     measurer.style.wordBreak = 'break-word';
-    (measurer.style as any).WebkitHyphens = 'auto';
-    (measurer.style as any).msHyphens = 'auto';
-    measurer.style.hyphens = 'auto';
+    (measurer.style as any).WebkitHyphens = 'none';
+    (measurer.style as any).msHyphens = 'none';
+    measurer.style.hyphens = 'none';
     measurer.style.padding = '0';
     measurer.style.paddingRight = '1px';
     measurer.style.margin = '0';
@@ -1781,7 +1877,9 @@ export default function App() {
       block: WorkbookBlock,
       paragraphStyle: string,
       isDropCapCandidate: boolean,
-      onDropCapUsed: () => void
+      onDropCapUsed: () => void,
+      blockIdx: number,
+      allBlocks: WorkbookBlock[]
     ): HTMLElement | null => {
       const renderInlineHtml = (str: string): string => {
         return str.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
@@ -2068,8 +2166,8 @@ export default function App() {
           contentDiv.className = 'workbook-box-content';
           contentDiv.style.marginTop = '4px';
           
-          block.children.forEach(child => {
-            const childNode = renderBlockToDomNode(child, paragraphStyle, false, () => {});
+          block.children.forEach((child, childIdx) => {
+            const childNode = renderBlockToDomNode(child, paragraphStyle, false, () => {}, childIdx, block.children);
             if (childNode) {
               contentDiv.appendChild(childNode);
             }
@@ -2108,38 +2206,65 @@ export default function App() {
             textSpan.innerHTML = renderInlineHtml(restText);
             p.appendChild(textSpan);
           } else {
-            const marginBottom = paragraphStyle === 'spacing' ? '0.8em' : '0';
-            p.style.textIndent = '0';
-            p.style.marginBottom = marginBottom;
+            const prevBlock = blockIdx > 0 ? allBlocks[blockIdx - 1] : null;
+            const isAfterBreakBlock = !!(prevBlock && prevBlock.type !== 'paragraph');
+            const paraMarginTop = (paragraphStyle === 'spacing' && isAfterBreakBlock) ? '0.8em' : '0';
+            const paraIndent = paragraphStyle === 'indent' && blockIdx > 0 && prevBlock?.type === 'paragraph' ? '1.5em' : '0';
+            p.style.textIndent = paraIndent;
+            p.style.marginTop = paraMarginTop;
+            p.style.marginBottom = '0';
             p.innerHTML = renderInlineHtml(block.text);
           }
           return p;
         }
 
         case 'image': {
+          const floatVal = block.float || 'none';
           const div = document.createElement('div');
           div.style.backgroundColor = '#f1f5f9';
           div.style.border = '2px dashed #94a3b8';
           div.style.borderRadius = '4px';
-          div.style.padding = '20px';
           div.style.margin = '16px 0';
-          div.style.textAlign = 'center';
-          div.style.color = '#64748b';
-          div.style.display = 'flex';
-          div.style.flexDirection = 'column';
-          div.style.alignItems = 'center';
-          div.style.gap = '8px';
+          div.style.boxSizing = 'border-box';
           
-          const iconSpan = document.createElement('span');
-          iconSpan.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
-          div.appendChild(iconSpan);
+          if (floatVal === 'none') {
+            const hPx = 115 * previewScaleY;
+            div.style.height = `${hPx}px`;
+            div.style.width = '100%';
+          } else {
+            const wPx = contentWidth * ((block.width || 50) / 100);
+            div.style.width = `${wPx}px`;
+            div.style.float = floatVal;
+            div.style.margin = '8px';
+            if (floatVal === 'left') div.style.marginLeft = '0';
+            if (floatVal === 'right') div.style.marginRight = '0';
+            const hPx = wPx * 0.75;
+            div.style.height = `${hPx}px`;
+          }
+          return div;
+        }
+
+        case 'custom_image': {
+          const floatVal = block.float || 'none';
+          const widthPercent = block.width || 85;
+          const wPx = contentWidth * (widthPercent / 100);
+          const hPx = wPx * 0.75;
           
-          const promptSpan = document.createElement('span');
-          promptSpan.style.fontSize = '0.85em';
-          promptSpan.style.fontStyle = 'italic';
-          promptSpan.textContent = `Grafik-Platzhalter: ${block.prompt}`;
-          div.appendChild(promptSpan);
+          const div = document.createElement('div');
+          div.style.backgroundColor = '#e2e8f0';
+          div.style.margin = floatVal === 'none' ? '16px auto' : '8px';
+          div.style.boxSizing = 'border-box';
           
+          if (floatVal === 'none') {
+            div.style.width = `${wPx}px`;
+            div.style.height = `${hPx + 15 * previewScaleY}px`;
+          } else {
+            div.style.width = `${wPx}px`;
+            div.style.height = `${hPx}px`;
+            div.style.float = floatVal;
+            if (floatVal === 'left') div.style.marginLeft = '0';
+            if (floatVal === 'right') div.style.marginRight = '0';
+          }
           return div;
         }
 
@@ -2168,7 +2293,8 @@ export default function App() {
         const linesCount = getLinesCount(chapterTitleText, fontStr, contentWidth);
         const titlePt = linesCount * 18 + 12;
         const ornamentPt = book.chapterOrnament ? 20 : 0;
-        const totalHeaderPt = titlePt + ornamentPt;
+        const paddingPt = book.chapterTopPadding !== undefined ? book.chapterTopPadding : 0;
+        const totalHeaderPt = titlePt + ornamentPt + paddingPt;
         effectiveContentHeight -= totalHeaderPt * previewScaleY;
       }
 
@@ -2178,8 +2304,15 @@ export default function App() {
       const blocks = parsePageLines(part.split('\n'));
       let dropCapUsed = false;
 
-      blocks.forEach((block) => {
-        const node = renderBlockToDomNode(block, paragraphStyleSetting, showInitialOnPage && partIdx === 0 && !dropCapUsed, () => { dropCapUsed = true; });
+      blocks.forEach((block, blockIdx) => {
+        const node = renderBlockToDomNode(
+          block,
+          paragraphStyleSetting,
+          showInitialOnPage && partIdx === 0 && !dropCapUsed,
+          () => { dropCapUsed = true; },
+          blockIdx,
+          blocks
+        );
         if (node) {
           measurer.appendChild(node);
         }
@@ -2418,7 +2551,7 @@ export default function App() {
       // 1. Flush any pending manual text edit from the editor if user was typing
       if (isTypingRef.current || document.activeElement?.tagName === 'TEXTAREA') {
         const bookId = activeBookIdRef.current;
-        const pageNum = selectedPageRef.current;
+        const pageNum = editorPageRef.current;
         const text = editorTextRef.current;
         if (bookId && pageNum !== null && text !== undefined) {
           const currentBook = booksRef.current.find(b => b.id === bookId);
@@ -2428,7 +2561,13 @@ export default function App() {
             const activeAcc = activeAccountIdRef.current || safeLocalStorage.getItem(KEYS.activeAccount) || 'default';
             const currentBooks = booksRef.current.map(b => b.id === bookId ? updatedBook : b);
             try {
-              localStorage.setItem(KEYS.library(activeAcc), JSON.stringify(currentBooks));
+              const lightBooks = currentBooks.map(b => ({
+                ...b,
+                images: {},
+                pagesGraphic: {},
+                imagesTransform: {}
+              }));
+              localStorage.setItem(KEYS.library(activeAcc), JSON.stringify(lightBooks));
             } catch(e) {}
             // Queue it for cloud save in this unload event
             pendingCloudSavesRef.current[bookId] = updatedBook;
@@ -2738,6 +2877,7 @@ export default function App() {
   const editorTextRef = React.useRef<string>('');
   const activeBookIdRef = React.useRef<string | null>(null);
   const selectedPageRef = React.useRef<number | null>(null);
+  const editorPageRef = React.useRef<number | null>(null);
   
   useEffect(() => {
     activeBookIdRef.current = activeBookId;
@@ -2965,17 +3105,17 @@ export default function App() {
       const savedBooks = localStorage.getItem(KEYS.library(activeAccountId));
       const localParsed = savedBooks ? (JSON.parse(savedBooks) as Book[]) : [];
       const indexedBooks = ((await loadLibrarySnapshot(activeAccountId)) || []) as Book[];
-      const mergedBooks = mergeBookLists(localParsed, indexedBooks) as Book[];
+      const mergedBooks = mergeBookLists(indexedBooks, localParsed) as Book[];
 
       if (cancelled) return;
 
       if (mergedBooks.length > 0) {
-        const cleaned = mergedBooks.map(b => ({
+        const cleaned = ensurePageOrder(mergedBooks.map(b => ({
           ...b,
           pagesStatus: Object.fromEntries(
             Object.entries(b.pagesStatus || {}).map(([k, v]) => [k, v === 'generating' ? 'idle' : v])
           )
-        }));
+        })));
         setBooks(cleaned);
         void persistLibraryEverywhere(activeAccountId, cleaned);
         const savedScopedId = localStorage.getItem(getScopedActiveBookStorageKey(activeAccountId));
@@ -3055,11 +3195,34 @@ export default function App() {
 
 
 
-  // Sync editor field — only when NOT actively typing (prevents cursor jump / flicker)
+  // Sync editor field — only when NOT actively typing, OR if the selected page/book has changed.
+  // If the page or book changes, we must force the sync to prevent displaying the old page's content.
+  const prevSelectedPageRef = useRef<number | string | null>(null);
+  const prevActiveBookIdRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (isTypingRef.current) return; // user is typing — don't overwrite
+    const pageChanged = prevSelectedPageRef.current !== selectedPage;
+    const bookChanged = prevActiveBookIdRef.current !== activeBookId;
+    
+    prevSelectedPageRef.current = selectedPage;
+    prevActiveBookIdRef.current = activeBookId;
+
+    if (pageChanged || bookChanged) {
+      // Force cancel any active typing states
+      isTypingRef.current = false;
+      if (editorTypingTimerRef.current) {
+        clearTimeout(editorTypingTimerRef.current);
+        editorTypingTimerRef.current = null;
+      }
+    }
+
+    if (isTypingRef.current) return; // user is typing the same page — don't overwrite
+
     if (activeBook && selectedPage !== null && typeof selectedPage === 'number') {
-      setEditorText((activeBook.pagesText || {})[selectedPage] || '');
+      const text = (activeBook.pagesText || {})[selectedPage] || '';
+      setEditorText(text);
+      editorTextRef.current = text;
+      editorPageRef.current = selectedPage;
     }
   }, [selectedPage, activeBookId, activeBook?.pagesText]);
 
@@ -3069,6 +3232,9 @@ export default function App() {
     const text = e.target.value;
     setEditorText(text);
     editorTextRef.current = text;
+    if (selectedPage !== null && typeof selectedPage === 'number') {
+      editorPageRef.current = selectedPage;
+    }
 
     // Mark as typing so the pagesText useEffect doesn't overwrite the textarea
     isTypingRef.current = true;
@@ -3092,10 +3258,23 @@ export default function App() {
 
         try {
           const activeAcc = activeAccountIdRef.current || safeLocalStorage.getItem(KEYS.activeAccount) || 'default';
-          localStorage.setItem(KEYS.library(activeAcc), JSON.stringify(updatedBooks));
+          const lightBooks = updatedBooks.map(b => ({
+            ...b,
+            images: {},
+            pagesGraphic: {},
+            imagesTransform: {}
+          }));
+          localStorage.setItem(KEYS.library(activeAcc), JSON.stringify(lightBooks));
         } catch (err) {
           console.warn('localStorage write failed:', err);
         }
+        
+        // Save to IndexedDB (unlimited size) more frequently than cloud to guarantee persistence on refresh
+        if ((handleEditorChange as any)._idbTimer) clearTimeout((handleEditorChange as any)._idbTimer);
+        (handleEditorChange as any)._idbTimer = setTimeout(() => {
+          const activeAcc = activeAccountIdRef.current || safeLocalStorage.getItem(KEYS.activeAccount) || 'default';
+          saveLibrarySnapshot(activeAcc, booksRef.current).catch(() => {});
+        }, 800);
         
         // Debounce the cloud save (1.5s) to avoid hammering Firestore on every keystroke
         if (editorSaveTimerRef.current) clearTimeout(editorSaveTimerRef.current);
@@ -3123,12 +3302,16 @@ export default function App() {
       clearTimeout((handleEditorChange as any)._saveTimer);
       (handleEditorChange as any)._saveTimer = null;
     }
+    if ((handleEditorChange as any)._idbTimer) {
+      clearTimeout((handleEditorChange as any)._idbTimer);
+      (handleEditorChange as any)._idbTimer = null;
+    }
     isTypingRef.current = false;
     
     // Use editorTextRef.current (always up-to-date ref) instead of editorText state (stale closure)
     const currentText = editorTextRef.current;
     const bookId = activeBookIdRef.current;
-    const pageNum = selectedPageRef.current;
+    const pageNum = editorPageRef.current;
     
     if (bookId && pageNum !== null) {
       const currentBook = booksRef.current.find(b => b.id === bookId);
@@ -3790,6 +3973,11 @@ export default function App() {
     const originalCount = originalPages.length;
 
     setIsPlanning(true);
+    setPlanningProgress({
+      percent: 50,
+      message: isDe ? 'KI fasst Inhaltsverzeichnis zusammen (dies kann 10-20 Sekunden dauern)...' : 'AI is condensing table of contents (this can take 10-20 seconds)...'
+    });
+    
     try {
       const service = getServiceInstance();
       const condensedPages = await service.condenseOutline(
@@ -3815,7 +4003,10 @@ export default function App() {
         }
       };
 
-      setBooks(latestBooks.map(b => b.id === activeBookId ? updatedBook : b));
+      const nextBooks = latestBooks.map(b => b.id === activeBookId ? updatedBook : b);
+      setBooks(nextBooks);
+      const activeAcc = safeLocalStorage.getItem(KEYS.activeAccount) || 'default';
+      void persistLibraryEverywhere(activeAcc, nextBooks);
 
       showConfirm({
         title: 'Erfolg',
@@ -3835,6 +4026,7 @@ export default function App() {
       });
     } finally {
       setIsPlanning(false);
+      setPlanningProgress(null);
     }
   };
 
@@ -3866,7 +4058,8 @@ export default function App() {
         getEffectiveGuidelines(activeBook)
       );
 
-      setBooks(prev => prev.map(b => {
+      const latestBooks = booksRef.current;
+      const nextBooks = latestBooks.map(b => {
         if (b.id === activeBookId && b.outline) {
           return {
             ...b,
@@ -3878,7 +4071,10 @@ export default function App() {
           };
         }
         return b;
-      }));
+      });
+      setBooks(nextBooks);
+      const activeAcc = safeLocalStorage.getItem(KEYS.activeAccount) || 'default';
+      void persistLibraryEverywhere(activeAcc, nextBooks);
 
       showConfirm({
         title: 'Erfolg',
@@ -3912,7 +4108,8 @@ export default function App() {
 
     if (!backup && !fullOutlineBackup) return;
 
-    setBooks(prev => prev.map(b => {
+    const latestBooks = booksRef.current;
+    const nextBooks = latestBooks.map(b => {
       if (b.id === activeBookId) {
         let restoredOutline = b.outline;
         if (fullOutlineBackup !== undefined) {
@@ -3935,7 +4132,10 @@ export default function App() {
         };
       }
       return b;
-    }));
+    });
+    setBooks(nextBooks);
+    const activeAcc = safeLocalStorage.getItem(KEYS.activeAccount) || 'default';
+    void persistLibraryEverywhere(activeAcc, nextBooks);
 
     const pagesCount = fullOutlineBackup ? fullOutlineBackup.pages.length : (backup ? backup.length : 0);
     showConfirm({
@@ -3970,7 +4170,8 @@ export default function App() {
       };
     });
 
-    setBooks(prev => prev.map(b => {
+    const latestBooks = booksRef.current;
+    const nextBooks = latestBooks.map(b => {
       if (b.id === activeBookId && b.outline) {
         return {
           ...b,
@@ -3978,7 +4179,10 @@ export default function App() {
         };
       }
       return b;
-    }));
+    });
+    setBooks(nextBooks);
+    const activeAcc = safeLocalStorage.getItem(KEYS.activeAccount) || 'default';
+    void persistLibraryEverywhere(activeAcc, nextBooks);
     alert(`Wiederhergestellt: ${totalTarget} Seiten aus vorhandenem Seiteninhalt.`);
   };
 
@@ -4155,12 +4359,14 @@ export default function App() {
           setBooks(prev => prev.map(b => {
             if (b.id === bookIdToExtend) {
               const existingOutline = b.outline!;
+              const combinedPages = [...existingOutline.pages, ...chunkPages];
+              const cleanedPages = service.ensureUniqueAndContiguousChapters(combinedPages, b.language || 'de');
               return {
                 ...b,
                 outline: {
                   ...existingOutline,
                   target_pages: targetTotal,
-                  pages: [...existingOutline.pages, ...chunkPages]
+                  pages: cleanedPages
                 },
                 pagesStatus: { ...(b.pagesStatus || {}), ...newStatus },
                 pagesError: { ...(b.pagesError || {}) }
@@ -4435,25 +4641,35 @@ export default function App() {
   // Retry generating single page
   const handleClearPage = async (pageNum: number) => {
     if (!activeBook) return;
-    if (!confirm('Möchtest du den Text dieser Seite wirklich löschen?')) return;
     
-    const updatedBook = {
-      ...activeBook,
-      pagesText: {
-        ...(activeBook.pagesText || {}),
-        [pageNum]: ''
-      }
-    };
-    
-    // clear the status too, so it looks like it's fresh
-    if (updatedBook.pagesStatus && updatedBook.pagesStatus[pageNum]) {
-      updatedBook.pagesStatus[pageNum] = 'idle';
-    }
+    showConfirm({
+      title: 'Seite leeren',
+      message: 'Bist du sicher, dass du den Text dieser Seite leeren möchtest? Dies kann nicht rückgängig gemacht werden.',
+      confirmLabel: 'Ja, leeren',
+      cancelLabel: 'Abbrechen',
+      danger: true,
+      onConfirm: async () => {
+        const currentBook = booksRef.current.find(b => b.id === activeBookId);
+        if (!currentBook) return;
 
-    setBooks(prev => prev.map(b => b.id === activeBookId ? updatedBook : b));
-    if (currentUser) {
-      await saveBookToCloud(currentUser.uid, updatedBook);
-    }
+        const updatedBook = {
+          ...currentBook,
+          pagesText: {
+            ...(currentBook.pagesText || {}),
+            [pageNum]: ''
+          }
+        };
+        
+        if (updatedBook.pagesStatus && updatedBook.pagesStatus[pageNum]) {
+          updatedBook.pagesStatus[pageNum] = 'idle';
+        }
+
+        setBooks(prev => prev.map(b => b.id === activeBookId ? updatedBook : b));
+        if (currentUser) {
+          await saveBookToCloud(currentUser.uid, updatedBook);
+        }
+      }
+    });
   };
 
   const handleRetryPage = async (pageNum: number) => {
@@ -5081,7 +5297,7 @@ export default function App() {
       const url = URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${(activeBook.title || 'Unbenannt').replace(/\s+/g, '_')}_book24.pdf`;
+      link.download = `${(activeBook.title || 'Unbenannt').replace(/\s+/g, '_')}_booklab_studio.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -7107,29 +7323,28 @@ export default function App() {
 
     let tocPagesCount = 0;
     if (activeBook.generateTOC !== false) {
-      tocPagesCount = 1;
-      let simY = 54 + 36; 
-      const tocSpacing = activeBook.tocLineSpacing || 18;
-      let chaptersRenderedOnPage = 0;
       const outlineChapterCount = chapterStartsList.length;
-      let usePreventativePageBreak = false;
-      let maxChaptersPerPage = 10;
+      let tocFontSizeUsed = activeBook.tocFontSize || 10;
+      let tocSpacingUsed = activeBook.tocLineSpacing || 18;
+      let attempts = 0;
+      const maxAttempts = 6;
       
-      if (activeBook.id) {
-        const rules = GilService.getPreventativeRules(activeBook.id, 'TOC', outlineChapterCount);
-        const pageBreakRule = rules.find(r => r.action === 'autoPageBreakAfterChapters');
-        if (pageBreakRule) {
-          usePreventativePageBreak = true;
-          maxChaptersPerPage = pageBreakRule.value;
-        }
-      }
-
-      chapterStartsList.forEach(({ title: chapterTitle }) => {
-        const forceBreak = usePreventativePageBreak && chaptersRenderedOnPage >= maxChaptersPerPage;
-        const entryLines = Math.ceil((chapterTitle || '').length / 30);
-        const lineSpacing = 10 * 1.2;
-        const entryHeight = (entryLines - 1) * lineSpacing + tocSpacing;
+      while (attempts < maxAttempts) {
+        tocPagesCount = 1;
+        let simY = 54 + 36; 
+        let chaptersRenderedOnPage = 0;
+        let usePreventativePageBreak = false;
+        let maxChaptersPerPage = 10;
         
+        if (activeBook.id) {
+          const rules = GilService.getPreventativeRules(activeBook.id, 'TOC', outlineChapterCount);
+          const pageBreakRule = rules.find(r => r.action === 'autoPageBreakAfterChapters');
+          if (pageBreakRule) {
+            usePreventativePageBreak = true;
+            maxChaptersPerPage = pageBreakRule.value;
+          }
+        }
+
         let hInches = 9;
         if (activeBook.pageSize === '5x8') hInches = 8;
         else if (activeBook.pageSize === '5.5x8.5') hInches = 8.5;
@@ -7139,14 +7354,29 @@ export default function App() {
         else if (activeBook.pageSize === 'custom') hInches = activeBook.customHeight || 9;
         const pageHeight = hInches * 72;
 
-        if (simY + entryHeight - tocSpacing > pageHeight - 54 || forceBreak) {
-          tocPagesCount++;
-          simY = 54 + 36;
-          chaptersRenderedOnPage = 0;
+        chapterStartsList.forEach(({ title: chapterTitle }) => {
+          const forceBreak = usePreventativePageBreak && chaptersRenderedOnPage >= maxChaptersPerPage;
+          const entryLines = Math.ceil((chapterTitle || '').length / 30);
+          const lineSpacing = tocFontSizeUsed * 1.2;
+          const entryHeight = (entryLines - 1) * lineSpacing + tocSpacingUsed;
+
+          if (simY + entryHeight - tocSpacingUsed > pageHeight - 54 || forceBreak) {
+            tocPagesCount++;
+            simY = 54 + 36;
+            chaptersRenderedOnPage = 0;
+          }
+          simY += entryHeight;
+          chaptersRenderedOnPage++;
+        });
+
+        if (tocPagesCount > 1 && outlineChapterCount <= 12 && tocFontSizeUsed > 7.5) {
+          tocFontSizeUsed -= 0.5;
+          tocSpacingUsed = Math.max(11, tocSpacingUsed - 1.5);
+          attempts++;
+        } else {
+          break;
         }
-        simY += entryHeight;
-        chaptersRenderedOnPage++;
-      });
+      }
     }
 
     let firstContentPhysicalPage = 2;
@@ -8395,7 +8625,10 @@ export default function App() {
                         <select
                           className="ex-select"
                           value={selectedModel}
-                          onChange={e => setSelectedModel(e.target.value)}
+                          onChange={e => {
+                            setSelectedModel(e.target.value);
+                            safeLocalStorage.setItem(KEYS.selectedModel, e.target.value);
+                          }}
                           disabled={isPlanning || isGenerating}
                         >
                           <optgroup label="Groq API">
@@ -8620,12 +8853,12 @@ export default function App() {
                             className="ex-btn ex-btn-warn"
                             onClick={handleCondenseOutline}
                             disabled={isPlanning || isGenerating || !activeBook.outline}
-                            title={isDe ? 'Kapitelnamen kürzen' : 'Shorten chapter names'}
+                            title={isDe ? 'Fasst das Inhaltsverzeichnis so zusammen, dass es auf genau 1 Seite passt.' : 'Condenses the table of contents so it fits on exactly 1 page.'}
                           >
                             {isPlanning
                               ? <Loader2 className="spinner" style={{ width: '13px', height: '13px' }} />
                               : <Scissors style={{ width: '13px', height: '13px' }} />}
-                            {isDe ? 'TOC einkürzen (AI)' : 'Shorten TOC (AI)'}
+                            {isDe ? 'Auf 1 Seite einkürzen' : 'Condense to 1 page'}
                           </button>
 
                           {activeBook.outlineBackup && (
@@ -9280,12 +9513,12 @@ export default function App() {
                       
                       <button
                         onClick={handleCondenseOutline}
-                        title={isDe ? 'Verkürzt das Inhaltsverzeichnis (z.B. wenn es zu lang ist).' : 'Shortens the table of contents (e.g. if it is too long).'}
+                        title={isDe ? 'Fasst das Inhaltsverzeichnis so zusammen, dass es auf genau 1 Seite passt.' : 'Condenses the table of contents so it fits on exactly 1 page.'}
                         className="btn"
                         style={{ width: '100%', fontSize: '10px', padding: '4px 8px', marginTop: '4px', gap: '5px' }}
                       >
                         <Scissors style={{ width: '10px', height: '10px', opacity: 0.6 }} />
-                        {isDe ? 'Inhaltsverzeichnis kürzen' : 'Shorten TOC'}
+                        {isDe ? 'Auf 1 Seite einkürzen' : 'Condense to 1 page'}
                       </button>
 
 
@@ -9342,7 +9575,9 @@ export default function App() {
 
                     {/* Page Navigator Grid Map */}
                     <div className="pages-grid" style={{ marginTop: '4px' }}>
-                      {outline.pages.map((p) => {
+                      {[...outline.pages]
+                        .sort((a, b) => Number(a.page_number) - Number(b.page_number))
+                        .map((p) => {
                         const status = (activeBook.pagesStatus || {})[p.page_number] || 'idle';
                         const isSelected = selectedPages.includes(p.page_number);
                         const hasOverflow = (activeBook.pagesOverflow || {})[p.page_number] || false;
@@ -11199,12 +11434,12 @@ export default function App() {
                                 style={{ 
                                   fontSize: `${previewFontSize}px`,
                                   color: '#1e293b',
-                                  lineHeight: '1.5',
+                                  lineHeight: String((activeBook as any).lineHeightMultiplier || 1.4),
                                   textAlign: activeBook.alignment === 'left' ? 'left' : 'justify',
                                   textAlignLast: 'left',
-                                  WebkitHyphens: 'auto',
-                                  msHyphens: 'auto',
-                                  hyphens: 'auto',
+                                  WebkitHyphens: 'none',
+                                  msHyphens: 'none',
+                                  hyphens: 'none',
                                   overflowY: 'hidden',
                                   paddingRight: '1px',
                                   flex: 1,
@@ -11619,7 +11854,10 @@ export default function App() {
         deepseekKeys={deepseekKeysInput}
         onDeepseekKeysChange={handleDeepseekKeysChange}
         selectedModel={selectedModel}
-        onModelChange={setSelectedModel}
+        onModelChange={(val) => {
+          setSelectedModel(val);
+          safeLocalStorage.setItem(KEYS.selectedModel, val);
+        }}
         generationTurboEnabled={generationTurboEnabled}
         onGenerationTurboChange={setGenerationTurboEnabled}
         groqConnected={groqConnected}
@@ -12006,7 +12244,23 @@ function cleanPageText(text: string): string {
           return false;
         }
       }
-      
+
+      // Remove context markers that the AI may accidentally reproduce from the prompt
+      if (lower.startsWith('bisheriger buchtext') ||
+          lower.startsWith('bisheriger text') ||
+          lower.startsWith('[vorheriger text') ||
+          lower.startsWith('[previous text') ||
+          lower === '---' ||
+          lower === '---\r' ||
+          lower.startsWith('der allerletzte satz') ||
+          lower.startsWith('the very last sentence') ||
+          lower.startsWith('setze den text absolut') ||
+          lower.startsWith('continue the text') ||
+          lower.startsWith('letzter satz der vorherigen') ||
+          lower.startsWith('last sentence of the previous')) {
+        return false;
+      }
+
       return true;
     });
 

@@ -476,46 +476,60 @@ export async function generateBookPdf(
 
   // 2. Calculate number of pages the TOC will occupy
   let tocPagesCount = 0;
+  let tocFontSizeUsed = config.tocFontSize || 10;
+  let tocSpacingUsed = config.tocLineSpacing || 18;
+
   if (config.generateTOC !== false) {
-    tocPagesCount = 1;
-    let simY = topMargin + 36;
-    const tocSpacing = config.tocLineSpacing || 18;
-    
-    let chaptersRenderedOnPage = 0;
     const outlineChapterCount = chapterStartsList.length;
-    let usePreventativePageBreak = false;
-    let maxChaptersPerPage = 10;
+    let attempts = 0;
+    const maxAttempts = 6;
     
-    if (config.bookId) {
-      const rules = GilService.getPreventativeRules(config.bookId, 'TOC', outlineChapterCount);
-      const pageBreakRule = rules.find(r => r.action === 'autoPageBreakAfterChapters');
-      if (pageBreakRule) {
-        usePreventativePageBreak = true;
-        maxChaptersPerPage = pageBreakRule.value;
+    while (attempts < maxAttempts) {
+      tocPagesCount = 1;
+      let simY = topMargin + 36;
+      let chaptersRenderedOnPage = 0;
+      let usePreventativePageBreak = false;
+      let maxChaptersPerPage = 10;
+      
+      if (config.bookId) {
+        const rules = GilService.getPreventativeRules(config.bookId, 'TOC', outlineChapterCount);
+        const pageBreakRule = rules.find(r => r.action === 'autoPageBreakAfterChapters');
+        if (pageBreakRule) {
+          usePreventativePageBreak = true;
+          maxChaptersPerPage = pageBreakRule.value;
+        }
+      }
+
+      const tocFont = resolvePdfFont(config.tocFontFamily || config.fontFamily);
+      doc.setFont(tocFont, fontStyleBold);
+      doc.setFontSize(tocFontSizeUsed);
+      const maxTitleWidth = writableWidth - 45;
+
+      chapterStartsList.forEach(({ title: chapterTitle }) => {
+        const forceBreak = usePreventativePageBreak && chaptersRenderedOnPage >= maxChaptersPerPage;
+        
+        const lines = doc.splitTextToSize(chapterTitle, maxTitleWidth);
+        const lineSpacing = tocFontSizeUsed * 1.2;
+        const entryHeight = (lines.length - 1) * lineSpacing + tocSpacingUsed;
+
+        if (simY + entryHeight - tocSpacingUsed > pageHeight - bottomMargin || forceBreak) {
+          tocPagesCount++;
+          simY = topMargin + 36;
+          chaptersRenderedOnPage = 0;
+        }
+        simY += entryHeight;
+        chaptersRenderedOnPage++;
+      });
+
+      // If we overflow to a second page and have <= 12 chapters, scale down to force it onto 1 page
+      if (tocPagesCount > 1 && outlineChapterCount <= 12 && tocFontSizeUsed > 7.5) {
+        tocFontSizeUsed -= 0.5;
+        tocSpacingUsed = Math.max(11, tocSpacingUsed - 1.5);
+        attempts++;
+      } else {
+        break;
       }
     }
-
-    const tocFont = resolvePdfFont(config.tocFontFamily || config.fontFamily);
-    const baseFontSize = config.tocFontSize || 10;
-    doc.setFont(tocFont, fontStyleBold);
-    doc.setFontSize(baseFontSize);
-    const maxTitleWidth = writableWidth - 45;
-
-    chapterStartsList.forEach(({ title: chapterTitle }) => {
-      const forceBreak = usePreventativePageBreak && chaptersRenderedOnPage >= maxChaptersPerPage;
-      
-      const lines = doc.splitTextToSize(chapterTitle, maxTitleWidth);
-      const lineSpacing = baseFontSize * 1.2;
-      const entryHeight = (lines.length - 1) * lineSpacing + tocSpacing;
-
-      if (simY + entryHeight - tocSpacing > pageHeight - bottomMargin || forceBreak) {
-        tocPagesCount++;
-        simY = topMargin + 36;
-        chaptersRenderedOnPage = 0;
-      }
-      simY += entryHeight;
-      chaptersRenderedOnPage++;
-    });
   }
 
   // 3. Map pages to physical pages and printed page numbers
@@ -557,9 +571,9 @@ export async function generateBookPdf(
     // removed totalTOCPagesCount
     
     const tocFont = resolvePdfFont(config.tocFontFamily || config.fontFamily);
-    const baseFontSize = config.tocFontSize || 10;
+    const baseFontSize = tocFontSizeUsed;
     const headerFontSize = baseFontSize + 4;
-    const tocSpacing = config.tocLineSpacing || 18;
+    const tocSpacing = tocSpacingUsed;
 
     if (pdfPageCounter > 0) {
       doc.addPage();

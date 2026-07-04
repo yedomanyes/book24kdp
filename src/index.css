@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@400;600;800;900&family=Roboto:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Courier+Prime&family=Montserrat:wght@300;400;600;800&family=Cinzel:wght@400;700&family=EB+Garamond:ital,wght@0,400;0,700;1,400&family=Great+Vibes&family=Sacramento&family=Oswald:wght@400;700&family=Lora:ital,wght@0,400;0,700;1,400&family=Merriweather:ital,wght@0,400;0,700;1,400&family=Bodoni+Moda:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,700;1,400&family=Cardo:ital,wght@0,400;1,400&family=Cinzel+Decorative:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@400;600;800;900&family=Roboto:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Courier+Prime&family=Montserrat:wght@300;400;600;800&family=Cinzel:wght@400;700&family=EB+Garamond:ital,wght@0,400;0,700;1,400&family=Great+Vibes&family=Sacramento&family=Oswald:wght@400;700&family=Lora:ital,wght@0,400;0,700;1,400&family=Merriweather:ital,wght@0,400;0,700;1,400&family=Bodoni+Moda:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,700;1,400&family=Cardo:ital,wght@0,400;1,400&family=Cinzel+Decorative:wght@400;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Lato:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 
@@ -1067,12 +1067,12 @@ input:focus, select:focus, textarea:focus {
   white-space: nowrap;
 }
 
-.book-font-times { font-family: 'Playfair Display', serif; }
+.book-font-times { font-family: 'Libre Baskerville', serif; }
 .book-font-playfair { font-family: 'Playfair Display', serif; }
-.book-font-helvetica { font-family: 'Roboto', sans-serif; }
-.book-font-inter { font-family: 'Inter', sans-serif; }
+.book-font-helvetica { font-family: 'Lato', sans-serif; }
+.book-font-inter { font-family: 'Lato', sans-serif; }
 .book-font-courier { font-family: 'Courier Prime', monospace; }
-.book-font-arial { font-family: 'Arial', sans-serif; }
+.book-font-arial { font-family: 'Lato', sans-serif; }
 
 /* ── Empty state ── */
 .empty-state {
@@ -1136,13 +1136,13 @@ input:focus, select:focus, textarea:focus {
 .preview-content p.literary-paragraph {
   margin: 0;
   padding: 0;
-  line-height: 1.55;
+  line-height: inherit;
   text-indent: 0.5em;
   text-align: justify;
   text-justify: inter-word;
-  -webkit-hyphens: auto;
-  -ms-hyphens: auto;
-  hyphens: auto;
+  -webkit-hyphens: none;
+  -ms-hyphens: none;
+  hyphens: none;
 }
 
 .preview-content p.literary-paragraph:first-of-type {
@@ -1156,7 +1156,7 @@ input:focus, select:focus, textarea:focus {
   padding-left: 0;
   margin: 24px 20px;
   color: var(--text-muted);
-  line-height: 1.5;
+  line-height: inherit;
   text-align: justify;
 }
 
