@@ -2,15 +2,15 @@
 type: "code-context-section"
 id: "misc"
 title: "Weitere Dateien"
-updatedAt: "2026-07-03T20:41:14.858Z"
+updatedAt: "2026-07-04T23:21:51.630Z"
 ---
 
 # Weitere Dateien
 
 Restliche Dateien, die nicht in eine Kern-Sektion gefallen sind.
 
-- Dateien: 17
-- Gesamtzeilen: 3426
+- Dateien: 18
+- Gesamtzeilen: 3610
 
 ## Wichtige Symbole
 - hasBrainAccess
@@ -31,9 +31,9 @@ Restliche Dateien, die nicht in eine Kern-Sektion gefallen sind.
 - cn
 
 ## Top Dateien
-- src/utils/PdfGenerator.ts — 1777 Zeilen | Symbole: generateBookPdf, PdfConfig, BoxDesign
+- src/utils/PdfGenerator.ts — 1952 Zeilen | Symbole: splitSingleLineWithHyphens, splitTextToSizeWithHyphens, generateBookPdf, PdfConfig, BoxDesign
 - src/services/gil/GilService.ts — 434 Zeilen | Symbole: GilService, GilLog, LayoutWarning, GoldenExample, EmbeddedText, GilState
-- src/i18n.ts — 323 Zeilen | Symbole: t, translations, Language, Translations
+- src/i18n.ts — 327 Zeilen | Symbole: t, translations, Language, Translations
 - src/services/graphics/SvgGraphicRenderer.tsx — 310 Zeilen | Symbole: SvgGraphicRenderer
 - src/services/graphics/NecessityDetector.ts — 199 Zeilen | Symbole: NecessityDetector
 - src/services/NicheService.ts — 79 Zeilen | Symbole: searchNiche, Competitor, NicheMetrics, NicheResult
@@ -43,7 +43,7 @@ Restliche Dateien, die nicht in eine Kern-Sektion gefallen sind.
 ## Vollständige Dateiübersicht
 - src/config/brainAccess.ts (11) | hasBrainAccess, BRAIN_ALLOWED_EMAILS
 - src/contexts/LanguageContext.tsx (34) | LanguageContext, useLanguage, LanguageProvider
-- src/i18n.ts (323) | t, translations, Language, Translations
+- src/i18n.ts (327) | t, translations, Language, Translations
 - src/lib/activity.ts (21) | logActivity
 - src/lib/owner.ts (21) | OWNER_EMAIL_FALLBACK, getOwnerEmailClient, isOwnerEmail, OWNER_ROUTES, isOwnerRoute
 - src/lib/utils.d.ts (8) | cn, formatCurrency, generateUniqueId, truncateText, formatDate, debounce, throttle
@@ -55,6 +55,7 @@ Restliche Dateien, die nicht in eine Kern-Sektion gefallen sind.
 - src/services/NicheService.ts (79) | searchNiche, Competitor, NicheMetrics, NicheResult
 - src/services/userProfileService.ts (22) | syncUserProfile
 - src/types/graphics.ts (50) | GraphicType, GraphicLayoutVariant, TableConfig, ProcessConfig, TimelineItem, TimelineConfig, HierarchyConfig, GraphicDecision
+- src/types/hyphen.d.ts (5) | hyphenate, hyphenateSync
 - src/types/three-spritetext.d.ts (2)
-- src/utils/PdfGenerator.ts (1777) | generateBookPdf, PdfConfig, BoxDesign
+- src/utils/PdfGenerator.ts (1952) | splitSingleLineWithHyphens, splitTextToSizeWithHyphens, generateBookPdf, PdfConfig, BoxDesign
 - src/utils/WebScraper.ts (54) | fetchAndExtractText

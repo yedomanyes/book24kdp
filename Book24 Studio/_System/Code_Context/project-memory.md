@@ -2,7 +2,7 @@
 type: "code-context-section"
 id: "project-memory"
 title: "Vault, Memory & Obsidian Context"
-updatedAt: "2026-07-03T20:41:14.857Z"
+updatedAt: "2026-07-04T23:21:51.629Z"
 ---
 
 # Vault, Memory & Obsidian Context
@@ -10,7 +10,7 @@ updatedAt: "2026-07-03T20:41:14.857Z"
 Langzeitwissen, Patterns, Logs, Vault-Kontext und Obsidian-Zielstruktur.
 
 - Dateien: 53
-- Gesamtzeilen: 11038
+- Gesamtzeilen: 11043
 
 ## Wichtige Symbole
 - Al
@@ -24,7 +24,7 @@ Langzeitwissen, Patterns, Logs, Vault-Kontext und Obsidian-Zielstruktur.
 
 ## Top Dateien
 - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js — 9570 Zeilen | Symbole: Al, Vs, Cn, Mn, Pn, Ce, It, Xs
-- Book24 Studio/.obsidian/workspace.json — 222 Zeilen
+- Book24 Studio/.obsidian/workspace.json — 227 Zeilen
 - vault/CLAUDE.md — 47 Zeilen
 - vault/logs/2026-06-28_session_01.md — 38 Zeilen
 - Book24 Studio/.obsidian/core-plugins.json — 33 Zeilen
@@ -42,7 +42,7 @@ Langzeitwissen, Patterns, Logs, Vault-Kontext und Obsidian-Zielstruktur.
 - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/data.json (4)
 - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/main.js (9570) | Al, Vs, Cn, Mn, Pn, Ce, It, Xs
 - Book24 Studio/.obsidian/plugins/antigravity-cli-sidebar/manifest.json (11)
-- Book24 Studio/.obsidian/workspace.json (222)
+- Book24 Studio/.obsidian/workspace.json (227)
 - Book24 Studio/Books/Trading Masterclass/Kapitel 1 Grundlagen.md (13)
 - Book24 Studio/Books/Trading Masterclass/Kapitel 2 Strategien.md (15)
 - Book24 Studio/Books/Trading Masterclass/meta.md (20)

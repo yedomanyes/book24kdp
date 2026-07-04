@@ -2,7 +2,7 @@
 type: "code-context-section"
 id: "storage-cloud"
 title: "Storage, Supabase & Cloud"
-updatedAt: "2026-07-03T20:41:14.856Z"
+updatedAt: "2026-07-04T23:21:51.628Z"
 ---
 
 # Storage, Supabase & Cloud
@@ -10,7 +10,7 @@ updatedAt: "2026-07-03T20:41:14.856Z"
 Lokale Persistenz, Supabase-Verbindung, Cloud-Sync und Backend-Definitionen.
 
 - Dateien: 12
-- Gesamtzeilen: 1182
+- Gesamtzeilen: 1191
 
 ## Wichtige Symbole
 - saveLibrarySnapshot
@@ -29,7 +29,7 @@ Lokale Persistenz, Supabase-Verbindung, Cloud-Sync und Backend-Definitionen.
 - searchNicheAPI
 
 ## Top Dateien
-- src/services/StorageService.ts — 489 Zeilen | Symbole: saveLibrarySnapshot, loadLibrarySnapshot, loadAllLibrarySnapshots, deleteLibrarySnapshot, migrateOldKeys, createBackup, downloadBackup, importBackup
+- src/services/StorageService.ts — 498 Zeilen | Symbole: saveLibrarySnapshot, loadLibrarySnapshot, loadAllLibrarySnapshots, deleteLibrarySnapshot, migrateOldKeys, createBackup, downloadBackup, importBackup
 - src/supabase.ts — 140 Zeilen | Symbole: isSupabaseConfigured, supabase, toAppUser, getCurrentAppUser, AppUser
 - supabase/book24_schema.sql — 101 Zeilen
 - supabase/fix_owner_dashboard_stats.sql — 74 Zeilen
@@ -42,7 +42,7 @@ Lokale Persistenz, Supabase-Verbindung, Cloud-Sync und Backend-Definitionen.
 - functions/src/index.d.ts (21)
 - functions/src/index.js (44) | searchNicheAPI
 - functions/src/index.ts (53) | searchNicheAPI
-- src/services/StorageService.ts (489) | saveLibrarySnapshot, loadLibrarySnapshot, loadAllLibrarySnapshots, deleteLibrarySnapshot, migrateOldKeys, createBackup, downloadBackup, importBackup
+- src/services/StorageService.ts (498) | saveLibrarySnapshot, loadLibrarySnapshot, loadAllLibrarySnapshots, deleteLibrarySnapshot, migrateOldKeys, createBackup, downloadBackup, importBackup
 - src/supabase.ts (140) | isSupabaseConfigured, supabase, toAppUser, getCurrentAppUser, AppUser
 - supabase/activate_license_for_user.sql (33)
 - supabase/activity_logs.sql (66)

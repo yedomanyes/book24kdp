@@ -2,7 +2,7 @@
 type: "code-context-section"
 id: "app-shell"
 title: "App Shell & Studio Flow"
-updatedAt: "2026-07-03T20:41:14.841Z"
+updatedAt: "2026-07-04T23:21:51.626Z"
 ---
 
 # App Shell & Studio Flow
@@ -10,7 +10,7 @@ updatedAt: "2026-07-03T20:41:14.841Z"
 Zentrale App-Struktur, Routing-artige Tabs, Screen-Komposition und globaler Studio-Flow.
 
 - Dateien: 31
-- Gesamtzeilen: 23882
+- Gesamtzeilen: 24344
 
 ## Wichtige Symbole
 - DEFAULT_BOX1_DESIGN
@@ -31,19 +31,19 @@ Zentrale App-Struktur, Routing-artige Tabs, Screen-Komposition und globaler Stud
 - CircularGallery
 
 ## Top Dateien
-- src/App.tsx — 12076 Zeilen | Symbole: DEFAULT_BOX1_DESIGN, DEFAULT_BOX2_DESIGN, DEFAULT_BOX3_DESIGN, parsePageLines, serializeBlocksToMarkdown, WorkbookBlock, BoxDesign, TitlePageCustomText
+- src/App.tsx — 12506 Zeilen | Symbole: DEFAULT_BOX1_DESIGN, DEFAULT_BOX2_DESIGN, DEFAULT_BOX3_DESIGN, parsePageLines, serializeBlocksToMarkdown, WorkbookBlock, BoxDesign, TitlePageCustomText
 - src/components/OwnerPanel.tsx — 1558 Zeilen | Symbole: OwnerPanel, MetricCard, OwnerToolbarButton
 - src/components/LandingPage.tsx — 1542 Zeilen | Symbole: LandingPage
 - src/components/LiquidEther.tsx — 1242 Zeilen | Symbole: LiquidEther
 - src/components/BrainDashboard.tsx — 913 Zeilen | Symbole: BrainDashboard, DecisionSection, MiniSignalCard, SignalStat
 - src/components/CircularGallery.tsx — 824 Zeilen | Symbole: CircularGallery
-- src/components/SettingsModal.tsx — 502 Zeilen | Symbole: AI_MODEL_OPTIONS, SettingsModal, SectionTitle, ApiKeyBlock, StatusPill
+- src/components/SettingsModal.tsx — 515 Zeilen | Symbole: AI_MODEL_OPTIONS, SettingsModal, SectionTitle, ApiKeyBlock, StatusPill
 - src/components/GilInsightsPanel.tsx — 421 Zeilen | Symbole: GilInsightsPanel, TallyMarks, Sparkline
 
 ## Vollständige Dateiübersicht
-- src/App.tsx (12076) | DEFAULT_BOX1_DESIGN, DEFAULT_BOX2_DESIGN, DEFAULT_BOX3_DESIGN, parsePageLines, serializeBlocksToMarkdown, WorkbookBlock, BoxDesign, TitlePageCustomText
+- src/App.tsx (12506) | DEFAULT_BOX1_DESIGN, DEFAULT_BOX2_DESIGN, DEFAULT_BOX3_DESIGN, parsePageLines, serializeBlocksToMarkdown, WorkbookBlock, BoxDesign, TitlePageCustomText
 - src/components/Aurora.tsx (212) | Aurora
-- src/components/Auth.tsx (250) | Auth
+- src/components/Auth.tsx (269) | Auth
 - src/components/BrainDashboard.tsx (913) | BrainDashboard, DecisionSection, MiniSignalCard, SignalStat
 - src/components/BugReportModal.tsx (279) | BugReportModal
 - src/components/CircularGallery.tsx (824) | CircularGallery
@@ -64,7 +64,7 @@ Zentrale App-Struktur, Routing-artige Tabs, Screen-Komposition und globaler Stud
 - src/components/PixelSnow.tsx (374) | PixelSnowProps, PixelSnow
 - src/components/ProfileCard.tsx (383) | ProfileCardProps, ProfileCardComponent
 - src/components/RotatingText.tsx (215) | RotatingTextProps, RotatingTextRef
-- src/components/SettingsModal.tsx (502) | AI_MODEL_OPTIONS, SettingsModal, SectionTitle, ApiKeyBlock, StatusPill
+- src/components/SettingsModal.tsx (515) | AI_MODEL_OPTIONS, SettingsModal, SectionTitle, ApiKeyBlock, StatusPill
 - src/components/ShinyText.tsx (132) | ShinyText
 - src/components/SupabaseStatusBox.tsx (277) | SupabaseStatusBox
 - src/components/TiltedCard.tsx (164) | TiltedCardProps, TiltedCard

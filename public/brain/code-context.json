@@ -6,7 +6,7 @@
     "Hermes",
     "Antigravity"
   ],
-  "lastIndexedAt": "2026-07-03T23:31:13.152Z",
+  "lastIndexedAt": "2026-07-04T23:21:51.624Z",
   "worker": {
     "pid": 9887,
     "hostname": "Mac",
@@ -26,9 +26,9 @@
     "analysisJson": "graphify-out/.graphify_analysis.json"
   },
   "decisionEngine": {
-    "generatedAt": "2026-07-03T23:31:13.152Z",
+    "generatedAt": "2026-07-04T23:21:51.624Z",
     "thoughts": [
-      "App Shell & Studio Flow dominiert aktuell mit 24111 Zeilen und ist damit der schwerste Produktblock.",
+      "App Shell & Studio Flow dominiert aktuell mit 24344 Zeilen und ist damit der schwerste Produktblock.",
       "Das Brain selbst belegt 1913 Zeilen und hat damit genug Substanz für echte Runtime-Ausbauten.",
       "Vault und Memory liefern 53 Dateien Kontext für wiederverwendbares Wissen."
     ],
@@ -59,19 +59,19 @@
       {
         "id": "graph-intelligence",
         "label": "Hauptfokus",
-        "detail": "Graph / Code Intelligence · 6 Dateien · 62416 Zeilen",
-        "score": 532
+        "detail": "Graph / Code Intelligence · 6 Dateien · 63176 Zeilen",
+        "score": 538
       },
       {
         "id": "app-shell",
         "label": "Fokus 2",
-        "detail": "App Shell & Studio Flow · 31 Dateien · 24111 Zeilen",
-        "score": 311
+        "detail": "App Shell & Studio Flow · 31 Dateien · 24344 Zeilen",
+        "score": 313
       },
       {
         "id": "project-memory",
         "label": "Fokus 3",
-        "detail": "Vault, Memory & Obsidian Context · 53 Dateien · 11038 Zeilen",
+        "detail": "Vault, Memory & Obsidian Context · 53 Dateien · 11043 Zeilen",
         "score": 222
       }
     ],
@@ -79,7 +79,7 @@
       {
         "id": "app-shell-heavy",
         "label": "App Shell ist zu schwer",
-        "detail": "24111 Zeilen in der Shell bremsen Verständnis und machen das Projekt unruhig.",
+        "detail": "24344 Zeilen in der Shell bremsen Verständnis und machen das Projekt unruhig.",
         "score": 93,
         "severity": "high"
       }
@@ -91,12 +91,12 @@
       "title": "Graph / Code Intelligence",
       "description": "Graphify-Ausgaben und strukturierte Code-Graph-Artefakte für schnellen Überblick.",
       "fileCount": 6,
-      "totalLines": 62416,
+      "totalLines": 63176,
       "symbols": [],
       "topFiles": [
         {
           "path": "graphify-out/graph.json",
-          "lines": 58741,
+          "lines": 59476,
           "symbols": [],
           "preview": "{"
         },
@@ -108,15 +108,15 @@
         },
         {
           "path": "graphify-out/manifest.json",
-          "lines": 607,
+          "lines": 627,
           "symbols": [],
           "preview": "{"
         },
         {
           "path": "graphify-out/GRAPH_REPORT.md",
-          "lines": 567,
+          "lines": 584,
           "symbols": [],
-          "preview": "# Graph Report - KDP  (2026-07-03)"
+          "preview": "# Graph Report - KDP  (2026-07-05)"
         },
         {
           "path": "graphify-out/graph.html",
@@ -126,7 +126,7 @@
         },
         {
           "path": "graphify-out/.graphify_labels.json",
-          "lines": 147,
+          "lines": 135,
           "symbols": [],
           "preview": "{"
         }
@@ -137,7 +137,7 @@
       "title": "App Shell & Studio Flow",
       "description": "Zentrale App-Struktur, Routing-artige Tabs, Screen-Komposition und globaler Studio-Flow.",
       "fileCount": 31,
-      "totalLines": 24111,
+      "totalLines": 24344,
       "symbols": [
         "DEFAULT_BOX1_DESIGN",
         "DEFAULT_BOX2_DESIGN",
@@ -159,7 +159,7 @@
       "topFiles": [
         {
           "path": "src/App.tsx",
-          "lines": 12233,
+          "lines": 12506,
           "symbols": [
             "DEFAULT_BOX1_DESIGN",
             "DEFAULT_BOX2_DESIGN",
@@ -219,7 +219,7 @@
         },
         {
           "path": "src/components/SettingsModal.tsx",
-          "lines": 555,
+          "lines": 515,
           "symbols": [
             "AI_MODEL_OPTIONS",
             "SettingsModal",
@@ -246,7 +246,7 @@
       "title": "Vault, Memory & Obsidian Context",
       "description": "Langzeitwissen, Patterns, Logs, Vault-Kontext und Obsidian-Zielstruktur.",
       "fileCount": 53,
-      "totalLines": 11038,
+      "totalLines": 11043,
       "symbols": [
         "Al",
         "Vs",
@@ -275,7 +275,7 @@
         },
         {
           "path": "Book24 Studio/.obsidian/workspace.json",
-          "lines": 222,
+          "lines": 227,
           "symbols": [],
           "preview": "{"
         },
@@ -321,8 +321,8 @@
       "id": "misc",
       "title": "Weitere Dateien",
       "description": "Restliche Dateien, die nicht in eine Kern-Sektion gefallen sind.",
-      "fileCount": 17,
-      "totalLines": 3430,
+      "fileCount": 18,
+      "totalLines": 3610,
       "symbols": [
         "hasBrainAccess",
         "BRAIN_ALLOWED_EMAILS",
@@ -344,8 +344,10 @@
       "topFiles": [
         {
           "path": "src/utils/PdfGenerator.ts",
-          "lines": 1777,
+          "lines": 1952,
           "symbols": [
+            "splitSingleLineWithHyphens",
+            "splitTextToSizeWithHyphens",
             "generateBookPdf",
             "PdfConfig",
             "BoxDesign"
@@ -424,7 +426,7 @@
       "title": "AI Generation Stack",
       "description": "Gemini-/Prompt-/Content-Generierung und angrenzende Schreiblogik.",
       "fileCount": 1,
-      "totalLines": 2111,
+      "totalLines": 2336,
       "symbols": [
         "GeminiService",
         "BookOutlinePage",
@@ -433,7 +435,7 @@
       "topFiles": [
         {
           "path": "src/services/GeminiService.ts",
-          "lines": 2111,
+          "lines": 2336,
           "symbols": [
             "GeminiService",
             "BookOutlinePage",
@@ -534,7 +536,7 @@
       "title": "Storage, Supabase & Cloud",
       "description": "Lokale Persistenz, Supabase-Verbindung, Cloud-Sync und Backend-Definitionen.",
       "fileCount": 12,
-      "totalLines": 1187,
+      "totalLines": 1191,
       "symbols": [
         "saveLibrarySnapshot",
         "loadLibrarySnapshot",
@@ -554,7 +556,7 @@
       "topFiles": [
         {
           "path": "src/services/StorageService.ts",
-          "lines": 494,
+          "lines": 498,
           "symbols": [
             "saveLibrarySnapshot",
             "loadLibrarySnapshot",

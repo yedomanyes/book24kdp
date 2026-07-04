@@ -29,10 +29,15 @@ interface SettingsModalProps {
   onGroqKeysChange: (value: string) => void;
   geminiKeys: string;
   onGeminiKeysChange: (value: string) => void;
+  deepseekKeys: string;
+  onDeepseekKeysChange: (value: string) => void;
   selectedModel: string;
   onModelChange: (value: string) => void;
+  generationTurboEnabled: boolean;
+  onGenerationTurboChange: (value: boolean) => void;
   groqConnected: boolean;
   geminiConnected: boolean;
+  deepseekConnected: boolean;
   userEmail?: string | null;
   userId?: string | null;
 }
@@ -48,10 +53,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onGroqKeysChange,
   geminiKeys,
   onGeminiKeysChange,
+  deepseekKeys,
+  onDeepseekKeysChange,
   selectedModel,
   onModelChange,
+  generationTurboEnabled,
+  onGenerationTurboChange,
   groqConnected,
   geminiConnected,
+  deepseekConnected,
   userEmail,
   userId,
 }) => {
@@ -160,7 +170,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               >
                 {t.icon}
                 {t.label}
-                {t.id === 'api' && (!groqConnected || !geminiConnected) && (
+                {t.id === 'api' && (!groqConnected || !geminiConnected || !deepseekConnected) && (
                   <span className="settings-nav-dot" />
                 )}
               </button>
@@ -335,6 +345,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   connected={geminiConnected}
                   tr={tr}
                 />
+
+                <ApiKeyBlock
+                  label="DeepSeek API Keys"
+                  hint={tr.deepseekHint}
+                  link="https://platform.deepseek.com/api_keys"
+                  linkLabel={tr.getKeys}
+                  placeholder={tr.deepseekPlaceholder}
+                  value={deepseekKeys}
+                  onChange={onDeepseekKeysChange}
+                  connected={deepseekConnected}
+                  tr={tr}
+                />
               </>
             )}
 
@@ -359,6 +381,33 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <div className="settings-status-row">
                   <StatusPill ok={groqConnected} label="Groq" readyLabel={tr.ready} missingLabel={tr.keyMissing} />
                   <StatusPill ok={geminiConnected} label="Gemini" readyLabel={tr.ready} missingLabel={tr.keyMissing} />
+                  <StatusPill ok={deepseekConnected} label="DeepSeek" readyLabel={tr.ready} missingLabel={tr.keyMissing} />
+                </div>
+                <div style={{
+                  marginTop: '20px',
+                  padding: '14px 16px',
+                  borderRadius: '10px',
+                  border: '1px solid var(--border-color)',
+                  background: 'var(--bg-card)',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  gap: '16px'
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <span className="settings-label" style={{ margin: 0 }}>Turbo-Generierung</span>
+                    <span className="settings-hint" style={{ margin: 0 }}>
+                      Reduziert Wartezeiten zwischen Seiten. DeepSeek läuft damit deutlich schneller, ohne den sequentiellen Buchfluss komplett zu zerstören.
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onGenerationTurboChange(!generationTurboEnabled)}
+                    className={`theme-switch-btn${generationTurboEnabled ? ' active' : ''}`}
+                    style={{ minWidth: '96px', justifyContent: 'center' }}
+                  >
+                    {generationTurboEnabled ? 'Aktiv' : 'Aus'}
+                  </button>
                 </div>
               </>
             )}
@@ -386,26 +435,21 @@ function ApiKeyBlock({
   connected: boolean;
   tr: ReturnType<typeof t>['settings'];
 }) {
-  const [newKey, setNewKey] = useState('');
-  const keys = value.split(/[\n,]+/).map(k => k.trim()).filter(Boolean);
+  // rawKeys is the actual saved keys
+  const rawKeys = value.split(/[\n,]+/).map(k => k.trim()).filter(Boolean);
+  // displayKeys always has one empty slot at the end for typing a new key
+  const displayKeys = [...rawKeys, ''];
 
   const updateKey = (index: number, newKeyVal: string) => {
-    const newKeys = [...keys];
+    const newKeys = [...displayKeys];
     newKeys[index] = newKeyVal;
     onChange(newKeys.filter(Boolean).join(','));
   };
 
   const removeKey = (index: number) => {
-    const newKeys = [...keys];
+    const newKeys = [...displayKeys];
     newKeys.splice(index, 1);
-    onChange(newKeys.join(','));
-  };
-
-  const handleAddKey = () => {
-    if (newKey.trim()) {
-      onChange([...keys, newKey.trim()].join(','));
-      setNewKey('');
-    }
+    onChange(newKeys.filter(Boolean).join(','));
   };
 
   return (
@@ -426,59 +470,28 @@ function ApiKeyBlock({
       </div>
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
-        {keys.map((key, index) => (
+        {displayKeys.map((key, index) => (
           <div key={index} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 'bold', width: '20px' }}>#{index + 1}</span>
             <input
               type="text"
               className="settings-textarea"
               style={{ padding: '6px 10px', height: '32px', margin: 0, flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-              placeholder={placeholder.split('\n')[0]}
+              placeholder={index === displayKeys.length - 1 ? tr.newKeyPlaceholder : placeholder.split('\n')[0]}
               value={key}
               onChange={e => updateKey(index, e.target.value)}
             />
-            <button 
-              onClick={() => removeKey(index)}
-              style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              title={tr.removeKey}
-            >
-              <X style={{ width: 16, height: 16 }} />
-            </button>
+            {index < displayKeys.length - 1 && (
+              <button 
+                onClick={() => removeKey(index)}
+                style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                title={tr.removeKey}
+              >
+                <X style={{ width: 16, height: 16 }} />
+              </button>
+            )}
           </div>
         ))}
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 'bold', width: '20px' }}>#{keys.length + 1}</span>
-          <input
-            type="text"
-            className="settings-textarea"
-            style={{ padding: '6px 10px', height: '32px', margin: 0, flex: 1 }}
-            placeholder={tr.newKeyPlaceholder}
-            value={newKey}
-            onChange={e => setNewKey(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleAddKey();
-              }
-            }}
-          />
-          <button
-            onClick={handleAddKey}
-            style={{
-              padding: '0 12px',
-              height: '32px',
-              backgroundColor: 'var(--primary)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '6px',
-              fontSize: '12px',
-              fontWeight: 600,
-              cursor: 'pointer'
-            }}
-          >
-            {tr.addKey}
-          </button>
-        </div>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
         <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>

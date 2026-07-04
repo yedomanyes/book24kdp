@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { hyphenateSync } from 'hyphen/de';
 import { 
   BookOpen, 
   Play, 
@@ -1777,6 +1778,9 @@ export default function App() {
     const measurer = document.getElementById('book24-measurer');
     if (!measurer) return false;
 
+    // Apply German hyphenation on-the-fly
+    text = hyphenateSync(text || '');
+
     let wInches = 6;
     let hInches = 9;
     if (book.pageSize === '5x8') { wInches = 5; hInches = 8; }
@@ -1829,9 +1833,9 @@ export default function App() {
     measurer.style.textAlign = book.alignment === 'left' ? 'left' : 'justify';
     measurer.style.textAlignLast = 'left';
     measurer.style.wordBreak = 'break-word';
-    (measurer.style as any).WebkitHyphens = 'none';
-    (measurer.style as any).msHyphens = 'none';
-    measurer.style.hyphens = 'none';
+    (measurer.style as any).WebkitHyphens = 'manual';
+    (measurer.style as any).msHyphens = 'manual';
+    measurer.style.hyphens = 'manual';
     measurer.style.padding = '0';
     measurer.style.paddingRight = '1px';
     measurer.style.margin = '0';
@@ -3208,6 +3212,19 @@ export default function App() {
     prevActiveBookIdRef.current = activeBookId;
 
     if (pageChanged || bookChanged) {
+      if (isTypingRef.current) {
+        const bookId = prevActiveBookIdRef.current || activeBookId;
+        const prevPageNum = editorPageRef.current;
+        const prevText = editorTextRef.current;
+        if (bookId && prevPageNum !== null && prevText !== undefined) {
+          const currentBook = booksRef.current.find(b => b.id === bookId);
+          if (currentBook) {
+            const updatedBook = buildManualPageUpdate(currentBook, prevPageNum, prevText);
+            forceSaveSingleBook(updatedBook);
+          }
+        }
+      }
+
       // Force cancel any active typing states
       isTypingRef.current = false;
       if (editorTypingTimerRef.current) {
@@ -6666,14 +6683,16 @@ export default function App() {
       );
     }
 
-    const blocks = parsePageLines(partText.split('\n'));
+    // Hyphenate on-the-fly for preview rendering
+    const hyphenatedPartText = hyphenateSync(partText || '');
+    const blocks = parsePageLines(hyphenatedPartText.split('\n'));
 
     const updatePagePartBlocks = (blocksList: WorkbookBlock[]) => {
       if (typeof selectedPage !== 'number') return;
       const pageText = (activeBook.pagesText || {})[selectedPage] || '';
       const parts = pageText.split(/\r?\n\s*-{3,}\s*(?:\r?\n|$)/);
       parts[partIndex] = serializeBlocksToMarkdown(blocksList);
-      const newPageText = parts.join('\n---\n');
+      const newPageText = parts.join('\n---\n').replace(/\u00ad/g, '');
       updateActiveBookConfig('pagesText', {
         ...(activeBook.pagesText || {}),
         [selectedPage]: newPageText
@@ -11437,9 +11456,9 @@ export default function App() {
                                   lineHeight: String((activeBook as any).lineHeightMultiplier || 1.4),
                                   textAlign: activeBook.alignment === 'left' ? 'left' : 'justify',
                                   textAlignLast: 'left',
-                                  WebkitHyphens: 'none',
-                                  msHyphens: 'none',
-                                  hyphens: 'none',
+                                  WebkitHyphens: 'manual',
+                                  msHyphens: 'manual',
+                                  hyphens: 'manual',
                                   overflowY: 'hidden',
                                   paddingRight: '1px',
                                   flex: 1,

@@ -1140,9 +1140,9 @@ input:focus, select:focus, textarea:focus {
   text-indent: 0.5em;
   text-align: justify;
   text-justify: inter-word;
-  -webkit-hyphens: none;
-  -ms-hyphens: none;
-  hyphens: none;
+  -webkit-hyphens: manual;
+  -ms-hyphens: manual;
+  hyphens: manual;
 }
 
 .preview-content p.literary-paragraph:first-of-type {

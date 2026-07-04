@@ -148,7 +148,7 @@ export const KEYS = {
 };
 
 /** Alle alten Key-Präfixe die migriert werden sollen */
-const LEGACY_PREFIXES = ['kryork_', 'book24_'];
+const LEGACY_PREFIXES = ['b24studio_', 'kryork_', 'book24_'];
 
 const getActiveAccountId = (): string => {
   return localStorage.getItem(KEYS.activeAccount) || 'default';
@@ -159,57 +159,61 @@ const getActiveAccountId = (): string => {
  * zu den neuen festen Keys. Läuft sicher mehrfach (idempotent).
  */
 export function migrateOldKeys(): void {
-  const mapKey = (oldPrefix: string, suffix: string) => `${oldPrefix}${suffix}`;
+  try {
+    const mapKey = (oldPrefix: string, suffix: string) => `${oldPrefix}${suffix}`;
 
-  const migrations: Array<{ newKey: string; oldSuffixes: string[] }> = [
-    { newKey: KEYS.theme, oldSuffixes: ['theme'] },
-    { newKey: KEYS.accounts, oldSuffixes: ['accounts'] },
-    { newKey: KEYS.activeAccount, oldSuffixes: ['active_account'] },
-    { newKey: KEYS.selectedModel, oldSuffixes: ['selected_model'] },
-    { newKey: KEYS.generationTurbo, oldSuffixes: ['generation_turbo'] },
-  ];
+    const migrations: Array<{ newKey: string; oldSuffixes: string[] }> = [
+      { newKey: KEYS.theme, oldSuffixes: ['theme'] },
+      { newKey: KEYS.accounts, oldSuffixes: ['accounts'] },
+      { newKey: KEYS.activeAccount, oldSuffixes: ['active_account'] },
+      { newKey: KEYS.selectedModel, oldSuffixes: ['selected_model'] },
+      { newKey: KEYS.generationTurbo, oldSuffixes: ['generation_turbo'] },
+    ];
 
-  for (const { newKey, oldSuffixes } of migrations) {
-    if (!localStorage.getItem(newKey)) {
-      for (const prefix of LEGACY_PREFIXES) {
-        for (const suffix of oldSuffixes) {
-          const val = localStorage.getItem(mapKey(prefix, suffix));
-          if (val) {
+    for (const { newKey, oldSuffixes } of migrations) {
+      if (!localStorage.getItem(newKey)) {
+        for (const prefix of LEGACY_PREFIXES) {
+          for (const suffix of oldSuffixes) {
+            const val = localStorage.getItem(mapKey(prefix, suffix));
+            if (val) {
+              localStorage.setItem(newKey, val);
+              break;
+            }
+          }
+          if (localStorage.getItem(newKey)) break;
+        }
+      }
+    }
+
+    const accountIds = new Set<string>(['default']);
+    for (const prefix of LEGACY_PREFIXES) {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key?.startsWith(`${prefix}library_`)) {
+          const id = key.replace(`${prefix}library_`, '');
+          accountIds.add(id);
+        }
+      }
+    }
+
+    for (const id of accountIds) {
+      const newKey = KEYS.library(id);
+      const newVal = localStorage.getItem(newKey);
+      const isNewValEmpty = !newVal || newVal === '[]' || newVal === 'null' || newVal === 'undefined';
+
+      if (isNewValEmpty) {
+        for (const prefix of LEGACY_PREFIXES) {
+          const oldKey = `${prefix}library_${id}`;
+          const val = localStorage.getItem(oldKey);
+          if (val && val !== '[]' && val !== 'null') {
             localStorage.setItem(newKey, val);
             break;
           }
         }
-        if (localStorage.getItem(newKey)) break;
       }
     }
-  }
-
-  const accountIds = new Set<string>(['default']);
-  for (const prefix of LEGACY_PREFIXES) {
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key?.startsWith(`${prefix}library_`)) {
-        const id = key.replace(`${prefix}library_`, '');
-        accountIds.add(id);
-      }
-    }
-  }
-
-  for (const id of accountIds) {
-    const newKey = KEYS.library(id);
-    const newVal = localStorage.getItem(newKey);
-    const isNewValEmpty = !newVal || newVal === '[]' || newVal === 'null' || newVal === 'undefined';
-
-    if (isNewValEmpty) {
-      for (const prefix of LEGACY_PREFIXES) {
-        const oldKey = `${prefix}library_${id}`;
-        const val = localStorage.getItem(oldKey);
-        if (val && val !== '[]' && val !== 'null') {
-          localStorage.setItem(newKey, val);
-          break;
-        }
-      }
-    }
+  } catch (e) {
+    console.error('Failed to migrate old keys:', e);
   }
 }
 

@@ -1,6 +1,162 @@
 import { jsPDF } from 'jspdf';
 import type { BookOutline } from '../services/GeminiService';
 import { GilService } from '../services/gil/GilService';
+import { hyphenateSync } from 'hyphen/de';
+
+// Syllable/hyphen wrapping helpers
+export function splitSingleLineWithHyphens(doc: any, text: string, maxWidth: number): { lineText: string, consumedLength: number } {
+  const cleanText = text.replace(/\u00ad/g, '');
+  if (doc.getTextWidth(cleanText) <= maxWidth) {
+    return { lineText: cleanText, consumedLength: text.length };
+  }
+
+  const tokens = text.split(/(\s+)/);
+  let currentLine = '';
+  let consumedLength = 0;
+
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    if (!token) continue;
+
+    if (/^\s+$/.test(token)) {
+      const cleanLineWithSpace = (currentLine + token).replace(/\u00ad/g, '');
+      if (doc.getTextWidth(cleanLineWithSpace) <= maxWidth) {
+        currentLine += token;
+        consumedLength += token.length;
+      } else {
+        break;
+      }
+      continue;
+    }
+
+    const cleanLineWithWord = (currentLine + token).replace(/\u00ad/g, '');
+    const w = doc.getTextWidth(cleanLineWithWord);
+
+    if (w <= maxWidth) {
+      currentLine += token;
+      consumedLength += token.length;
+    } else {
+      const syllables = token.split('\u00ad');
+      if (syllables.length > 1) {
+        let partialWord = '';
+        let partialWordWithAd = '';
+        let hyphenatedPartIndex = -1;
+
+        for (let s = 0; s < syllables.length - 1; s++) {
+          const testPartial = partialWord + syllables[s];
+          const testPartialWithAd = partialWordWithAd + syllables[s] + '\u00ad';
+          const cleanLineWithPartial = (currentLine + testPartial + '-').replace(/\u00ad/g, '');
+          const testW = doc.getTextWidth(cleanLineWithPartial);
+
+          if (testW <= maxWidth) {
+            partialWord = testPartial;
+            partialWordWithAd = testPartialWithAd;
+            hyphenatedPartIndex = s;
+          } else {
+            break;
+          }
+        }
+
+        if (hyphenatedPartIndex >= 0) {
+          return {
+            lineText: currentLine.replace(/\u00ad/g, '') + partialWord + '-',
+            consumedLength: consumedLength + partialWordWithAd.length
+          };
+        }
+      }
+      break;
+    }
+  }
+
+  if (currentLine) {
+    return { lineText: currentLine.replace(/\u00ad/g, ''), consumedLength };
+  }
+
+  const firstToken = tokens[0] || '';
+  return { lineText: firstToken.replace(/\u00ad/g, ''), consumedLength: firstToken.length };
+}
+
+export function splitTextToSizeWithHyphens(doc: any, text: string, maxWidth: number): string[] {
+  if (!text) return [];
+  if (!text.includes('\u00ad')) {
+    return doc.splitTextToSize(text, maxWidth);
+  }
+
+  const lines: string[] = [];
+  const paragraphs = text.split('\n');
+
+  for (const para of paragraphs) {
+    if (!para) {
+      lines.push('');
+      continue;
+    }
+
+    const tokens = para.split(/(\s+)/);
+    let currentLine = '';
+
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i];
+      if (!token) continue;
+
+      if (/^\s+$/.test(token)) {
+        if (currentLine) {
+          currentLine += token;
+        }
+        continue;
+      }
+
+      const lineWithWord = currentLine + token;
+      const cleanLineWithWord = lineWithWord.replace(/\u00ad/g, '');
+      const width = doc.getTextWidth(cleanLineWithWord);
+
+      if (width <= maxWidth) {
+        currentLine += token;
+      } else {
+        const syllables = token.split('\u00ad');
+        if (syllables.length > 1) {
+          let partialWord = '';
+          let hyphenatedPartIndex = -1;
+
+          for (let s = 0; s < syllables.length - 1; s++) {
+            const testPartial = partialWord + syllables[s];
+            const lineWithPartial = currentLine + testPartial + '-';
+            const cleanLineWithPartial = lineWithPartial.replace(/\u00ad/g, '');
+            const w = doc.getTextWidth(cleanLineWithPartial);
+
+            if (w <= maxWidth) {
+              partialWord = testPartial;
+              hyphenatedPartIndex = s;
+            } else {
+              break;
+            }
+          }
+
+          if (hyphenatedPartIndex >= 0) {
+            lines.push(currentLine + partialWord + '-');
+            const remainingWord = syllables.slice(hyphenatedPartIndex + 1).join('\u00ad');
+            currentLine = remainingWord;
+            continue;
+          }
+        }
+
+        if (currentLine) {
+          lines.push(currentLine);
+          currentLine = token;
+        } else {
+          lines.push(token);
+          currentLine = '';
+        }
+      }
+    }
+
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+  }
+
+  return lines.map(line => line.replace(/\u00ad/g, ''));
+}
+
 
 export interface PdfConfig {
   bookId?: string;
@@ -90,6 +246,13 @@ export async function generateBookPdf(
   pagesText: { [key: number]: string },
   config: PdfConfig
 ): Promise<Blob> {
+  // Hyphenate all page text on the fly
+  const hyphenatedPagesText: { [key: number]: string } = {};
+  for (const [key, val] of Object.entries(pagesText)) {
+    hyphenatedPagesText[Number(key)] = hyphenateSync(val || '');
+  }
+  pagesText = hyphenatedPagesText;
+
   // Determine page dimensions in inches
   let widthInches = 6;
   let heightInches = 9;
@@ -973,32 +1136,32 @@ export async function generateBookPdf(
           case 'heading': {
             doc.setFont(fontFamily, fontStyleBold);
             doc.setFontSize(fontSize);
-            return doc.splitTextToSize(block.text.replace(/\*\*/g, ''), drawWidth).length * lh + fontSize * 0.4;
+            return splitTextToSizeWithHyphens(doc, block.text.replace(/\*\*/g, ''), drawWidth).length * lh + fontSize * 0.4;
           }
           case 'quote': {
             doc.setFont(fontFamily, fontStyleItalic);
             doc.setFontSize(fontSize);
-            return doc.splitTextToSize(block.text.replace(/\*\*/g, ''), drawWidth - 30).length * lh + fontSize * 1.6;
+            return splitTextToSizeWithHyphens(doc, block.text.replace(/\*\*/g, ''), drawWidth - 30).length * lh + fontSize * 1.6;
           }
           case 'bullet': {
             doc.setFont(fontFamily, fontStyleRegular);
             doc.setFontSize(fontSize);
-            return doc.splitTextToSize('• ' + block.text.replace(/\*\*/g, ''), drawWidth - 10).length * lh;
+            return splitTextToSizeWithHyphens(doc, '• ' + block.text.replace(/\*\*/g, ''), drawWidth - 10).length * lh;
           }
           case 'numbered': {
             doc.setFont(fontFamily, fontStyleRegular);
             doc.setFontSize(fontSize);
-            return doc.splitTextToSize(block.num + ' ' + block.text.replace(/\*\*/g, ''), drawWidth - 14).length * lh;
+            return splitTextToSizeWithHyphens(doc, block.num + ' ' + block.text.replace(/\*\*/g, ''), drawWidth - 14).length * lh;
           }
           case 'checkbox': {
             doc.setFont(fontFamily, fontStyleRegular);
             doc.setFontSize(fontSize);
-            return doc.splitTextToSize(block.text.replace(/\*\*/g, ''), drawWidth - 16).length * lh;
+            return splitTextToSizeWithHyphens(doc, block.text.replace(/\*\*/g, ''), drawWidth - 16).length * lh;
           }
           case 'paragraph': {
             doc.setFont(fontFamily, fontStyleRegular);
             doc.setFontSize(fontSize);
-            return doc.splitTextToSize(block.text.replace(/\*\*/g, ''), drawWidth).length * lh;
+            return splitTextToSizeWithHyphens(doc, block.text.replace(/\*\*/g, ''), drawWidth).length * lh;
           }
           case 'image': {
             const floatVal = block.float !== undefined ? block.float : 'none';
@@ -1122,7 +1285,7 @@ export async function generateBookPdf(
             doc.setFont(fontFamily, fontStyleRegular);
             doc.setFontSize(fontSize);
             doc.setTextColor(0);
-            const bLines = doc.splitTextToSize(txt, drawWidth - 10);
+            const bLines = splitTextToSizeWithHyphens(doc, txt, drawWidth - 10);
             bLines.forEach((ln: string, li: number) => {
               const isLast = li === bLines.length - 1;
               const bAlign = config.alignment === 'left' || isLast
@@ -1140,7 +1303,7 @@ export async function generateBookPdf(
             doc.setFont(fontFamily, fontStyleRegular);
             doc.setFontSize(fontSize);
             doc.setTextColor(0);
-            const nLines = doc.splitTextToSize(txt, drawWidth - 14);
+            const nLines = splitTextToSizeWithHyphens(doc, txt, drawWidth - 14);
             nLines.forEach((ln: string, li: number) => {
               const isLast = li === nLines.length - 1;
               const bAlign = config.alignment === 'left' || isLast
@@ -1175,7 +1338,7 @@ export async function generateBookPdf(
             doc.setFont(fontFamily, fontStyleRegular);
             doc.setFontSize(fontSize);
             doc.setTextColor(0);
-            const cbLines = doc.splitTextToSize(cbLabel, drawWidth - boxSize - 5);
+            const cbLines = splitTextToSizeWithHyphens(doc, cbLabel, drawWidth - boxSize - 5);
             cbLines.forEach((ln: string) => {
               doc.text(ln, blockX + boxSize + 5, contentY);
               contentY += lh;
@@ -1471,11 +1634,10 @@ export async function generateBookPdf(
                   currentX += indentWidth;
                 }
                 
-                const lines = doc.splitTextToSize(remainingText, currentWidth);
-                const lineText = lines[0];
+                const { lineText, consumedLength } = splitSingleLineWithHyphens(doc, remainingText, currentWidth);
                 if (!lineText) break;
                 
-                const isLastLine = lines.length <= 1 || !remainingText.substring(lineText.length).trim();
+                const isLastLine = consumedLength >= remainingText.length || !remainingText.substring(consumedLength).trim();
                 const aOpt = config.alignment === 'left' || isLastLine
                   ? { align: 'left' as const }
                   : { align: 'justify' as const, maxWidth: currentWidth };
@@ -1483,7 +1645,7 @@ export async function generateBookPdf(
                 doc.text(lineText, currentX, contentY, aOpt);
                 contentY += lh;
                 
-                remainingText = remainingText.substring(lineText.length).trim();
+                remainingText = remainingText.substring(consumedLength).trim();
                 isFirstLineOfParagraph = false;
               }
               doc.setFont(fontFamily, fontStyleRegular);
@@ -1503,11 +1665,10 @@ export async function generateBookPdf(
                 currentX += indentWidth;
               }
               
-              const lines = doc.splitTextToSize(remainingText, currentWidth);
-              const lineText = lines[0];
+              const { lineText, consumedLength } = splitSingleLineWithHyphens(doc, remainingText, currentWidth);
               if (!lineText) break;
               
-              const isLastLine = lines.length <= 1 || !remainingText.substring(lineText.length).trim();
+              const isLastLine = consumedLength >= remainingText.length || !remainingText.substring(consumedLength).trim();
               const aOpt = config.alignment === 'left' || isLastLine
                 ? { align: 'left' as const }
                 : { align: 'justify' as const, maxWidth: currentWidth };
@@ -1515,7 +1676,7 @@ export async function generateBookPdf(
               doc.text(lineText, currentX, contentY, aOpt);
               contentY += lh;
               
-              remainingText = remainingText.substring(lineText.length).trim();
+              remainingText = remainingText.substring(consumedLength).trim();
               isFirstLineOfParagraph = false;
             }
             doc.setFont(fontFamily, fontStyleRegular);

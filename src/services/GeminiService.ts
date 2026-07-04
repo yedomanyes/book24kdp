@@ -19,8 +19,8 @@ import { LayoutFixDB } from './brain/LayoutFixDB';
 export class GeminiService {
   private groqKeys: string[] = [];
   private geminiKeys: string[] = [];
+  private deepseekKeys: string[] = [];
   private model: string;
-  private static promptCache: { [key: string]: { name: string; expiresAt: number } } = {};
   private static keyBlacklist: { [key: string]: number } = {};
 
   private static blacklistKey(key: string, durationMs: number = 300000) {
@@ -55,12 +55,15 @@ export class GeminiService {
     } else if (apiKeys && typeof apiKeys === 'object') {
       this.groqKeys = (apiKeys.groq || []).filter(Boolean);
       this.geminiKeys = (apiKeys.gemini || []).filter(Boolean);
+      this.deepseekKeys = (apiKeys.deepseek || []).filter(Boolean);
     }
   }
 
-  private getProvider(): 'groq' | 'gemini' {
+  private getProvider(): 'groq' | 'gemini' | 'deepseek' {
     if (this.model.startsWith('gemini-')) {
       return 'gemini';
+    } else if (this.model.startsWith('deepseek-')) {
+      return 'deepseek';
     }
     return 'groq';
   }
@@ -120,6 +123,92 @@ export class GeminiService {
     }
 
     return normalized;
+  }
+
+  public ensureUniqueAndContiguousChapters(
+    pages: BookOutlinePage[],
+    language: string
+  ): BookOutlinePage[] {
+    if (pages.length === 0) return pages;
+
+    const isDe = language === 'de';
+    
+    // Step 1: Detect all chapter segments as they appear sequentially
+    const segments: { title: string; pages: BookOutlinePage[] }[] = [];
+    let currentSegment: { title: string; pages: BookOutlinePage[] } | null = null;
+
+    for (const p of pages) {
+      const title = (p.chapter_title || '').trim();
+      if (!currentSegment || currentSegment.title !== title) {
+        currentSegment = { title, pages: [] };
+        segments.push(currentSegment);
+      }
+      currentSegment.pages.push(p);
+    }
+
+    // Step 2: Merge micro-chapters (less than 3 pages, or less than 2 for short books)
+    // into the preceding chapter to enforce minimum chapter length and avoid alternating 1-page chapters
+    const consolidatedSegments: { title: string; pages: BookOutlinePage[] }[] = [];
+    const minPages = pages.length < 15 ? 2 : 3;
+    
+    for (let i = 0; i < segments.length; i++) {
+      const seg = segments[i];
+      
+      if (consolidatedSegments.length === 0) {
+        consolidatedSegments.push(seg);
+        continue;
+      }
+      
+      const lastSeg = consolidatedSegments[consolidatedSegments.length - 1];
+      
+      if (seg.pages.length < minPages) {
+        lastSeg.pages.push(...seg.pages);
+        seg.pages.forEach(p => {
+          p.chapter_title = lastSeg.title;
+        });
+      } else {
+        if (seg.title.trim().toLowerCase() === lastSeg.title.trim().toLowerCase()) {
+          lastSeg.pages.push(...seg.pages);
+          seg.pages.forEach(p => {
+            p.chapter_title = lastSeg.title;
+          });
+        } else {
+          consolidatedSegments.push(seg);
+        }
+      }
+    }
+
+    // Step 3: Ensure all remaining chapter titles are completely unique.
+    // If a chapter title appears multiple times non-contiguously, we append " - Teil II", " - Teil III", etc.
+    const titleCounts: { [title: string]: number } = {};
+    
+    for (const seg of consolidatedSegments) {
+      const baseTitle = seg.title;
+      const normalizedBase = baseTitle.toLowerCase().trim();
+      if (!titleCounts[normalizedBase]) {
+        titleCounts[normalizedBase] = 1;
+      } else {
+        titleCounts[normalizedBase]++;
+        const suffix = isDe ? ` - Teil ${titleCounts[normalizedBase]}` : ` - Part ${titleCounts[normalizedBase]}`;
+        const newTitle = baseTitle + suffix;
+        seg.title = newTitle;
+        for (const p of seg.pages) {
+          p.chapter_title = newTitle;
+        }
+      }
+    }
+
+    // Step 4: Re-flatten pages list in correct page order
+    const flattened: BookOutlinePage[] = [];
+    for (const seg of consolidatedSegments) {
+      flattened.push(...seg.pages);
+    }
+    
+    flattened.forEach((p, idx) => {
+      p.page_number = idx + 1;
+    });
+
+    return flattened;
   }
 
   /**
@@ -208,10 +297,11 @@ export class GeminiService {
   }
 
   private async executeWithKeyRotation(
-    provider: 'groq' | 'gemini',
-    requestFn: (key: string) => Promise<Response>
+    provider: 'groq' | 'gemini' | 'deepseek',
+    requestFn: (key: string) => Promise<Response>,
+    timeoutMs: number = 25000
   ): Promise<any> {
-    const keys = provider === 'groq' ? this.groqKeys : this.geminiKeys;
+    const keys = provider === 'groq' ? this.groqKeys : provider === 'deepseek' ? this.deepseekKeys : this.geminiKeys;
     if (keys.length === 0) {
       throw new Error(`Keine API-Schlüssel für ${provider.toUpperCase()} konfiguriert.`);
     }
@@ -231,9 +321,29 @@ export class GeminiService {
         const key = keysToTry[i];
         const keyIndexInOriginal = keys.indexOf(key);
         try {
-          const response = await requestFn(key);
+          let timeoutId: any;
+          const response = await Promise.race([
+            requestFn(key),
+            new Promise<never>((_, reject) => {
+              timeoutId = setTimeout(() => reject(new Error(`Timeout: API-Anfrage hat länger als ${timeoutMs / 1000} Sekunden gedauert.`)), timeoutMs);
+            })
+          ]).finally(() => {
+            if (timeoutId) clearTimeout(timeoutId);
+          });
           
-          if (response.status === 429 || response.status === 413 || response.status === 401 || response.status === 403) {
+          if (response.status === 413) {
+            const errText = await response.text();
+            let errorMessage = errText;
+            try {
+              const parsed = JSON.parse(errText);
+              errorMessage = parsed.error?.message || errText;
+            } catch (e) {}
+            
+            // Do NOT rotate keys or wait for 413 (Payload too large). Just throw immediately so the fallback logic can kick in.
+            throw new Error(`Key #${keyIndexInOriginal + 1} Fehler (${response.status}): ${errorMessage}`);
+          }
+
+          if (response.status === 429 || response.status === 401 || response.status === 403) {
             const errText = await response.text();
             let errorMessage = errText;
             try {
@@ -272,9 +382,9 @@ export class GeminiService {
       
       // If we cycled through all keys and still failed, wait before next cycle
       if (cycle < maxGlobalCycles - 1) {
-        const waitTime = provider === 'groq' ? 15000 : 4000;
-        console.warn(`Alle aktiven ${provider.toUpperCase()}-Keys ausprobiert. Warte ${waitTime / 1000}s vor dem nächsten Gesamtdurchlauf...`);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
+        console.log(`${provider.toUpperCase()}: Alle verfügbaren Keys fehlgeschlagen in Zyklus ${cycle + 1}. Warte kurz...`);
+        const waitTime = provider === 'groq' ? 15000 : provider === 'deepseek' ? 8000 : 4000;
+        await new Promise(r => setTimeout(r, waitTime));
       }
     }
 
@@ -320,9 +430,11 @@ Jede einzelne Buchseite MUSS einen vollkommen eigenständigen, glasklaren und un
 - Jede Seite muss das Thema progressiv vorantreiben (z.B. Seite 3: 'Psychologischer Auslöser des Verhaltens', Seite 4: 'Erste SOS-Schritte im Alltag', Seite 5: 'Ein konkretes Praxisbeispiel aus der Wirtschaft').
 - Es darf unter keinen Umständen im gesamten Buch eine Dopplung von Fokus-Ideen geben. Jede Seite muss neuen Nutzwert oder eine neue Perspektive bieten.
 
-KAPITELLÄNGE – ORGANISCH & THEMENGERECHT:
-Entscheide selbst, wie viele Seiten ein Kapitel benötigt – basierend darauf, wie viel Inhalt das Thema wirklich hergibt. Ein einfaches Kapitel kommt mit 2-3 Seiten aus, ein komplexes Thema kann 6-8+ Seiten einnehmen. 
-RULE: Schließe ein Kapitel ab, sobald das Thema vollständig und qualitativ hochwertig behandelt wurde. Vermeide Füllseiten um jeden Preis! Starte das nächste Kapitel, wenn das vorherige Thema logisch abgeschlossen ist.
+KAPITELLÄNGE – WIE EIN ECHTES BUCH (3 BIS 20 SEITEN PRO KAPITEL):
+Ein Kapitel ist ein umfassender Buchabschnitt und geht über mehrere Seiten. Daher MUSS ein Kapitel typischerweise 3 bis 20 Seiten lang sein!
+- Mehrere aufeinanderfolgende Seiten (z. B. Seiten 1 bis 10) MÜSSEN exakt denselben Wert im Feld "chapter_title" haben.
+- Plane das Buch so, dass es bei z. B. 100 Seiten insgesamt nur ca. 6 bis 10 Kapitel gibt, damit das Inhaltsverzeichnis sauber auf genau 1 Seite passt.
+- Erhöhe die Kapitelüberschrift erst, wenn das Thema des vorherigen Kapitels nach mehreren Seiten wirklich komplett abgeschlossen ist.
 
 ANLEITUNG für einzigartige Seiten-Fokuspunkte innerhalb eines Kapitels:
 Pro Seite wähle einen anderen Blickwinkel aus dieser Pool (nur was zum Thema PASST und wirklich sinnvoll ist):
@@ -364,10 +476,12 @@ Stelle sicher, dass die "pages"-Liste EXAKT ${targetPages} Einträge enthält!`;
     const provider = this.getProvider();
     let data: any;
 
-    if (provider === 'groq') {
-      // Groq has a ~4096 token output limit which truncates large outlines.
-      // We split into chunks of 25 pages and merge the results.
-      const CHUNK_SIZE = 25;
+    if (provider === 'groq' || provider === 'deepseek') {
+      const apiUrl = provider === 'groq' 
+        ? 'https://api.groq.com/openai/v1/chat/completions' 
+        : 'https://api.deepseek.com/chat/completions';
+        
+      const CHUNK_SIZE = provider === 'groq' ? 10 : 25;
       const allPages: BookOutlinePage[] = [];
 
       for (let start = 1; start <= targetPages; start += CHUNK_SIZE) {
@@ -381,9 +495,14 @@ Stelle sicher, dass die "pages"-Liste EXAKT ${targetPages} Einträge enthält!`;
 
         let previousPagesContext = '';
         if (allPages.length > 0) {
-          previousPagesContext = `\n\nBisherige Seiten-Planung (Seiten 1 bis ${start - 1}):\n` +
-            allPages.map(p => `- Seite ${p.page_number}: Kapitel "${p.chapter_title}" - Fokus: "${p.focus}"`).join('\n') +
-            `\n\nSETZE DIESE PLANUNG NAHTLOS FORT. Plane jetzt NUR die Seiten ${start} bis ${end} (${chunkSize} Seiten). Es ist STRENGSTENS VERBOTEN, die oben gelisteten Kapitelüberschriften, Fokuspunkte oder behandelten Aspekte zu wiederholen oder zu doppeln!\n`;
+          const uniqueChapters = Array.from(new Set(allPages.map(p => p.chapter_title)));
+          const lastPages = allPages.slice(-15);
+          
+          previousPagesContext = `\n\nBisherige Kapitelstruktur (bereits erstellt):\n` +
+            uniqueChapters.map(ch => `- ${ch}`).join('\n') +
+            `\n\nDetails der letzten geplanten Seiten:\n` +
+            lastPages.map(p => `- Seite ${p.page_number}: Kapitel "${p.chapter_title}" - Fokus: "${p.focus}"`).join('\n') +
+            `\n\nSETZE DIESE PLANUNG NAHTLOS FORT. Plane jetzt NUR die Seiten ${start} bis ${end} (${chunkSize} Seiten). Es ist STRENGSTENS VERBOTEN, die bereits erstellten Kapitelüberschriften oder die Fokuspunkte der letzten Seiten zu wiederholen. Schreibe stattdessen neue, fortschreitende Aspekte!\n`;
         }
 
         const chunkPrompt = `Du bist ein professioneller Buch-Redakteur. Erstelle die Seiten-Planung für folgendes Buch.
@@ -393,10 +512,11 @@ Hauptidee/Beschreibung: "${safeIdea}"
 Sprache des Buches: "${language === 'de' ? 'Deutsch' : 'ENGLISH (CRITICAL: All generated output MUST be completely in English, including chapter titles and key points!)'}"
 Das Buch hat insgesamt ${targetPages} Seiten. Du planst jetzt NUR die Seiten ${start} bis ${end} (${chunkSize} Seiten).${previousPagesContext}
 ${safeGuidelines && safeGuidelines.trim() ? `\nAutoren-Richtlinien: "${safeGuidelines}"\n` : ''}
-KRITISCHSTE REGEL – SEITEN-FOKUS & EIGENSTÄNDIGKEIT (PFLICHT):
+KRITISCHSTE REGEL – SEITEN-FOKUS & EIGENSTÄNDIGKEIT (ABSOLUTE PFLICHT):
 Jede einzelne Seite MUSS einen absolut einzigartigen, trennscharfen und unverwechselbaren Fokus haben!
 - Wenn mehrere Seiten zum selben Kapitel gehören, ist es STRENGSTENS VERBOTEN, ähnliche oder redundante Aspekte zu wiederholen.
-- Jede Seite muss das Thema fortführen und ein neues Detail oder einen neuen Gedanken beleuchten. Jede Dopplung im gesamten Buch ist verboten.
+- Es ist EBENFALLS STRENGSTENS VERBOTEN, dass zwei Seiten innerhalb dieser Planung denselben oder einen nahezu identischen Fokus haben.
+- Jede Seite MUSS das Thema progressiv fortführen. Stelle sicher, dass KEIN "focus" und KEINE "key_points" einer anderen Seite exakt gleichen. Jede Dopplung im Buch ist verboten!
 
 KAPITELLÄNGE ORGANISCH: Entscheide selbst wie viele Seiten ein Kapitel braucht (einfache Themen 2-3 Seiten, komplexe Themen 6-8+ Seiten). Starte das nächste Kapitel, sobald das aktuelle Thema vollständig abgedeckt ist – keine Füllseiten!
 
@@ -429,25 +549,40 @@ Antworte ausschließlich im JSON-Format:
 }
 Die "pages"-Liste muss EXAKT ${chunkSize} Einträge enthalten, mit page_number von ${start} bis ${end}!`;
 
-        data = await this.executeWithKeyRotation('groq', (key) =>
-          fetch('https://api.groq.com/openai/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${key}`
-            },
-            body: JSON.stringify({
-              model: this.model,
-              messages: [
-                { role: 'system', content: 'Du bist ein nützlicher Assistent, der ausschließlich im JSON-Format antwortet.' },
-                { role: 'user', content: chunkPrompt }
-              ],
-              response_format: { type: 'json_object' },
-              temperature: 0.3,
-              max_tokens: 2048
-            })
-          })
-        );
+        let data: any;
+        const tokenLimits = provider === 'groq' ? [1500, 1000, 800, 600] : [2048];
+        
+        for (let i = 0; i < tokenLimits.length; i++) {
+          const tokens = tokenLimits[i];
+          try {
+            data = await this.executeWithKeyRotation(provider, (key) =>
+              fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${key}`
+                },
+                body: JSON.stringify({
+                  model: this.model,
+                  messages: [
+                    { role: 'system', content: 'Du bist ein nützlicher Assistent, der ausschließlich im JSON-Format antwortet.' },
+                    { role: 'user', content: chunkPrompt }
+                  ],
+                  ...(this.model !== 'deepseek-reasoner' ? { response_format: { type: 'json_object' } } : {}),
+                  temperature: 0.3,
+                  max_tokens: tokens
+                })
+              }),
+              45000
+            );
+            break; // Success
+          } catch (err: any) {
+            if (i === tokenLimits.length - 1) {
+              throw err;
+            }
+            console.warn(`Groq outline generation failed with max_tokens=${tokens}, retrying with ${tokenLimits[i + 1]}...`);
+          }
+        }
 
         const chunkText = data.choices[0].message.content;
         let chunkJson: any;
@@ -474,7 +609,8 @@ Die "pages"-Liste muss EXAKT ${chunkSize} Einträge enthalten, mit page_number v
         }
       }
 
-      const finalGroqPages = this.diversifyPageFocus(allPages, language);
+      let finalGroqPages = this.ensureUniqueAndContiguousChapters(allPages, language);
+      finalGroqPages = this.diversifyPageFocus(finalGroqPages, language);
       return {
         title,
         subtitle,
@@ -507,7 +643,8 @@ Die "pages"-Liste muss EXAKT ${chunkSize} Einträge enthalten, mit page_number v
               temperature: 0.3
             }
           })
-        })
+        }),
+        90000
       );
       if (!data.candidates || !data.candidates[0]?.content?.parts?.[0]?.text) {
         throw new Error(`Gemini hat keine Textantwort zurückgegeben (Sicherheitsblock oder leerer Inhalt).`);
@@ -518,6 +655,7 @@ Die "pages"-Liste muss EXAKT ${chunkSize} Einträge enthalten, mit page_number v
       }
       const parsed = JSON.parse(jsonText) as BookOutline;
       parsed.pages = this.normalizeOutlinePages(parsed.pages, targetPages, 1, language);
+      parsed.pages = this.ensureUniqueAndContiguousChapters(parsed.pages, language);
       parsed.pages = this.diversifyPageFocus(parsed.pages, language);
       return parsed;
     }
@@ -547,11 +685,17 @@ Die letzten bereits geplanten Seiten waren:
 ${lastExistingPagesContext}
 
 SETZE NAHTLOS FORT. Plane jetzt NUR die Seiten ${startPage} bis ${endPage} (${chunkSize} Seiten).
-KRITISCHSTE REGEL – SEITEN-FOKUS & EIGENSTÄNDIGKEIT (PFLICHT):
-Jede geplante Seite MUSS einen absolut einzigartigen, neuen und unverwechselbaren Fokus haben!
+KRITISCHSTE REGEL – SEITEN-FOKUS & EIGENSTÄNDIGKEIT (ABSOLUTE PFLICHT):
+Jede einzelne Seite MUSS einen absolut einzigartigen, neuen und unverwechselbaren Fokus haben!
 - Es ist STRENGSTENS VERBOTEN, Themen, Aspekte oder Fokus-Ideen der bereits geplanten Seiten (Seiten 1 bis ${startPage - 1}) zu wiederholen oder zu doppeln.
-- Jede neue Seite muss die Argumentation progressiv weitertreiben, statt sich im Kreis zu drehen.
+- Es ist EBENFALLS STRENGSTENS VERBOTEN, dass zwei oder mehr Seiten innerhalb deiner neuen Planung denselben oder einen nahezu identischen Fokus haben.
+- Jede Seite MUSS die Argumentation progressiv weitertreiben. Stelle sicher, dass KEIN "focus" und KEINE "key_points" einer anderen Seite exakt gleichen.
 ${customGuidelines ? `\nRichtlinien: "${customGuidelines}"\n` : ''}
+KAPITELLÄNGE – WIE EIN ECHTES BUCH (3 BIS 20 SEITEN PRO KAPITEL):
+Ein Kapitel geht über mehrere Seiten (typischerweise 3 bis 20 Seiten). 
+- Mehrere aufeinanderfolgende Seiten MÜSSEN exakt denselben Wert im Feld "chapter_title" haben.
+- Wenn das letzte Kapitel auf Seite ${startPage - 1} (in dem Kontext oben) noch nicht abgeschlossen ist, führe es nahtlos fort, indem du denselben "chapter_title" für die ersten Seiten deiner neuen Planung verwendest.
+- Erhöhe die Kapitelüberschrift erst, wenn das Thema des vorherigen Kapitels nach mehreren Seiten wirklich komplett abgeschlossen ist.
 
 STRIKTE REGEL FÜR DIE KAPITELTITEL (chapter_title):
 - Keine zwei Kapitelüberschriften dürfen dieselbe Satzstruktur verwenden.
@@ -580,9 +724,13 @@ Die "pages"-Liste muss EXAKT ${chunkSize} Einträge enthalten, mit page_number v
 
     const provider = this.getProvider();
 
-    if (provider === 'groq') {
-      const data = await this.executeWithKeyRotation('groq', (key) =>
-        fetch('https://api.groq.com/openai/v1/chat/completions', {
+    if (provider === 'groq' || provider === 'deepseek') {
+      const apiUrl = provider === 'groq' 
+        ? 'https://api.groq.com/openai/v1/chat/completions' 
+        : 'https://api.deepseek.com/chat/completions';
+        
+      const data = await this.executeWithKeyRotation(provider, (key) =>
+        fetch(apiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
           body: JSON.stringify({
@@ -591,11 +739,12 @@ Die "pages"-Liste muss EXAKT ${chunkSize} Einträge enthalten, mit page_number v
               { role: 'system', content: 'Du bist ein nützlicher Assistent, der ausschließlich im JSON-Format antwortet.' },
               { role: 'user', content: chunkPrompt }
             ],
-            response_format: { type: 'json_object' },
+            ...(this.model !== 'deepseek-reasoner' ? { response_format: { type: 'json_object' } } : {}),
             temperature: 0.7,
-            max_tokens: 2048
+            max_tokens: provider === 'groq' ? 1500 : 2500
           })
-        })
+        }),
+        45000
       );
       const parsed = JSON.parse(data.choices[0].message.content);
       return this.normalizeOutlinePages(parsed.pages || [], chunkSize, startPage, language);
@@ -609,7 +758,8 @@ Die "pages"-Liste muss EXAKT ${chunkSize} Einträge enthalten, mit page_number v
             systemInstruction: { parts: [{ text: 'Du bist ein nützlicher Assistent, der ausschließlich im JSON-Format antwortet.' }] },
             generationConfig: { responseMimeType: 'application/json', temperature: 0.3 }
           })
-        })
+        }),
+        45000
       );
       let jsonText = data.candidates[0].content.parts[0].text.trim();
       if (jsonText.startsWith('```')) jsonText = jsonText.replace(/^```json/, '').replace(/^```/, '').replace(/```$/, '').trim();
@@ -946,10 +1096,11 @@ Achte peinlich genau auf folgende Regeln:
 1. ${(isChapterOpening && !noQuotes) ? `Zitate sind auf dieser Seite (Beginn eines neuen Kapitels!) als feierlicher Einstieg sehr erwünscht. ABER ACHTUNG: Ein Zitat darf NIEMALS ganz oben am Anfang der Seite stehen! Beginne die Seite IMMER zuerst mit mindestens einem eleganten Absatz Fließtext als Einleitung in das Thema, bevor du weiter unten ein Zitat einfügst. Das Zitat muss gemeinfrei/legal sein, in einer eigenen Zeile stehen, eingeleitet mit "> ", und MUSS am Ende immer eine Autorenangabe enthalten (Format: — Vorname Nachname). Beispiel:
 > "Wissen ist Macht." — Francis Bacon
 EIN ZITAT OHNE — AUTORENANGABE AM ENDE IST STRENGSTENS VERBOTEN.` : `Es ist dir STRENGSTENS VERBOTEN, Zitate auf dieser Seite zu generieren! Verwende kein Zitat (keine Zeile mit "> "). Zitate sind in diesem Buch vollständig verboten und deaktiviert.`}
+${pageNumber === 1 ? '1b. WICHTIG: Dies ist die allererste Seite des Buches! Es gibt absolut keine vorherigen Seiten, keinen bisherigen Buchtext und keinen vorherigen Kontext. Beginne das Buch frisch und eigenständig. Schreibe NIEMALS Phrasen wie "wie bereits erwähnt", "auf den vorigen Seiten", "zuvor haben wir", "im letzten Kapitel" oder ähnliche Verweise auf nicht existierende Vorseiten! Diese wäre absurd, da dies die erste Seite ist.' : ''}
 2. KRITISCHES REDUNDANZ-VERBOT: Vermeide absolut jegliche Wiederholungen von Fakten, Beispielen, Formulierungen, Phrasen oder Ideen, die bereits auf den vorherigen Seiten behandelt wurden. Jede Seite muss das Thema progressiv vorantreiben. Plane und schreibe exklusiv über den neuen Fokus dieser Seite und bringe neue Informationen ein, statt bereits Gesagtes neu zu formulieren.
 3. Formatiere den Text lesbar durch klare Absätze. Teile den Text unbedingt in mehrere Absätze (durch Zeilenumbrüche getrennt) auf, um das Lesen zu erleichtern! Ein einziger großer Textblock ist verboten. Verwende KEINE Markdown-Überschriften (wie # oder ##) oder Sternchen (wie **fett**). ${noQuotes ? 'Verwende absolut keine Zitate.' : 'Einzige Ausnahme sind Zitate, die mit "> " beginnen.'} Überschriften werden vom Layout-System automatisch eingefügt.
 4. Schreibe so viel Text, wie das Thema auf dieser Seite natürlich erfordert — orientiere dich am Richtwert von ca. ${minWords} bis ${maxWords} Wörtern. WICHTIG: Beende den Text NIEMALS mitten im Satz oder mitten in einer Aufzählung; führe jeden Gedanken sauber zu Ende. Wenn ein Layout-Element (z. B. eine Tabelle, eine Box, eine Checkliste, ${noQuotes ? '' : 'ein Zitat, '}eine Liste oder Schreiblinien) die Seite thematisch abschließt, ist es vollkommen in Ordnung, danach nicht mehr weiterzuschreiben — füge dann KEINEN künstlichen Fülltext hinzu. Wenn die Seite hingegen reinen Fließtext enthält und das Thema noch nicht abgeschlossen ist, nutze den Raum und schreibe bis in den unteren Bereich der Seite.
-6. Vermeide typische KI-Floskeln und künstliche oder extrem repetitive Übergänge wie 'Zusammenfassend...', 'Es ist wichtig zu betonen...', 'Abschließend...', 'Nicht nur..., sondern auch...', 'Daher...', 'Deshalb...', 'Folglich...'. Es ist dir absolut VERBOTEN, Absätze oder Sätze mehrfach hintereinander mit den exakt selben Wörtern wie "Daher" oder "Deshalb" zu beginnen! Schreibe stattdessen literarisch elegant, extrem abwechslungsreich, mit sauberem Vokabular und organisch fließend.
+6. Vermeide typische KI-Floskeln und künstliche oder extrem repetitive Übergänge wie 'Zusammenfassend...', 'Es ist wichtig zu betonen...', 'Abschließend...', 'Nicht nur..., sondern auch...'. Es ist dir absolut VERBOTEN, Absätze oder Sätze mehrfach hintereinander mit den exakt selben Wörtern wie "Daher" oder "Deshalb" zu beginnen! Schreibe stattdessen literarisch elegant, extrem abwechslungsreich, mit sauberem Vokabular und organisch fließend.
 7. ZWINGENDE LAYOUT-STRUKTUR FÜR DIESE SEITE (Um das Buch abwechslungsreich und visuell einzigartig wie Handarbeit zu gestalten, MUSS diese Seite exakt folgendem Layout folgen):
    👉 "${selectedTemplate}"
 
@@ -981,14 +1132,20 @@ EIN ZITAT OHNE — AUTORENANGABE AM ENDE IST STRENGSTENS VERBOTEN.` : `Es ist di
 
     // Varietät-System: Erfassung kürzlich genutzter Satzanfänge zur Erhöhung der Vielfalt
     const recentOpeners = this.getRecentPageOpeners(previousPagesText, pageNumber);
+    const isEng2 = outline.language !== 'de';
     finalSystemPrompt += `\n\n8. VERBOTENE SEITEN-ANFÄNGE (Zur Gewährleistung von Varietät):
 Der allererste Satz dieser Seite darf keinesfalls mit typischen, monotonen KI-Satzstrukturen oder kürzlich genutzten Anfängen eingeleitet werden.
 Folgende Satzanfänge sind für den ALLERERSTEN Satz dieser Seite STRENGSTENS VERBOTEN:
-- Formulierungen mit "Wenn..." (z. B. "Wenn du...", "Wenn Sie...", "Wenn...")
+${isEng2 ? `- Phrases starting with "When..." (e.g. "When you...", "When we...")
+- Phrases starting with "By..." (e.g. "By doing...", "By using...")
+- Phrases starting with "To..." (e.g. "To achieve...", "To understand...")
+- Phrases starting with "Therefore", "Thus", "Hence", "Consequently"
+- Phrases starting with "In this chapter", "In this section", "As we", "We have seen"` : `- Formulierungen mit "Wenn..." (z. B. "Wenn du...", "Wenn Sie...", "Wenn...")
 - Formulierungen mit "Indem..." (z. B. "Indem du...", "Indem Sie...", "Indem...")
 - Formulierungen mit "Um..." (z. B. "Um deine...", "Um Ihre...", "Um...")
 - Formulierungen mit "Daher...", "Deshalb...", "Folglich..." oder "Somit..."
-${recentOpeners.length > 0 ? recentOpeners.map(op => `- "${op}..."`).join('\n') : ''}
+- Formulierungen mit "In diesem Kapitel", "Wie wir gesehen haben", "Wir haben"`}
+${recentOpeners.length > 0 ? recentOpeners.map(op => `- Beginne NICHT mit "${op}..." (bereits verwendet)`).join('\n') : ''}
 
 Achte auf maximale sprachliche Vielfalt! Verwende kreative, abwechslungsreiche und elegante Einleitungen für den ersten Satz. Vermeide konsequent Satzanfang-Wiederholungen innerhalb der Seite!`;
 
@@ -1022,30 +1179,40 @@ Schreibe jetzt den vollständigen Fließtext für Seite ${pageNumber}. Verwende 
     let data: any;
 
     if (provider === 'groq') {
-      data = await this.executeWithKeyRotation('groq', (key) => 
-        fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${key}`
-          },
-          body: JSON.stringify({
-            model: this.model,
-            messages: [
-              { role: 'system', content: finalSystemPrompt },
-              { role: 'user', content: finalUserPrompt }
-            ],
-            temperature: 0.75,
-            max_tokens: 1500
-          })
-        })
-      );
-      return data.choices[0].message.content.trim();
+      const tokenLimits = [2000, 1500, 1000];
+      for (let i = 0; i < tokenLimits.length; i++) {
+        const tokens = tokenLimits[i];
+        try {
+          data = await this.executeWithKeyRotation('groq', (key) => 
+            fetch('https://api.groq.com/openai/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${key}`
+              },
+              body: JSON.stringify({
+                model: this.model,
+                messages: [
+                  { role: 'system', content: finalSystemPrompt },
+                  { role: 'user', content: finalUserPrompt }
+                ],
+                temperature: 0.75,
+                max_tokens: tokens
+              })
+            })
+          );
+          return data.choices[0].message.content.trim();
+        } catch (err: any) {
+          if (i === tokenLimits.length - 1) {
+            throw err;
+          }
+          console.warn(`Groq page generation failed with max_tokens=${tokens}, retrying with ${tokenLimits[i + 1]}...`);
+        }
+      }
+      throw new Error('Groq page generation failed all fallback attempts.');
     } else {
       // Gemini
       data = await this.executeWithKeyRotation('gemini', async (key) => {
-        const cacheName = await this.getOrCreateCachedContent(key, this.model, finalSystemPrompt);
-        
         const body: any = {
           contents: [
             {
@@ -1053,18 +1220,13 @@ Schreibe jetzt den vollständigen Fließtext für Seite ${pageNumber}. Verwende 
               parts: [{ text: finalUserPrompt }]
             }
           ],
+          systemInstruction: {
+            parts: [{ text: finalSystemPrompt }]
+          },
           generationConfig: {
             temperature: 0.65
           }
         };
-
-        if (cacheName) {
-          body.cachedContent = cacheName;
-        } else {
-          body.systemInstruction = {
-            parts: [{ text: finalSystemPrompt }]
-          };
-        }
 
         return fetch(`https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${key}`, {
           method: 'POST',
@@ -1147,7 +1309,7 @@ Achte peinlich genau auf folgende Regeln:
 1. Verwende KEINE Markdown-Überschriften oder Sternchen.
 2. Generiere exakt die Länge für eine Buchseite (ca. ${minWords} bis ${maxWords} Wörter). Der Text darf nicht überlaufen.
 3. Beende den Text nicht mitten im Satz, sondern führe den Gedanken auf dieser Seite sauber zu Ende.
-4. Starte direkt mit dem neuen, verlängerten Text der Seite, ohne Buchtitel, Kapitel-Überschriften oder Anmerkungen am Anfang.
+4. Starte direkt mit dem neuen, verlängerten Text der Seite, ohne Buchtitel, Kapitel-Überschrift oder Anmerkungen am Anfang.
 5. Vermeide typische KI-Floskeln und künstliche Übergänge wie 'Zusammenfassend...', 'Es ist wichtig zu betonen...', 'Abschließend...', etc. Schreibe organisch, literarisch hochwertig und fließend.
 6. Falls die Seite Arbeitsbuch-, Übungs- oder Journal-Elemente enthalten soll (z. B. Checklisten, Schreiblinien, Boxen oder Tabellen):
    - Für leere Kontrollkästchen/Checklisten schreibe am Zeilenanfang "[ ] ".
@@ -1197,7 +1359,7 @@ Schreibe jetzt den vollständigen, verlängerten Fließtext für Seite ${pageNum
               { role: 'user', content: finalUserPrompt }
             ],
             temperature: 0.65,
-            max_tokens: 1500
+            max_tokens: 1000
           })
         })
       );
@@ -1205,8 +1367,6 @@ Schreibe jetzt den vollständigen, verlängerten Fließtext für Seite ${pageNum
     } else {
       // Gemini
       data = await this.executeWithKeyRotation('gemini', async (key) => {
-        const cacheName = await this.getOrCreateCachedContent(key, this.model, finalSystemPrompt);
-        
         const body: any = {
           contents: [
             {
@@ -1214,18 +1374,13 @@ Schreibe jetzt den vollständigen, verlängerten Fließtext für Seite ${pageNum
               parts: [{ text: finalUserPrompt }]
             }
           ],
+          systemInstruction: {
+            parts: [{ text: finalSystemPrompt }]
+          },
           generationConfig: {
             temperature: 0.65
           }
         };
-
-        if (cacheName) {
-          body.cachedContent = cacheName;
-        } else {
-          body.systemInstruction = {
-            parts: [{ text: finalSystemPrompt }]
-          };
-        }
 
         return fetch(`https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${key}`, {
           method: 'POST',
@@ -1347,9 +1502,9 @@ Entwirf jetzt drei unterschiedliche Stil-Versionen (version_1, version_2, versio
               { role: 'system', content: systemPrompt },
               { role: 'user', content: userPrompt }
             ],
-            response_format: { type: 'json_object' },
+            ...(this.model !== 'deepseek-reasoner' ? { response_format: { type: 'json_object' } } : {}),
             temperature: 0.8,
-            max_tokens: 2000
+            max_tokens: 1000
           })
         })
       );
@@ -1480,9 +1635,9 @@ Entwirf jetzt drei unterschiedliche Struktur-Varianten (version_1, version_2, ve
               { role: 'system', content: systemPrompt },
               { role: 'user', content: userPrompt }
             ],
-            response_format: { type: 'json_object' },
+            ...(this.model !== 'deepseek-reasoner' ? { response_format: { type: 'json_object' } } : {}),
             temperature: 0.75,
-            max_tokens: 1500
+            max_tokens: 1000
           })
         })
       );
@@ -1552,14 +1707,47 @@ ORIGINAL PROMPT SPECIFICATION:
 ` + p + `\n\n### CRITICAL OVERRIDE ###\nIGNORE ANY INSTRUCTIONS ABOVE THAT ARE WRITTEN IN GERMAN. YOU MUST WRITE 100% IN NATIVE ENGLISH. NO GERMAN ALLOWED!`;
   }
 
-  private async askAI(rawSys: string, rawUsr: string, jsonFormat: boolean = false): Promise<string> {
+  private async askAI(rawSys: string, rawUsr: string, jsonFormat: boolean = false, timeoutMs: number = 25000): Promise<string> {
     const isEng = rawSys.includes('ENGLISH') || rawSys.includes('English') || rawUsr.includes('ENGLISH') || rawUsr.includes('English') || rawSys.includes('Englisch') || rawUsr.includes('Englisch');
     const systemPrompt = this.enforceEnglishOnly(rawSys, isEng);
     const userPrompt = this.enforceEnglishOnly(rawUsr, isEng);
     const provider = this.getProvider();
     if (provider === 'groq') {
-      const data = await this.executeWithKeyRotation('groq', (key) =>
-        fetch('https://api.groq.com/openai/v1/chat/completions', {
+      let data: any;
+      const tokenLimits = [1500, 1000, 800, 500];
+      for (let i = 0; i < tokenLimits.length; i++) {
+        const tokens = tokenLimits[i];
+        try {
+          data = await this.executeWithKeyRotation('groq', (key) =>
+            fetch('https://api.groq.com/openai/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${key}`
+              },
+              body: JSON.stringify({
+                model: this.model,
+                messages: [
+                  { role: 'system', content: systemPrompt },
+                  { role: 'user', content: userPrompt }
+                ],
+                ...(jsonFormat && this.model !== 'deepseek-reasoner' ? { response_format: { type: 'json_object' } } : {}),
+                temperature: 0.7,
+                max_tokens: tokens
+              })
+            }),
+            timeoutMs
+          );
+          break;
+        } catch (err: any) {
+          if (i === tokenLimits.length - 1) throw err;
+        }
+      }
+      const rawText = data.choices[0].message.content;
+      return jsonFormat ? rawText : rawText.replace(/^\s*-{3,}\s*$/gm, '');
+    } else if (provider === 'deepseek') {
+      const data = await this.executeWithKeyRotation('deepseek', (key) =>
+        fetch('https://api.deepseek.com/chat/completions', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1571,18 +1759,16 @@ ORIGINAL PROMPT SPECIFICATION:
               { role: 'system', content: systemPrompt },
               { role: 'user', content: userPrompt }
             ],
-            ...(jsonFormat ? { response_format: { type: 'json_object' } } : {}),
+            ...(jsonFormat && this.model !== 'deepseek-reasoner' ? { response_format: { type: 'json_object' } } : {}),
             temperature: 0.7
           })
-        })
+        }),
+        timeoutMs
       );
       const rawText = data.choices[0].message.content;
       return jsonFormat ? rawText : rawText.replace(/^\s*-{3,}\s*$/gm, '');
     } else {
       const data = await this.executeWithKeyRotation('gemini', async (key) => {
-        const useCache = systemPrompt.length > 200;
-        const cacheName = useCache ? await this.getOrCreateCachedContent(key, this.model, systemPrompt) : null;
-        
         const body: any = {
           contents: [
             {
@@ -1590,19 +1776,14 @@ ORIGINAL PROMPT SPECIFICATION:
               parts: [{ text: userPrompt }]
             }
           ],
+          systemInstruction: {
+            parts: [{ text: systemPrompt }]
+          },
           generationConfig: {
             ...(jsonFormat ? { responseMimeType: 'application/json' } : {}),
             temperature: 0.7
           }
         };
-
-        if (cacheName) {
-          body.cachedContent = cacheName;
-        } else {
-          body.systemInstruction = {
-            parts: [{ text: systemPrompt }]
-          };
-        }
 
         return fetch(`https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${key}`, {
           method: 'POST',
@@ -1611,7 +1792,9 @@ ORIGINAL PROMPT SPECIFICATION:
           },
           body: JSON.stringify(body)
         });
-      });
+      },
+      timeoutMs
+      );
       if (!data.candidates || !data.candidates[0]?.content?.parts?.[0]?.text) {
         throw new Error('Keine Antwort von der KI erhalten.');
       }
@@ -1622,56 +1805,6 @@ ORIGINAL PROMPT SPECIFICATION:
 
   async evaluateRawText(prompt: string): Promise<string> {
     return this.askAI("Bewerte den Text kurz.", prompt, false);
-  }
-
-  private async getOrCreateCachedContent(
-    key: string,
-    modelName: string,
-    staticText: string
-  ): Promise<string | null> {
-    const cleanModel = modelName.startsWith('models/') ? modelName : `models/${modelName}`;
-    const cached = GeminiService.promptCache[staticText];
-    if (cached && cached.expiresAt > Date.now()) {
-      return cached.name;
-    }
-
-    try {
-      const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/cachedContents?key=${key}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: cleanModel,
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: staticText }]
-            }
-          ],
-          ttl: '600s'
-        })
-      });
-
-      if (!resp.ok) {
-        const errorText = await resp.text();
-        console.warn('Gemini prompt caching not supported or failed:', errorText);
-        return null;
-      }
-
-      const data = await resp.json();
-      if (data && data.name) {
-        GeminiService.promptCache[staticText] = {
-          name: data.name,
-          expiresAt: Date.now() + 580 * 1000
-        };
-        console.log('Successfully created Gemini prompt cache:', data.name);
-        return data.name;
-      }
-    } catch (e) {
-      console.warn('Failed to create Gemini prompt cache', e);
-    }
-    return null;
   }
 
   async generateAmazonDescription(title: string, subtitle: string, idea: string, language: string): Promise<string> {
@@ -1816,93 +1949,185 @@ Antworte AUSSCHLIESSLICH als JSON-Array:
   ): Promise<BookOutlinePage[]> {
 
     // --- Step 1: collect unique chapters in order ---
-    const uniqueChapters: { title: string, focus: string, snippets: string[] }[] = [];
+    const uniqueChapters: { title: string, pageFocuses: string[], snippets: string[] }[] = [];
     
     for (const p of currentPages) {
       let chapterObj = uniqueChapters.find(c => c.title === p.chapter_title);
       if (!chapterObj) {
-        chapterObj = { title: p.chapter_title, focus: p.focus, snippets: [] };
+        chapterObj = { title: p.chapter_title, pageFocuses: [], snippets: [] };
         uniqueChapters.push(chapterObj);
       }
+      chapterObj.pageFocuses.push(`S.${p.page_number} (${p.focus})`);
       
       const pText = pagesText[p.page_number];
       if (pText && pText.trim().length > 0) {
-        // Grab first ~150 chars of text to give AI a sense of what's inside
+        // Grab first ~100 chars of text to give AI a sense of what's inside (keeps prompt small/fast)
         const plainText = pText.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
         if (plainText) {
-          chapterObj.snippets.push(`S.${p.page_number}: ${plainText.substring(0, 150)}...`);
+          chapterObj.snippets.push(`S.${p.page_number}: ${plainText.substring(0, 100)}...`);
         }
-      } else {
-        chapterObj.snippets.push(`S.${p.page_number}: [Kein Text / Geplant]`);
       }
     }
     const numOriginal = uniqueChapters.length;
 
-    // Target: roughly 1/3 of the original chapters, between 3 and 12
-    const targetChapters = Math.max(3, Math.min(12, Math.round(numOriginal / 3)));
+    // Target: We want the TOC to fit on exactly 1 page.
+    // Each chapter should have a healthy length of 3 to 20 pages.
+    const totalPages = currentPages.length;
+    const targetChapters = Math.max(3, Math.min(8, Math.min(numOriginal, Math.round(totalPages / 12))));
 
     const lang = language === 'de' ? 'Deutsch' : 'ENGLISH (CRITICAL: ALL TITLES MUST BE IN ENGLISH)';
 
-    const systemPrompt = `Du bist ein professioneller Bucheditor. Das Buch heißt "${title}" (${subtitle}), Thema: "${idea}".
+  const systemPrompt = `Du bist ein professioneller Bucheditor. Das Buch heißt "${title}" (${subtitle}), Thema: "${idea}".
 Du bekommst eine Liste der aktuellen Kapitel mit ihren Fokuspunkten und kurzen Textausschnitten.
-DEINE AUFGABE: Fasse diese ${numOriginal} Kapitel in ca. ${targetChapters} breitere Oberkapitel zusammen, sodass der rote Faden und die Logik des Buches verbessert werden.
-Berücksichtige die Textausschnitte, um sinnvolle Gruppen zu bilden!
+DEINE AUFGABE: Fasse diese ${numOriginal} Kapitel in exakt ${targetChapters} neue Oberkapitel zusammen.
+Das Ziel ist es, dass das Inhaltsverzeichnis übersichtlich ist, auf exakt EINE Seite passt und jedes Kapitel eine gesunde Länge von 3 bis 20 Seiten hat.
 
 ${guidelines ? `ZIELGRUPPE & RICHTLINIEN:\n${guidelines}\n` : ''}
-Antworte AUSSCHLIESSLICH mit einem validen JSON-Array dieses Formats – kein Markdown, kein Kommentar:
-[
-  {
-    "new_chapter_title": "Name des neuen Kapitels (${lang})",
-    "new_focus": "Kurze Zusammenfassung was dieses Kapitel abdeckt (${lang})",
-    "original_chapters": ["Exakter Kapiteltitel 1", "Exakter Kapiteltitel 2", ...]
-  },
-  ...
-]
+Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt dieses Formats – kein Markdown, kein Kommentar:
+{
+  "chapters": [
+    {
+      "new_chapter_title": "Name des neuen Kapitels (${lang})",
+      "new_focus": "Kurze Zusammenfassung was dieses Kapitel abdeckt (${lang})",
+      "original_chapters": ["Exakter Kapiteltitel 1", "Exakter Kapiteltitel 2", ...]
+    }
+  ]
+}
 Regeln:
-- Jedes original_chapters-Element muss EXAKT einem Titel aus der Eingabeliste entsprechen.
+- Jedes original_chapters-Element muss EXAKT einem titel aus der Eingabeliste entsprechen.
 - Jeder original-Titel muss in genau einer Gruppe vorkommen.
-- Die Gruppen sollen inhaltlich zusammengehörige Kapitel vereinen.
-- Gib so viele Gruppen zurück wie nötig (Ziel: ~${targetChapters}).`;
+- Die Gruppen MÜSSEN aus direkt aufeinanderfolgenden Kapiteln (in der exakten Reihenfolge der Eingabeliste) bestehen. Es ist strengstens verboten, nicht-aufeinanderfolgende Kapitel zusammenzufassen!
+- Jedes neu erstellte Kapitel MUSS eine Länge von 3 bis 20 Seiten umfassen.
+- Erstelle EXAKT ${targetChapters} Kapitel-Gruppen in deiner Antwort.`;
 
-    const userPrompt = `Aktuelle Kapitel (in Reihenfolge):\n\n${uniqueChapters.map((c, i) => 
-      `${i + 1}. TITEL: ${c.title}\n   FOKUS: ${c.focus}\n   INHALT: ${c.snippets.join(' | ')}`
-    ).join('\n\n')}`;
+    const userPrompt = `Aktuelle Kapitel (in Reihenfolge):\n\n${uniqueChapters.map((c, i) => {
+      let pString = `${i + 1}. TITEL: ${c.title}\n   SEITEN & FOKUS-INFOS:\n   - ${c.pageFocuses.join('\n   - ')}`;
+      if (c.snippets.length > 0) {
+        pString += `\n   TEXT-AUSSCHNITTE: ${c.snippets.join(' | ')}`;
+      }
+      return pString;
+    }).join('\n\n')}`;
 
     try {
       const response = await this.askAI(systemPrompt, userPrompt, true);
       let jsonText = response.trim();
-      const match = jsonText.match(/\[[\s\S]*\]/);
+      const match = jsonText.match(/\{[\s\S]*\}/);
       if (match) {
         jsonText = match[0];
       }
-      const mergeMap: Array<{ new_chapter_title: string; new_focus: string; original_chapters: string[] }> = JSON.parse(jsonText);
+      const parsedData = JSON.parse(jsonText);
+      
+      let mergeMap: any[] = [];
+      if (Array.isArray(parsedData)) {
+        mergeMap = parsedData;
+      } else if (parsedData && typeof parsedData === 'object') {
+        if (Array.isArray(parsedData.chapters)) {
+          mergeMap = parsedData.chapters;
+        } else {
+          const firstArray = Object.values(parsedData).find(Array.isArray);
+          if (firstArray) mergeMap = firstArray;
+        }
+      }
 
       if (!Array.isArray(mergeMap) || mergeMap.length === 0) {
         return currentPages;
       }
 
       // --- Step 2: build a lookup from old chapter title → new chapter info ---
-      const remapTitle: { [old: string]: string } = {};
-      const remapFocus: { [old: string]: string } = {};
+      const remapTitle: { [normalizedOld: string]: string } = {};
+      const remapFocus: { [normalizedOld: string]: string } = {};
+
+      const normalize = (s: string) => (s || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+
+      const getSimilarityScore = (s1: string, s2: string): number => {
+        const norm1 = normalize(s1);
+        const norm2 = normalize(s2);
+        if (norm1 === norm2) return 1.0;
+        if (norm1.includes(norm2) || norm2.includes(norm1)) return 0.8;
+        
+        // Simple Jaccard similarity index based on character bigrams
+        const getBigrams = (str: string) => {
+          const bigrams = new Set<string>();
+          for (let i = 0; i < str.length - 1; i++) {
+            bigrams.add(str.slice(i, i + 2));
+          }
+          return bigrams;
+        };
+        const b1 = getBigrams(norm1);
+        const b2 = getBigrams(norm2);
+        const intersection = new Set([...b1].filter(x => b2.has(x)));
+        const union = new Set([...b1, ...b2]);
+        if (union.size === 0) return 0;
+        return intersection.size / union.size;
+      };
+
       for (const group of mergeMap) {
-        for (const orig of group.original_chapters) {
-          remapTitle[orig] = group.new_chapter_title;
-          remapFocus[orig] = group.new_focus;
+        if (!group || typeof group !== 'object') continue;
+        
+        const newTitle = group.new_chapter_title || group.title || group.new_title || '';
+        const newFocus = group.new_focus || group.focus || '';
+        let originalChapters = group.original_chapters || group.original || group.chapters || [];
+        
+        if (typeof originalChapters === 'string') {
+          originalChapters = [originalChapters];
+        }
+
+        if (Array.isArray(originalChapters)) {
+          for (const orig of originalChapters) {
+            if (orig && typeof orig === 'string') {
+              let bestMatch = '';
+              let highestScore = 0;
+              
+              for (const ch of uniqueChapters) {
+                const score = getSimilarityScore(orig, ch.title);
+                if (score > highestScore) {
+                  highestScore = score;
+                  bestMatch = ch.title;
+                }
+              }
+              
+              if (highestScore > 0.4) {
+                const normMatch = normalize(bestMatch);
+                remapTitle[normMatch] = newTitle;
+                remapFocus[normMatch] = newFocus;
+              }
+            }
+          }
+        }
+      }
+
+      // Sequential gap filling fallback
+      let lastKnownTitle = '';
+      for (let i = 0; i < uniqueChapters.length; i++) {
+        const norm = normalize(uniqueChapters[i].title);
+        if (remapTitle[norm]) {
+          lastKnownTitle = remapTitle[norm];
+        } else if (lastKnownTitle) {
+          remapTitle[norm] = lastKnownTitle;
+        }
+      }
+      
+      let nextKnownTitle = '';
+      for (let i = uniqueChapters.length - 1; i >= 0; i--) {
+        const norm = normalize(uniqueChapters[i].title);
+        if (remapTitle[norm]) {
+          nextKnownTitle = remapTitle[norm];
+        } else if (nextKnownTitle) {
+          remapTitle[norm] = nextKnownTitle;
         }
       }
 
       // --- Step 3: apply remapping to every page ---
       const remapped: BookOutlinePage[] = currentPages.map(p => {
-        const newTitle = remapTitle[p.chapter_title] ?? p.chapter_title;
-        const newFocus = remapFocus[p.chapter_title] ?? p.focus;
+        const normTitle = normalize(p.chapter_title);
+        const newTitle = remapTitle[normTitle] ?? p.chapter_title;
         return {
           ...p,
           chapter_title: newTitle,
-          focus: newFocus,
         };
       });
 
-      return remapped;
+      return this.ensureUniqueAndContiguousChapters(remapped, language);
     } catch (e) {
       console.error('Failed to condense outline', e);
       return currentPages;
@@ -1987,7 +2212,7 @@ ${contentSummary}
 Erstelle daraus das optimierte Inhaltsverzeichnis. Jedes Kapitel MUSS mindestens 1 Seite enthalten. Alle Seiten von Seite 1 bis Seite ${pagesWithText[pagesWithText.length - 1].number} müssen lückenlos abgedeckt sein.`;
 
     try {
-      const responseText = await this.askAI(systemPrompt, userPrompt, true);
+      const responseText = await this.askAI(systemPrompt, userPrompt, true, 90000);
       let jsonText = responseText.trim();
       if (jsonText.startsWith('```')) {
         jsonText = jsonText.replace(/^```json/, '').replace(/^```/, '').replace(/```$/, '').trim();
