@@ -1136,12 +1136,12 @@ export async function generateBookPdf(
           case 'heading': {
             doc.setFont(fontFamily, fontStyleBold);
             doc.setFontSize(fontSize);
-            return splitTextToSizeWithHyphens(doc, block.text.replace(/\*\*/g, ''), drawWidth).length * lh + fontSize * 0.4;
+            return doc.splitTextToSize(block.text.replace(/\*\*/g, '').replace(/\u00ad/g, ''), drawWidth).length * lh + fontSize * 0.4;
           }
           case 'quote': {
             doc.setFont(fontFamily, fontStyleItalic);
             doc.setFontSize(fontSize);
-            return splitTextToSizeWithHyphens(doc, block.text.replace(/\*\*/g, ''), drawWidth - 30).length * lh + fontSize * 1.6;
+            return doc.splitTextToSize(block.text.replace(/\*\*/g, '').replace(/\u00ad/g, ''), drawWidth - 30).length * lh + fontSize * 1.6;
           }
           case 'bullet': {
             doc.setFont(fontFamily, fontStyleRegular);
@@ -1186,7 +1186,8 @@ export async function generateBookPdf(
             for (const row of block.rows) {
               let maxCellLines = 1;
               for (const cell of row) {
-                const cLines = doc.splitTextToSize(cell, colW - 6).length;
+                const cleanCell = cell.replace(/\u00ad/g, '');
+                const cLines = doc.splitTextToSize(cleanCell, colW - 6).length;
                 if (cLines > maxCellLines) maxCellLines = cLines;
               }
               totalH += maxCellLines * lh * 0.9 + 6;
@@ -1234,7 +1235,7 @@ export async function generateBookPdf(
           }
 
           case 'heading': {
-            const txt = block.text.replace(/\*\*/g, '');
+            const txt = block.text.replace(/\*\*/g, '').replace(/\u00ad/g, '');
             doc.setFont(fontFamily, fontStyleBold);
             doc.setFontSize(fontSize);
             doc.setTextColor(0);
@@ -1248,7 +1249,7 @@ export async function generateBookPdf(
           }
 
           case 'quote': {
-            const txt = block.text.replace(/\*\*/g, '');
+            const txt = block.text.replace(/\*\*/g, '').replace(/\u00ad/g, '');
             const isInfobox = pageStyle === 'spacing';
             contentY += fontSize * 0.8;
             doc.setFont(fontFamily, fontStyleItalic);
@@ -1379,8 +1380,8 @@ export async function generateBookPdf(
             doc.rect(blockX, headerBoxY, drawWidth, headerBoxH, 'FD');
 
             block.headers.forEach((h, ci) => {
-              // Strip markdown ** from headers
-              const cleanH = h.replace(/\*\*/g, '').trim();
+              // Strip markdown ** and soft-hyphens from headers
+              const cleanH = h.replace(/\*\*/g, '').replace(/\u00ad/g, '').trim();
               const hLines = doc.splitTextToSize(cleanH, colW - cellPad * 2);
               hLines.forEach((ln: string, li: number) => {
                 doc.text(ln, blockX + ci * colW + cellPad, contentY + li * tableLH);
@@ -1395,8 +1396,8 @@ export async function generateBookPdf(
               const rowCellLines: string[][] = [];
               row.forEach((cell, ci) => {
                 if (ci < colCount) {
-                  // Strip ** markdown from cell text
-                  const cleanCell = cell.replace(/\*\*/g, '').trim();
+                  // Strip ** markdown and soft-hyphens from cell text
+                  const cleanCell = cell.replace(/\*\*/g, '').replace(/\u00ad/g, '').trim();
                   const cLines = doc.splitTextToSize(cleanCell, colW - cellPad * 2);
                   rowCellLines.push(cLines);
                   if (cLines.length > maxLines) maxLines = cLines.length;
@@ -1449,11 +1450,13 @@ export async function generateBookPdf(
               borderRGB = [51, 65, 85]; // Slate 700
               isSolidBorder = true;
               borderThickness = 2.5; 
+              isTransparent = false;
             } else if (boxType === 'reflection') {
               bgRGB = [253, 252, 251];
               borderRGB = [203, 213, 225]; // Slate 300
               isSolidBorder = true;
               borderThickness = 1;
+              isTransparent = false;
             } else if (boxType === 'action') {
               isTransparent = true;
               borderRGB = [15, 23, 42]; // Slate 900
@@ -1498,9 +1501,9 @@ export async function generateBookPdf(
                 const rx = design.borderRadius;
                 const ry = design.borderRadius;
                 if (rx > 0) {
-                  doc.roundedRect(boxY < 0 ? 0 : blockX, boxY < 0 ? 0 : boxY, drawWidth, boxH, rx, ry, drawStyle);
+                  doc.roundedRect(blockX, Math.max(0, boxY), drawWidth, boxH, rx, ry, drawStyle);
                 } else {
-                  doc.rect(boxY < 0 ? 0 : blockX, boxY < 0 ? 0 : boxY, drawWidth, boxH, drawStyle);
+                  doc.rect(blockX, Math.max(0, boxY), drawWidth, boxH, drawStyle);
                 }
               }
             }

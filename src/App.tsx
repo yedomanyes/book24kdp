@@ -1937,7 +1937,7 @@ export default function App() {
           p.style.margin = '1.5em 0';
           p.style.padding = '0';
           p.style.lineHeight = '1.5';
-          p.innerHTML = `<strong>${renderInlineHtml(block.text)}</strong>`;
+          p.innerHTML = `<strong>${renderInlineHtml(block.text.replace(/\u00ad/g, ''))}</strong>`;
           return p;
         }
 
@@ -1954,7 +1954,7 @@ export default function App() {
             div.style.margin = '6px 0';
             div.style.fontStyle = 'italic';
             div.style.color = '#334155';
-            div.innerHTML = renderInlineHtml(block.text);
+            div.innerHTML = renderInlineHtml(block.text.replace(/\u00ad/g, ''));
             return div;
           }
           
@@ -1967,7 +1967,7 @@ export default function App() {
           q.style.color = 'var(--text-muted)';
           q.style.lineHeight = '1.5';
           q.style.textAlign = 'justify';
-          q.innerHTML = renderInlineHtml(block.text);
+          q.innerHTML = renderInlineHtml(block.text.replace(/\u00ad/g, ''));
           return q;
         }
 
@@ -2095,7 +2095,7 @@ export default function App() {
             th.style.fontWeight = '700';
             th.style.background = '#f1f5f9';
             th.style.color = '#1e293b';
-            th.innerHTML = renderInlineHtml(h);
+            th.innerHTML = renderInlineHtml(h.replace(/\u00ad/g, ''));
             headerTr.appendChild(th);
           });
           thead.appendChild(headerTr);
@@ -2112,7 +2112,7 @@ export default function App() {
               td.style.verticalAlign = 'top';
               td.style.wordBreak = 'break-word';
               td.style.color = '#334155';
-              td.innerHTML = renderInlineHtml(cell);
+              td.innerHTML = renderInlineHtml(cell.replace(/\u00ad/g, ''));
               tr.appendChild(td);
             });
             tbody.appendChild(tr);
@@ -7063,6 +7063,7 @@ export default function App() {
 
         case 'box': {
           const styleNum = block.styleNum || 1;
+          const boxType = block.boxType || 'box';
           const design = styleNum === 1 
             ? (activeBook.box1Design || DEFAULT_BOX1_DESIGN)
             : styleNum === 2 
@@ -7072,18 +7073,19 @@ export default function App() {
           return (
             <div 
               key={key} 
-              className="workbook-box" 
+              className={`workbook-box type-${boxType}`}
               onClick={(e) => {
                 e.stopPropagation();
                 setActiveStyleEditNum(styleNum);
               }}
               style={{
                 position: 'relative',
-                backgroundColor: design.backgroundColor,
-                borderColor: design.borderColor,
-                borderWidth: `${design.borderThickness}px`,
-                borderStyle: design.borderStyle,
-                borderRadius: `${design.borderRadius}px`,
+                backgroundColor: boxType === 'callout' ? '#f8fafc' : boxType === 'reflection' ? '#fdfcfb' : design.backgroundColor,
+                borderColor: boxType === 'callout' ? '#334155' : boxType === 'reflection' ? '#cbd5e1' : boxType === 'action' ? '#0f172a' : design.borderColor,
+                borderWidth: boxType === 'callout' ? '0 0 0 3px' : boxType === 'reflection' ? '1px' : boxType === 'action' ? '2px' : `${design.borderThickness}px`,
+                borderStyle: boxType === 'callout' ? 'solid' : boxType === 'reflection' ? 'solid' : boxType === 'action' ? 'solid' : design.borderStyle,
+                borderRadius: boxType === 'callout' ? '0px' : boxType === 'reflection' ? '4px' : boxType === 'action' ? '4px' : `${design.borderRadius}px`,
+                boxShadow: boxType === 'action' ? '3px 3px 0px #0f172a' : 'none',
                 color: design.textColor,
                 fontStyle: design.fontStyle,
                 padding: '12px 14px',
