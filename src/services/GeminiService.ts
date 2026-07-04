@@ -146,10 +146,8 @@ export class GeminiService {
       currentSegment.pages.push(p);
     }
 
-    // Step 2: Merge micro-chapters (less than 3 pages, or less than 2 for short books)
-    // into the preceding chapter to enforce minimum chapter length and avoid alternating 1-page chapters
+    // Step 2: Consolidate contiguous segments with the same title
     const consolidatedSegments: { title: string; pages: BookOutlinePage[] }[] = [];
-    const minPages = pages.length < 15 ? 2 : 3;
     
     for (let i = 0; i < segments.length; i++) {
       const seg = segments[i];
@@ -161,20 +159,13 @@ export class GeminiService {
       
       const lastSeg = consolidatedSegments[consolidatedSegments.length - 1];
       
-      if (seg.pages.length < minPages) {
+      if (seg.title.trim().toLowerCase() === lastSeg.title.trim().toLowerCase()) {
         lastSeg.pages.push(...seg.pages);
         seg.pages.forEach(p => {
           p.chapter_title = lastSeg.title;
         });
       } else {
-        if (seg.title.trim().toLowerCase() === lastSeg.title.trim().toLowerCase()) {
-          lastSeg.pages.push(...seg.pages);
-          seg.pages.forEach(p => {
-            p.chapter_title = lastSeg.title;
-          });
-        } else {
-          consolidatedSegments.push(seg);
-        }
+        consolidatedSegments.push(seg);
       }
     }
 
