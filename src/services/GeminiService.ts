@@ -169,11 +169,71 @@ export class GeminiService {
       }
     }
 
+    // Step 2b: Merge segments that are too short to enforce target chapter length (3 to 20 pages per chapter)
+    const totalPages = pages.length;
+    let minPages = 3;
+    if (totalPages >= 150) minPages = 12;
+    else if (totalPages >= 100) minPages = 8;
+    else if (totalPages >= 50) minPages = 5;
+
+    let mergedSegments = [...consolidatedSegments];
+    let hasShortSegments = true;
+
+    while (hasShortSegments && mergedSegments.length > 1) {
+      hasShortSegments = false;
+      for (let i = 0; i < mergedSegments.length; i++) {
+        if (mergedSegments[i].pages.length < minPages) {
+          hasShortSegments = true;
+          let mergeWithIndex = -1;
+          if (i === 0) {
+            mergeWithIndex = 1;
+          } else if (i === mergedSegments.length - 1) {
+            mergeWithIndex = i - 1;
+          } else {
+            const leftLen = mergedSegments[i - 1].pages.length;
+            const rightLen = mergedSegments[i + 1].pages.length;
+            mergeWithIndex = leftLen < rightLen ? i - 1 : i + 1;
+          }
+
+          const currentSeg = mergedSegments[i];
+          const targetSeg = mergedSegments[mergeWithIndex];
+
+          const t1 = currentSeg.title.trim();
+          const t2 = targetSeg.title.trim();
+          let mergedTitle = t1;
+          if (t1 !== t2) {
+            if (t1.toLowerCase().includes(t2.toLowerCase())) {
+              mergedTitle = t1;
+            } else if (t2.toLowerCase().includes(t1.toLowerCase())) {
+              mergedTitle = t2;
+            } else if (t1.length + t2.length < 45) {
+              mergedTitle = i < mergeWithIndex ? `${t1} & ${t2}` : `${t2} & ${t1}`;
+            } else {
+              mergedTitle = currentSeg.pages.length > targetSeg.pages.length ? t1 : t2;
+            }
+          }
+
+          const combinedPages = i < mergeWithIndex 
+            ? [...currentSeg.pages, ...targetSeg.pages]
+            : [...targetSeg.pages, ...currentSeg.pages];
+          
+          combinedPages.forEach(p => {
+            p.chapter_title = mergedTitle;
+          });
+
+          targetSeg.title = mergedTitle;
+          targetSeg.pages = combinedPages;
+          mergedSegments.splice(i, 1);
+          break;
+        }
+      }
+    }
+
     // Step 3: Ensure all remaining chapter titles are completely unique.
     // If a chapter title appears multiple times non-contiguously, we append " - Teil II", " - Teil III", etc.
     const titleCounts: { [title: string]: number } = {};
     
-    for (const seg of consolidatedSegments) {
+    for (const seg of mergedSegments) {
       const baseTitle = seg.title;
       const normalizedBase = baseTitle.toLowerCase().trim();
       if (!titleCounts[normalizedBase]) {
@@ -191,7 +251,7 @@ export class GeminiService {
 
     // Step 4: Re-flatten pages list in correct page order
     const flattened: BookOutlinePage[] = [];
-    for (const seg of consolidatedSegments) {
+    for (const seg of mergedSegments) {
       flattened.push(...seg.pages);
     }
     
@@ -2161,7 +2221,7 @@ Regeln:
       return this.ensureUniqueAndContiguousChapters(remapped, language);
     } catch (e) {
       console.error('Failed to condense outline', e);
-      return currentPages;
+      return this.ensureUniqueAndContiguousChapters(currentPages, language);
     }
   }
 
@@ -2272,7 +2332,7 @@ Erstelle daraus das optimierte Inhaltsverzeichnis. Jedes Kapitel MUSS mindestens
         }
       });
 
-      return newPages;
+      return this.ensureUniqueAndContiguousChapters(newPages, outline.language);
     } catch (err) {
       console.error('Failed to regenerate chapters from pages content:', err);
       throw err;

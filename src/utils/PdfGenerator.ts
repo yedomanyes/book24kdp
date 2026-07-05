@@ -685,9 +685,9 @@ export async function generateBookPdf(
       });
 
       // If we overflow to a second page and have <= 12 chapters, scale down to force it onto 1 page
-      if (tocPagesCount > 1 && tocFontSizeUsed > 5.5) {
+      if (tocPagesCount > 1 && tocFontSizeUsed > 9.5) {
         tocFontSizeUsed -= 0.5;
-        tocSpacingUsed = Math.max(8, tocSpacingUsed - 1.5);
+        tocSpacingUsed = Math.max(16, tocSpacingUsed - 1.5);
         attempts++;
       } else {
         break;
