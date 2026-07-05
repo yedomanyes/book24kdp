@@ -7308,9 +7308,99 @@ export default function App() {
     };
     
     const outline = activeBook.outline;
-    const sortedPages = [...outline.pages]
+    const rawSortedPages = [...outline.pages]
       .map(p => ({ ...p, page_number: Number(p.page_number) }))
       .sort((a, b) => a.page_number - b.page_number);
+
+    // Group pages dynamically into chapters of at least 3-12 pages (3-20 pages per chapter)
+    const totalPages = rawSortedPages.length;
+    let minPages = 3;
+    if (totalPages >= 150) minPages = 12;
+    else if (totalPages >= 100) minPages = 8;
+    else if (totalPages >= 50) minPages = 5;
+
+    const segments: { title: string; pages: typeof rawSortedPages }[] = [];
+    let currentSegment: { title: string; pages: typeof rawSortedPages } | null = null;
+    for (const p of rawSortedPages) {
+      const title = (p.chapter_title || '').trim();
+      if (!currentSegment || currentSegment.title !== title) {
+        currentSegment = { title, pages: [] };
+        segments.push(currentSegment);
+      }
+      currentSegment.pages.push(p);
+    }
+
+    const consolidatedSegments: typeof segments = [];
+    for (let i = 0; i < segments.length; i++) {
+      const seg = segments[i];
+      if (consolidatedSegments.length === 0) {
+        consolidatedSegments.push(seg);
+        continue;
+      }
+      const lastSeg = consolidatedSegments[consolidatedSegments.length - 1];
+      if (seg.title.trim().toLowerCase() === lastSeg.title.trim().toLowerCase()) {
+        lastSeg.pages.push(...seg.pages);
+      } else {
+        consolidatedSegments.push(seg);
+      }
+    }
+
+    let mergedSegments = [...consolidatedSegments];
+    let hasShortSegments = true;
+
+    while (hasShortSegments && mergedSegments.length > 1) {
+      hasShortSegments = false;
+      for (let i = 0; i < mergedSegments.length; i++) {
+        if (mergedSegments[i].pages.length < minPages) {
+          hasShortSegments = true;
+          let mergeWithIndex = -1;
+          if (i === 0) {
+            mergeWithIndex = 1;
+          } else if (i === mergedSegments.length - 1) {
+            mergeWithIndex = i - 1;
+          } else {
+            const leftLen = mergedSegments[i - 1].pages.length;
+            const rightLen = mergedSegments[i + 1].pages.length;
+            mergeWithIndex = leftLen < rightLen ? i - 1 : i + 1;
+          }
+
+          const currentSeg = mergedSegments[i];
+          const targetSeg = mergedSegments[mergeWithIndex];
+
+          const t1 = currentSeg.title.trim();
+          const t2 = targetSeg.title.trim();
+          let mergedTitle = t1;
+          if (t1 !== t2) {
+            if (t1.toLowerCase().includes(t2.toLowerCase())) {
+              mergedTitle = t1;
+            } else if (t2.toLowerCase().includes(t1.toLowerCase())) {
+              mergedTitle = t2;
+            } else if (t1.length + t2.length < 45) {
+              mergedTitle = i < mergeWithIndex ? `${t1} & ${t2}` : `${t2} & ${t1}`;
+            } else {
+              mergedTitle = currentSeg.pages.length > targetSeg.pages.length ? t1 : t2;
+            }
+          }
+
+          const combinedPages = i < mergeWithIndex 
+            ? [...currentSeg.pages, ...targetSeg.pages]
+            : [...targetSeg.pages, ...currentSeg.pages];
+
+          targetSeg.title = mergedTitle;
+          targetSeg.pages = combinedPages;
+          mergedSegments.splice(i, 1);
+          break;
+        }
+      }
+    }
+
+    const sortedPages = rawSortedPages.map(p => {
+      const foundSeg = mergedSegments.find(seg => seg.pages.some(sp => sp.page_number === p.page_number));
+      return {
+        ...p,
+        chapter_title: foundSeg ? foundSeg.title : p.chapter_title
+      };
+    });
     
     const chapterStartsList: { title: string; pageNum: number }[] = [];
     sortedPages.forEach((pageInfo, idx) => {
