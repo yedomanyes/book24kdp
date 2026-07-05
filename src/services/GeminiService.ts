@@ -1326,6 +1326,12 @@ ${pageNumber === 1 ? '1b. WICHTIG: Dies ist die allererste Seite des Buches! Es 
    - Nummerierte Listen: Beginne Zeilen mit "1. ", "2. " usw.
    - Tabellen: Nutze Markdown-Tabellen ("| Spalte 1 | Spalte 2 |" gefolgt von "| :--- | :--- |").\n\n`;
 
+    const layoutNotice = outline.language === 'de'
+      ? `    ACHTUNG (STRIKTE LAYOUT-PFLICHT): Du MUSS das vorgegebene Layout ("${selectedTemplate}") exakt und vollständig umsetzen! Falls das Layout eine Box (:::callout, :::action, :::reflection), eine Checkliste ([ ]) oder eine Tabelle verlangt, MUSS diese zwingend im generierten Text enthalten sein. Schreibe auf keinen Fall nur reinen Fließtext ohne diese Elemente, da das Buch sonst unvollständig ist.\n\n`
+      : `    ATTENTION (STRICT LAYOUT MANDATE): You MUST strictly and completely implement the specified layout ("${selectedTemplate}")! If the layout requires a box (:::callout, :::action, :::reflection), a checklist ([ ]), or a table, it MUST be included in the generated text. Do NOT write only plain text without these elements, otherwise the book formatting will fail.\n\n`;
+    
+    systemPrompt += layoutNotice;
+
     if (autoChapterGraphics) {
       systemPrompt += `8. Du darfst optional EINE thematisch extrem gut passende Grafik/Illustration einfügen, falls sie das Verständnis perfekt bereichert. Setze dazu den Platzhalter: [grafik: dein Bild-Prompt auf Englisch]. Füge maximal EIN Bild pro Seite ein und nur dann, wenn es massiven Mehrwert bietet. Wenn du dir unsicher bist, füge keine Grafik ein.\n\n`;
     } else {
