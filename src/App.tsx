@@ -5409,44 +5409,13 @@ export default function App() {
   const getTOCPages = () => {
     const chapters = getChapterPageNumbers();
     if (chapters.length === 0) return [];
-
-    let hInches = 9;
-    if (activeBook) {
-      if (activeBook.pageSize === '5x8') { hInches = 8; }
-      else if (activeBook.pageSize === '5.5x8.5') { hInches = 8.5; }
-      else if (activeBook.pageSize === '6x9') { hInches = 9; }
-      else if (activeBook.pageSize === '8.5x11') { hInches = 11; }
-      else if (activeBook.pageSize === 'a4') { hInches = 11.69; }
-      else if (activeBook.pageSize === 'custom') {
-        hInches = activeBook.customHeight || 9;
-      }
-    }
-    const pageHeightPt = hInches * 72;
-    const topMargin = 54;
-    const bottomMargin = 54;
-    const lineSpacing = activeBook?.tocLineSpacing || 18;
-
-    const pages: typeof chapters[] = [];
-    let currentPageChapters: typeof chapters = [];
-    let currentY = topMargin + 36;
-
-    chapters.forEach((ch) => {
-      if (currentY + lineSpacing > pageHeightPt - bottomMargin) {
-        pages.push(currentPageChapters);
-        currentPageChapters = [];
-        currentY = topMargin + 36;
-      }
-      currentPageChapters.push(ch);
-      currentY += lineSpacing;
-    });
-
-    if (currentPageChapters.length > 0) {
-      pages.push(currentPageChapters);
-    }
-    return pages;
+    // We unconditionally return exactly 1 page containing all chapters,
+    // so there is only ever one TOC page in the preview.
+    return [chapters];
   };
 
   const renderTOCPreview = () => {
+    const { tocFontSizeUsed, tocSpacingUsed } = calculateBookPageNumbers();
     const tocPages = getTOCPages();
     const pageIndex = typeof selectedPage === 'string' && selectedPage.includes('_')
       ? parseInt(selectedPage.split('_')[1], 10)
@@ -5455,7 +5424,7 @@ export default function App() {
     const chaptersOnPage = tocPages[pageIndex] || [];
 
     const tocFontFamily = activeBook?.tocFontFamily || activeBook?.fontFamily || 'times';
-    const tocLineSpacing = activeBook?.tocLineSpacing || 18;
+    const tocLineSpacing = tocSpacingUsed;
 
     return (
       <div style={{
@@ -5505,7 +5474,7 @@ export default function App() {
           width: '100%'
         }}>
           {chaptersOnPage.map((ch, idx) => {
-            const relativeFontSize = activeBook?.tocFontSize || 10;
+            const relativeFontSize = tocFontSizeUsed;
             const uniformFontSizePx = relativeFontSize * previewScaleY;
             return (
               <div 
@@ -7331,7 +7300,12 @@ export default function App() {
   };
 
   const calculateBookPageNumbers = () => {
-    if (!activeBook || !activeBook.outline) return { pageContentNumberMap: {}, chapterToPageList: [] };
+    if (!activeBook || !activeBook.outline) return { 
+      pageContentNumberMap: {} as { [pageNum: number]: number }, 
+      chapterToPageList: [] as { title: string; pageNum: number; outlinePage: number }[],
+      tocFontSizeUsed: 10,
+      tocSpacingUsed: 18
+    };
     
     const outline = activeBook.outline;
     const sortedPages = [...outline.pages]
@@ -7346,11 +7320,11 @@ export default function App() {
       }
     });
 
+    let tocFontSizeUsed = activeBook.tocFontSize || 10;
+    let tocSpacingUsed = activeBook.tocLineSpacing || 18;
     let tocPagesCount = 0;
     if (activeBook.generateTOC !== false) {
       const outlineChapterCount = chapterStartsList.length;
-      let tocFontSizeUsed = activeBook.tocFontSize || 10;
-      let tocSpacingUsed = activeBook.tocLineSpacing || 18;
       let attempts = 0;
       const maxAttempts = 6;
       
@@ -7437,7 +7411,7 @@ export default function App() {
       currentPhysicalPage += partsCount;
     });
 
-    return { pageContentNumberMap, chapterToPageList };
+    return { pageContentNumberMap, chapterToPageList, tocFontSizeUsed, tocSpacingUsed };
   };
 
   const getPreviewPageNumber = (partIndex: number = 0) => {
