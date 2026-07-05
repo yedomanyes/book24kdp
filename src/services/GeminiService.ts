@@ -468,7 +468,7 @@ export class GeminiService {
     }
 
     let lastError: any = null;
-    const maxGlobalCycles = 6;
+    const maxGlobalCycles = keys.length > 1 ? 2 : 1;
 
     for (let cycle = 0; cycle < maxGlobalCycles; cycle++) {
       // Filter out blacklisted keys dynamically at the beginning of each cycle
@@ -504,7 +504,18 @@ export class GeminiService {
             throw new Error(`Key #${keyIndexInOriginal + 1} Fehler (${response.status}): ${errorMessage}`);
           }
 
-          if (response.status === 429 || response.status === 401 || response.status === 403) {
+          if (response.status === 401 || response.status === 403) {
+            const errText = await response.text();
+            let errorMessage = errText;
+            try {
+              const parsed = JSON.parse(errText);
+              errorMessage = parsed.error?.message || errText;
+            } catch (e) {}
+            // Throw immediately for invalid/unauthorized keys to give instant feedback
+            throw new Error(`Ungültiger API-Schlüssel für ${provider.toUpperCase()} (Fehler ${response.status}): ${errorMessage}`);
+          }
+
+          if (response.status === 429) {
             const errText = await response.text();
             let errorMessage = errText;
             try {
