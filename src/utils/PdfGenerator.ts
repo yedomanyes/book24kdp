@@ -809,11 +809,11 @@ export async function generateBookPdf(
       if (isDe) {
         if (count === 2) uniqueTitle = `Vertiefung: ${title}`;
         else if (count === 3) uniqueTitle = `Praxis: ${title}`;
-        else uniqueTitle = `${title} im Detail`;
+        else uniqueTitle = `${title} (${count})`;
       } else {
         if (count === 2) uniqueTitle = `Deep Dive: ${title}`;
         else if (count === 3) uniqueTitle = `Practice: ${title}`;
-        else uniqueTitle = `${title} in Detail`;
+        else uniqueTitle = `${title} (${count})`;
       }
       norm = uniqueTitle.toLowerCase().trim();
     }
