@@ -685,14 +685,15 @@ export async function generateBookPdf(
       });
 
       // If we overflow to a second page and have <= 12 chapters, scale down to force it onto 1 page
-      if (tocPagesCount > 1 && outlineChapterCount <= 12 && tocFontSizeUsed > 7.5) {
+      if (tocPagesCount > 1 && tocFontSizeUsed > 5.5) {
         tocFontSizeUsed -= 0.5;
-        tocSpacingUsed = Math.max(11, tocSpacingUsed - 1.5);
+        tocSpacingUsed = Math.max(8, tocSpacingUsed - 1.5);
         attempts++;
       } else {
         break;
       }
     }
+    tocPagesCount = 1; // Unconditionally force exactly 1 page for TOC
   }
 
   // 3. Map pages to physical pages and printed page numbers
@@ -781,7 +782,7 @@ export async function generateBookPdf(
       const forceBreak = usePreventativePageBreak && chaptersRenderedOnPage >= maxChaptersPerPage;
 
       // Overflow check
-      if (tocY + entryHeight - tocSpacing > pageHeight - bottomMargin || forceBreak) {
+      if (currentTOCPageIndex < tocPagesCount && (tocY + entryHeight - tocSpacing > pageHeight - bottomMargin || forceBreak)) {
         // Draw footer (Roman numeral) for the current TOC page
         doc.setFont(tocFont, fontStyleRegular);
         doc.setFontSize(9);
