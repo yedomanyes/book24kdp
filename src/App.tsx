@@ -4381,7 +4381,7 @@ export default function App() {
             if (b.id === bookIdToExtend) {
               const existingOutline = b.outline!;
               const combinedPages = [...existingOutline.pages, ...chunkPages];
-              const cleanedPages = service.ensureUniqueAndContiguousChapters(combinedPages, b.language || 'de');
+              const cleanedPages = service.ensureUniqueAndContiguousChapters(combinedPages, b.language || 'de', b.title);
               return {
                 ...b,
                 outline: {
@@ -7311,6 +7311,41 @@ export default function App() {
     const rawSortedPages = [...outline.pages]
       .map(p => ({ ...p, page_number: Number(p.page_number) }))
       .sort((a, b) => a.page_number - b.page_number);
+
+    const stripBookTitleFromChapterTitle = (chapterTitle: string, bookTitle: string): string => {
+      if (!bookTitle || !chapterTitle) return chapterTitle;
+      const cleanBookTitle = bookTitle.trim().toLowerCase();
+      if (cleanBookTitle.length < 3) return chapterTitle;
+      const variations = [cleanBookTitle];
+      const articleRegex = /^(?:die|der|das|the|ein|eine|a|an)\s+/i;
+      if (articleRegex.test(cleanBookTitle)) {
+        variations.push(cleanBookTitle.replace(articleRegex, ''));
+      }
+      let result = chapterTitle.trim();
+      for (const variant of variations) {
+        const escapedVariant = variant.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        const patternStr = `(?:\\s+|-|,)*(?:von\\s+der|bei\\s+der|nach\\s+der|für\\s+die|über\\s+die|in\\s+der|auf\\s+die|von|bei|nach|für|über|in|auf|of\\s+the|from\\s+the|after\\s+the|for\\s+the|about\\s+the|of|from|after|for|about)\\s+${escapedVariant}\\b`;
+        const regex = new RegExp(patternStr, 'ig');
+        if (regex.test(result)) {
+          result = result.replace(regex, '');
+          break;
+        }
+        const directPatternStr = `(?:\\s+|-|,)*${escapedVariant}\\b`;
+        const directRegex = new RegExp(directPatternStr, 'ig');
+        if (directRegex.test(result)) {
+          result = result.replace(directRegex, '');
+          break;
+        }
+      }
+      result = result.replace(/[\s-–,]+$/, '').replace(/\s+/g, ' ').trim();
+      return result.length < 3 ? chapterTitle : result;
+    };
+
+    if (activeBook.title) {
+      rawSortedPages.forEach(p => {
+        p.chapter_title = stripBookTitleFromChapterTitle(p.chapter_title, activeBook.title);
+      });
+    }
 
     // Group pages dynamically into chapters of at least 3-12 pages (3-20 pages per chapter)
     const totalPages = rawSortedPages.length;

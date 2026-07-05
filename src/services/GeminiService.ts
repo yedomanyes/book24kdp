@@ -132,13 +132,58 @@ export class GeminiService {
     return clean.trim() || title;
   }
 
+  private stripBookTitleFromChapterTitle(chapterTitle: string, bookTitle: string): string {
+    if (!bookTitle || !chapterTitle) return chapterTitle;
+
+    const cleanBookTitle = bookTitle.trim().toLowerCase();
+    if (cleanBookTitle.length < 3) return chapterTitle;
+
+    const variations = [cleanBookTitle];
+    const articleRegex = /^(?:die|der|das|the|ein|eine|a|an)\s+/i;
+    if (articleRegex.test(cleanBookTitle)) {
+      variations.push(cleanBookTitle.replace(articleRegex, ''));
+    }
+
+    let result = chapterTitle.trim();
+
+    for (const variant of variations) {
+      const escapedVariant = variant.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      const patternStr = `(?:\\s+|-|,)*(?:von\\s+der|bei\\s+der|nach\\s+der|für\\s+die|über\\s+die|in\\s+der|auf\\s+die|von|bei|nach|für|über|in|auf|of\\s+the|from\\s+the|after\\s+the|for\\s+the|about\\s+the|of|from|after|for|about)\\s+${escapedVariant}\\b`;
+      const regex = new RegExp(patternStr, 'ig');
+
+      if (regex.test(result)) {
+        result = result.replace(regex, '');
+        break;
+      }
+
+      const directPatternStr = `(?:\\s+|-|,)*${escapedVariant}\\b`;
+      const directRegex = new RegExp(directPatternStr, 'ig');
+      if (directRegex.test(result)) {
+        result = result.replace(directRegex, '');
+        break;
+      }
+    }
+
+    result = result.replace(/[\s-–,]+$/, '').replace(/\s+/g, ' ').trim();
+    if (result.length < 3) return chapterTitle;
+    return result;
+  }
+
   public ensureUniqueAndContiguousChapters(
     pages: BookOutlinePage[],
-    language: string
+    language: string,
+    bookTitle: string = ''
   ): BookOutlinePage[] {
     if (pages.length === 0) return pages;
 
     const isDe = language === 'de';
+
+    // Pre-strip book title from all pages
+    if (bookTitle) {
+      pages.forEach(p => {
+        p.chapter_title = this.stripBookTitleFromChapterTitle(p.chapter_title, bookTitle);
+      });
+    }
     
     // Step 1: Detect all chapter segments as they appear sequentially
     const segments: { title: string; pages: BookOutlinePage[] }[] = [];
@@ -727,7 +772,7 @@ Die "pages"-Liste muss EXAKT ${chunkSize} Einträge enthalten, mit page_number v
         }
       }
 
-      let finalGroqPages = this.ensureUniqueAndContiguousChapters(allPages, language);
+      let finalGroqPages = this.ensureUniqueAndContiguousChapters(allPages, language, title);
       
       const uniqueChs = Array.from(new Set(finalGroqPages.map(p => p.chapter_title)));
       if (uniqueChs.length > 10) {
@@ -792,7 +837,7 @@ Die "pages"-Liste muss EXAKT ${chunkSize} Einträge enthalten, mit page_number v
       }
       const parsed = JSON.parse(jsonText) as BookOutline;
       parsed.pages = this.normalizeOutlinePages(parsed.pages, targetPages, 1, language);
-      parsed.pages = this.ensureUniqueAndContiguousChapters(parsed.pages, language);
+      parsed.pages = this.ensureUniqueAndContiguousChapters(parsed.pages, language, title);
 
       const uniqueChs = Array.from(new Set(parsed.pages.map(p => p.chapter_title)));
       if (uniqueChs.length > 10) {
@@ -2283,10 +2328,10 @@ Regeln:
         };
       });
 
-      return this.ensureUniqueAndContiguousChapters(remapped, language);
+      return this.ensureUniqueAndContiguousChapters(remapped, language, title);
     } catch (e) {
       console.error('Failed to condense outline', e);
-      return this.ensureUniqueAndContiguousChapters(currentPages, language);
+      return this.ensureUniqueAndContiguousChapters(currentPages, language, title);
     }
   }
 
@@ -2397,7 +2442,7 @@ Erstelle daraus das optimierte Inhaltsverzeichnis. Jedes Kapitel MUSS mindestens
         }
       });
 
-      return this.ensureUniqueAndContiguousChapters(newPages, outline.language);
+      return this.ensureUniqueAndContiguousChapters(newPages, outline.language, outline.title);
     } catch (err) {
       console.error('Failed to regenerate chapters from pages content:', err);
       throw err;
