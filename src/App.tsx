@@ -7367,16 +7367,26 @@ export default function App() {
           const currentSeg = mergedSegments[i];
           const targetSeg = mergedSegments[mergeWithIndex];
 
+          const cleanChapterTitleForMerging = (t: string): string => {
+            let clean = t.trim();
+            clean = clean.replace(/^(?:kapitel|chapter|teil|part)\s*\d+[\s:.-]+/i, '');
+            clean = clean.replace(/^\d+[\s:.-]+/, '');
+            return clean.trim() || t;
+          };
+
           const t1 = currentSeg.title.trim();
           const t2 = targetSeg.title.trim();
           let mergedTitle = t1;
           if (t1 !== t2) {
-            if (t1.toLowerCase().includes(t2.toLowerCase())) {
+            const c1 = cleanChapterTitleForMerging(t1);
+            const c2 = cleanChapterTitleForMerging(t2);
+
+            if (c1.toLowerCase().includes(c2.toLowerCase())) {
               mergedTitle = t1;
-            } else if (t2.toLowerCase().includes(t1.toLowerCase())) {
+            } else if (c2.toLowerCase().includes(c1.toLowerCase())) {
               mergedTitle = t2;
-            } else if (t1.length + t2.length < 45) {
-              mergedTitle = i < mergeWithIndex ? `${t1} & ${t2}` : `${t2} & ${t1}`;
+            } else if (c1.length + c2.length < 45) {
+              mergedTitle = i < mergeWithIndex ? `${c1} & ${c2}` : `${c2} & ${c1}`;
             } else {
               mergedTitle = currentSeg.pages.length > targetSeg.pages.length ? t1 : t2;
             }
