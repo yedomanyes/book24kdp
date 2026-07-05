@@ -1583,6 +1583,10 @@ export default function App() {
             try {
               safeLocalStorage.setItem('b24studio_activeTab', 'projects');
             } catch (e) {}
+            // Clear OAuth tokens/codes from the URL to prevent subsequent resets on refocus
+            try {
+              window.history.replaceState({}, document.title, window.location.pathname);
+            } catch (e) {}
           }
           // Reset lock so checkUser() can run fresh (to load books, license, profile)
           isCheckingRef.current = false;
