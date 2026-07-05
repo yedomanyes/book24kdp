@@ -159,6 +159,28 @@ const getChapterTransitionDelayMs = (turboEnabled: boolean): number => (
   turboEnabled ? 800 : 1500
 );
 
+const backgroundSafeTimeout = (delayMs: number): Promise<void> => {
+  return new Promise(resolve => {
+    const blob = new Blob([
+      `self.onmessage = function(e) {
+        setTimeout(function() {
+          self.postMessage(null);
+        }, e.data);
+      };`
+    ], { type: 'application/javascript' });
+    const url = URL.createObjectURL(blob);
+    const worker = new Worker(url);
+    
+    worker.onmessage = () => {
+      worker.terminate();
+      URL.revokeObjectURL(url);
+      resolve();
+    };
+    
+    worker.postMessage(delayMs);
+  });
+};
+
 const COVER_FONTS = [
   { value: 'playfair', label: 'Playfair Display (Serif)' },
   { value: 'times', label: 'Times New Roman (Serif)' },
@@ -4273,7 +4295,7 @@ export default function App() {
         
         if (i > 0) {
           const delayMs = getThrottleDelayMs(selectedModel, generationTurboEnabled, getActiveKeys(selectedModel).length, 'translation');
-          await new Promise(resolve => setTimeout(resolve, delayMs));
+          await backgroundSafeTimeout(delayMs);
         }
 
         const originalText = bookToTranslate.pagesText?.[pageNum] || '';
@@ -4404,7 +4426,7 @@ export default function App() {
           }));
 
           if (end < targetTotal) {
-            await new Promise(resolve => setTimeout(resolve, 800));
+            await backgroundSafeTimeout(800);
           }
         }
       } catch (err: any) {
@@ -4469,9 +4491,9 @@ export default function App() {
           // Delay to reduce rate limits (only if it's not the very first page of a chapter, or minimal delay)
           if (lastChapter === page.chapter_title) {
             const delayMs = getThrottleDelayMs(selectedModel, generationTurboEnabled, getActiveKeys(selectedModel).length, 'generation');
-            await new Promise(resolve => setTimeout(resolve, delayMs));
+            await backgroundSafeTimeout(delayMs);
           } else if (lastChapter !== '') {
-            await new Promise(resolve => setTimeout(resolve, getChapterTransitionDelayMs(generationTurboEnabled)));
+            await backgroundSafeTimeout(getChapterTransitionDelayMs(generationTurboEnabled));
           }
           lastChapter = page.chapter_title;
           
