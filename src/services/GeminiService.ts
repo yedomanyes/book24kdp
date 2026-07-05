@@ -601,6 +601,25 @@ Die "pages"-Liste muss EXAKT ${chunkSize} Einträge enthalten, mit page_number v
       }
 
       let finalGroqPages = this.ensureUniqueAndContiguousChapters(allPages, language);
+      
+      const uniqueChs = Array.from(new Set(finalGroqPages.map(p => p.chapter_title)));
+      if (uniqueChs.length > 10) {
+        if (onProgress) onProgress(95, 'Optimiere Inhaltsverzeichnis...');
+        try {
+          finalGroqPages = await this.condenseOutline(
+            title,
+            subtitle,
+            idea,
+            language,
+            finalGroqPages,
+            customGuidelines,
+            {}
+          );
+        } catch (e) {
+          console.warn('Auto-condense failed, using original outline:', e);
+        }
+      }
+
       finalGroqPages = this.diversifyPageFocus(finalGroqPages, language);
       return {
         title,
@@ -647,6 +666,25 @@ Die "pages"-Liste muss EXAKT ${chunkSize} Einträge enthalten, mit page_number v
       const parsed = JSON.parse(jsonText) as BookOutline;
       parsed.pages = this.normalizeOutlinePages(parsed.pages, targetPages, 1, language);
       parsed.pages = this.ensureUniqueAndContiguousChapters(parsed.pages, language);
+
+      const uniqueChs = Array.from(new Set(parsed.pages.map(p => p.chapter_title)));
+      if (uniqueChs.length > 10) {
+        if (onProgress) onProgress(95, 'Optimiere Inhaltsverzeichnis...');
+        try {
+          parsed.pages = await this.condenseOutline(
+            title,
+            subtitle,
+            idea,
+            language,
+            parsed.pages,
+            customGuidelines,
+            {}
+          );
+        } catch (e) {
+          console.warn('Auto-condense failed, using original outline:', e);
+        }
+      }
+
       parsed.pages = this.diversifyPageFocus(parsed.pages, language);
       return parsed;
     }
