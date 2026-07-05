@@ -239,25 +239,80 @@ export class GeminiService {
       }
     }
 
-    // Step 3: Ensure all remaining chapter titles are completely unique.
-    // If a chapter title appears multiple times non-contiguously, we append " - Teil II", " - Teil III", etc.
-    const titleCounts: { [title: string]: number } = {};
-    
-    for (const seg of mergedSegments) {
-      const baseTitle = seg.title;
-      const normalizedBase = baseTitle.toLowerCase().trim();
-      if (!titleCounts[normalizedBase]) {
-        titleCounts[normalizedBase] = 1;
+    // Step 3: Diversify and clean remaining chapter titles (strip 'Teil X', vary beginnings, make unique)
+    const rawTitles = mergedSegments.map(seg => seg.title);
+    const seenNormalized = new Set<string>();
+    const uniqueTitles: string[] = [];
+
+    rawTitles.forEach((origTitle) => {
+      let title = origTitle.trim();
+
+      // 1. Strip trailing " - Teil X" or " - Part X" or " - Teil 2" etc.
+      title = title.replace(/[\s,.-]+(?:teil|part)\s*(?:\d+|[ivxldm]+)\s*$/i, '');
+      title = title.replace(/[\s,.-]+\d+\s*$/i, '');
+
+      // 2. Diversify repetitive beginnings
+      if (isDe) {
+        if (title.startsWith("Die langfristigen Auswirkungen der ")) {
+          title = title.replace("Die langfristigen Auswirkungen der ", "Langzeitfolgen der ");
+        } else if (title.startsWith("Die langfristigen Auswirkungen von ")) {
+          title = title.replace("Die langfristigen Auswirkungen von ", "Langzeitfolgen von ");
+        } else if (title.startsWith("Die Auswirkungen der ")) {
+          title = title.replace("Die Auswirkungen der ", "Auswirkungen der ");
+        } else if (title.startsWith("Die Auswirkungen von ")) {
+          title = title.replace("Die Auswirkungen von ", "Auswirkungen von ");
+        } else if (title.startsWith("Die Rolle der ")) {
+          title = title.replace("Die Rolle der ", "Einfluss der ");
+        } else if (title.startsWith("Die Rolle von ")) {
+          title = title.replace("Die Rolle von ", "Einfluss von ");
+        } else if (title.startsWith("Der Weg zur ")) {
+          title = title.replace("Der Weg zur ", "Weg zur ");
+        } else if (title.startsWith("Der Weg zum ")) {
+          title = title.replace("Der Weg zum ", "Weg zum ");
+        }
       } else {
-        titleCounts[normalizedBase]++;
-        const suffix = isDe ? ` - Teil ${titleCounts[normalizedBase]}` : ` - Part ${titleCounts[normalizedBase]}`;
-        const newTitle = baseTitle + suffix;
-        seg.title = newTitle;
-        for (const p of seg.pages) {
-          p.chapter_title = newTitle;
+        if (title.startsWith("The long-term effects of ")) {
+          title = title.replace("The long-term effects of ", "Long-term effects of ");
+        } else if (title.startsWith("The effects of ")) {
+          title = title.replace("The effects of ", "Effects of ");
+        } else if (title.startsWith("The role of ")) {
+          title = title.replace("The role of ", "Role of ");
+        } else if (title.startsWith("The way to ")) {
+          title = title.replace("The way to ", "Way to ");
         }
       }
-    }
+
+      // 3. Make sure it's unique without appending "Teil X"
+      let uniqueTitle = title;
+      let norm = uniqueTitle.toLowerCase().trim();
+      let count = 1;
+      
+      while (seenNormalized.has(norm)) {
+        count++;
+        if (isDe) {
+          if (count === 2) uniqueTitle = `Vertiefung: ${title}`;
+          else if (count === 3) uniqueTitle = `Praxis: ${title}`;
+          else uniqueTitle = `${title} im Detail`;
+        } else {
+          if (count === 2) uniqueTitle = `Deep Dive: ${title}`;
+          else if (count === 3) uniqueTitle = `Practice: ${title}`;
+          else uniqueTitle = `${title} in Detail`;
+        }
+        norm = uniqueTitle.toLowerCase().trim();
+      }
+
+      seenNormalized.add(norm);
+      uniqueTitles.push(uniqueTitle);
+    });
+
+    // Update mergedSegments with the cleaned and unique titles
+    mergedSegments.forEach((seg, idx) => {
+      const cleanTitle = uniqueTitles[idx];
+      seg.title = cleanTitle;
+      seg.pages.forEach(p => {
+        p.chapter_title = cleanTitle;
+      });
+    });
 
     // Step 4: Re-flatten pages list in correct page order
     const flattened: BookOutlinePage[] = [];

@@ -720,6 +720,77 @@ export async function generateBookPdf(
     }
   }
 
+  // Step 3: Diversify and clean remaining chapter titles (strip 'Teil X', vary beginnings, make unique)
+  const rawTitles = mergedSegments.map(seg => seg.title);
+  const seenNormalized = new Set<string>();
+  const uniqueTitles: string[] = [];
+  const isDe = outline.language === 'de';
+
+  rawTitles.forEach((origTitle) => {
+    let title = origTitle.trim();
+
+    // 1. Strip trailing " - Teil X" or " - Part X" or " - Teil 2" etc.
+    title = title.replace(/[\s,.-]+(?:teil|part)\s*(?:\d+|[ivxldm]+)\s*$/i, '');
+    title = title.replace(/[\s,.-]+\d+\s*$/i, '');
+
+    // 2. Diversify repetitive beginnings
+    if (isDe) {
+      if (title.startsWith("Die langfristigen Auswirkungen der ")) {
+        title = title.replace("Die langfristigen Auswirkungen der ", "Langzeitfolgen der ");
+      } else if (title.startsWith("Die langfristigen Auswirkungen von ")) {
+        title = title.replace("Die langfristigen Auswirkungen von ", "Langzeitfolgen von ");
+      } else if (title.startsWith("Die Auswirkungen der ")) {
+        title = title.replace("Die Auswirkungen der ", "Auswirkungen der ");
+      } else if (title.startsWith("Die Auswirkungen von ")) {
+        title = title.replace("Die Auswirkungen von ", "Auswirkungen von ");
+      } else if (title.startsWith("Die Rolle der ")) {
+        title = title.replace("Die Rolle der ", "Einfluss der ");
+      } else if (title.startsWith("Die Rolle von ")) {
+        title = title.replace("Die Rolle von ", "Einfluss von ");
+      } else if (title.startsWith("Der Weg zur ")) {
+        title = title.replace("Der Weg zur ", "Weg zur ");
+      } else if (title.startsWith("Der Weg zum ")) {
+        title = title.replace("Der Weg zum ", "Weg zum ");
+      }
+    } else {
+      if (title.startsWith("The long-term effects of ")) {
+        title = title.replace("The long-term effects of ", "Long-term effects of ");
+      } else if (title.startsWith("The effects of ")) {
+        title = title.replace("The effects of ", "Effects of ");
+      } else if (title.startsWith("The role of ")) {
+        title = title.replace("The role of ", "Role of ");
+      } else if (title.startsWith("The way to ")) {
+        title = title.replace("The way to ", "Way to ");
+      }
+    }
+
+    // 3. Make sure it's unique without appending "Teil X"
+    let uniqueTitle = title;
+    let norm = uniqueTitle.toLowerCase().trim();
+    let count = 1;
+    
+    while (seenNormalized.has(norm)) {
+      count++;
+      if (isDe) {
+        if (count === 2) uniqueTitle = `Vertiefung: ${title}`;
+        else if (count === 3) uniqueTitle = `Praxis: ${title}`;
+        else uniqueTitle = `${title} im Detail`;
+      } else {
+        if (count === 2) uniqueTitle = `Deep Dive: ${title}`;
+        else if (count === 3) uniqueTitle = `Practice: ${title}`;
+        else uniqueTitle = `${title} in Detail`;
+      }
+      norm = uniqueTitle.toLowerCase().trim();
+    }
+
+    seenNormalized.add(norm);
+    uniqueTitles.push(uniqueTitle);
+  });
+
+  mergedSegments.forEach((seg, idx) => {
+    seg.title = uniqueTitles[idx];
+  });
+
   const sortedPages = rawSortedPages.map(p => {
     const foundSeg = mergedSegments.find(seg => seg.pages.some(sp => sp.page_number === p.page_number));
     return {
