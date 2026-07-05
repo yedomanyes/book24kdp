@@ -488,12 +488,13 @@ Stelle sicher, dass die "pages"-Liste EXAKT ${targetPages} Einträge enthält!`;
         if (allPages.length > 0) {
           const uniqueChapters = Array.from(new Set(allPages.map(p => p.chapter_title)));
           const lastPages = allPages.slice(-15);
+          const lastChapter = allPages[allPages.length - 1].chapter_title;
           
           previousPagesContext = `\n\nBisherige Kapitelstruktur (bereits erstellt):\n` +
             uniqueChapters.map(ch => `- ${ch}`).join('\n') +
             `\n\nDetails der letzten geplanten Seiten:\n` +
             lastPages.map(p => `- Seite ${p.page_number}: Kapitel "${p.chapter_title}" - Fokus: "${p.focus}"`).join('\n') +
-            `\n\nSETZE DIESE PLANUNG NAHTLOS FORT. Plane jetzt NUR die Seiten ${start} bis ${end} (${chunkSize} Seiten). Es ist STRENGSTENS VERBOTEN, die bereits erstellten Kapitelüberschriften oder die Fokuspunkte der letzten Seiten zu wiederholen. Schreibe stattdessen neue, fortschreitende Aspekte!\n`;
+            `\n\nSETZE DIESE PLANUNG NAHTLOS FORT. Plane jetzt NUR die Seiten ${start} bis ${end} (${chunkSize} Seiten). Du darfst und sollst das letzte Kapitel ("${lastChapter}") fortsetzen, wenn das Thema noch nicht abgeschlossen ist. Verwende bereits abgeschlossene Kapitelüberschriften oder Fokuspunkte der vorherigen Seiten nicht wieder.\n`;
         }
 
         const chunkPrompt = `Du bist ein professioneller Buch-Redakteur. Erstelle die Seiten-Planung für folgendes Buch.
@@ -509,7 +510,8 @@ Jede einzelne Seite MUSS einen absolut einzigartigen, trennscharfen und unverwec
 - Es ist EBENFALLS STRENGSTENS VERBOTEN, dass zwei Seiten innerhalb dieser Planung denselben oder einen nahezu identischen Fokus haben.
 - Jede Seite MUSS das Thema progressiv fortführen. Stelle sicher, dass KEIN "focus" und KEINE "key_points" einer anderen Seite exakt gleichen. Jede Dopplung im Buch ist verboten!
 
-KAPITELLÄNGE ORGANISCH: Entscheide selbst wie viele Seiten ein Kapitel braucht (einfache Themen 2-3 Seiten, komplexe Themen 6-8+ Seiten). Starte das nächste Kapitel, sobald das aktuelle Thema vollständig abgedeckt ist – keine Füllseiten!
+KAPITELLÄNGE (3 BIS 20 SEITEN PRO KAPITEL):
+Ein Kapitel ist ein umfassender Buchabschnitt. Daher muss ein Kapitel typischerweise 8 bis 15 Seiten lang sein! Setze das aktuelle Kapitel über mehrere Seiten fort (auch über Chunk-Grenzen hinweg), bevor du ein neues beginnst, damit das Buch bei ${targetPages} Seiten insgesamt nur ca. 6 bis 10 Kapitel hat und das Inhaltsverzeichnis auf exakt eine Seite passt.
 
 BLICKWINKEL-POOL (nur was zum Thema PASST):
 Einführung & Kernfrage • Mechanismen & Hintergründe • Praxisbeispiele & Anwendung • Häufige Fehler & Mythen • Schritt-für-Schritt • Psychologie & Emotion • Wissenschaft & Belege • Fallstudie & Erfahrung • Vergleich & Abgrenzung • Langzeitwirkung & Fazit
