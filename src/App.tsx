@@ -133,19 +133,26 @@ const getSourceGuidelineCharLimit = (modelName: string): number => {
 const getThrottleDelayMs = (
   modelName: string,
   turboEnabled: boolean,
+  keyCount: number = 1,
   mode: 'generation' | 'translation' = 'generation'
 ): number => {
   const provider = getModelProvider(modelName);
+  const factor = Math.max(1, keyCount);
 
   if (mode === 'translation') {
-    if (provider === 'deepseek') return turboEnabled ? 1200 : 1800;
-    if (provider === 'gemini') return turboEnabled ? 2800 : 4500;
-    return turboEnabled ? 1800 : 2500;
+    let base = 2500;
+    if (provider === 'deepseek') base = turboEnabled ? 1200 : 1800;
+    else if (provider === 'gemini') base = turboEnabled ? 2800 : 4500;
+    else base = turboEnabled ? 1800 : 2500;
+    return Math.max(800, Math.round(base / factor));
   }
 
-  if (provider === 'deepseek') return turboEnabled ? 1600 : 2800;
-  if (provider === 'gemini') return turboEnabled ? 3200 : 4500;
-  return turboEnabled ? 5500 : 8500;
+  let base = 8500;
+  if (provider === 'deepseek') base = turboEnabled ? 1600 : 2800;
+  else if (provider === 'gemini') base = turboEnabled ? 2400 : 4000;
+  else base = turboEnabled ? 4000 : 7000; // Groq
+  
+  return Math.max(1000, Math.round(base / factor));
 };
 
 const getChapterTransitionDelayMs = (turboEnabled: boolean): number => (
@@ -4265,7 +4272,7 @@ export default function App() {
         setTranslationProgress(`Übersetze Buchseite ${i + 1} von ${totalTextPages}...`);
         
         if (i > 0) {
-          const delayMs = getThrottleDelayMs(selectedModel, generationTurboEnabled, 'translation');
+          const delayMs = getThrottleDelayMs(selectedModel, generationTurboEnabled, getActiveKeys(selectedModel).length, 'translation');
           await new Promise(resolve => setTimeout(resolve, delayMs));
         }
 
@@ -4461,7 +4468,7 @@ export default function App() {
         try {
           // Delay to reduce rate limits (only if it's not the very first page of a chapter, or minimal delay)
           if (lastChapter === page.chapter_title) {
-            const delayMs = getThrottleDelayMs(selectedModel, generationTurboEnabled, 'generation');
+            const delayMs = getThrottleDelayMs(selectedModel, generationTurboEnabled, getActiveKeys(selectedModel).length, 'generation');
             await new Promise(resolve => setTimeout(resolve, delayMs));
           } else if (lastChapter !== '') {
             await new Promise(resolve => setTimeout(resolve, getChapterTransitionDelayMs(generationTurboEnabled)));
@@ -4582,15 +4589,34 @@ export default function App() {
                   (page as any).chapter_scope
                 );
 
-                // Auto graphics decision
-                let graphicDecisionSingle: GraphicDecision = { grafik_sinnvoll: false };
+                // Auto graphics decision - run in the background as a non-blocking Promise to speed up generation
                 if ((currentBook.autoChapterGraphics !== false) && !(currentBook.pagesGraphicDisabled?.[pageNum])) {
-                  try {
-                    const pagesSinceGraph = NecessityDetector.evaluateDensityPlacement(pageNum, currentBook.pagesGraphic);
-                    const promptGraph = NecessityDetector.buildAnalysisPrompt(text, pagesSinceGraph, currentOutline?.language || 'de');
-                    const rawJsonGraph = await service.evaluateRawJson(promptGraph, text);
-                    graphicDecisionSingle = NecessityDetector.parseAndValidateDecision(rawJsonGraph, text);
-                  } catch(eG) { console.warn("AGVE Error:", eG); }
+                  const pagesSinceGraph = NecessityDetector.evaluateDensityPlacement(pageNum, currentBook.pagesGraphic);
+                  const promptGraph = NecessityDetector.buildAnalysisPrompt(text, pagesSinceGraph, currentOutline?.language || 'de');
+                  
+                  void (async () => {
+                    try {
+                      const rawJsonGraph = await service.evaluateRawJson(promptGraph, text);
+                      const graphicDecisionSingle = NecessityDetector.parseAndValidateDecision(rawJsonGraph, text);
+                      if (graphicDecisionSingle.grafik_sinnvoll) {
+                        setBooks(prev => prev.map(b => {
+                          if (b.id === targetBookId) {
+                            const updated = {
+                              ...b,
+                              pagesGraphic: { ...(b.pagesGraphic || {}), [pageNum]: graphicDecisionSingle }
+                            };
+                            if (currentUser) {
+                              saveBookToCloud(currentUser.uid, updated);
+                            }
+                            return updated;
+                          }
+                          return b;
+                        }));
+                      }
+                    } catch (eG) {
+                      console.warn("AGVE Error:", eG);
+                    }
+                  })();
                 }
 
                 // CRITICAL FIX: Fetch the absolute latest book state from the ref right before updating!
@@ -4609,8 +4635,7 @@ export default function App() {
                   pagesOverflow: { ...(freshBook.pagesOverflow || {}), [pageNum]: finalOverflow },
                   cmieStore: { ...(freshBook.cmieStore || {}), [pageNum]: cmieRes.memory },
                   cmieStatus: { ...(freshBook.cmieStatus || {}), [pageNum]: cmieRes.pageStatus },
-                  cmieGlossary: cmieRes.updatedGlossary,
-                  pagesGraphic: graphicDecisionSingle.grafik_sinnvoll ? { ...(freshBook.pagesGraphic || {}), [pageNum]: graphicDecisionSingle } : (freshBook.pagesGraphic || {})
+                  cmieGlossary: cmieRes.updatedGlossary
                 };
                 
                 await forceSaveSingleBook(updatedBook);
@@ -4783,14 +4808,34 @@ export default function App() {
         (bulkPageInfo as any)?.chapter_scope
       );
 
-      let graphicDecisionBulk: GraphicDecision = { grafik_sinnvoll: false };
+      // Auto graphics decision - run in the background as a non-blocking Promise to speed up generation
       if ((currentBook.autoChapterGraphics !== false) && !(currentBook.pagesGraphicDisabled?.[pageNum])) {
-        try {
-          const pagesSinceGraphBulk = NecessityDetector.evaluateDensityPlacement(pageNum, currentBook.pagesGraphic);
-          const promptGraphBulk = NecessityDetector.buildAnalysisPrompt(text, pagesSinceGraphBulk, outline?.language || 'de');
-          const rawJsonGraphBulk = await service.evaluateRawJson(promptGraphBulk, text);
-          graphicDecisionBulk = NecessityDetector.parseAndValidateDecision(rawJsonGraphBulk, text);
-        } catch(eGB) { console.warn("AGVE Bulk Error:", eGB); }
+        const pagesSinceGraphBulk = NecessityDetector.evaluateDensityPlacement(pageNum, currentBook.pagesGraphic);
+        const promptGraphBulk = NecessityDetector.buildAnalysisPrompt(text, pagesSinceGraphBulk, outline?.language || 'de');
+        
+        void (async () => {
+          try {
+            const rawJsonGraphBulk = await service.evaluateRawJson(promptGraphBulk, text);
+            const graphicDecisionBulk = NecessityDetector.parseAndValidateDecision(rawJsonGraphBulk, text);
+            if (graphicDecisionBulk.grafik_sinnvoll) {
+              setBooks(prev => prev.map(b => {
+                if (b.id === activeBookId) {
+                  const updated = {
+                    ...b,
+                    pagesGraphic: { ...(b.pagesGraphic || {}), [pageNum]: graphicDecisionBulk }
+                  };
+                  if (currentUser) {
+                    saveBookToCloud(currentUser.uid, updated);
+                  }
+                  return updated;
+                }
+                return b;
+              }));
+            }
+          } catch(eGB) {
+            console.warn("AGVE Bulk Error:", eGB);
+          }
+        })();
       }
 
       const freshBook = booksRef.current.find(b => b.id === activeBookId);
@@ -4806,8 +4851,7 @@ export default function App() {
         pagesOverflow: { ...(currentBook.pagesOverflow || {}), [pageNum]: finalOverflow },
         cmieStore: { ...(currentBook.cmieStore || {}), [pageNum]: cmieResBulk.memory },
         cmieStatus: { ...(currentBook.cmieStatus || {}), [pageNum]: cmieResBulk.pageStatus },
-        cmieGlossary: cmieResBulk.updatedGlossary,
-        pagesGraphic: graphicDecisionBulk.grafik_sinnvoll ? { ...(currentBook.pagesGraphic || {}), [pageNum]: graphicDecisionBulk } : (currentBook.pagesGraphic || {})
+        cmieGlossary: cmieResBulk.updatedGlossary
       };
       
       await forceSaveSingleBook(updatedBook);
