@@ -159,6 +159,54 @@ const getChapterTransitionDelayMs = (turboEnabled: boolean): number => (
   turboEnabled ? 800 : 1500
 );
 
+let audioCtx: AudioContext | null = null;
+let silentSource: AudioBufferSourceNode | null = null;
+
+const startAudioKeepAlive = () => {
+  try {
+    if (!audioCtx) {
+      const AudioCtxClass = window.AudioContext || (window as any).webkitAudioContext;
+      audioCtx = new AudioCtxClass();
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate, audioCtx.sampleRate);
+    const channelData = buffer.getChannelData(0);
+    for (let i = 0; i < channelData.length; i++) {
+      channelData[i] = 0;
+    }
+    
+    // Stop any existing source first
+    if (silentSource) {
+      try { silentSource.stop(); } catch(e){}
+      try { silentSource.disconnect(); } catch(e){}
+    }
+
+    silentSource = audioCtx.createBufferSource();
+    silentSource.buffer = buffer;
+    silentSource.loop = true;
+    silentSource.connect(audioCtx.destination);
+    silentSource.start();
+    console.log("Audio keep-alive started.");
+  } catch (e) {
+    console.warn("Failed to start audio keep-alive:", e);
+  }
+};
+
+const stopAudioKeepAlive = () => {
+  try {
+    if (silentSource) {
+      silentSource.stop();
+      silentSource.disconnect();
+      silentSource = null;
+    }
+    console.log("Audio keep-alive stopped.");
+  } catch (e) {
+    console.warn("Failed to stop audio keep-alive:", e);
+  }
+};
+
 const backgroundSafeTimeout = (delayMs: number): Promise<void> => {
   return new Promise(resolve => {
     const blob = new Blob([
@@ -2310,6 +2358,87 @@ export default function App() {
       }
     };
 
+    const estimateBlocksHeight = (blocksList: WorkbookBlock[]): number => {
+      let totalHeight = 0;
+      const fontStr = `${previewFontSize}px ${resolvedFont}`;
+      const lh = previewFontSize * ((book as any).lineHeightMultiplier || 1.4);
+
+      blocksList.forEach((block, blockIdx) => {
+        switch (block.type) {
+          case 'paragraph': {
+            const lines = getLinesCount(block.text, fontStr, contentWidth);
+            totalHeight += lines * lh;
+            // Paragraph margins
+            const prevBlock = blockIdx > 0 ? blocksList[blockIdx - 1] : null;
+            const isAfterBreakBlock = !!(prevBlock && prevBlock.type !== 'paragraph');
+            if (paragraphStyleSetting === 'spacing' && isAfterBreakBlock) {
+              totalHeight += 0.8 * previewFontSize; // 0.8em
+            }
+            break;
+          }
+          case 'box': {
+            let innerHeight = estimateBlocksHeight(block.children);
+            // Add padding and margin
+            innerHeight += 24 * previewScaleY; // padding top/bottom (12px + 12px)
+            if (block.title) {
+              innerHeight += 12 * previewScaleY; // box title spacer
+            }
+            totalHeight += innerHeight + 16 * previewScaleY; // margins (8px + 8px)
+            break;
+          }
+          case 'table': {
+            // Header + rows
+            const headerRow = block.headers || [];
+            let headerHeight = 0;
+            headerRow.forEach(cell => {
+              const cellLines = getLinesCount(cell, `bold ${fontStr}`, contentWidth / Math.max(1, headerRow.length));
+              headerHeight = Math.max(headerHeight, cellLines * lh + 8 * previewScaleY);
+            });
+            totalHeight += headerHeight;
+
+            const rows = block.rows || [];
+            rows.forEach(row => {
+              let rowHeight = 0;
+              row.forEach(cell => {
+                const cellLines = getLinesCount(cell, fontStr, contentWidth / Math.max(1, row.length));
+                rowHeight = Math.max(rowHeight, cellLines * lh + 8 * previewScaleY);
+              });
+              totalHeight += rowHeight;
+            });
+            break;
+          }
+          case 'image': {
+            const floatVal = block.float || 'none';
+            if (floatVal === 'none') {
+              totalHeight += 115 * previewScaleY + 32 * previewScaleY;
+            } else {
+              const wPx = contentWidth * ((block.width || 50) / 100);
+              totalHeight += wPx * 0.75 + 16 * previewScaleY;
+            }
+            break;
+          }
+          case 'custom_image': {
+            const floatVal = block.float || 'none';
+            const widthPercent = block.width || 85;
+            const wPx = contentWidth * (widthPercent / 100);
+            const hPx = wPx * 0.75;
+            if (floatVal === 'none') {
+              totalHeight += hPx + 15 * previewScaleY + 32 * previewScaleY;
+            } else {
+              totalHeight += hPx + 16 * previewScaleY;
+            }
+            break;
+          }
+          case 'pagebreak': {
+            totalHeight += 24 * previewScaleY;
+            break;
+          }
+        }
+      });
+
+      return totalHeight;
+    };
+
     const splitPageText = (t: string): string[] => {
       if (!t) return [''];
       return t.split(/\r?\n\s*-{3,}\s*(?:\r?\n|$)/);
@@ -2355,7 +2484,13 @@ export default function App() {
         }
       });
 
-      if (measurer.scrollHeight > effectiveContentHeight) {
+      let height = measurer.scrollHeight;
+      if (height === 0) {
+        // Tab is in background: fall back to virtual Canvas height estimator
+        height = estimateBlocksHeight(blocks);
+      }
+
+      if (height > effectiveContentHeight) {
         anyOverflow = true;
         break;
       }
@@ -4246,6 +4381,7 @@ export default function App() {
     }
 
     setIsTranslating(true);
+    startAudioKeepAlive();
     setShowTranslationWarning(false);
 
     setTranslationProgress("Erstelle eine Kopie des Projekts...");
@@ -4348,6 +4484,7 @@ export default function App() {
       alert("Fehler bei der Übersetzung: " + (err.message || err));
     } finally {
       setIsTranslating(false);
+      stopAudioKeepAlive();
       setTranslationProgress('');
     }
   };
@@ -4459,6 +4596,7 @@ export default function App() {
       return;
     }
     setIsGenerating(true);
+    startAudioKeepAlive();
     cancelGenerationRef.current = false;
     const service = getServiceInstance();
 
@@ -4702,8 +4840,12 @@ export default function App() {
       }
     };
 
-    await runQueue();
-    setIsGenerating(false);
+    try {
+      await runQueue();
+    } finally {
+      setIsGenerating(false);
+      stopAudioKeepAlive();
+    }
   };
 
   // Retry generating single page
