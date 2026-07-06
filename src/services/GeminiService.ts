@@ -1362,10 +1362,18 @@ ${isEng2 ? `- Phrases starting with "When..." (e.g. "When you...", "When we...")
 - Formulierungen mit "Indem..." (z. B. "Indem du...", "Indem Sie...", "Indem...")
 - Formulierungen mit "Um..." (z. B. "Um deine...", "Um Ihre...", "Um...")
 - Formulierungen mit "Daher...", "Deshalb...", "Folglich..." oder "Somit..."
-- Formulierungen mit "In diesem Kapitel", "Wie wir gesehen haben", "Wir haben"`}
+- Formulierungen mit "In diesem Kapitel", "Wie wir gesehen haben", "Wir haben"
+- Redundante Anfänge mit bestimmten Artikeln, die direkt ein abstraktes Nomen einleiten (wie "Die Rolle...", "Die Bedeutung...", "Die Wichtigkeit...", "Der Fokus...", "Das Ziel...", "Die Kunst...", "Die Praxis..."). Verwende diese Artikel-Anfänge auf keinen Fall!`}
 ${recentOpeners.length > 0 ? recentOpeners.map(op => `- Beginne NICHT mit "${op}..." (bereits verwendet)`).join('\n') : ''}
 
-Achte auf maximale sprachliche Vielfalt! Verwende kreative, abwechslungsreiche und elegante Einleitungen für den ersten Satz. Vermeide konsequent Satzanfang-Wiederholungen innerhalb der Seite!`;
+Achte auf maximale sprachliche Vielfalt! Starte den allerersten Satz der Seite stattdessen bewusst mit anderen Wortarten:
+- Verben (z. B. "Betrachten wir...", "Stell dir vor...", "Vergiss alles, was...", "Konzentriere dich auf...", "Beginnen wir mit...")
+- Adverbien (z. B. "Oftmals...", "Vielleicht...", "Längst...", "Kaum...", "Niemals...", "Selten...")
+- Direkten Fragen (z. B. "Was passiert eigentlich, wenn...", "Wie oft hast du dich gefragt, ob...")
+- Eleganten Präpositionalphrasen (z. B. "Mitten im Chaos von...", "Abseits der ausgetretenen Pfade...", "Hinter jedem Erfolg steht...", "Im Kern geht es um...")
+- Verneinenden Feststellungen (z. B. "Es reicht nicht aus, nur...", "Niemand wird bestreiten, dass...")
+
+Finde einen kreativen, eleganten Einstieg, der fließend an das vorherige Kapitel anknüpft, sich aber stilistisch neu und frisch anfühlt. Vermeide konsequent Satzanfang-Wiederholungen innerhalb der Seite!`;
 
     if (shorterRetry) {
       finalSystemPrompt += `\n\nACHTUNG: Dein vorheriger Entwurf war etwas zu lang und ist über das Buchseiten-Limit hinausgelaufen! Du MUSST diesen Entwurf jetzt um ca. 15% bis 20% kürzen (also ca. ${Math.round(minWords * 0.8)} bis ${Math.round(maxWords * 0.8)} Wörter), damit er exakt auf eine Seite passt, ohne abgeschnitten zu werden. Behalte alle wichtigen Informationen bei, aber schreibe kompakter.`;
