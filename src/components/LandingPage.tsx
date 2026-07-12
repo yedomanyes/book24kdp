@@ -286,7 +286,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
           style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}
         >
           <button 
-            onClick={() => window.location.href = 'https://book24studio.gumroad.com/l/booklabstudio'}
+            onClick={() => window.location.href = 'https://booklabstudio.gumroad.com/l/booklabstudio'}
             style={{
               background: theme === 'dark'
                 ? 'linear-gradient(180deg, #0b57d0 0%, #0842a0 100%)'
@@ -1118,7 +1118,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
           <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
             {/* Primary Button */}
             <button 
-              onClick={() => window.location.href = 'https://book24studio.gumroad.com/l/booklabstudio'}
+              onClick={() => window.location.href = 'https://booklabstudio.gumroad.com/l/booklabstudio'}
               style={{
                 background: theme === 'dark'
                   ? 'linear-gradient(180deg, #0b57d0 0%, #0842a0 100%)'
@@ -1484,7 +1484,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
               
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <button
-                  onClick={() => window.location.href = 'https://book24studio.gumroad.com/l/booklabstudio'}
+                  onClick={() => window.location.href = 'https://booklabstudio.gumroad.com/l/booklabstudio'}
                   style={{
                     background: '#2563eb',
                     color: '#fff',

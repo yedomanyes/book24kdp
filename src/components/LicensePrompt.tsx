@@ -13,7 +13,7 @@ export const LicensePrompt: React.FC<LicensePromptProps> = ({ onValidLicense, on
   const [error, setError] = useState<string | null>(null);
   const [isValidating, setIsValidating] = useState(false);
   const [cooldown, setCooldown] = useState(0);
-  const purchaseLink = 'https://book24studio.gumroad.com/l/booklabstudio';
+  const purchaseLink = 'https://booklabstudio.gumroad.com/l/booklabstudio';
   const isDe = language === 'de';
 
   useEffect(() => {
