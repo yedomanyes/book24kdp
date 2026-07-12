@@ -1,122 +1,57 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Check, ChevronDown, Search, Frown } from 'lucide-react';
+import { X, Check, ChevronDown, ArrowRight } from 'lucide-react';
 import ShinyText from './ShinyText';
 import ProfileCard from './ProfileCard';
-import CircularGallery from './CircularGallery';
 
 
-import LiquidEther from './LiquidEther';
 import ClickSpark from './ClickSpark';
+import { CosmicBackground } from './CosmicBackground';
 import { LandingNavbar } from './LandingNavbar';
 
-import { LegalModal } from './LegalModal';
+import { LegalDocumentPage } from './LegalModal';
 import type { LegalPage } from './LegalModal';
+import './LandingPage.css';
 
 const PROFILE_ICON_PATTERN = '/profile-icon-pattern.svg';
 
 const TEAM = [
   {
-    name: 'Renzo',
-    title: 'Head Of Marketing',
-    avatarUrl: '/MannAkim.png',
-    iconUrl: PROFILE_ICON_PATTERN,
-    behindGlowColor: 'rgba(125, 190, 255, 0.67)',
-    innerGradient: 'linear-gradient(145deg,#60496e8c 0%,#71C4FF44 100%)',
-    avatarScale: 1.35,
-  },
-  {
     name: 'Yedo',
-    title: 'CTO',
+    title: 'Developer',
     avatarUrl: '/yigit.png',
     iconUrl: PROFILE_ICON_PATTERN,
     behindGlowColor: 'rgba(167, 139, 250, 0.67)',
     innerGradient: 'linear-gradient(145deg,#4c1d958c 0%,#818cf844 100%)',
+    avatarScale: 1.0,
   },
 ];
 
 
 
-const getRoadmapPhases = (isDe: boolean) => [
-  {
-    phase: 'Phase 01',
-    title: 'Core Engine & KDP-Ready Export',
-    price: '199$',
-    badge: isDe ? '6. JULI' : 'JULY 6',
-    features: isDe
-      ? ['Optimierte Textgenerierung', 'Druckfertiger PDF-Export (6x9)', 'Dynamische Kapitelstrukturen', 'Unbegrenzte Bucherstellung']
-      : ['Optimized Text Generation', 'Print-ready PDF Export (6x9)', 'Dynamic Chapter Structures', 'Unlimited Book Creation'],
-    desc: isDe ? 'Das Fundament der Plattform. Offizieller Release am 6. Juli.' : 'The foundation of the platform. Official release on July 6.',
-    active: true,
-  },
-  {
-    phase: 'Phase 02',
-    title: 'Cover Engine & Advanced Layouts',
-    price: '300$',
-    badge: isDe ? '6. AUG' : 'AUG 6',
-    features: isDe
-      ? ['Cover-Design Engine', 'Erweiterte Layout-Templates', 'Custom Fonts Support', 'Kapitel-Stilvorlagen']
-      : ['Cover Design Engine', 'Advanced Layout Templates', 'Custom Fonts Support', 'Chapter Style Presets'],
-    desc: isDe ? 'Buchcover visuell gestalten und erweiterte Layout-Templates freischalten. Release am 6. August.' : 'Visually design book covers and unlock advanced layout templates. Release on August 6.',
-    active: false,
-  },
-  {
-    phase: 'Phase 03',
-    title: 'Automation & Bulk Creation',
-    price: '500$',
-    badge: 'PLANNED',
-    features: isDe
-      ? ['Batch-Buchgenerierung', 'Direkter KDP-Upload-Assistent', 'Automatische Keyword-Optimierung', 'Bulk Metadata Management']
-      : ['Batch Book Generation', 'Direct KDP Upload Assistant', 'Automated Keyword Optimization', 'Bulk Metadata Management'],
-    desc: isDe ? 'Erstellung und Export mehrerer Manuskripte in einem Schritt.' : 'Generate and export multiple manuscripts in a single run.',
-    active: false,
-  },
-  {
-    phase: 'Phase 04',
-    title: 'Global Localization',
-    price: '1000$',
-    badge: 'PLANNED',
-    features: isDe
-      ? ['Automatisierte Übersetzung (20+ Sprachen)', 'Globale Marktanalysen', 'Regionale KDP-Layout-Profile', 'Publisher Dashboard']
-      : ['Automated Translation (20+ Languages)', 'Global Market Analysis', 'Regional KDP Layout Profiles', 'Publisher Dashboard'],
-    desc: isDe ? 'Lokalisierung und Skalierung von Buchprojekten weltweit.' : 'Localize and scale book projects for international markets.',
-    active: false,
-  },
-  {
-    phase: 'Phase 05',
-    title: 'The Publisher Enterprise',
-    price: '2000$',
-    badge: 'VISION',
-    features: isDe
-      ? ['Kollaborativer Editor', 'Team-Rollen-Verwaltung', 'API-Zugang & Automatisierung', 'Enterprise Support']
-      : ['Collaborative Editor', 'Team Role Management', 'API Access & Automation', 'Enterprise Support'],
-    desc: isDe ? 'Die vollumfängliche Plattform für professionelle Publisher.' : 'The comprehensive suite for professional publishing houses.',
-    active: false,
-  }
-];
 
 const getFaqs = (isDe: boolean) => [
   {
-    q: 'Gehören mir die Rechte an den generierten Büchern?',
-    a: isDe ? 'Ja. Alle generierten Inhalte, Texte und Layouts gehören zu 100% dir. Du kannst sie uneingeschränkt auf Amazon KDP oder anderen Plattformen unter deinem Namen veröffentlichen und monetarisieren.' : 'Yes. All generated content, text, and layouts belong 100% to you. You can publish and monetize them on Amazon KDP or other platforms under your name without restrictions.'
+    q: isDe ? 'Gehören mir die Rechte an den generierten Büchern?' : 'Do I own the rights to the books I generate?',
+    a: isDe ? 'Ja. Alle generierten Inhalte, Texte und Layouts gehören zu 100% dir. Du kannst sie uneingeschränkt auf Amazon KDP oder anderen Plattformen unter deinem Namen veröffentlichen und monetarisieren.' : 'You receive the rights to use and publish the content you create with BookLab Studio, subject to applicable laws and third-party AI provider terms. You are responsible for reviewing the output before publishing it.'
   },
   {
-    q: 'Wird der Preis in Zukunft steigen?',
+    q: isDe ? 'Wird der Preis in Zukunft steigen?' : 'Will the price increase in the future?',
     a: isDe ? 'Ja! Wir entwickeln BookLab Studio kontinuierlich weiter. Mit jedem großen Update kommen neue, mächtige Funktionen hinzu. Daher wird der Preis des Produkts stetig steigen. Wer sich den Zugang jetzt sichert, erhält alle künftigen Erweiterungen kostenlos – ohne Aufpreis!' : 'Yes! We are continuously developing BookLab Studio. With every major update, new powerful features are added. Therefore, the price of the product will steadily increase. Those who secure access now will receive all future expansions for free - at no extra cost!'
   },
   {
-    q: 'Benötige ich Vorkenntnisse im Buch-Layouting?',
-    a: 'Nein, überhaupt nicht. Die Plattform übernimmt das komplette Design, die Ränder und die Schriftformatierung automatisch nach offiziellen Amazon KDP-Druckstandards (z.B. 6x9 Zoll Taschenbuchformat).'
+    q: isDe ? 'Benötige ich Vorkenntnisse im Buch-Layouting?' : 'Do I need prior book formatting experience?',
+    a: isDe ? 'Nein, überhaupt nicht. Die Plattform übernimmt das komplette Design, die Ränder und die Schriftformatierung automatisch nach offiziellen Amazon KDP-Druckstandards (z.B. 6x9 Zoll Taschenbuchformat).' : 'No. BookLab Studio helps handle layout, margins, and typography according to common Amazon KDP print requirements, including formats such as 6 × 9 inch paperbacks.'
   },
   {
-    q: 'Gibt es versteckte monatliche Gebühren?',
+    q: isDe ? 'Gibt es versteckte monatliche Gebühren?' : 'Are there any hidden monthly fees?',
     a: isDe ? 'Nein. Mit dem Studio-Pass sicherst du dir einen lebenslangen Zugang zu allen Kernfunktionen. Keine Abos, keine versteckten Kosten.' : 'No. The Studio Pass gives you lifetime access to all core features. No subscriptions, no hidden costs.'
   },
   {
-    q: isDe ? 'Darf ich mehrere Accounts mit verschiedenen E-Mails kaufen, um die Keys später teurer weiterzuverkaufen?' : 'Am I allowed to buy multiple accounts with different emails to resell the keys later at a higher price?',
+    q: isDe ? 'Darf ich mehrere Accounts mit verschiedenen E-Mails kaufen, um die Keys später teurer weiterzuverkaufen?' : 'Can I buy multiple accounts or resell license keys?',
     a: isDe
       ? 'Ja, das ist vollständig erlaubt! Sobald du einen Key einlöst, ist er an dein Konto gebunden und funktioniert nur auf einem Gerät gleichzeitig. Doch uneingelöste Keys können niemals ablaufen – du kannst sie also jederzeit weiterverkaufen. Da der Preis mit jedem Update steigt, lohnt es sich, sich jetzt mehrere Keys zu sichern und sie später zum aktuellen Marktpreis weiterzugeben.'
-      : 'Yes, that is completely allowed! Once you redeem a key, it is linked to your account and only works on one device at a time. However, unredeemed keys never expire — so you can resell them at any time. Since the price increases with every update, it makes sense to secure multiple keys now and resell them later at the current market price.'
+      : 'License keys are intended for the original purchaser and may only be used according to the applicable license terms. Please contact support before purchasing multiple licenses or transferring access.'
   },
 ];
 
@@ -128,28 +63,23 @@ interface LandingPageProps {
   onLanguageChange: (lang: 'de' | 'en') => void;
 }
 
+const getLegalPageFromUrl = (): LegalPage => {
+  if (typeof window === 'undefined') return null;
+  const value = new URLSearchParams(window.location.search).get('legal');
+  return value === 'impressum' || value === 'datenschutz' || value === 'terms' || value === 'privacy' ? value : null;
+};
+
 export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, setTheme, language, onLanguageChange }) => {
   const isDe = language === 'de';
 
-  const covers = [
-    { src: '/cover1.jpg', revenueEur: 854.81 },
-    { src: '/cover2.jpg', revenueEur: 139.06 },
-    { src: '/nahrungsluegecover.jpg', revenueEur: 326.00 },
-    { src: '/cover4.jpg', revenueEur: 89.98 }
-  ];
 
-  const formatRevenue = (valEur: number) => {
-    if (isDe) {
-      return valEur.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
-    } else {
-      const valUsd = valEur * 1.10;
-      return '$' + valUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
-  };
+
   const [openFaq, setOpenFaq] = React.useState<number | null>(null);
-  const [legalPage, setLegalPage] = React.useState<LegalPage>(null);
+  const [legalPage, setLegalPage] = React.useState<LegalPage>(() => getLegalPageFromUrl());
   const [showStickyCta, setShowStickyCta] = React.useState(false);
   const [stickyCtaDismissed, setStickyCtaDismissed] = React.useState(false);
+  const [emailInput, setEmailInput] = React.useState('');
+  const [emailSubmitted, setEmailSubmitted] = React.useState(false);
   const [cookieConsent, setCookieConsent] = React.useState<boolean>(() => {
     try {
       const val = localStorage.getItem('cookie-consent');
@@ -179,9 +109,41 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  React.useEffect(() => {
+    const handlePopState = () => setLegalPage(getLegalPageFromUrl());
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const openLegalPage = (page: Exclude<LegalPage, null>) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('legal', page);
+    window.history.pushState({ legal: page }, '', url);
+    setLegalPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const closeLegalPage = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('legal');
+    window.history.pushState({}, '', url.pathname + url.hash);
+    setLegalPage(null);
+  };
+
   const toggleFaq = (index: number) => {
     setOpenFaq((prev: number | null) => prev === index ? null : index);
   };
+
+  if (legalPage) {
+    return (
+      <LegalDocumentPage
+        page={legalPage}
+        onBack={closeLegalPage}
+        onNavigate={(page) => openLegalPage(page)}
+        theme={theme}
+      />
+    );
+  }
 
   return (
     <ClickSpark
@@ -191,7 +153,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
       sparkCount={8}
       duration={400}
     >
-    <div style={{
+    <div className={`booklab-landing theme-${theme}`} style={{
       minHeight: '100vh',
       backgroundColor: theme === 'dark' ? '#0a0a0a' : '#f8f9fa',
       color: theme === 'dark' ? '#ffffff' : '#111827',
@@ -200,39 +162,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
       position: 'relative',
       transition: 'background-color 0.3s ease, color 0.3s ease'
     }}>
-      {/* Background */}
+      {/* Dark-space background: small pixel stars and planets softly pull toward the cursor. */}
       {theme === 'dark' ? (
-        <div style={{ 
-          position: 'absolute', 
-          top: 0, 
-          left: 0, 
-          right: 0,
-          height: '900px', 
-          zIndex: 0, 
-          pointerEvents: 'none', 
-          overflow: 'hidden',
-          maskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)'
-        }}>
-          <LiquidEther
-            colors={[ '#5227FF', '#FF9FFC', '#B497CF' ]}
-            mouseForce={20}
-            cursorSize={100}
-            isViscous={true}
-            viscous={30}
-            iterationsViscous={32}
-            iterationsPoisson={32}
-            resolution={0.5}
-            isBounce={false}
-            autoDemo={true}
-            autoSpeed={0.5}
-            autoIntensity={2.2}
-            takeoverDuration={0.25}
-            autoResumeDelay={3000}
-            autoRampDuration={0.6}
-            style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}
-          />
-        </div>
+        <CosmicBackground active />
       ) : (
         <div style={{ 
           position: 'fixed', 
@@ -247,8 +179,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
       <LandingNavbar onLoginClick={onLoginClick} theme={theme} setTheme={setTheme} language={language} onLanguageChange={onLanguageChange} />
 
       {/* Hero Section */}
-      <main style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '140px', paddingBottom: '100px', textAlign: 'center', padding: '140px 24px 100px' }}>
-
+      <main className="landing-hero" style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '140px', paddingBottom: '0px', textAlign: 'center', padding: '140px 24px 0px' }}>
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -266,13 +197,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
         >
           {isDe ? (
             <>
-              <span className="hero-title-line" style={{ display: 'inline-block' }}>Upload fertige Bücher</span> <br/>
-              <span>in <span className="slogan-accent">3 Minuten</span></span>
+              <span className="hero-title-line" style={{ display: 'inline-block' }}>In <span className="slogan-accent">3 Minuten</span></span> <br/>
+              <span>zum perfekten Buch.</span>
             </>
           ) : (
             <>
-              <span className="hero-title-line" style={{ display: 'inline-block' }}>Upload ready books</span> <br/>
-              <span>in <span className="slogan-accent">3 Minutes</span></span>
+              <span className="hero-title-line" style={{ display: 'inline-block' }}>Your book in <span className="slogan-accent">3 minutes</span></span> <br/>
+              <span>ready to publish.</span>
             </>
           )}
         </motion.h1>
@@ -286,6 +217,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
           style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}
         >
           <button 
+            className="landing-primary-cta"
             onClick={() => window.location.href = 'https://booklabstudio.gumroad.com/l/booklabstudio'}
             style={{
               background: theme === 'dark'
@@ -351,8 +283,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
             }}
           >
             <span style={{ fontSize: '18px', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.01em' }}>
-              <ShinyText text={isDe ? 'Jetzt Erstellen' : 'Create Now'} color="rgba(255, 255, 255, 0.85)" shineColor="#ffffff" speed={2.5} />
+              <ShinyText text={isDe ? 'Studio-Pass sichern' : 'Get Lifetime Access'} color="rgba(255, 255, 255, 0.85)" shineColor="#ffffff" speed={2.5} />
             </span>
+            <ArrowRight size={18} strokeWidth={2.5} color="#ffffff" />
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(0, 0, 0, 0.25)', padding: '4px 10px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.15)' }}>
               <span style={{ fontSize: '13px', textDecoration: 'line-through', color: 'rgba(255, 255, 255, 0.7)' }}>300$</span>
               <span style={{ fontSize: '16px', fontWeight: 900, color: '#ffffff' }}>199$</span>
@@ -366,21 +299,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.5 }}
-          style={{ 
-            marginTop: '32px', 
-            display: 'flex', 
-            flexDirection: 'column',
-            alignItems: 'center', 
-            justifyContent: 'center',
-            gap: '8px', 
-            background: theme === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', 
-            padding: '16px 24px', 
-            borderRadius: '24px', 
-            border: theme === 'dark' ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)',
-            boxShadow: theme === 'dark' ? '0 10px 30px rgba(0,0,0,0.2)' : '0 10px 30px rgba(0,0,0,0.02)',
-            maxWidth: '380px',
-            margin: '32px auto 0'
-          }}
+          style={{ marginTop: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}
         >
           {/* Stars & Avatars Side-by-Side */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -391,7 +310,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
                 </svg>
               ))}
             </div>
-
             <div style={{ display: 'flex', alignItems: 'center' }}>
               {[
                 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=128&h=128&q=80',
@@ -399,625 +317,331 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
                 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=128&h=128&q=80',
                 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=128&h=128&q=80'
               ].map((src, idx) => (
-                <img
-                  key={idx}
-                  src={src}
-                  alt={`User ${idx + 1}`}
-                  style={{
-                    width: '24px',
-                    height: '24px',
-                    borderRadius: '50%',
-                    border: theme === 'dark' ? '2px solid #0a0a0a' : '2px solid #ffffff',
-                    marginLeft: idx > 0 ? '-8px' : '0px',
-                    objectFit: 'cover',
-                    boxShadow: '0 4px 10px rgba(0,0,0,0.15)',
-                    zIndex: 4 - idx
-                  }}
-                />
+                <img key={idx} src={src} alt={`User ${idx + 1}`} style={{ width: '24px', height: '24px', borderRadius: '50%', border: theme === 'dark' ? '2px solid #0a0a0a' : '2px solid #ffffff', marginLeft: idx > 0 ? '-8px' : '0px', objectFit: 'cover', boxShadow: '0 4px 10px rgba(0,0,0,0.15)', zIndex: 4 - idx }} />
               ))}
             </div>
           </div>
-
-          {/* Publishing count text centered below */}
           <span style={{ fontSize: '13px', fontWeight: 600, color: theme === 'dark' ? '#a3a3a3' : '#4b5563', lineHeight: 1.3, textAlign: 'center' }}>
             {isDe ? <>Bereits <strong style={{ color: theme === 'dark' ? '#fff' : '#1a1a1a', fontWeight: 800 }}>1.350+</strong> Bücher erfolgreich veröffentlicht</> : <><strong style={{ color: theme === 'dark' ? '#fff' : '#1a1a1a', fontWeight: 800 }}>1,350+</strong> books successfully published</>}
           </span>
         </motion.div>
 
-        {/* Cover Preview Mini */}
+        {/* Infinite Book Cover Marquee */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.7 }}
-          style={{ marginTop: '32px', display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}
+          style={{
+            width: '100%',
+            overflow: 'hidden',
+            display: 'flex',
+            justifyContent: 'center',
+            maskImage: 'linear-gradient(to right, transparent, white 12%, white 88%, transparent)',
+            WebkitMaskImage: 'linear-gradient(to right, transparent, white 12%, white 88%, transparent)',
+            margin: '24px auto 0',
+          }}
         >
-          {covers.map((item, i) => {
-
-            return (
-              <div 
+          <style>{`
+            @keyframes marquee-scroll {
+              0%   { transform: translateX(0); }
+              100% { transform: translateX(-33.3333%); }
+            }
+            .marquee-track {
+              display: flex;
+              gap: 18px;
+              width: max-content;
+              animation: marquee-scroll 45s linear infinite;
+              will-change: transform;
+            }
+          `}</style>
+          <div className="marquee-track">
+            {[
+              { src: '/cover1.jpg', rev: 854 },
+              { src: '/cover2.jpg', rev: 139 },
+              { src: '/cover4.jpg', rev: 712 },
+              { src: '/cover4_kopie.jpg', rev: 1120 },
+              { src: '/cover5.jpg', rev: 1504 },
+              { src: '/cover6.jpg', rev: 680 },
+              { src: '/cover88.jpg', rev: 888 },
+              { src: '/cover99.jpg', rev: 999 },
+              { src: '/cover100.jpg', rev: 1000 },
+              { src: '/cover111.jpg', rev: 1111 },
+              { src: '/cover333.jpg', rev: 3333 },
+              { src: '/cover1222.jpg', rev: 1222 },
+              // duplicate 1 for seamless loop
+              { src: '/cover1.jpg', rev: 854 },
+              { src: '/cover2.jpg', rev: 139 },
+              { src: '/cover4.jpg', rev: 712 },
+              { src: '/cover4_kopie.jpg', rev: 1120 },
+              { src: '/cover5.jpg', rev: 1504 },
+              { src: '/cover6.jpg', rev: 680 },
+              { src: '/cover88.jpg', rev: 888 },
+              { src: '/cover99.jpg', rev: 999 },
+              { src: '/cover100.jpg', rev: 1000 },
+              { src: '/cover111.jpg', rev: 1111 },
+              { src: '/cover333.jpg', rev: 3333 },
+              { src: '/cover1222.jpg', rev: 1222 },
+              // duplicate 2 for seamless loop
+              { src: '/cover1.jpg', rev: 854 },
+              { src: '/cover2.jpg', rev: 139 },
+              { src: '/cover4.jpg', rev: 712 },
+              { src: '/cover4_kopie.jpg', rev: 1120 },
+              { src: '/cover5.jpg', rev: 1504 },
+              { src: '/cover6.jpg', rev: 680 },
+              { src: '/cover88.jpg', rev: 888 },
+              { src: '/cover99.jpg', rev: 999 },
+              { src: '/cover100.jpg', rev: 1000 },
+              { src: '/cover111.jpg', rev: 1111 },
+              { src: '/cover333.jpg', rev: 3333 },
+              { src: '/cover1222.jpg', rev: 1222 },
+            ].map((item, i) => (
+              <div
                 key={i}
-                style={{ position: 'relative', height: '180px', width: '120px', borderRadius: '4px', overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.3s ease', transform: 'translateY(0px)' }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-10px)';
-                  const overlay = e.currentTarget.querySelector('.cover-overlay') as HTMLDivElement;
+                style={{
+                  position: 'relative',
+                  height: '200px',
+                  width: '134px',
+                  flexShrink: 0,
+                  borderRadius: '6px',
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  transition: 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+                  boxShadow: theme === 'dark' ? '0 10px 28px rgba(0,0,0,0.55)' : '0 10px 28px rgba(0,0,0,0.18)',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.transform = 'translateY(-4px) scale(1.02)';
+                  e.currentTarget.style.boxShadow = theme === 'dark' ? '0 15px 30px rgba(0,0,0,0.65)' : '0 15px 30px rgba(0,0,0,0.22)';
+                  const overlay = e.currentTarget.querySelector('.cov-ov') as HTMLDivElement;
                   if (overlay) overlay.style.opacity = '1';
                 }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0px)';
-                  const overlay = e.currentTarget.querySelector('.cover-overlay') as HTMLDivElement;
+                onMouseLeave={e => {
+                  e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                  e.currentTarget.style.boxShadow = theme === 'dark' ? '0 10px 28px rgba(0,0,0,0.55)' : '0 10px 28px rgba(0,0,0,0.18)';
+                  const overlay = e.currentTarget.querySelector('.cov-ov') as HTMLDivElement;
                   if (overlay) overlay.style.opacity = '0';
                 }}
               >
-                <img 
-                  src={item.src} 
-                  alt={`Cover ${i+1}`}
-                  style={{ 
-                    height: '180px', 
-                    width: '120px', 
-                    boxShadow: theme === 'dark' ? '0 8px 24px rgba(0,0,0,0.6)' : '0 8px 24px rgba(0,0,0,0.15)',
-                    border: theme === 'dark' ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.05)',
-                    objectFit: 'cover',
-                    display: 'block'
-                  }} 
+                <img
+                  src={item.src}
+                  alt={`Book cover`}
+                  style={{ width: '134px', height: '200px', objectFit: 'cover', display: 'block' }}
+                  onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                 />
-                <div 
-                  className="cover-overlay"
-                  style={{
-                    position: 'absolute',
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    height: '60px',
-                    background: 'linear-gradient(to top, rgba(0,0,0,0.95), transparent)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'flex-end',
-                    opacity: 0,
-                    transition: 'opacity 0.3s ease',
-                    color: 'white',
-                    textAlign: 'center',
-                    paddingBottom: '8px'
-                  }}
-                >
-                  <div style={{ fontSize: '10px', opacity: 0.9, marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{isDe ? 'Tantiemen' : 'Royalties'}</div>
-                  <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#4ade80' }}>{formatRevenue(item.revenueEur)}</div>
+                {/* Always-visible royalty badge at bottom */}
+                <div style={{
+                  position: 'absolute', bottom: 0, left: 0, right: 0,
+                  background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 60%, transparent 100%)',
+                  padding: '24px 8px 10px',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px'
+                }}>
+                  <span style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.07em', color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>
+                    {isDe ? 'Tantiemen' : 'Royalties'}
+                  </span>
+                  <span style={{ fontSize: '15px', fontWeight: 800, color: '#4ade80', letterSpacing: '-0.02em' }}>
+                    {isDe
+                      ? item.rev.toLocaleString('de-DE') + ' €'
+                      : '$' + Math.round(item.rev * 1.1).toLocaleString('en-US')}
+                  </span>
                 </div>
+                {/* Hover overlay pulse */}
+                <div className="cov-ov" style={{
+                  position: 'absolute', inset: 0,
+                  background: 'rgba(22,207,224,0.08)',
+                  opacity: 0,
+                  transition: 'opacity 0.3s ease',
+                  pointerEvents: 'none'
+                }} />
               </div>
-            );
-          })}
-        </motion.div>
-      </main>
-
-      {/* AI Slop Problem Section */}
-      <section style={{ 
-        background: theme === 'dark' ? '#0a0a0a' : '#f9fafb', 
-        color: theme === 'dark' ? '#ffffff' : '#111827', 
-        padding: '100px 24px', 
-        position: 'relative', 
-        zIndex: 10,
-        borderBottom: `1px solid ${theme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'}`,
-        transition: 'background-color 0.3s ease'
-      }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            style={{ textAlign: 'center', marginBottom: '60px' }}
-          >
-            <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, letterSpacing: '-0.02em', margin: '0', color: theme === 'dark' ? '#ffffff' : '#111827' }}>
-              {isDe ? 'Du kennst das:' : 'You know this:'}
-            </h2>
-          </motion.div>
-          
-          <div className="slop-comparison-container">
-            {/* Left Column */}
-            <div className="slop-col slop-left">
-              {(isDe ? [
-                'Verzerrte KI-Bilder & minderwertige Cover',
-                'Formatierungsfehler & zerschossenes Layout',
-                'Roboterhafte Texte voller ChatGPT-Phrasen'
-              ] : [
-                'Distorted AI images & low-quality covers',
-                'Formatting errors & broken layouts',
-                'Robotic text full of ChatGPT phrases'
-              ]).map((text, i) => (
-                <motion.div 
-                  key={i}
-                  initial={{ opacity: 0, x: -30 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
-                  className="slop-tag"
-                  style={{
-                    background: theme === 'dark' ? 'rgba(255, 255, 255, 0.03)' : '#ffffff',
-                    border: theme === 'dark' ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.06)',
-                    color: theme === 'dark' ? '#e4e4e7' : '#374151',
-                    boxShadow: theme === 'dark' ? '0 10px 30px rgba(0, 0, 0, 0.3)' : '0 10px 30px rgba(0, 0, 0, 0.02)',
-                    borderRadius: '16px',
-                    padding: '16px 24px'
-                  }}
-                >
-                  <div className="slop-icon" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444' }}>
-                    <Frown size={15} />
-                  </div>
-                  <span>{text}</span>
-                </motion.div>
-              ))}
-            </div>
-            
-            {/* Center Image Placeholder */}
-            <div className="slop-center">
-              <motion.div 
-                className="slop-circle-bg"
-                animate={{ scale: [1, 1.03, 1] }}
-                transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-                style={{
-                  background: theme === 'dark' ? 'rgba(239, 68, 68, 0.03)' : 'rgba(239, 68, 68, 0.01)',
-                  border: `1px solid ${theme === 'dark' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(239, 68, 68, 0.08)'}`,
-                  boxShadow: theme === 'dark' ? '0 0 40px rgba(239, 68, 68, 0.05)' : 'none'
-                }}
-              >
-                <div className="slop-circle-inner" style={{
-                  background: theme === 'dark' ? '#141414' : '#ffffff',
-                  border: `1px solid ${theme === 'dark' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)'}`,
-                  boxShadow: theme === 'dark' ? '0 10px 40px rgba(0, 0, 0, 0.4)' : '0 10px 40px rgba(0, 0, 0, 0.02)'
-                }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', color: theme === 'dark' ? '#ef4444' : '#ef4444' }}>
-                    <Search size={36} strokeWidth={2} style={{ filter: 'drop-shadow(0 0 8px rgba(239,68,68,0.3))' }} />
-                    <span style={{ fontSize: '13px', fontWeight: 800, letterSpacing: '0.05em', color: theme === 'dark' ? '#f87171' : '#b91c1c' }}>KI-SLOP</span>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-            
-            {/* Right Column */}
-            <div className="slop-col slop-right">
-              {(isDe ? [
-                'Unlogische Handlungsstränge & Fehler',
-                'KDP-Fehler & gesperrte Amazon-Accounts',
-                'Frustrierte Kunden & schlechte Rezensionen'
-              ] : [
-                'Illogical plot lines & errors',
-                'KDP errors & suspended Amazon accounts',
-                'Frustrated customers & bad reviews'
-              ]).map((text, i) => (
-                <motion.div 
-                  key={i}
-                  initial={{ opacity: 0, x: 30 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
-                  className="slop-tag"
-                  style={{
-                    background: theme === 'dark' ? 'rgba(255, 255, 255, 0.03)' : '#ffffff',
-                    border: theme === 'dark' ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.06)',
-                    color: theme === 'dark' ? '#e4e4e7' : '#374151',
-                    boxShadow: theme === 'dark' ? '0 10px 30px rgba(0, 0, 0, 0.3)' : '0 10px 30px rgba(0, 0, 0, 0.02)',
-                    borderRadius: '16px',
-                    padding: '16px 24px'
-                  }}
-                >
-                  <div className="slop-icon" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444' }}>
-                    <Frown size={15} />
-                  </div>
-                  <span>{text}</span>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Before / After Comparison Section */}
-      <section id="vergleich" style={{ position: 'relative', zIndex: 10, padding: '20px 24px 80px', maxWidth: '1200px', margin: '0 auto', scrollMarginTop: '100px' }}>
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          style={{ textAlign: 'center', marginBottom: '48px' }}
-        >
-          <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 12px', color: theme === 'dark' ? '#fff' : '#1a1a1a' }}>
-            {isDe ? 'Der Unterschied ist' : 'The difference is'}{' '}
-            <span style={{ color: '#3b82f6', textDecoration: 'underline', textDecorationThickness: '3px', textUnderlineOffset: '4px' }}>
-              {isDe ? 'offensichtlich' : 'obvious'}
-            </span>
-          </h2>
-          <p style={{ color: theme === 'dark' ? '#9ca3af' : '#6b7280', fontSize: '18px', margin: 0 }}>
-            {isDe ? 'ChatGPT & andere KI vs. BookLab Studio' : 'ChatGPT & other AI vs. BookLab Studio'}
-          </p>
-        </motion.div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', alignItems: 'start', maxWidth: '900px', margin: '0 auto' }}>
-          
-          {/* Left: ChatGPT / other AI */}
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: '-80px' }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <div style={{ marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{
-                background: '#dc2626',
-                color: '#fff',
-                fontSize: '12px',
-                fontWeight: 700,
-                padding: '7px 14px',
-                borderRadius: '8px',
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '7px',
-                boxShadow: 'none'
-              }}>
-                <X size={13} strokeWidth={3} />
-                {isDe ? 'So nicht' : 'Not like this'}
-              </span>
-            </div>
-            <div style={{
-              borderRadius: '12px',
-              overflow: 'hidden',
-              border: '1px solid rgba(255,255,255,0.08)',
-              aspectRatio: '210 / 297',
-            }}>
-              <img
-                src="/Bild 03.07.26 um 02.36.jpg"
-                alt="ChatGPT KI Buchvorschau"
-                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block' }}
-              />
-            </div>
-          </motion.div>
-
-          {/* Right: BookLab Studio */}
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: '-80px' }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
-          >
-            <div style={{ marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{
-                background: '#1d4ed8',
-                color: '#fff',
-                fontSize: '12px',
-                fontWeight: 700,
-                padding: '7px 14px',
-                borderRadius: '8px',
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '7px',
-                boxShadow: 'none'
-              }}>
-                <Check size={13} strokeWidth={3} />
-                {isDe ? 'So soll es sein' : 'This is the way'}
-              </span>
-            </div>
-            <div style={{
-              borderRadius: '12px',
-              overflow: 'hidden',
-              border: '1px solid rgba(255,255,255,0.08)',
-              aspectRatio: '210 / 297',
-            }}>
-              <img
-                src="/Bild 03.07.26 um 02.41.jpg"
-                alt="BookLab Studio Buchvorschau"
-                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block' }}
-              />
-            </div>
-          </motion.div>
-
-        </div>
-      </section>
-
-      {/* SaaS Dashboard Mockup Showcase */}
-      <section style={{ 
-        position: 'relative', 
-        zIndex: 10, 
-        padding: '100px 24px', 
-        maxWidth: '1200px', 
-        margin: '0 auto',
-        borderBottom: `1px solid ${theme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'}`
-      }}>
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-60px' }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          style={{ textAlign: 'center', marginBottom: '64px' }}
-        >
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#2563eb', marginBottom: '16px' }}>
-            {isDe ? 'DAS WORKSPACE' : 'THE WORKSPACE'}
-          </div>
-          <h2 style={{ fontSize: 'clamp(32px, 5vw, 48px)', fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 16px', color: theme === 'dark' ? '#fff' : '#1a1a1a' }}>
-            {isDe ? 'Ein Blick ins Studio' : 'A Look Inside the Studio'}
-          </h2>
-          <p style={{ color: theme === 'dark' ? '#a3a3a3' : '#6b7280', fontSize: '16px', margin: '0 auto', maxWidth: '580px', lineHeight: 1.6 }}>
-            {isDe 
-              ? 'Kein mühsames Herumschieben in Word. BookLab Studio vereint Schreibstudio, Struktur und KDP-Formatierung in einer Oberfläche.' 
-              : 'No painful tweaking in Word. BookLab Studio combines writing studio, structure, and KDP formatting in one screen.'}
-          </p>
-        </motion.div>
-
-        {/* Circular Gallery instead of Dashboard Mockup */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          style={{ height: '600px', position: 'relative', overflow: 'hidden' }}
-        >
-          <CircularGallery
-            bend={1}
-            textColor={theme === 'dark' ? '#ffffff' : '#111827'}
-            borderRadius={0.05}
-            scrollEase={0.05}
-            fontUrl="https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap"
-            font="bold 30px Poppins"
-            scrollSpeed={2}
-            isDe={isDe}
-            items={[
-              { image: "/foto1liabary.png", text: isDe ? "unsere Bibliothek" : "our library" },
-              { image: "/foto2schreibstudiobildkaursell.png", text: isDe ? "unser Schreibstudio" : "our Writing Studio" },
-              { image: "/foto1liabary.png", text: isDe ? "unsere Bibliothek" : "our library" },
-              { image: "/foto2schreibstudiobildkaursell.png", text: isDe ? "unser Schreibstudio" : "our Writing Studio" },
-              { image: "/foto1liabary.png", text: isDe ? "unsere Bibliothek" : "our library" },
-              { image: "/foto2schreibstudiobildkaursell.png", text: isDe ? "unser Schreibstudio" : "our Writing Studio" }
-            ]}
-          />
-        </motion.div>
-      </section>
-
-
-
-      {/* Pain & Agitation Section (Comparison Table) */}
-      <section style={{ position: 'relative', zIndex: 10, padding: '100px 24px 120px', maxWidth: '1000px', margin: '0 auto' }}>
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-60px' }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        >
-          <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-            <h2 style={{ fontSize: 'clamp(32px, 5vw, 48px)', fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 14px', color: theme === 'dark' ? '#fff' : '#1a1a1a' }}>
-              {isDe ? 'KDP war bisher ein Albtraum.' : 'KDP used to be a nightmare.'}
-            </h2>
-            <p style={{ color: theme === 'dark' ? '#71717a' : '#6b7280', fontSize: '16px', margin: 0 }}>
-              {isDe ? 'BookLab Studio ändert das — für immer.' : 'BookLab Studio changes that — for good.'}
-            </p>
-          </div>
-
-          {/* Column headers */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '16px', padding: '0 4px' }}>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <span style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', fontSize: '11px', fontWeight: 800, padding: '6px 12px', borderRadius: '6px', letterSpacing: '0.08em', textTransform: 'uppercase', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-                <X size={12} strokeWidth={3} style={{ display: 'inline', marginRight: '6px', verticalAlign: 'middle' }} />
-                {isDe ? 'Ohne BookLab Studio' : 'Without BookLab Studio'}
-              </span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <span style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', fontSize: '11px', fontWeight: 800, padding: '6px 12px', borderRadius: '6px', letterSpacing: '0.08em', textTransform: 'uppercase', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                <Check size={12} strokeWidth={3} style={{ display: 'inline', marginRight: '6px', verticalAlign: 'middle' }} />
-                {isDe ? 'Mit BookLab Studio' : 'With BookLab Studio'}
-              </span>
-            </div>
-          </div>
-
-          {/* Rows */}
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {(isDe ? [
-              { bad: 'Stunden damit verbringen, Kapitel manuell zu schreiben oder zu diktieren', good: 'Vollständige Buchkapitel in Sekunden mit dem Schreibstudio generieren' },
-              { bad: 'KDP lehnt dein PDF wegen falscher Ränder immer wieder ab', good: 'KDP-konformes Print-Layout auf Knopfdruck — kein Nacharbeiten nötig' },
-              { bad: 'Kapitel ohne roten Faden — KI vergisst vorherige Inhalte sofort', good: 'Brain-System merkt sich jedes Kapitel und hält den Stil konsistent' },
-              { bad: 'Teure Designer oder stundenlanger Canva-Frust für das Cover', good: 'Professionelle, druckfertige Cover direkt in der Mediathek erstellen' },
-              { bad: 'Manuelles Formatieren von Absätzen, Einzügen und Überschriften', good: 'Automatisches Buchlayout: Blocksatz, Drop Caps, Zitate — alles perfekt' },
-            ] : [
-              { bad: 'Spending hours manually writing or dictating every chapter', good: 'Generate complete book chapters in seconds with the Writing Studio' },
-              { bad: 'KDP keeps rejecting your PDF because of wrong margins', good: 'KDP-ready print layout at the click of a button — no rework needed' },
-              { bad: 'Chapters without a thread — AI forgets previous content instantly', good: 'Brain system remembers every chapter and keeps the style consistent' },
-              { bad: 'Expensive designers or hours of Canva frustration for your cover', good: 'Create professional, print-ready covers directly in the Media Library' },
-              { bad: 'Manually formatting paragraphs, indents and headings', good: 'Automatic book layout: justified text, drop caps, quotes — all perfect' },
-            ]).map((row, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 15 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-20px' }}
-                transition={{ duration: 0.5, delay: i * 0.08 }}
-                style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: '1fr 1fr', 
-                  gap: '24px', 
-                  borderBottom: i < 4 ? `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` : 'none',
-                  padding: '24px 0'
-                }}
-              >
-                {/* Bad */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '14px',
-                  paddingRight: '12px'
-                }}>
-                  <div style={{ width: '3px', minHeight: '32px', background: '#dc2626', borderRadius: '4px', alignSelf: 'stretch', flexShrink: 0 }} />
-                  <X size={16} strokeWidth={2.5} color="#ef4444" style={{ flexShrink: 0, marginTop: '4px' }} />
-                  <span style={{ fontSize: '15px', lineHeight: 1.6, color: theme === 'dark' ? '#a1a1aa' : '#4b5563', fontWeight: 400 }}>{row.bad}</span>
-                </div>
-                {/* Good */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '14px',
-                  paddingLeft: '12px'
-                }}>
-                  <div style={{ width: '3px', minHeight: '32px', background: '#3b82f6', borderRadius: '4px', alignSelf: 'stretch', flexShrink: 0 }} />
-                  <Check size={16} strokeWidth={3} color="#3b82f6" style={{ flexShrink: 0, marginTop: '4px' }} />
-                  <span style={{ fontSize: '15px', lineHeight: 1.6, color: theme === 'dark' ? '#e5e5e5' : '#111827', fontWeight: 600 }}>{row.good}</span>
-                </div>
-              </motion.div>
             ))}
           </div>
         </motion.div>
-      </section>
-
-
-
-      {/* Roadmap / Plan Section */}
-      <section id="roadmap" style={{ position: 'relative', zIndex: 10, padding: '120px 0 80px', overflow: 'hidden' }}>
-
-        {/* Ambient glow */}
-        <div style={{ position: 'absolute', top: '30%', left: '20%', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(124, 58, 237, 0.04) 0%, transparent 65%)', pointerEvents: 'none', filter: 'blur(60px)' }} />
-
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          style={{ textAlign: 'center', marginBottom: '80px', padding: '0 24px', position: 'relative' }}
-        >
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.25em', textTransform: 'uppercase', color: theme === 'dark' ? '#a78bfa' : '#6d28d9', marginBottom: '16px' }}>
-            {isDe ? 'PROJEKTPLAN' : 'PROJECT TIMELINE'}
-          </div>
-          <h2 style={{ fontSize: 'clamp(36px, 5vw, 56px)', fontWeight: 800, letterSpacing: '-0.04em', margin: '0 0 16px', color: theme === 'dark' ? '#fff' : '#0f172a', lineHeight: 1.1 }}>
-            BookLab Roadmap
-          </h2>
-          <p style={{ fontSize: '16px', color: theme === 'dark' ? '#a1a1aa' : '#4b5563', maxWidth: '480px', margin: '0 auto', lineHeight: 1.5 }}>
-            {isDe ? 'Langfristige Wertsteigerung durch kontinuierliche Systemerweiterungen.' : 'Long-term value creation through continuous system expansions.'}
-          </p>
-        </motion.div>
-
-        {/* Cards — horizontal scrollable on mobile, grid on desktop */}
-        <div className="rm2-grid">
-          {getRoadmapPhases(isDe).map((phase, i) => {
-            const isActive = phase.active;
-            const colorSets = [
-              { glow: '#8b5cf6', accent: '#a78bfa', border: 'rgba(139,92,246,0.2)', bg: 'rgba(139,92,246,0.02)' },
-              { glow: '#3b82f6', accent: '#60a5fa', border: 'rgba(59,130,246,0.15)', bg: 'rgba(59,130,246,0.01)' },
-              { glow: '#06b6d4', accent: '#22d3ee', border: 'rgba(6,182,212,0.15)', bg: 'rgba(6,182,212,0.01)' },
-              { glow: '#10b981', accent: '#34d399', border: 'rgba(16,185,129,0.15)', bg: 'rgba(16,185,129,0.01)' },
-              { glow: '#f59e0b', accent: '#fbbf24', border: 'rgba(245,158,11,0.15)', bg: 'rgba(245,158,11,0.01)' },
-            ][i];
-            return (
-              <motion.div
-                key={phase.phase}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-40px' }}
-                transition={{ duration: 0.5, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
-                className={`rm2-card ${isActive ? 'active' : ''} ${theme === 'dark' ? 'dark' : 'light'}`}
-                style={{ ['--c-glow' as any]: colorSets.glow, ['--c-accent' as any]: colorSets.accent, ['--c-border' as any]: colorSets.border, ['--c-bg' as any]: colorSets.bg }}
-              >
-                {/* Accent line top */}
-                {isActive && (
-                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, #3b82f6, #4169e1)' }} />
-                )}
-
-                {/* Header row */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', position: 'relative' }}>
-                  <span style={{ fontFamily: 'monospace', fontSize: '11px', fontWeight: 600, color: theme === 'dark' ? '#71717a' : '#9ca3af', letterSpacing: '0.1em' }}>
-                    {phase.phase}
-                  </span>
-                  <span className={`rm2-badge ${isActive ? 'live' : 'soon'}`}>
-                    {phase.badge}
-                  </span>
-                </div>
-
-                {/* Title */}
-                <h3 style={{ fontSize: '16px', fontWeight: 700, letterSpacing: '-0.02em', margin: '0 0 8px', color: theme === 'dark' ? '#fff' : '#0f172a', lineHeight: 1.3, position: 'relative' }}>
-                  {phase.title}
-                </h3>
-
-                {/* Tagline */}
-                <p style={{ fontSize: '13px', margin: '0 0 24px', color: theme === 'dark' ? '#71717a' : '#6b7280', lineHeight: 1.4, position: 'relative' }}>
-                  {phase.desc}
-                </p>
-
-                {/* Feature checklist */}
-                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px', display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative' }}>
-                  {phase.features.map((f: string) => (
-                    <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '12px', color: theme === 'dark' ? '#a1a1aa' : '#374151', lineHeight: 1.4 }}>
-                      <span style={{ color: theme === 'dark' ? '#52525b' : '#d1d5db', flexShrink: 0, fontSize: '10px', marginTop: '1px' }}>
-                        —
-                      </span>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-
-                {/* Price */}
-                <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`, position: 'relative' }}>
-                  <div style={{ fontSize: '9px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.15em', color: theme === 'dark' ? '#52525b' : '#9ca3af', marginBottom: '4px' }}>
-                    {isDe ? 'WERT-INDIKATOR' : 'VALUE INDICATOR'}
-                  </div>
-                  <div style={{ fontSize: '24px', fontWeight: 800, fontFamily: 'monospace', letterSpacing: '-0.04em', color: theme === 'dark' ? '#fff' : '#0f172a', lineHeight: 1 }}>
-                    {phase.price}
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
-
-        {/* CTA below */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          style={{ textAlign: 'center', marginTop: '48px', padding: '0 24px' }}
-        >
-          <p style={{ fontSize: '12.5px', color: theme === 'dark' ? '#52525b' : '#9ca3af', letterSpacing: '0.02em' }}>
-            {isDe ? 'Hinweis: Early-Access-Passinhaber erhalten alle System-Erweiterungen ohne zusätzliche Zuzahlung.' : 'Note: Early Access Pass holders receive all future extensions with no additional cost.'}
-          </p>
-        </motion.div>
-      </section>
-
-
-      {/* Team / Leadership */}
-      <section id="team" style={{ position: 'relative', zIndex: 10, padding: '40px 24px 100px', maxWidth: '900px', margin: '0 auto', scrollMarginTop: '100px' }}>
+      </main>
+   
+      {/* Email Subscription Section */}
+      <section className="landing-subscribe-section" style={{ position: 'relative', zIndex: 10, padding: '60px 24px', maxWidth: '680px', margin: '0 auto', textAlign: 'center' }}>
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-80px' }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          style={{ textAlign: 'center', marginBottom: '48px' }}
+          style={{
+            background: '#ffffff',
+            border: '2px solid #0f172a',
+            boxShadow: '5px 5px 0px #16cfe0',
+            borderRadius: '8px',
+            padding: '36px 28px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '16px'
+          }}
+          whileHover={{ y: -2, x: -2, boxShadow: '7px 7px 0px #16cfe0' }}
         >
-          <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#737373', marginBottom: '10px' }}>
-            Leadership
+          {/* Match the sticky Lifetime Pass reminder exactly. */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', width: '100%', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left' }}>
+              <img
+                src="/logokdpbook24studio.png"
+                alt="BookLab Logo"
+                style={{ width: '32px', height: '32px', objectFit: 'contain', borderRadius: '4px', flexShrink: 0 }}
+              />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                <span style={{ fontSize: '14px', fontWeight: 800, color: '#1f2937', letterSpacing: '-0.02em' }}>
+                  BookLab Studio Lifetime Pass
+                </span>
+                <span style={{ fontSize: '11.5px', fontWeight: 500, color: '#4b5563' }}>
+                  {isDe ? 'Lebenslanger Zugriff · Alle künftigen Updates' : 'Lifetime Access · All Future Updates'}
+                </span>
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1px', lineHeight: 1 }}>
+              <span style={{ textDecoration: 'line-through', opacity: 0.6, color: '#9ca3af', fontSize: '11px', fontWeight: 600 }}>300$</span>
+              <span style={{ fontWeight: 800, color: '#10b981', fontSize: '18px', letterSpacing: '-0.03em' }}>199$</span>
+            </div>
           </div>
-          <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 12px', color: theme === 'dark' ? '#fff' : '#1a1a2e' }}>
-            {isDe ? 'Das Team hinter BookLab Studio' : 'The Team behind BookLab Studio'}
-          </h2>
 
+          {emailSubmitted ? (
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              style={{
+                background: '#ecfdf5',
+                border: '1.5px solid #10b981',
+                color: '#065f46',
+                padding: '12px 24px',
+                borderRadius: '6px',
+                fontSize: '13.5px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <Check size={16} strokeWidth={3} style={{ flexShrink: 0 }} />
+              {isDe ? 'Erfolgreich eingetragen!' : 'Successfully subscribed!'}
+            </motion.div>
+          ) : (
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const email = emailInput.trim().toLowerCase();
+                if (!email) return;
+                try {
+                  const response = await fetch('/api/waitlist', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email }),
+                  });
+                  if (!response.ok) throw new Error('Waitlist request failed');
+                  setEmailSubmitted(true);
+                } catch {
+                  window.alert(isDe ? 'Die Anmeldung ist gerade nicht verfügbar. Bitte versuche es gleich noch einmal.' : 'Signup is temporarily unavailable. Please try again shortly.');
+                }
+              }}
+              style={{
+                display: 'flex',
+                width: '100%',
+                maxWidth: '480px',
+                gap: '10px',
+                flexWrap: 'wrap'
+              }}
+            >
+              <input
+                type="email"
+                required
+                placeholder={isDe ? 'Deine E-Mail-Adresse' : 'Your email address'}
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                style={{
+                  flex: 1,
+                  minWidth: '220px',
+                  background: '#f9fafb',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '6px',
+                  padding: '10px 14px',
+                  fontSize: '13.5px',
+                  color: '#1f2937',
+                  outline: 'none',
+                  transition: 'border-color 0.2s',
+                  fontFamily: "'Inter', sans-serif"
+                }}
+                onFocus={(e) => e.currentTarget.style.borderColor = '#16cfe0'}
+                onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
+              />
+              <button
+                type="submit"
+                style={{
+                  background: '#16cfe0',
+                  color: '#031b23',
+                  border: '1px solid rgba(206, 255, 255, .82)',
+                  borderBottom: '3px solid #087f98',
+                  borderRadius: '8px',
+                  padding: '10px 20px',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(17, 202, 226, 0.22)',
+                  transition: 'all 0.2s ease',
+                  whiteSpace: 'nowrap',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = '#35e5f2';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(17, 202, 226, 0.3)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = '#16cfe0';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(17, 202, 226, 0.22)';
+                }}
+              >
+                <ShinyText text={isDe ? 'Abonnieren' : 'Subscribe'} color="#031b23" shineColor="#ffffff" speed={2.5} />
+              </button>
+            </form>
+          )}
+        </motion.div>
+      </section>
+
+
+
+      {/* Team / Leadership */}
+      <section id="team" className="landing-team-section" style={{ position: 'relative', zIndex: 10, padding: '40px 24px 100px', maxWidth: '800px', margin: '0 auto', scrollMarginTop: '100px', textAlign: 'center' }}>
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          style={{ textAlign: 'center', marginBottom: '40px' }}
+        >
+          <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 12px', color: theme === 'dark' ? '#fff' : '#1a1a2e' }}>
+            {isDe ? 'Der Gründer hinter BookLab Studio' : 'The Founder behind BookLab Studio'}
+          </h2>
         </motion.div>
 
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '40px',
-          alignItems: 'start',
-          justifyItems: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '32px',
+          width: '100%',
         }}>
-          {TEAM.map((member, i) => (
+          {TEAM.map((member) => (
             <motion.div
               key={member.name}
-              initial={{ opacity: 0, y: 40 }}
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-60px' }}
-              transition={{ duration: 0.65, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
               style={{ width: '100%', maxWidth: '320px' }}
             >
               <ProfileCard
                 className="landing-team"
                 name={member.name}
-                title={member.title}
+                title={member.title === 'Developer' ? (isDe ? 'Gründer' : 'Founder') : member.title}
                 avatarUrl={member.avatarUrl}
                 avatarSymbol={undefined}
                 iconUrl={member.iconUrl}
@@ -1027,7 +651,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
                 behindGlowEnabled
                 behindGlowColor={member.behindGlowColor}
                 innerGradient={member.innerGradient}
-                avatarScale={'avatarScale' in member ? member.avatarScale : 1}
+                avatarScale={member.avatarScale}
               />
             </motion.div>
           ))}
@@ -1035,7 +659,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
       </section>
 
       {/* FAQ Sektion */}
-      <section id="faq" style={{ position: 'relative', zIndex: 10, padding: '80px 24px', maxWidth: '800px', margin: '0 auto', scrollMarginTop: '100px' }}>
+      <section id="faq" className="landing-faq-section" style={{ position: 'relative', zIndex: 10, padding: '80px 24px', maxWidth: '800px', margin: '0 auto', scrollMarginTop: '100px' }}>
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -1043,9 +667,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           style={{ textAlign: 'center', marginBottom: '16px' }}
         >
-          <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: theme === 'dark' ? '#737373' : '#666', marginBottom: '10px' }}>
-            Support & Details
-          </div>
           <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 12px', color: theme === 'dark' ? '#fff' : '#1a1a1a' }}>
             {isDe ? 'Häufig gestellte Fragen' : 'Frequently Asked Questions'}
           </h2>
@@ -1075,13 +696,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
       </section>
 
       {/* Final CTA Section */}
-      <section style={{
+      <section className="landing-final-cta" style={{
         position: 'relative',
-        padding: '140px 24px',
+        padding: '100px 24px',
         maxWidth: '1200px',
         margin: '0 auto',
         textAlign: 'center',
-        marginBottom: '60px',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -1095,7 +715,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
           transform: 'translate(-50%, -50%)',
           width: '1000px',
           height: '600px',
-          background: 'radial-gradient(ellipse at center, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.05) 40%, transparent 70%)',
+          background: 'radial-gradient(ellipse at center, rgba(22, 207, 224, 0.12) 0%, rgba(11, 87, 208, 0.03) 40%, transparent 70%)',
           zIndex: 0,
           pointerEvents: 'none',
         }} />
@@ -1109,35 +729,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
             color: theme === 'dark' ? '#ffffff' : '#1a1a1a',
             display: 'inline-block'
           }}>
-            {isDe ? 'Bereit für deinen KDP-Erfolg?' : 'Ready for your KDP success?'}
+            {isDe ? 'Bereit für deinen KDP-Erfolg?' : 'Ready to build your next KDP book?'}
           </h2>
-          <p style={{ color: '#a3a3a3', fontSize: '20px', margin: '0 auto 56px auto', lineHeight: 1.6, maxWidth: '640px' }}>
-            {isDe ? 'Erhalte sofortigen, lebenslangen Zugriff auf den Schreibwerkzeug Generator. Keine monatlichen Kosten.' : 'Get instant, lifetime access to the Book Writing Generator. No monthly fees.'}
+          <p style={{ color: theme === 'dark' ? '#a3a3a3' : '#666', fontSize: '20px', margin: '0 auto 56px auto', lineHeight: 1.6, maxWidth: '640px' }}>
+            {isDe ? 'Erhalte sofortigen, lebenslangen Zugriff auf den Schreibwerkzeug Generator. Keine monatlichen Kosten.' : 'Get instant lifetime access to BookLab Studio and build your next KDP book from one focused workspace.'}
           </p>
 
           <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
             {/* Primary Button */}
             <button 
+              className="landing-primary-cta landing-final-primary-cta"
               onClick={() => window.location.href = 'https://booklabstudio.gumroad.com/l/booklabstudio'}
               style={{
-                background: theme === 'dark'
-                  ? 'linear-gradient(180deg, #0b57d0 0%, #0842a0 100%)'
-                  : 'linear-gradient(180deg, #1e1e24 0%, #0c0c0e 100%)',
-                border: theme === 'dark'
-                  ? '1px solid rgba(255, 255, 255, 0.2)'
-                  : '1px solid rgba(255, 255, 255, 0.15)',
-                borderBottom: theme === 'dark'
-                  ? '4px solid #063078'
-                  : '4px solid rgba(255, 255, 255, 0.35)',
+                background: '#16cfe0',
+                border: '1px solid rgba(206, 255, 255, .82)',
+                borderBottom: '4px solid #087f98',
                 padding: '14px 36px 16px 36px',
                 borderRadius: '12px',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '12px',
-                boxShadow: theme === 'dark'
-                  ? '0 8px 30px rgba(11, 87, 208, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3)'
-                  : '0 8px 30px rgba(255, 255, 255, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.25)',
+                boxShadow: '0 8px 30px rgba(17, 202, 226, .3), inset 0 1px 0 rgba(255, 255, 255, 0.4)',
                 transition: 'all 0.15s cubic-bezier(0.16, 1, 0.3, 1)',
                 transform: 'translateY(0)',
                 position: 'relative',
@@ -1145,54 +758,39 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
               }}
               onMouseEnter={(e) => { 
                 e.currentTarget.style.transform = 'translateY(-2px)'; 
-                e.currentTarget.style.borderBottom = theme === 'dark'
-                  ? '5px solid #0a4fbe'
-                  : '5px solid rgba(255, 255, 255, 0.45)';
-                e.currentTarget.style.boxShadow = theme === 'dark'
-                  ? '0 12px 40px rgba(11, 87, 208, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4)'
-                  : '0 12px 40px rgba(255, 255, 255, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.35)';
-                e.currentTarget.style.filter = 'brightness(1.2)';
+                e.currentTarget.style.background = '#35e5f2';
+                e.currentTarget.style.borderBottom = '5px solid #0a9bb7';
+                e.currentTarget.style.boxShadow = '0 12px 40px rgba(17, 202, 226, .45), inset 0 1px 0 rgba(255, 255, 255, 0.5)';
               }}
               onMouseLeave={(e) => { 
                 e.currentTarget.style.transform = 'translateY(0)'; 
-                e.currentTarget.style.borderBottom = theme === 'dark'
-                  ? '4px solid #063078'
-                  : '4px solid rgba(255, 255, 255, 0.35)';
-                e.currentTarget.style.boxShadow = theme === 'dark'
-                  ? '0 8px 30px rgba(11, 87, 208, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3)'
-                  : '0 8px 30px rgba(255, 255, 255, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.25)';
-                e.currentTarget.style.filter = 'brightness(1)';
+                e.currentTarget.style.background = '#16cfe0';
+                e.currentTarget.style.borderBottom = '4px solid #087f98';
+                e.currentTarget.style.boxShadow = '0 8px 30px rgba(17, 202, 226, .3), inset 0 1px 0 rgba(255, 255, 255, 0.4)';
               }}
               onMouseDown={(e) => {
                 e.currentTarget.style.transform = 'translateY(2px)';
-                e.currentTarget.style.borderBottom = theme === 'dark'
-                  ? '1px solid #063078'
-                  : '1px solid rgba(255, 255, 255, 0.15)';
-                e.currentTarget.style.boxShadow = theme === 'dark'
-                  ? '0 4px 10px rgba(11, 87, 208, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15)'
-                  : '0 4px 10px rgba(255, 255, 255, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+                e.currentTarget.style.borderBottom = '1px solid #087f98';
+                e.currentTarget.style.boxShadow = '0 4px 10px rgba(17, 202, 226, .15), inset 0 1px 0 rgba(255, 255, 255, 0.15)';
               }}
               onMouseUp={(e) => {
                 e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.borderBottom = theme === 'dark'
-                  ? '5px solid #0a4fbe'
-                  : '5px solid rgba(255, 255, 255, 0.45)';
-                e.currentTarget.style.boxShadow = theme === 'dark'
-                  ? '0 12px 40px rgba(11, 87, 208, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4)'
-                  : '0 12px 40px rgba(255, 255, 255, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.35)';
+                e.currentTarget.style.borderBottom = '5px solid #0a9bb7';
+                e.currentTarget.style.boxShadow = '0 12px 40px rgba(17, 202, 226, .45), inset 0 1px 0 rgba(255, 255, 255, 0.5)';
               }}
             >
-              <span style={{ fontSize: '18px', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.01em' }}>
-                <ShinyText text={isDe ? 'Jetzt Erstellen' : 'Create Now'} color="rgba(255, 255, 255, 0.85)" shineColor="#ffffff" speed={2.5} />
+              <span style={{ fontSize: '18px', fontWeight: 800, color: '#031b23', letterSpacing: '-0.01em' }}>
+                <ShinyText text={isDe ? 'Jetzt Erstellen' : 'Get Lifetime Access'} color="#031b23" shineColor="#ffffff" speed={2.5} />
               </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(0, 0, 0, 0.25)', padding: '4px 10px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.15)' }}>
-                <span style={{ fontSize: '13px', textDecoration: 'line-through', color: 'rgba(255, 255, 255, 0.7)' }}>300$</span>
-                <span style={{ fontSize: '16px', fontWeight: 900, color: '#ffffff' }}>199$</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(3, 27, 35, 0.15)', padding: '4px 10px', borderRadius: '8px', border: '1px solid rgba(3, 27, 35, 0.12)' }}>
+                <span style={{ fontSize: '13px', textDecoration: 'line-through', color: 'rgba(3, 27, 35, 0.5)' }}>300$</span>
+                <span style={{ fontSize: '16px', fontWeight: 900, color: '#031b23' }}>199$</span>
               </div>
             </button>
           </div>
         </div>
       </section>
+
 
       {/* Footer */}
       <footer style={{
@@ -1238,38 +836,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
 
           </div>
 
-          {/* Product Column */}
+          {/* Navigation Column */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <h4 style={{ color: theme === 'dark' ? '#ffffff' : '#111827', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
-              {isDe ? 'Produkt' : 'Product'}
+              {isDe ? 'Navigation' : 'Navigation'}
             </h4>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <li>
-                <a href="#produkt" style={{ color: theme === 'dark' ? '#737373' : '#666', textDecoration: 'none', fontSize: '13.5px', transition: 'color 0.2s' }}
-                   onMouseEnter={e => e.currentTarget.style.color = theme === 'dark' ? '#fff' : '#000'}
-                   onMouseLeave={e => e.currentTarget.style.color = theme === 'dark' ? '#737373' : '#666'}>
-                  {isDe ? 'Schreibstudio' : 'Writing Studio'}
-                </a>
-              </li>
-              <li>
-                <a href="#rechner" style={{ color: theme === 'dark' ? '#737373' : '#666', textDecoration: 'none', fontSize: '13.5px', transition: 'color 0.2s' }}
-                   onMouseEnter={e => e.currentTarget.style.color = theme === 'dark' ? '#fff' : '#000'}
-                   onMouseLeave={e => e.currentTarget.style.color = theme === 'dark' ? '#737373' : '#666'}>
-                  {isDe ? 'KDP Rechner' : 'KDP Calculator'}
-                </a>
-              </li>
               <li>
                 <a href="#faq" style={{ color: theme === 'dark' ? '#737373' : '#666', textDecoration: 'none', fontSize: '13.5px', transition: 'color 0.2s' }}
                    onMouseEnter={e => e.currentTarget.style.color = theme === 'dark' ? '#fff' : '#000'}
                    onMouseLeave={e => e.currentTarget.style.color = theme === 'dark' ? '#737373' : '#666'}>
-                  {isDe ? 'Häufige Fragen' : 'FAQs'}
+                  FAQ
                 </a>
               </li>
               <li>
-                <a href="#roadmap" style={{ color: theme === 'dark' ? '#737373' : '#666', textDecoration: 'none', fontSize: '13.5px', transition: 'color 0.2s' }}
+                <a href="#team" style={{ color: theme === 'dark' ? '#737373' : '#666', textDecoration: 'none', fontSize: '13.5px', transition: 'color 0.2s' }}
                    onMouseEnter={e => e.currentTarget.style.color = theme === 'dark' ? '#fff' : '#000'}
                    onMouseLeave={e => e.currentTarget.style.color = theme === 'dark' ? '#737373' : '#666'}>
-                  Roadmap
+                  {isDe ? 'Entwickler' : 'Developer'}
                 </a>
               </li>
             </ul>
@@ -1305,31 +889,31 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
             </h4>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <li>
-                <button onClick={() => setLegalPage('impressum')} style={{ background: 'none', border: 'none', padding: 0, color: theme === 'dark' ? '#737373' : '#666', fontSize: '13.5px', cursor: 'pointer', textAlign: 'left', transition: 'color 0.2s' }}
+                <button onClick={() => openLegalPage('impressum')} style={{ background: 'none', border: 'none', padding: 0, color: theme === 'dark' ? '#737373' : '#666', fontSize: '13.5px', cursor: 'pointer', textAlign: 'left', transition: 'color 0.2s' }}
                    onMouseEnter={e => e.currentTarget.style.color = theme === 'dark' ? '#fff' : '#000'}
                    onMouseLeave={e => e.currentTarget.style.color = theme === 'dark' ? '#737373' : '#666'}>
-                  Impressum
+                  Legal Notice
                 </button>
               </li>
               <li>
-                <button onClick={() => setLegalPage('datenschutz')} style={{ background: 'none', border: 'none', padding: 0, color: theme === 'dark' ? '#737373' : '#666', fontSize: '13.5px', cursor: 'pointer', textAlign: 'left', transition: 'color 0.2s' }}
+                <button onClick={() => openLegalPage('datenschutz')} style={{ background: 'none', border: 'none', padding: 0, color: theme === 'dark' ? '#737373' : '#666', fontSize: '13.5px', cursor: 'pointer', textAlign: 'left', transition: 'color 0.2s' }}
                    onMouseEnter={e => e.currentTarget.style.color = theme === 'dark' ? '#fff' : '#000'}
                    onMouseLeave={e => e.currentTarget.style.color = theme === 'dark' ? '#737373' : '#666'}>
-                  Datenschutzerklärung
+                  Privacy Notice
                 </button>
               </li>
               <li>
-                <button onClick={() => setLegalPage('privacy')} style={{ background: 'none', border: 'none', padding: 0, color: theme === 'dark' ? '#737373' : '#666', fontSize: '13.5px', cursor: 'pointer', textAlign: 'left', transition: 'color 0.2s' }}
+                <button onClick={() => openLegalPage('privacy')} style={{ background: 'none', border: 'none', padding: 0, color: theme === 'dark' ? '#737373' : '#666', fontSize: '13.5px', cursor: 'pointer', textAlign: 'left', transition: 'color 0.2s' }}
                    onMouseEnter={e => e.currentTarget.style.color = theme === 'dark' ? '#fff' : '#000'}
                    onMouseLeave={e => e.currentTarget.style.color = theme === 'dark' ? '#737373' : '#666'}>
                   Privacy Policy
                 </button>
               </li>
               <li>
-                <button onClick={() => setLegalPage('terms')} style={{ background: 'none', border: 'none', padding: 0, color: theme === 'dark' ? '#737373' : '#666', fontSize: '13.5px', cursor: 'pointer', textAlign: 'left', transition: 'color 0.2s' }}
+                <button onClick={() => openLegalPage('terms')} style={{ background: 'none', border: 'none', padding: 0, color: theme === 'dark' ? '#737373' : '#666', fontSize: '13.5px', cursor: 'pointer', textAlign: 'left', transition: 'color 0.2s' }}
                    onMouseEnter={e => e.currentTarget.style.color = theme === 'dark' ? '#fff' : '#000'}
                    onMouseLeave={e => e.currentTarget.style.color = theme === 'dark' ? '#737373' : '#666'}>
-                  AGB / Terms
+                  Terms of Service
                 </button>
               </li>
             </ul>
@@ -1362,8 +946,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
           </div>
         </div>
       </footer>
-
-      <LegalModal page={legalPage} onClose={() => setLegalPage(null)} theme={theme} />
 
       {/* Cookie Consent Banner */}
       <AnimatePresence>
@@ -1460,54 +1042,74 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
             transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             className={`sticky-cta-banner theme-${theme}`}
             style={{
-              background: theme === 'dark' ? 'rgba(15, 15, 15, 0.88)' : 'rgba(255, 255, 255, 0.94)',
-              border: theme === 'dark' ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 0, 0, 0.08)',
-              boxShadow: theme === 'dark' ? '0 20px 45px rgba(0, 0, 0, 0.5)' : '0 20px 45px rgba(0, 0, 0, 0.06)',
+              background: '#ffffff',
+              border: '2px solid #0f172a',
+              boxShadow: '5px 5px 0px #16cfe0',
+              borderRadius: '8px',
             }}
+            whileHover={{ y: -2, x: -2, boxShadow: '7px 7px 0px #16cfe0' }}
           >
-            <div className="sticky-cta-banner-text-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span className="sticky-cta-banner-title" style={{ fontSize: '13.5px', fontWeight: 800, color: theme === 'dark' ? '#fff' : '#111' }}>
+            <div className="sticky-cta-banner-text-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              {/* Logo Favicon */}
+              <img 
+                src="/logokdpbook24studio.png" 
+                alt="BookLab Logo" 
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  objectFit: 'contain',
+                  borderRadius: '4px',
+                  flexShrink: 0
+                }} 
+              />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                <span className="sticky-cta-banner-title" style={{ fontSize: '14px', fontWeight: 800, color: '#1f2937', letterSpacing: '-0.02em' }}>
                   BookLab Studio Lifetime Pass
                 </span>
-                <span className="sticky-cta-banner-desc" style={{ fontSize: '12px', color: theme === 'dark' ? '#a3a3a3' : '#666' }}>
+                <span className="sticky-cta-banner-desc" style={{ fontSize: '11.5px', fontWeight: 500, color: '#4b5563' }}>
                   {isDe ? 'Lebenslanger Zugriff · Alle künftigen Updates' : 'Lifetime Access · All Future Updates'}
                 </span>
               </div>
             </div>
 
-            <div className="sticky-cta-banner-actions">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
-                <span style={{ textDecoration: 'line-through', opacity: 0.5, color: theme === 'dark' ? '#737373' : '#888' }}>300$</span>
-                <span style={{ fontWeight: 900, color: '#22c55e' }}>199$</span>
+            <div className="sticky-cta-banner-actions" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1px', lineHeight: 1 }}>
+                <span style={{ textDecoration: 'line-through', opacity: 0.6, color: '#9ca3af', fontSize: '11px', fontWeight: 600 }}>300$</span>
+                <span style={{ fontWeight: 800, color: '#10b981', fontSize: '18px', letterSpacing: '-0.03em' }}>199$</span>
               </div>
               
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <button
                   onClick={() => window.location.href = 'https://booklabstudio.gumroad.com/l/booklabstudio'}
                   style={{
-                    background: '#2563eb',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '10px',
-                    padding: '10px 18px',
+                    background: '#16cfe0',
+                    color: '#031b23',
+                    border: '1px solid rgba(206, 255, 255, .82)',
+                    borderBottom: '3px solid #087f98',
+                    borderRadius: '8px',
+                    padding: '8px 18px',
                     fontSize: '13px',
-                    fontWeight: 800,
+                    fontWeight: 700,
                     cursor: 'pointer',
-                    boxShadow: '0 4px 14px rgba(37, 99, 213, 0.35)',
-                    transition: 'all 0.2s',
-                    whiteSpace: 'nowrap'
+                    boxShadow: '0 4px 12px rgba(17, 202, 226, 0.22)',
+                    transition: 'all 0.2s ease',
+                    whiteSpace: 'nowrap',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
                   }}
                   onMouseEnter={e => {
-                    e.currentTarget.style.background = '#1d4ed8';
+                    e.currentTarget.style.background = '#35e5f2';
                     e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(17, 202, 226, 0.3)';
                   }}
                   onMouseLeave={e => {
-                    e.currentTarget.style.background = '#2563eb';
+                    e.currentTarget.style.background = '#16cfe0';
                     e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(17, 202, 226, 0.22)';
                   }}
                 >
-                  {isDe ? 'Jetzt sichern' : 'Get Access'}
+                  <ShinyText text={isDe ? 'Jetzt sichern' : 'Get Access'} color="#031b23" shineColor="#ffffff" speed={2.5} />
                 </button>
 
                 <button
@@ -1516,17 +1118,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
                   style={{
                     background: 'transparent',
                     border: 'none',
-                    color: theme === 'dark' ? '#737373' : '#888',
+                    color: '#9ca3af',
                     cursor: 'pointer',
                     padding: '8px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    borderRadius: '8px',
+                    borderRadius: '6px',
                     transition: 'all 0.2s'
                   }}
-                  onMouseEnter={e => e.currentTarget.style.color = theme === 'dark' ? '#fff' : '#111'}
-                  onMouseLeave={e => e.currentTarget.style.color = theme === 'dark' ? '#737373' : '#888'}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.color = '#1f2937';
+                    e.currentTarget.style.background = 'rgba(0,0,0,0.04)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.color = '#9ca3af';
+                    e.currentTarget.style.background = 'transparent';
+                  }}
                 >
                   <X size={16} />
                 </button>

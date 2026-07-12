@@ -20,21 +20,13 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
   language,
   onLanguageChange
 }) => {
-  const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const isDe = language === 'de';
   const navItems = [
-    { label: isDe ? 'Vergleich' : 'Comparison', target: 'vergleich' },
-    { label: 'Roadmap', target: 'roadmap' },
-    { label: 'Team', target: 'team' },
+    { label: 'FAQ', target: 'faq' },
+    { label: isDe ? 'Entwickler' : 'Developer', target: 'team' },
   ];
 
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
 
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? 'hidden' : '';
@@ -54,7 +46,7 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
   return (
     <header className="landing-nav-shell">
       <motion.nav
-        className={`landing-nav${scrolled ? ' scrolled' : ''} theme-${theme}`}
+        className={`landing-nav scrolled theme-${theme}`}
         initial={{ opacity: 0, y: -16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
@@ -70,10 +62,6 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
           </span>
         </button>
 
-        {/* Extra Container: Static Text Pill */}
-        <div className="landing-nav-promo-badge">
-          {isDe ? 'Buch erstellen' : 'Create Book'}
-        </div>
 
         <div className="landing-nav-links">
           {navItems.map(item => (
@@ -94,7 +82,7 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
             type="button"
             className="landing-nav-link"
             onClick={() => onLanguageChange(language === 'de' ? 'en' : 'de')}
-            title={isDe ? 'Switch to English' : 'Auf Deutsch wechseln'}
+            title={isDe ? 'Switch to English' : 'Switch to German'}
             style={{ 
               display: 'flex', 
               alignItems: 'center', 
@@ -123,12 +111,12 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
           </button>
           <button type="button" className="landing-nav-cta" onClick={onLoginClick}>
-            <ShinyText text={isDe ? 'Anmelden' : 'Sign In'} color="rgba(255, 255, 255, 0.85)" shineColor="#ffffff" speed={2.5} />
+            <ShinyText text={isDe ? 'Anmelden' : 'Sign In'} color="#06303a" shineColor="#ffffff" speed={2.5} />
           </button>
           <button
             type="button"
             className="landing-nav-menu-btn"
-            aria-label={mobileOpen ? 'Menü schließen' : 'Menü öffnen'}
+            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
             onClick={() => setMobileOpen(v => !v)}
           >
             {mobileOpen ? <X size={18} /> : <Menu size={18} />}
@@ -193,7 +181,7 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({
                 onLoginClick();
               }}
             >
-              <ShinyText text={isDe ? 'Anmelden' : 'Sign In'} color="rgba(255, 255, 255, 0.85)" shineColor="#ffffff" speed={2.5} />
+              <ShinyText text={isDe ? 'Anmelden' : 'Sign In'} color="#06303a" shineColor="#ffffff" speed={2.5} />
             </button>
           </motion.div>
         )}

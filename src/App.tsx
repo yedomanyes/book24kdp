@@ -67,7 +67,8 @@ import { TrendingUp } from 'lucide-react';
 
 import { SettingsModal } from './components/SettingsModal';
 import { BugReportModal } from './components/BugReportModal';
-import KdpCalculator from './components/KdpCalculator';
+
+import CoverEditor from './components/CoverEditor';
 import MaintenanceView from './components/MaintenanceView';
 import GooeyNav from './components/GooeyNav';
 import { searchNiche, type NicheResult } from './services/NicheService';
@@ -85,7 +86,7 @@ import { LanguageProvider } from './contexts/LanguageContext';
 // Run migration once at module load (before any state is initialized)
 migrateOldKeys();
 
-const NAV_TABS = ['projects', 'dashboard', 'brain', 'studio', 'calculator', 'owner'] as const;
+const NAV_TABS = ['projects', 'dashboard', 'brain', 'studio', 'cover', 'owner'] as const;
 type NavTabId = typeof NAV_TABS[number];
 type ModelProvider = 'groq' | 'gemini' | 'deepseek';
 
@@ -94,7 +95,8 @@ const NAV_TAB_PARTICLE_COLORS: Record<NavTabId, number[]> = {
   dashboard: [1, 2, 3, 4],
   brain: [1, 2, 3, 4],
   studio: [1, 2, 3, 4],
-  calculator: [1, 2, 3, 4],
+
+  cover: [1, 2, 3, 4],
   owner: [1, 2, 3, 4],
 };
 
@@ -171,10 +173,13 @@ const startAudioKeepAlive = () => {
     if (audioCtx.state === 'suspended') {
       audioCtx.resume();
     }
+    
+    // Create 1 second buffer filled with extremely quiet inaudible random noise (amplitude 0.00002)
+    // This bypasses browser background tab silence detection algorithms!
     const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate, audioCtx.sampleRate);
     const channelData = buffer.getChannelData(0);
     for (let i = 0; i < channelData.length; i++) {
-      channelData[i] = 0;
+      channelData[i] = (Math.random() * 2 - 1) * 0.00002;
     }
     
     // Stop any existing source first
@@ -188,7 +193,7 @@ const startAudioKeepAlive = () => {
     silentSource.loop = true;
     silentSource.connect(audioCtx.destination);
     silentSource.start();
-    console.log("Audio keep-alive started.");
+    console.log("Audio keep-alive started with active inaudible noise.");
   } catch (e) {
     console.warn("Failed to start audio keep-alive:", e);
   }
@@ -471,7 +476,10 @@ export type WorkbookBlock =
   | { type: 'bullet'; text: string }
   | { type: 'numbered'; text: string; num: string }
   | { type: 'image'; prompt: string; width?: number; float?: 'none' | 'left' | 'right' }
-  | { type: 'custom_image'; id: string; width?: number; float?: 'none' | 'left' | 'right' };
+  | { type: 'custom_image'; id: string; width?: number; float?: 'none' | 'left' | 'right' }
+  | { type: 'stat'; number: string; label: string }
+  | { type: 'timeline'; items: { step: string; title: string; desc: string }[] }
+  | { type: 'mermaid'; code: string };
 
 const PageGenerationProgress: React.FC<{ pageNum: number }> = ({ pageNum }) => {
   const [elapsed, setElapsed] = useState(0);
@@ -551,15 +559,62 @@ export const parsePageLines = (rawLines: string[]): WorkbookBlock[] => {
     const trimmed = raw.trim().replace(/ {2,}/g, ' ');
     if (!trimmed) { i++; continue; }
 
+    // :::stat [number] | [label]
+    if (/^:{3,}\s*stat/i.test(trimmed)) {
+      const partsStr = trimmed.replace(/^:{3,}\s*stat\s*/i, '').trim();
+      const splitIdx = partsStr.indexOf('|');
+      const number = splitIdx !== -1 ? partsStr.substring(0, splitIdx).trim() : '0';
+      const label = splitIdx !== -1 ? partsStr.substring(splitIdx + 1).trim() : partsStr;
+      blocks.push({ type: 'stat', number, label });
+      i++;
+      continue;
+    }
+
+    // :::timeline ... :::
+    if (/^:{3,}\s*timeline/i.test(trimmed)) {
+      i++;
+      const items: { step: string; title: string; desc: string }[] = [];
+      while (i < rawLines.length && !/^:{3,}\s*$/.test(rawLines[i].trim())) {
+        const line = rawLines[i].trim();
+        if (line) {
+          const parts = line.split('|').map(p => p.trim());
+          if (parts.length >= 3) {
+            items.push({ step: parts[0], title: parts[1], desc: parts.slice(2).join(' | ') });
+          } else if (parts.length === 2) {
+            items.push({ step: '', title: parts[0], desc: parts[1] });
+          } else if (parts.length === 1) {
+            items.push({ step: '', title: '', desc: parts[0] });
+          }
+        }
+        i++;
+      }
+      i++; // skip closing :::
+      blocks.push({ type: 'timeline', items });
+      continue;
+    }
+
+    // :::mermaid ... :::
+    if (/^:{3,}\s*mermaid/i.test(trimmed)) {
+      i++;
+      const codeLines: string[] = [];
+      while (i < rawLines.length && !/^:{3,}\s*$/.test(rawLines[i].trim())) {
+        codeLines.push(rawLines[i]);
+        i++;
+      }
+      i++; // skip closing :::
+      blocks.push({ type: 'mermaid', code: codeLines.join('\n') });
+      continue;
+    }
+
     // :::box ... :::
-    if (/^:::\s*(box|callout|reflection|action)/i.test(trimmed)) {
-      const match = trimmed.match(/^:::\s*(box|callout|reflection|action)\s*(\d+)?\s*(.*)/i);
+    if (/^:{3,}\s*(box|callout|reflection|action)/i.test(trimmed)) {
+      const match = trimmed.match(/^:{3,}\s*(box|callout|reflection|action)\s*(\d+)?\s*(.*)/i);
       const boxType = match && match[1] ? match[1].toLowerCase() : 'box';
       const styleNum = match && match[2] ? parseInt(match[2]) : 1;
       const boxTitle = match && match[3] ? match[3].trim() : '';
       i++;
       const innerLines: string[] = [];
-      while (i < rawLines.length && rawLines[i].trim() !== ':::') {
+      while (i < rawLines.length && !/^:{3,}\s*$/.test(rawLines[i].trim())) {
         innerLines.push(rawLines[i]);
         i++;
       }
@@ -666,8 +721,8 @@ export const parsePageLines = (rawLines: string[]): WorkbookBlock[] => {
     }
 
     // Image placeholder new format: :::image PROMPT float:left width:50
-    if (/^:::image\s+/i.test(trimmed)) {
-      const lineText = trimmed.replace(/^:::image\s+/i, '');
+    if (/^:{3,}image\s+/i.test(trimmed)) {
+      const lineText = trimmed.replace(/^:{3,}image\s+/i, '');
       const widthMatch = lineText.match(/width:(\d+)/i);
       const floatMatch = lineText.match(/float:(none|left|right)/i);
       
@@ -685,8 +740,8 @@ export const parsePageLines = (rawLines: string[]): WorkbookBlock[] => {
     }
 
     // Custom image new format: :::custom_image ID float:left width:50
-    if (/^:::custom_image\s+/i.test(trimmed)) {
-      const lineText = trimmed.replace(/^:::custom_image\s+/i, '');
+    if (/^:{3,}custom_image\s+/i.test(trimmed)) {
+      const lineText = trimmed.replace(/^:{3,}custom_image\s+/i, '');
       const widthMatch = lineText.match(/width:(\d+)/i);
       const floatMatch = lineText.match(/float:(none|left|right)/i);
       
@@ -1118,6 +1173,124 @@ const persistLibraryEverywhere = async (accountId: string, books: any[]): Promis
 };
 
 
+const LibraryProgressBarLoader = ({ theme, themeMode }: { theme: string; themeMode: string }) => {
+  const [progress, setProgress] = useState(0);
+  const isDe = themeMode === 'de';
+
+  useEffect(() => {
+    let start = 0;
+    const interval = setInterval(() => {
+      start += Math.random() * 15;
+      if (start > 98) {
+        start = 98;
+        clearInterval(interval);
+      }
+      setProgress(Math.floor(start));
+    }, 120);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: 'calc(100vh - 110px)',
+      width: '100%',
+      background: theme === 'dark' ? '#070b11' : '#f4f7fb',
+      color: theme === 'dark' ? '#f8fafc' : '#0f172a',
+      fontFamily: "'Outfit', sans-serif",
+      padding: '24px',
+      boxSizing: 'border-box'
+    }}>
+      <style>{`
+        @keyframes orbit-clockwise {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes orbit-counter {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(-360deg); }
+        }
+        @keyframes fade-pulse {
+          0%, 100% { opacity: 0.6; }
+          50% { opacity: 1; }
+        }
+      `}</style>
+
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '24px',
+        textAlign: 'center'
+      }}>
+        {/* Orbital rotating ring design */}
+        <div style={{
+          position: 'relative',
+          width: '72px',
+          height: '72px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          {/* Outer Ring */}
+          <div style={{
+            position: 'absolute',
+            width: '64px',
+            height: '64px',
+            borderRadius: '50%',
+            border: '2.5px solid transparent',
+            borderTopColor: '#2563eb',
+            borderBottomColor: '#2563eb',
+            animation: 'orbit-clockwise 1.6s cubic-bezier(0.53, 0.21, 0.29, 0.67) infinite'
+          }} />
+          {/* Inner Ring */}
+          <div style={{
+            position: 'absolute',
+            width: '42px',
+            height: '42px',
+            borderRadius: '50%',
+            border: '2.5px solid transparent',
+            borderLeftColor: '#818cf8',
+            borderRightColor: '#818cf8',
+            animation: 'orbit-counter 1.2s cubic-bezier(0.53, 0.21, 0.29, 0.67) infinite'
+          }} />
+        </div>
+
+        {/* Large Clean Percentage */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+          <span style={{ 
+            fontSize: '38px', 
+            fontWeight: 800, 
+            letterSpacing: '-0.04em',
+            background: 'linear-gradient(135deg, #2563eb 0%, #6366f1 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            lineHeight: '1'
+          }}>
+            {progress}%
+          </span>
+          <span style={{ 
+            fontSize: '10px', 
+            fontWeight: 700, 
+            letterSpacing: '0.14em', 
+            textTransform: 'uppercase', 
+            color: theme === 'dark' ? '#94a3b8' : '#64748b',
+            animation: 'fade-pulse 1.8s infinite ease-in-out',
+            marginTop: '4px'
+          }}>
+            {isDe ? 'Synchronisiere Mediathek' : 'Syncing Library'}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 export default function App() {
   // Supabase Auth states
   const [currentUser, setCurrentUser] = useState<any>(() => {
@@ -1143,7 +1316,7 @@ export default function App() {
     return null;
   });
   const [maintenanceInfo, setMaintenanceInfo] = useState<{ active: boolean; message: string | null; endsAt: string | null }>({ active: false, message: null, endsAt: null });
-  const [activeModules, setActiveModules] = useState<Record<string, any>>({ brain: true, dashboard: true, calculator: true, studio: true });
+  const [activeModules, setActiveModules] = useState<Record<string, any>>({ brain: true, dashboard: true, studio: true, cover: true });
   const [showBanModal, setShowBanModal] = useState(false);
 
   const bootLocalWorkspace = React.useCallback(() => {
@@ -1158,6 +1331,8 @@ export default function App() {
   // Prevents onAuthStateChange re-runs (e.g. token refresh) from overwriting books.
   const booksLoadedForUidRef = React.useRef<string | null>(null);
   const isCheckingRef = React.useRef<boolean>(false);
+  const libraryScrollTopRef = React.useRef<number>(0);
+  const mediathekContainerRef = React.useRef<HTMLDivElement | null>(null);
 
   // Parse URL error on mount
   useEffect(() => {
@@ -1169,6 +1344,7 @@ export default function App() {
       }
     } catch (e) {}
   }, []);
+
 
   // One-time cleanup to migrate massive libraries from localStorage to IndexedDB
   // and replace the localStorage entries with light versions.
@@ -1546,41 +1722,48 @@ export default function App() {
           }
         }
 
-        if (booksToSet.length > 0) {
-          // Recompute overflow with the SAME layout logic used by the editor/preview.
-          // A rough character estimate can incorrectly turn manually-fixed pages red again after refresh.
-          const cleanBooks = booksToSet.map((b: any) => {
-            const recomputedOverflow: Record<string, boolean> = {};
-            const normalizedStatus: Record<string, any> = { ...(b.pagesStatus || {}) };
-            const normalizedErrors: Record<string, any> = { ...(b.pagesError || {}) };
+        try {
+          const validBooks = booksToSet.filter(b => b && typeof b === 'object' && b.id);
+          if (validBooks.length > 0) {
+            // Recompute overflow with the SAME layout logic used by the editor/preview.
+            // A rough character estimate can incorrectly turn manually-fixed pages red again after refresh.
+            const cleanBooks = validBooks.map((b: any) => {
+              const recomputedOverflow: Record<string, boolean> = {};
+              const normalizedStatus: Record<string, any> = { ...(b.pagesStatus || {}) };
+              const normalizedErrors: Record<string, any> = { ...(b.pagesError || {}) };
 
-            Object.entries(b.pagesText || {}).forEach(([pageNum, text]) => {
-              const numericPageNum = Number(pageNum);
-              const pageText = typeof text === 'string' ? text : '';
-              const hasOverflow = checkTextOverflow(pageText, b, numericPageNum);
-              recomputedOverflow[pageNum] = hasOverflow;
+              Object.entries(b.pagesText || {}).forEach(([pageNum, text]) => {
+                const numericPageNum = Number(pageNum);
+                const pageText = typeof text === 'string' ? text : '';
+                const hasOverflow = checkTextOverflow(pageText, b, numericPageNum);
+                recomputedOverflow[pageNum] = hasOverflow;
 
-              if (normalizedStatus[pageNum] === 'generating') {
-                normalizedStatus[pageNum] = pageText.trim().length > 0 ? 'completed' : 'idle';
-              }
+                if (normalizedStatus[pageNum] === 'generating') {
+                  normalizedStatus[pageNum] = pageText.trim().length > 0 ? 'completed' : 'idle';
+                }
 
-              if (pageText.trim().length > 0 && normalizedStatus[pageNum] === 'failed' && !normalizedErrors[pageNum]) {
-                normalizedStatus[pageNum] = 'completed';
-              }
+                if (pageText.trim().length > 0 && normalizedStatus[pageNum] === 'failed' && !normalizedErrors[pageNum]) {
+                  normalizedStatus[pageNum] = 'completed';
+                }
+              });
+
+              return {
+                ...b,
+                pagesStatus: normalizedStatus,
+                pagesError: normalizedErrors,
+                pagesOverflow: recomputedOverflow,
+              };
             });
-
-            return {
-              ...b,
-              pagesStatus: normalizedStatus,
-              pagesError: normalizedErrors,
-              pagesOverflow: recomputedOverflow,
-            };
-          });
-          const orderedCleanBooks = ensurePageOrder(cleanBooks);
-          setBooksState(orderedCleanBooks);
-          booksRef.current = orderedCleanBooks;
-          void persistLibraryEverywhere(activeAcc, orderedCleanBooks);
-        } else {
+            const orderedCleanBooks = ensurePageOrder(cleanBooks);
+            setBooksState(orderedCleanBooks);
+            booksRef.current = orderedCleanBooks;
+            void persistLibraryEverywhere(activeAcc, orderedCleanBooks);
+          } else {
+            booksRef.current = [];
+            setBooksState([]);
+          }
+        } catch (bookErr) {
+          console.error("Error processing books during checkUser:", bookErr);
           booksRef.current = [];
           setBooksState([]);
         }
@@ -1742,8 +1925,8 @@ export default function App() {
   const [language, setLanguageState] = useState<'de' | 'en'>(() => {
     const saved = safeLocalStorage.getItem('b24studio_language') as 'de' | 'en' | null;
     if (saved === 'de' || saved === 'en') return saved;
-    // Auto-detect from browser
-    return (typeof navigator !== 'undefined' && navigator.language.startsWith('de')) ? 'de' : 'en';
+    // English is the default landing-page language; users can still switch manually.
+    return 'en';
   });
 
   const isDe = language === 'de';
@@ -1859,8 +2042,15 @@ export default function App() {
     const measurer = document.getElementById('book24-measurer');
     if (!measurer) return false;
 
-    // Apply German hyphenation on-the-fly
-    text = hyphenateSync(text || '');
+    // Apply German hyphenation on-the-fly, protecting ::: syntax lines from soft-hyphens
+    text = hyphenateSync(text || '')
+      .split('\n')
+      .map(line => {
+        const t = line.trim();
+        if (t.startsWith(':::')) return t.replace(/\u00ad/g, '');
+        return line;
+      })
+      .join('\n');
 
     let wInches = 6;
     let hInches = 9;
@@ -1881,21 +2071,24 @@ export default function App() {
 
     const topMarginPx = 54 * previewScaleY;
     const bottomMarginPx = 54 * previewScaleY;
-    let insideMargin = 54;
+    // WYSIWYG: insideMargin values MUST exactly match PdfGenerator.ts (L426-433)
+    let insideMargin = 54; // 0.75" — KDP minimum for all books
     const totalBookPages = book.outline?.pages?.length || 0;
     if (totalBookPages > 500) {
-      insideMargin = 72;
+      insideMargin = 90; // 1.25" gutter — matches PDF
     } else if (totalBookPages > 300) {
-      insideMargin = 67.5;
+      insideMargin = 81; // 1.125" gutter — matches PDF
     } else if (totalBookPages > 150) {
-      insideMargin = 63;
+      insideMargin = 72; // 1.0" gutter — matches PDF
     }
     const insideMarginPx = insideMargin * previewScaleX;
     const outsideMarginPx = 45 * previewScaleX; // matches PDF: outsideMargin = 45pt
 
     const contentWidth = previewWidth - (insideMarginPx + outsideMarginPx);
-    // Use a precise safety margin (24px) to account for header heights, footer page numbers and minor font rendering differences
-    const contentHeight = previewHeight - (topMarginPx + bottomMarginPx) - 24;
+    // Safety buffer: 20pt in PDF points (footer page-number area + font rendering tolerance)
+    // Scaled to preview pixels so it matches actual PDF proportions
+    const pdfSafetyBufferPt = 20;
+    const contentHeight = previewHeight - (topMarginPx + bottomMarginPx) - (pdfSafetyBufferPt * previewScaleY);
     const previewFontSize = book.fontSize * previewScaleY;
 
     measurer.style.width = `${contentWidth}px`;
@@ -2261,6 +2454,158 @@ export default function App() {
           return div;
         }
 
+        case 'stat': {
+          const div = document.createElement('div');
+          div.style.display = 'flex';
+          div.style.alignItems = 'center';
+          div.style.gap = '14px';
+          div.style.padding = '10px 14px';
+          div.style.margin = '10px 0';
+          div.style.backgroundColor = '#f8fafc';
+          div.style.border = '1px solid #cbd5e1';
+          div.style.borderRadius = '8px';
+          div.style.boxSizing = 'border-box';
+
+          const numSpan = document.createElement('span');
+          numSpan.style.fontSize = '1.7em';
+          numSpan.style.fontWeight = '800';
+          numSpan.style.color = '#2563eb';
+          numSpan.style.fontFamily = '"Playfair Display", Georgia, serif';
+          numSpan.textContent = block.number;
+
+          const labelSpan = document.createElement('span');
+          labelSpan.style.fontSize = '0.85em';
+          labelSpan.style.color = '#475569';
+          labelSpan.style.lineHeight = '1.3';
+          labelSpan.innerHTML = renderInlineHtml(block.label);
+
+          div.appendChild(numSpan);
+          div.appendChild(labelSpan);
+          return div;
+        }
+
+        case 'timeline': {
+          const container = document.createElement('div');
+          container.style.position = 'relative';
+          container.style.paddingLeft = '20px';
+          container.style.margin = '14px 0';
+          container.style.display = 'flex';
+          container.style.flexDirection = 'column';
+          container.style.gap = '10px';
+          container.style.boxSizing = 'border-box';
+
+          const line = document.createElement('div');
+          line.style.position = 'absolute';
+          line.style.left = '6px';
+          line.style.top = '4px';
+          line.style.bottom = '4px';
+          line.style.width = '1.5px';
+          line.style.backgroundColor = '#2563eb';
+          container.appendChild(line);
+
+          (block.items || []).forEach(item => {
+            const itemDiv = document.createElement('div');
+            itemDiv.style.position = 'relative';
+
+            const dot = document.createElement('div');
+            dot.style.position = 'absolute';
+            dot.style.left = '-18px';
+            dot.style.top = '4px';
+            dot.style.width = '7px';
+            dot.style.height = '7px';
+            dot.style.borderRadius = '50%';
+            dot.style.backgroundColor = '#ffffff';
+            dot.style.border = '2.5px solid #2563eb';
+            itemDiv.appendChild(dot);
+
+            const titleP = document.createElement('p');
+            titleP.style.margin = '0 0 2px 0';
+            titleP.style.fontSize = '0.9em';
+            titleP.style.fontWeight = 'bold';
+            titleP.style.color = '#0f172a';
+            titleP.innerHTML = renderInlineHtml(item.step ? `${item.step}: ${item.title}` : item.title);
+            itemDiv.appendChild(titleP);
+
+            const descP = document.createElement('p');
+            descP.style.margin = '0';
+            descP.style.fontSize = '0.82em';
+            descP.style.color = '#475569';
+            descP.style.lineHeight = '1.4';
+            descP.innerHTML = renderInlineHtml(item.desc);
+            itemDiv.appendChild(descP);
+
+            container.appendChild(itemDiv);
+          });
+          return container;
+        }
+
+        case 'mermaid': {
+          const container = document.createElement('div');
+          container.style.display = 'flex';
+          container.style.flexDirection = 'column';
+          container.style.alignItems = 'center';
+          container.style.gap = '8px';
+          container.style.margin = '14px 0';
+          container.style.padding = '12px';
+          container.style.backgroundColor = '#fdfcfb';
+          container.style.border = '1.5px dashed #2563eb';
+          container.style.borderRadius = '8px';
+          container.style.boxSizing = 'border-box';
+
+          const title = document.createElement('div');
+          title.style.fontSize = '8px';
+          title.style.fontWeight = 'bold';
+          title.style.color = '#2563eb';
+          title.style.textTransform = 'uppercase';
+          title.style.letterSpacing = '0.05em';
+          title.style.marginBottom = '6px';
+          title.textContent = 'ABLAUF-DIAGRAMM';
+          container.appendChild(title);
+
+          const nodesDiv = document.createElement('div');
+          nodesDiv.style.display = 'flex';
+          nodesDiv.style.flexWrap = 'wrap';
+          nodesDiv.style.alignItems = 'center';
+          nodesDiv.style.justifyContent = 'center';
+          nodesDiv.style.gap = '8px';
+          nodesDiv.style.width = '100%';
+
+          // Simple flowchart chain parser: extracts node labels e.g. Start --> Aktion --> Ergebnis
+          const cleanCode = block.code || '';
+          const parts = cleanCode.split(/-->|->/).map(p => p.trim());
+          
+          parts.forEach((part, idx) => {
+            const cleanLabel = part.replace(/^[A-Za-z0-9]+\s*\[|\]|\(|\)|\{|\}$/g, '').trim();
+            if (!cleanLabel) return;
+
+            const node = document.createElement('div');
+            node.style.padding = '6px 12px';
+            node.style.backgroundColor = '#ffffff';
+            node.style.border = '1.5px solid #0f172a';
+            node.style.borderRadius = '6px';
+            node.style.boxShadow = '2px 2px 0px #0f172a';
+            node.style.fontSize = '0.85em';
+            node.style.fontWeight = '700';
+            node.style.color = '#0f172a';
+            node.textContent = cleanLabel;
+            nodesDiv.appendChild(node);
+
+            if (idx < parts.length - 1) {
+              const arrow = document.createElement('div');
+              arrow.style.display = 'flex';
+              arrow.style.alignItems = 'center';
+              arrow.style.color = '#2563eb';
+              arrow.style.fontWeight = '900';
+              arrow.style.fontSize = '1.1em';
+              arrow.innerHTML = '&#10142;'; // ➔
+              nodesDiv.appendChild(arrow);
+            }
+          });
+
+          container.appendChild(nodesDiv);
+          return container;
+        }
+
         case 'paragraph': {
           const isDropCap = isDropCapCandidate && block.text.length > 1;
           const p = document.createElement('p');
@@ -2427,6 +2772,27 @@ export default function App() {
             } else {
               totalHeight += hPx + 16 * previewScaleY;
             }
+            break;
+          }
+          case 'stat': {
+            totalHeight += 44 * previewScaleY + 16 * previewScaleY;
+            break;
+          }
+          case 'timeline': {
+            let timelineH = 8 * previewScaleY;
+            (block.items || []).forEach(item => {
+              const itemTitleLines = getLinesCount(item.step ? `${item.step}: ${item.title}` : item.title, `bold ${fontStr}`, contentWidth - 20);
+              const itemDescLines = getLinesCount(item.desc, fontStr, contentWidth - 20);
+              timelineH += (itemTitleLines + itemDescLines) * lh + 14 * previewScaleY;
+            });
+            totalHeight += timelineH;
+            break;
+          }
+          case 'mermaid': {
+            // Title + Flowchart area
+            const parts = (block.code || '').split(/-->|->/).map(p => p.trim());
+            const boxRows = Math.ceil(parts.length / 2); // approximate flow wrapping
+            totalHeight += 24 * previewScaleY + boxRows * (28 * previewScaleY) + 16 * previewScaleY;
             break;
           }
           case 'pagebreak': {
@@ -3024,6 +3390,18 @@ export default function App() {
     localStorage.setItem('b24studio_activeTab', activeTab);
   }, [activeTab]);
 
+  // Save editor scroll position per book+page
+  useEffect(() => {
+    const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement | null;
+    if (!textarea || !activeBookId || selectedPage === null) return;
+    const key = `b24studio_scroll_${activeBookId}_${selectedPage}`;
+    const onScroll = () => {
+      localStorage.setItem(key, String(textarea.scrollTop));
+    };
+    textarea.addEventListener('scroll', onScroll, { passive: true });
+    return () => textarea.removeEventListener('scroll', onScroll);
+  }, [activeBookId, selectedPage]);
+
   useEffect(() => {
     if (activeBookId) {
       localStorage.setItem('b24studio_activeBookId', activeBookId);
@@ -3149,6 +3527,7 @@ export default function App() {
   const [showTranslationWarning, setShowTranslationWarning] = useState<boolean>(false);
   const [activeStyleEditNum, setActiveStyleEditNum] = useState<number | null>(null);
   const [showImageInsertModal, setShowImageInsertModal] = useState<boolean>(false);
+  const [showCoverEditorOverlay, setShowCoverEditorOverlay] = useState<boolean>(false);
 
 
   // Multi-selection states for pages grid
@@ -3293,9 +3672,9 @@ export default function App() {
         const savedScopedId = localStorage.getItem(getScopedActiveBookStorageKey(activeAccountId));
         const savedGlobalId = localStorage.getItem('b24studio_activeBookId');
         
-        // Priority: Current activeBookId (if valid) > Scoped ID > Global ID > First book
-        let resolvedBookId = cleaned[0].id;
-        
+        // Priority: Current activeBookId (if valid) > Scoped ID > Global ID > First book (only if in studio)
+        let resolvedBookId: string | null = null;
+
         // React batching: if activeBookId state is already set and valid in this account, use it
         if (activeBookId && cleaned.some(b => b.id === activeBookId)) {
           resolvedBookId = activeBookId;
@@ -3303,9 +3682,15 @@ export default function App() {
           resolvedBookId = savedScopedId;
         } else if (savedGlobalId && cleaned.some(b => b.id === savedGlobalId)) {
           resolvedBookId = savedGlobalId;
+        } else {
+          // Only fall back to first book if user was in studio — otherwise leave null
+          const savedTab = localStorage.getItem('b24studio_activeTab');
+          if (savedTab === 'studio') {
+            resolvedBookId = cleaned[0].id;
+          }
         }
 
-        setActiveBookId(resolvedBookId);
+        if (resolvedBookId) setActiveBookId(resolvedBookId);
       } else {
         setBooks([]);
         setActiveBookId(null);
@@ -3344,6 +3729,22 @@ export default function App() {
       setSelectedPage('title');
     }
   }, [activeBookId, activeAccountId]);
+
+  // Restore editor scroll position after page content renders
+  useEffect(() => {
+    if (!activeBookId || selectedPage === null) return;
+    const key = `b24studio_scroll_${activeBookId}_${selectedPage}`;
+    const saved = localStorage.getItem(key);
+    if (!saved) return;
+    const scrollTop = parseInt(saved, 10);
+    if (isNaN(scrollTop)) return;
+    // Defer until after React renders the editor content
+    const raf = requestAnimationFrame(() => {
+      const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement | null;
+      if (textarea) textarea.scrollTop = scrollTop;
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [activeBookId, selectedPage]);
 
   // Reset title page states when active book changes
   useEffect(() => {
@@ -5569,8 +5970,18 @@ export default function App() {
 
     topMarginPx = 54 * previewScaleY;
     bottomMarginPx = 54 * previewScaleY;
-    insideMarginPx = 54 * previewScaleX;
-    outsideMarginPx = 36 * previewScaleX;
+    // WYSIWYG: insideMargin MUST match PdfGenerator.ts dynamic gutter (L426-433)
+    let previewInsideMarginPt = 54; // 0.75" — KDP minimum
+    const previewTotalBookPages = activeBook.outline?.pages?.length || 0;
+    if (previewTotalBookPages > 500) {
+      previewInsideMarginPt = 90; // 1.25"
+    } else if (previewTotalBookPages > 300) {
+      previewInsideMarginPt = 81; // 1.125"
+    } else if (previewTotalBookPages > 150) {
+      previewInsideMarginPt = 72; // 1.0"
+    }
+    insideMarginPx = previewInsideMarginPt * previewScaleX;
+    outsideMarginPx = 45 * previewScaleX; // matches PDF: outsideMargin = 45pt
     
     // Scale font size proportionally
     previewFontSize = activeBook.fontSize * previewScaleY;
@@ -6865,7 +7276,18 @@ export default function App() {
     }
 
     // Hyphenate on-the-fly for preview rendering
-    const hyphenatedPartText = hyphenateSync(partText || '');
+    // IMPORTANT: Strip soft-hyphens (\u00ad) from syntax-marker lines (:::box, :::callout, etc.)
+    // because hyphenateSync injects them into keywords, breaking the parser.
+    // e.g. ":::callout" → ":::call\u00adout" which no longer matches the regex.
+    const hyphenatedPartText = hyphenateSync(partText || '')
+      .split('\n')
+      .map(line => {
+        const t = line.trim();
+        // Protect all ::: syntax lines from soft-hyphens
+        if (t.startsWith(':::')) return t.replace(/\u00ad/g, '');
+        return line;
+      })
+      .join('\n');
     const blocks = parsePageLines(hyphenatedPartText.split('\n'));
 
     const updatePagePartBlocks = (blocksList: WorkbookBlock[]) => {
@@ -7119,6 +7541,135 @@ export default function App() {
             </div>
           );
 
+        case 'stat':
+          return (
+            <div 
+              key={key} 
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '14px',
+                padding: '10px 14px',
+                margin: '10px 0',
+                backgroundColor: '#f8fafc',
+                border: '1px solid #cbd5e1',
+                borderRadius: '8px',
+                boxSizing: 'border-box'
+              }}
+            >
+              <span style={{ fontSize: '1.7em', fontWeight: '800', color: '#2563eb', fontFamily: '"Playfair Display", Georgia, serif' }}>
+                {block.number}
+              </span>
+              <span style={{ fontSize: '0.85em', color: '#475569', lineHeight: '1.3' }}>
+                {renderInline(block.label || '')}
+              </span>
+            </div>
+          );
+
+        case 'timeline':
+          return (
+            <div 
+              key={key} 
+              style={{
+                position: 'relative',
+                paddingLeft: '20px',
+                margin: '14px 0',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+                boxSizing: 'border-box'
+              }}
+            >
+              <div style={{ position: 'absolute', left: '6px', top: '4px', bottom: '4px', width: '1.5px', backgroundColor: '#2563eb' }} />
+              {(block.items || []).map((item, idx) => (
+                <div key={idx} style={{ position: 'relative' }}>
+                  <div 
+                    style={{
+                      position: 'absolute',
+                      left: '-18px',
+                      top: '4px',
+                      width: '7px',
+                      height: '7px',
+                      borderRadius: '50%',
+                      backgroundColor: '#ffffff',
+                      border: '2.5px solid #2563eb'
+                    }}
+                  />
+                  <p style={{ margin: '0 0 2px 0', fontSize: '0.9em', fontWeight: 'bold', color: '#0f172a' }}>
+                    {renderInline(item.step ? `${item.step}: ${item.title}` : item.title)}
+                  </p>
+                  <p style={{ margin: '0', fontSize: '0.82em', color: '#475569', lineHeight: '1.4' }}>
+                    {renderInline(item.desc)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          );
+
+        case 'mermaid': {
+          const cleanCode = block.code || '';
+          const parts = cleanCode.split(/-->|->/).map(p => p.trim());
+          return (
+            <div 
+              key={key} 
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '8px',
+                margin: '14px 0',
+                padding: '12px',
+                backgroundColor: '#fdfcfb',
+                border: '1.5px dashed #2563eb',
+                borderRadius: '8px',
+                boxSizing: 'border-box'
+              }}
+            >
+              <div style={{ fontSize: '8px', fontWeight: 'bold', color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+                ABLAUF-DIAGRAMM
+              </div>
+              <div 
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  width: '100%'
+                }}
+              >
+                {parts.map((part, idx) => {
+                  const cleanLabel = part.replace(/^[A-Za-z0-9]+\s*\[|\]|\(|\)|\{|\}$/g, '').trim();
+                  if (!cleanLabel) return null;
+                  return (
+                    <React.Fragment key={idx}>
+                      <div 
+                        style={{
+                          padding: '6px 12px',
+                          backgroundColor: '#ffffff',
+                          border: '1.5px solid #0f172a',
+                          borderRadius: '6px',
+                          boxShadow: '2px 2px 0px #0f172a',
+                          fontSize: '0.85em',
+                          fontWeight: '700',
+                          color: '#0f172a'
+                        }}
+                      >
+                        {cleanLabel}
+                      </div>
+                      {idx < parts.length - 1 && (
+                        <div style={{ display: 'flex', alignItems: 'center', color: '#2563eb', fontWeight: '900', fontSize: '1.1em' }}>
+                          ➔
+                        </div>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        }
+
         case 'ornament':
           return (
             <div key={key} className="group" style={{ position: 'relative', textAlign: 'center', margin: '8px 0' }}>
@@ -7145,7 +7696,7 @@ export default function App() {
               {...getDragDropProps(path)}
               {...makeEditable(path)}
             >
-              <strong>{block.text}</strong>
+              <strong>{renderInline(block.text)}</strong>
             </p>
           );
 
@@ -7160,7 +7711,7 @@ export default function App() {
                 {...getDragDropProps(path)}
                 {...makeEditable(path)}
               >
-                {block.text}
+                {renderInline(block.text)}
               </div>
             );
           }
@@ -7171,7 +7722,7 @@ export default function App() {
               {...getDragDropProps(path)}
               {...makeEditable(path)}
             >
-              {block.text}
+              {renderInline(block.text)}
             </blockquote>
           );
         }
@@ -7186,7 +7737,7 @@ export default function App() {
             >
               <span style={{ display: 'flex', gap: '6px', paddingLeft: '8px' }}>
                 <span>•</span>
-                <span {...makeEditable(path)} style={{ flex: 1, outline: 'none' }}>{block.text}</span>
+                <span {...makeEditable(path)} style={{ flex: 1, outline: 'none' }}>{renderInline(block.text)}</span>
               </span>
             </p>
           );
@@ -7213,7 +7764,7 @@ export default function App() {
                 }}
                 style={{ cursor: 'pointer', flexShrink: 0 }}
               />
-              <span {...makeEditable(path)} style={{ flex: 1, outline: 'none' }}>{block.text}</span>
+              <span {...makeEditable(path)} style={{ flex: 1, outline: 'none' }}>{renderInline(block.text)}</span>
             </div>
           );
 
@@ -7905,6 +8456,18 @@ export default function App() {
 
   const isBooksLoading = currentUser && booksLoadedForUidRef.current !== currentUser.uid;
 
+  // Restore scroll position in Mediathek when switching back
+  useEffect(() => {
+    if (activeTab === 'projects' && !isBooksLoading) {
+      const timer = setTimeout(() => {
+        if (mediathekContainerRef.current) {
+          mediathekContainerRef.current.scrollTop = libraryScrollTopRef.current;
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [activeTab, isBooksLoading]);
+
   if (authLoading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)', overflow: 'hidden' }}>
@@ -8232,7 +8795,8 @@ export default function App() {
               if (tab === 'dashboard') return { label: isDe ? 'Nischen-Finder' : 'Niche Finder', maintenance: isMaintenance };
               if (tab === 'brain') return { label: 'Brain', disabled: !brainEnabled && !isMaintenance, maintenance: isMaintenance };
               if (tab === 'studio') return { label: isDe ? 'Schreibstudio' : 'Studio', maintenance: isMaintenance };
-              if (tab === 'calculator') return { label: isDe ? 'Rechner' : 'Calculator', maintenance: isMaintenance };
+
+              if (tab === 'cover') return { label: isDe ? 'Cover' : 'Cover', maintenance: isMaintenance };
               if (tab === 'owner') return { label: 'Owner Panel' };
               return { label: '' };
             });
@@ -8399,7 +8963,18 @@ export default function App() {
                     message: isDe ? 'Möchtest du dich wirklich abmelden?' : 'Are you sure you want to sign out?',
                     confirmLabel: isDe ? 'Abmelden' : 'Sign Out',
                     danger: true,
-                    onConfirm: () => supabase?.auth.signOut()
+                    onConfirm: () => {
+                      if (supabase) {
+                        supabase.auth.signOut({ scope: 'local' }).catch(console.error);
+                      }
+                      setCurrentUser(null);
+                      setUserHasValidLicense(null);
+                      setAuthLoading(false);
+                      booksLoadedForUidRef.current = null;
+                      try { window.sessionStorage.removeItem('b24_rt'); } catch (e) {}
+                      try { window.localStorage.removeItem('b24_rt'); } catch (e) {}
+                      try { document.cookie = 'b24_rt=; path=/; max-age=0'; } catch (e) {}
+                    }
                   });
                 }}
                 style={{
@@ -8445,11 +9020,21 @@ export default function App() {
         <>
         {/* Tab 1: Projects Mediathek Grid view */}
         {activeTab === 'projects' && (
-          <>
+          isBooksLoading ? (
+            <LibraryProgressBarLoader theme={theme} themeMode={language} />
+          ) : (
+            <>
             {theme === 'light' && (
               <div style={{ position: 'fixed', inset: 0, zIndex: -1, background: '#f4f5f7' }} />
             )}
-            <div className="mediathek-container" style={{ position: 'relative', zIndex: 1 }}>
+             <div 
+               ref={mediathekContainerRef}
+               className="mediathek-container" 
+               style={{ position: 'relative', zIndex: 1 }}
+               onScroll={(e) => {
+                 libraryScrollTopRef.current = e.currentTarget.scrollTop;
+               }}
+             >
               <div className="mediathek-header">
               <div>
                 <h2 className="mediathek-title">{isDe ? 'Meine Buchprojekte' : 'My Book Projects'}</h2>
@@ -8617,6 +9202,7 @@ export default function App() {
             )}
           </div>
           </>
+          )
         )}
 
 
@@ -8666,14 +9252,27 @@ export default function App() {
           )
         )}
 
-        {/* Tab 4: Calculator */}
-        {activeTab === 'calculator' && (
-          !isOwnerClient && activeModules.calculator === 'maintenance' ? (
-            <MaintenanceView name={isDe ? 'KDP Rechner' : 'KDP Calculator'} theme={theme} onBack={() => setActiveTab('projects')} />
+
+
+        {/* Tab: Cover Editor */}
+        {activeTab === 'cover' && (
+          !isOwnerClient && activeModules.cover === 'maintenance' ? (
+            <MaintenanceView name={isDe ? 'Cover Editor' : 'Cover Editor'} theme={theme} onBack={() => setActiveTab('projects')} />
           ) : (
-            <div style={{ height: 'calc(100vh - 110px)', overflowY: 'auto', background: theme === 'dark' ? '#0f172a' : '#f8fafc', padding: '20px' }}>
-              <KdpCalculator theme={theme} />
-            </div>
+            <CoverEditor
+              theme={theme}
+              activeBook={activeBook ? {
+                title: activeBook.title,
+                pageSize: activeBook.pageSize,
+                outline: activeBook.outline ? { pages: activeBook.outline.pages ?? [] } : undefined,
+                coverDesign: (activeBook as any).coverDesign,
+                customWidth: activeBook.customWidth,
+                customHeight: activeBook.customHeight,
+              } : undefined}
+              onSaveCoverDesign={(json) => {
+                if (activeBook) updateActiveBookConfig('coverDesign' as any, json);
+              }}
+            />
           )
         )}
 
@@ -9644,6 +10243,25 @@ export default function App() {
                 >
                   <BookOpen style={{ width: '12px', height: '12px', opacity: mirrorMargins ? 1 : 0.4 }} />
                   <span>{mirrorMargins ? (isDe ? 'Spiegel-Ränder' : 'Mirrored') : (isDe ? 'Gleiche Ränder' : 'Equal Margins')}</span>
+                </button>
+                <button
+                  onClick={() => setShowCoverEditorOverlay(true)}
+                  className="btn"
+                  style={{
+                    padding: '4px 10px',
+                    fontSize: '10px',
+                    flexShrink: 0,
+                    backgroundColor: 'transparent',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--text-main)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    marginRight: '2px'
+                  }}
+                >
+                  <BookOpen style={{ width: '12px', height: '12px', color: '#6366f1' }} />
+                  <span>{isDe ? 'Cover erstellen' : 'Cover Editor'}</span>
                 </button>
                 <button 
                   onClick={handleDownloadPdf} 
@@ -11156,13 +11774,52 @@ export default function App() {
                             const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement;
                             if(!textarea) return;
                             const start = textarea.selectionStart;
-                            const end = textarea.selectionEnd;
                             const text = textarea.value;
-                            const newText = text.substring(0, start) + '\n\n:::box Tipp\n' + (text.substring(start, end) || 'Dein Text hier...') + '\n:::\n\n' + text.substring(end);
+                            const snippet = '\n\n:::box Tipp\n' + (textarea.value.substring(start, textarea.selectionEnd) || 'Dein Text hier...') + '\n:::\n\n';
+                            const newText = text.substring(0, start) + snippet + text.substring(textarea.selectionEnd);
                             handleEditorChange({ target: { value: newText } } as React.ChangeEvent<HTMLTextAreaElement>);
-                            setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + 13, end + 13); }, 0);
+                            setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + 13, start + 13); }, 0);
                           }} className="btn" style={{ padding: '4px 8px', fontSize: '11px', background: 'transparent', border: 'none', cursor: 'pointer', color: theme === 'dark' ? '#ffffff' : 'var(--text-main)' }} title="Info-Box einfügen">
                             [Box]
+                          </button>
+
+                          <button onMouseDown={(e) => e.preventDefault()} onClick={() => {
+                            const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement;
+                            if(!textarea) return;
+                            const start = textarea.selectionStart;
+                            const text = textarea.value;
+                            const snippet = '\n\n:::stat 85% | der Menschen unterschätzen diesen Faktor.\n\n';
+                            const newText = text.substring(0, start) + snippet + text.substring(start);
+                            handleEditorChange({ target: { value: newText } } as React.ChangeEvent<HTMLTextAreaElement>);
+                            setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + 8, start + 8); }, 0);
+                          }} className="btn" style={{ padding: '4px 8px', fontSize: '11px', background: 'transparent', border: 'none', cursor: 'pointer', color: theme === 'dark' ? '#ffffff' : 'var(--text-main)' }} title="Statistik-Block einfügen">
+                            Statistik
+                          </button>
+
+                          <button onMouseDown={(e) => e.preventDefault()} onClick={() => {
+                            const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement;
+                            if(!textarea) return;
+                            const start = textarea.selectionStart;
+                            const text = textarea.value;
+                            const snippet = '\n\n:::timeline\nSchritt 1 | Analyse | Untersuche die Ausgangssituation.\nSchritt 2 | Planung | Entwickle einen konkreten Plan.\nSchritt 3 | Umsetzung | Setze den ersten Schritt heute um.\n:::\n\n';
+                            const newText = text.substring(0, start) + snippet + text.substring(start);
+                            handleEditorChange({ target: { value: newText } } as React.ChangeEvent<HTMLTextAreaElement>);
+                            setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + 14, start + 14); }, 0);
+                          }} className="btn" style={{ padding: '4px 8px', fontSize: '11px', background: 'transparent', border: 'none', cursor: 'pointer', color: theme === 'dark' ? '#ffffff' : 'var(--text-main)' }} title="Zeitstrahl einfügen">
+                            Zeitstrahl
+                          </button>
+
+                          <button onMouseDown={(e) => e.preventDefault()} onClick={() => {
+                            const textarea = document.querySelector('.editor-textarea') as HTMLTextAreaElement;
+                            if(!textarea) return;
+                            const start = textarea.selectionStart;
+                            const text = textarea.value;
+                            const snippet = '\n\n:::mermaid\nA[Start] --> B[Analyse] --> C[Aktion] --> D[Ergebnis]\n:::\n\n';
+                            const newText = text.substring(0, start) + snippet + text.substring(start);
+                            handleEditorChange({ target: { value: newText } } as React.ChangeEvent<HTMLTextAreaElement>);
+                            setTimeout(() => { textarea.focus(); textarea.setSelectionRange(start + 11, start + 11); }, 0);
+                          }} className="btn" style={{ padding: '4px 8px', fontSize: '11px', background: 'transparent', border: 'none', cursor: 'pointer', color: theme === 'dark' ? '#ffffff' : 'var(--text-main)' }} title="Ablaufdiagramm einfügen">
+                            Ablauf
                           </button>
 
                           <button onMouseDown={(e) => e.preventDefault()} onClick={() => {
@@ -11772,9 +12429,9 @@ export default function App() {
                                     {(getPreviewPageNumber(partIndex) as number) % 2 === 0 ? activeBook.title : (outline?.pages[(selectedPage as number) - 1]?.chapter_title || '')}
                                   </span>
                                 </div>
-                              ) : (
+                              ) : activeBook.showRunningHeader !== false ? (
                                 <div style={{ height: '9px', marginBottom: '4px' }}></div>
-                              )}
+                              ) : null}
 
                               {/* Chapter title header */}
                               {typeof selectedPage === 'number' && (
@@ -12508,6 +13165,25 @@ export default function App() {
           </div>
         );
       })()}
+
+      {/* Cover Editor Overlay */}
+      {showCoverEditorOverlay && activeBook && (
+        <CoverEditor
+          theme={theme}
+          activeBook={{
+            title: activeBook.title,
+            pageSize: activeBook.pageSize,
+            outline: activeBook.outline ? { pages: activeBook.outline.pages ?? [] } : undefined,
+            coverDesign: (activeBook as any).coverDesign,
+            customWidth: activeBook.customWidth,
+            customHeight: activeBook.customHeight,
+          }}
+          onSaveCoverDesign={(json) => {
+            updateActiveBookConfig('coverDesign' as any, json);
+          }}
+          onClose={() => setShowCoverEditorOverlay(false)}
+        />
+      )}
 
       {/* Image Insert Modal */}
       {showImageInsertModal && activeBook && (

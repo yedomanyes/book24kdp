@@ -17,7 +17,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  max-width: 850px;
+  max-width: 760px;
   margin: 0 auto;
   padding: 12px 14px 12px 20px;
   border-radius: 12px;
@@ -36,6 +36,7 @@
 }
 
 .landing-nav.scrolled {
+  max-width: 720px;
   padding: 8px 12px 8px 16px;
   background: rgba(8, 8, 12, 0.78);
   border-color: rgba(255, 255, 255, 0.12);
@@ -117,33 +118,31 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-bottom: 3px solid rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(206, 255, 255, .82);
+  border-bottom: 3px solid #087f98;
   border-radius: 8px;
   padding: 8px 14px;
   font-size: 13px;
   font-weight: 700;
-  color: #fff;
+  color: #031b23;
   cursor: pointer;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 100%);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: #16cfe0;
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.15) inset,
-    0 4px 12px rgba(0, 0, 0, 0.3);
+    0 1px 0 rgba(255, 255, 255, .62) inset,
+    0 8px 20px rgba(17, 202, 226, .22);
   transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
   transform: translateY(0);
 }
 
 .landing-nav-cta:hover {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.08) 100%);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: #35e5f2;
+  border-color: rgba(231, 255, 255, .95);
+  border-bottom-color: #0a9bb7;
   border-bottom-width: 4px;
   transform: translateY(-1.5px);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.25) inset,
-    0 8px 16px rgba(255, 255, 255, 0.1),
-    0 10px 24px rgba(0, 0, 0, 0.4);
+    0 1px 0 rgba(255, 255, 255, .78) inset,
+    0 12px 28px rgba(17, 202, 226, .34);
 }
 
 .landing-nav-cta:active {
@@ -327,7 +326,37 @@
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15) !important;
 }
 
-/* Light Theme Overrides */
+/* Product-first navigation refresh */
+.landing-nav {
+  max-width: 1120px;
+  border-radius: 14px;
+  border-color: rgba(145, 169, 229, .16);
+  background: rgba(9, 12, 20, .72);
+}
+.landing-nav.scrolled {
+  background: rgba(8, 11, 19, .9);
+  border-color: rgba(145, 169, 229, .24);
+}
+.landing-nav-cta {
+  border-color: rgba(159, 185, 255, .52);
+  border-bottom-color: #1948bc;
+  background: linear-gradient(135deg, #3b75ff 0%, #2454d6 100%);
+  box-shadow: 0 6px 18px rgba(37, 89, 222, .28), inset 0 1px 0 rgba(255,255,255,.2);
+}
+.landing-nav-cta:hover {
+  background: linear-gradient(135deg, #4a80ff 0%, #295ee8 100%);
+  border-color: rgba(183, 203, 255, .8);
+  box-shadow: 0 10px 28px rgba(37, 89, 222, .38), inset 0 1px 0 rgba(255,255,255,.25);
+}
+.landing-nav-promo-badge {
+  background: rgba(74, 128, 255, .12);
+  border-color: rgba(139, 171, 255, .25);
+}
+.landing-nav-promo-badge:hover {
+  background: rgba(74, 128, 255, .2);
+  border-color: rgba(139, 171, 255, .45);
+}
+
 .landing-nav.theme-light {
   background: rgba(255, 255, 255, 0.7);
   border-color: rgba(0, 0, 0, 0.08);
@@ -386,3 +415,37 @@
   border-color: rgba(0, 0, 0, 0.1);
   background: rgba(0, 0, 0, 0.04);
 }
+
+/* Test accent: conversion controls go warm; navigation and product remain blue. */
+.landing-nav-cta {
+  background: linear-gradient(135deg, #ffd95a 0%, #f5b92f 100%) !important;
+  border-color: rgba(255, 246, 200, .8) !important;
+  border-bottom-color: #b87512 !important;
+  box-shadow: 0 7px 18px rgba(236, 177, 37, .22), inset 0 1px rgba(255,255,255,.6) !important;
+}
+.landing-nav-cta:hover {
+  background: linear-gradient(135deg, #ffe47b 0%, #ffca48 100%) !important;
+  box-shadow: 0 10px 24px rgba(236, 177, 37, .3), inset 0 1px rgba(255,255,255,.72) !important;
+}
+.landing-nav-cta .shiny-text { color: #1b1607 !important; }
+
+/* Current launch accent — these overrides deliberately win over older test colors. */
+.landing-nav { max-width: 760px !important; }
+.landing-nav.scrolled { max-width: 720px !important; }
+.landing-nav-cta,
+.landing-nav.theme-light .landing-nav-cta,
+.landing-nav-mobile.theme-light .landing-nav-mobile-cta {
+  background: #16cfe0 !important;
+  border-color: rgba(206, 255, 255, .82) !important;
+  border-bottom-color: #087f98 !important;
+  color: #031b23 !important;
+  box-shadow: 0 8px 20px rgba(17, 202, 226, .22), inset 0 1px rgba(255,255,255,.62) !important;
+}
+.landing-nav-cta:hover,
+.landing-nav.theme-light .landing-nav-cta:hover {
+  background: #35e5f2 !important;
+  border-color: rgba(231, 255, 255, .95) !important;
+  border-bottom-color: #0a9bb7 !important;
+  box-shadow: 0 12px 28px rgba(17, 202, 226, .34), inset 0 1px rgba(255,255,255,.78) !important;
+}
+.landing-nav-cta .shiny-text { color: #06303a !important; }
