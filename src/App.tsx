@@ -9335,7 +9335,7 @@ export default function App() {
                 customWidth: activeBook.customWidth,
                 customHeight: activeBook.customHeight,
               } : undefined}
-              onSaveCoverDesign={(json) => {
+              onSaveCoverDesign={(json: string) => {
                 if (activeBook) updateActiveBookConfig('coverDesign' as any, json);
               }}
             />
@@ -13249,7 +13249,7 @@ export default function App() {
             customWidth: activeBook.customWidth,
             customHeight: activeBook.customHeight,
           }}
-          onSaveCoverDesign={(json) => {
+          onSaveCoverDesign={(json: string) => {
             updateActiveBookConfig('coverDesign' as any, json);
           }}
           onClose={() => setShowCoverEditorOverlay(false)}
