@@ -9352,22 +9352,7 @@ export default function App() {
           !isOwnerClient && activeModules.studio === 'maintenance' ? (
             <MaintenanceView name={isDe ? 'Buch Studio' : 'Book Studio'} theme={theme} onBack={() => setActiveTab('projects')} />
           ) : (
-            isBooksLoading ? (
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: 'calc(100vh - 110px)',
-                width: '100%',
-                background: 'var(--bg-main)',
-                color: 'var(--text-main)',
-                fontFamily: "'Outfit', sans-serif",
-                gap: '16px'
-              }}>
-                <Loader2 className="animate-spin" style={{ width: '32px', height: '32px', color: 'var(--primary)' }} />
-                <p style={{ fontSize: '14px', fontWeight: 500 }}>{isDe ? 'Lade Projekte...' : 'Loading Projects...'}</p>
-              </div>
+              <LibraryProgressBarLoader theme={theme} themeMode={language} />
             ) : !activeBook ? (
               <div style={{
                 display: 'flex',
