@@ -58,6 +58,7 @@ import {
 import { isSupabaseConfigured, supabase, toAppUser } from './supabase';
 import { Auth } from './components/Auth';
 import { LandingPage } from './components/LandingPage';
+import { AffiliateDashboard } from './components/AffiliateDashboard';
 import { LicensePrompt } from './components/LicensePrompt';
 import { NicheFinderDashboard } from './components/NicheFinderDashboard';
 import { BrainDashboard } from './components/BrainDashboard';
@@ -86,7 +87,7 @@ import { LanguageProvider } from './contexts/LanguageContext';
 // Run migration once at module load (before any state is initialized)
 migrateOldKeys();
 
-const NAV_TABS = ['projects', 'dashboard', 'brain', 'studio', 'cover', 'owner'] as const;
+const NAV_TABS = ['projects', 'dashboard', 'brain', 'studio', 'cover', 'affiliate', 'owner'] as const;
 type NavTabId = typeof NAV_TABS[number];
 type ModelProvider = 'groq' | 'gemini' | 'deepseek';
 
@@ -97,6 +98,7 @@ const NAV_TAB_PARTICLE_COLORS: Record<NavTabId, number[]> = {
   studio: [1, 2, 3, 4],
 
   cover: [1, 2, 3, 4],
+  affiliate: [1, 2, 3, 4],
   owner: [1, 2, 3, 4],
 };
 
@@ -1331,7 +1333,16 @@ export default function App() {
   // Prevents onAuthStateChange re-runs (e.g. token refresh) from overwriting books.
   const booksLoadedForUidRef = React.useRef<string | null>(null);
   const isCheckingRef = React.useRef<boolean>(false);
-  const libraryScrollTopRef = React.useRef<number>(0);
+  const libraryScrollTopRef = React.useRef<number>(
+    (() => {
+      try {
+        const saved = window.sessionStorage.getItem('b24studio_libraryScrollTop');
+        return saved ? parseInt(saved, 10) : 0;
+      } catch (e) {
+        return 0;
+      }
+    })()
+  );
   const mediathekContainerRef = React.useRef<HTMLDivElement | null>(null);
 
   // Parse URL error on mount
@@ -1837,17 +1848,60 @@ export default function App() {
           setCurrentUser(user);
           setAuthLoading(false);
           clearTimeout(safetyTimeoutId);
-          // Only redirect to 'projects' on the initial OAuth callback, not during regular page reloads or refreshes!
-          if (isOAuthCallback) {
+
+          // Detect if this is a fresh login
+          let isFreshLogin = false;
+          try {
+            if (window.sessionStorage.getItem('b24_just_logged_in') === 'true') {
+              isFreshLogin = true;
+              window.sessionStorage.removeItem('b24_just_logged_in');
+            }
+          } catch (e) {}
+
+          const currentIsOAuth = typeof window !== 'undefined' && (
+            window.location.hash.includes('access_token') ||
+            window.location.hash.includes('error') ||
+            window.location.search.includes('code=') ||
+            window.location.search.includes('error=')
+          );
+
+          if (currentIsOAuth) {
+            isFreshLogin = true;
+          }
+
+          if (isFreshLogin) {
+            // Force user to land in Mediathek directly upon new login
             setActiveTab('projects');
             try {
               safeLocalStorage.setItem('b24studio_activeTab', 'projects');
             } catch (e) {}
-            // Clear OAuth tokens/codes from the URL to prevent subsequent resets on refocus
+
+            // Do not open last active book upon fresh login
+            setActiveBookId(null);
+            try {
+              localStorage.removeItem('b24studio_activeBookId');
+              for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('b24studio_activeBookId_')) {
+                  localStorage.removeItem(key);
+                }
+              }
+            } catch (e) {}
+
+            // Reset scroll position on fresh login
+            libraryScrollTopRef.current = 0;
+            try {
+              window.sessionStorage.removeItem('b24studio_libraryScrollTop');
+            } catch (e) {}
+          }
+
+          // Clear OAuth tokens/codes from the URL to prevent subsequent resets on refocus
+          if (currentIsOAuth) {
             try {
               window.history.replaceState({}, document.title, window.location.pathname);
             } catch (e) {}
           }
+
           // Reset lock so checkUser() can run fresh (to load books, license, profile)
           isCheckingRef.current = false;
         }
@@ -3134,6 +3188,19 @@ export default function App() {
     };
   }, [currentUser]);
 
+  const brainEnabled = hasBrainAccess(currentUser?.email) || currentUser?.plan === 'staff';
+  const isOwnerClient = isOwnerEmail(currentUser?.email);
+  const [currentPath, setCurrentPath] = useState<string>(() => window.location.pathname || '/');
+  const ownerRouteActive = isOwnerRoute(currentPath);
+
+  // Layout Tab Manager
+  const [activeTab, setActiveTab] = useState<NavTabId>(() => {
+    const saved = safeLocalStorage.getItem('b24studio_activeTab') as NavTabId;
+    return (saved && saved !== 'dashboard') ? saved : 'projects';
+  });
+  const [brainTick, setBrainTick] = useState(0);
+  const activeNavKey: NavTabId = ownerRouteActive && isOwnerClient ? 'owner' : activeTab;
+
   const [activeBookId, setActiveBookId] = useState<string | null>(() => {
     try {
       const activeAcc = safeLocalStorage.getItem(KEYS.activeAccount) || 'default';
@@ -3176,25 +3243,14 @@ export default function App() {
 
     if (savedId && books.some(b => b.id === savedId)) {
       setActiveBookId(savedId);
-    } else if (!activeBookId) {
-      // Only fall back to first book if truly nothing is selected
+    } else if (!activeBookId && activeTab === 'studio') {
+      // Only fall back to first book if truly nothing is selected and we are in the studio
       setActiveBookId(books[0].id);
     }
-  }, [books, activeAccountId, currentUser]);
+  }, [books, activeAccountId, currentUser, activeTab]);
 
   const activeBook = books.find(b => b.id === activeBookId) || null;
-  const brainEnabled = hasBrainAccess(currentUser?.email) || currentUser?.plan === 'staff';
-  const isOwnerClient = isOwnerEmail(currentUser?.email);
-  const [currentPath, setCurrentPath] = useState<string>(() => window.location.pathname || '/');
-  const ownerRouteActive = isOwnerRoute(currentPath);
 
-  // Layout Tab Manager
-  const [activeTab, setActiveTab] = useState<NavTabId>(() => {
-    const saved = safeLocalStorage.getItem('b24studio_activeTab') as NavTabId;
-    return (saved && saved !== 'dashboard') ? saved : 'projects';
-  });
-  const [brainTick, setBrainTick] = useState(0);
-  const activeNavKey: NavTabId = ownerRouteActive && isOwnerClient ? 'owner' : activeTab;
 
   const refreshBrain = () => setBrainTick(t => t + 1);
 
@@ -8783,6 +8839,7 @@ export default function App() {
 
             const currentNavTabs = NAV_TABS.filter(tab => {
               if (tab === 'dashboard') return false; // Niche finder completely removed
+              if (tab === 'cover') return false; // Cover editor hidden for now
               if (isOwnerClient) return true; // Owner sees all tabs
               if (tab === 'owner') return false; // Non-owner never sees owner tab
               
@@ -8802,6 +8859,7 @@ export default function App() {
               if (tab === 'studio') return { label: isDe ? 'Schreibstudio' : 'Studio', maintenance: isMaintenance };
 
               if (tab === 'cover') return { label: isDe ? 'Cover' : 'Cover', maintenance: isMaintenance };
+              if (tab === 'affiliate') return { label: 'Affiliate' };
               if (tab === 'owner') return { label: 'Owner Panel' };
               return { label: '' };
             });
@@ -9038,6 +9096,9 @@ export default function App() {
                style={{ position: 'relative', zIndex: 1 }}
                onScroll={(e) => {
                  libraryScrollTopRef.current = e.currentTarget.scrollTop;
+                 try {
+                   window.sessionStorage.setItem('b24studio_libraryScrollTop', String(e.currentTarget.scrollTop));
+                 } catch (err) {}
                }}
              >
               <div className="mediathek-header">
@@ -9279,6 +9340,11 @@ export default function App() {
               }}
             />
           )
+        )}
+
+        {/* Tab: Affiliate Center */}
+        {activeTab === 'affiliate' && (
+          <AffiliateDashboard currentUser={currentUser} language={isDe ? 'de' : 'en'} />
         )}
 
         {/* Tab 2: Studio Layout Panel Grid */}

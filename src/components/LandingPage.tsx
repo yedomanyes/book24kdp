@@ -1015,7 +1015,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
                   setCookieConsent(true);
                 }}
                 style={{
-                  background: '#ea580c',
+                  background: '#2563eb',
                   border: 'none',
                   color: '#fff',
                   fontSize: '13px',
@@ -1023,7 +1023,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, theme, s
                   padding: '8px 16px',
                   cursor: 'pointer',
                   borderRadius: '8px',
-                  boxShadow: '0 4px 12px rgba(234, 88, 12, 0.2)'
+                  boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)'
                 }}
               >
                 {isDe ? 'Akzeptieren' : 'Accept'}

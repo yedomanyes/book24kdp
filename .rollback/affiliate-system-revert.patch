@@ -1,0 +1,231 @@
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -58,7 +58,6 @@
+ import { isSupabaseConfigured, supabase, toAppUser } from './supabase';
+ import { Auth } from './components/Auth';
+ import { LandingPage } from './components/LandingPage';
+-import { AffiliateDashboard } from './components/AffiliateDashboard';
+ import { LicensePrompt } from './components/LicensePrompt';
+ import { NicheFinderDashboard } from './components/NicheFinderDashboard';
+ import { BrainDashboard } from './components/BrainDashboard';
+@@ -87,7 +86,7 @@
+ // Run migration once at module load (before any state is initialized)
+ migrateOldKeys();
+
+-const NAV_TABS = ['projects', 'dashboard', 'brain', 'studio', 'cover', 'affiliate', 'owner'] as const;
++const NAV_TABS = ['projects', 'dashboard', 'brain', 'studio', 'cover', 'owner'] as const;
+ type NavTabId = typeof NAV_TABS[number];
+ type ModelProvider = 'groq' | 'gemini' | 'deepseek';
+
+@@ -98,7 +97,6 @@
+   studio: [1, 2, 3, 4],
+
+   cover: [1, 2, 3, 4],
+-  affiliate: [1, 2, 3, 4],
+   owner: [1, 2, 3, 4],
+ };
+
+@@ -8859,7 +8857,6 @@
+               if (tab === 'studio') return { label: isDe ? 'Schreibstudio' : 'Studio', maintenance: isMaintenance };
+
+               if (tab === 'cover') return { label: isDe ? 'Cover' : 'Cover', maintenance: isMaintenance };
+-              if (tab === 'affiliate') return { label: 'Affiliate' };
+               if (tab === 'owner') return { label: 'Owner Panel' };
+               return { label: '' };
+             });
+@@ -9340,11 +9337,6 @@
+               }}
+             />
+           )
+-        )}
+-
+-        {/* Tab: Affiliate Center */}
+-        {activeTab === 'affiliate' && (
+-          <AffiliateDashboard currentUser={currentUser} language={isDe ? 'de' : 'en'} />
+         )}
+
+         {/* Tab 2: Studio Layout Panel Grid */}
+--- a/src/index.css
++++ b/src/index.css
+@@ -2929,67 +2929,3 @@
+     border-top-color: rgba(0, 0, 0, 0.08);
+   }
+ }
+-
+-/* Authenticated Affiliate Center */
+-.affiliate-workspace-page { width: 100%; height: calc(100vh - 110px); overflow-y: auto; background: var(--bg-main); color: var(--text-main); }
+-.affiliate-workspace-inner { width: min(1120px, calc(100% - 56px)); margin: 0 auto; padding: 30px 0 56px; }
+-.affiliate-workspace-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-bottom: 22px; border-bottom: 1px solid var(--border-color); }
+-.affiliate-workspace-header h1 { margin: 0; color: var(--text-main); font-size: 28px; font-weight: 800; letter-spacing: -.04em; }
+-.affiliate-current-rate { min-width: 132px; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-card); text-align: right; }
+-.affiliate-current-rate span, .affiliate-current-rate small { display: block; color: var(--text-muted); font-size: 9px; text-transform: uppercase; letter-spacing: .08em; }
+-.affiliate-current-rate strong { display: block; margin-top: 4px; color: var(--primary); font-size: 25px; line-height: 1; }
+-.affiliate-current-rate small { margin-top: 5px; text-transform: none; letter-spacing: 0; }
+-.affiliate-setup-panel, .affiliate-link-panel, .affiliate-stat-panel, .affiliate-chart-panel, .affiliate-tier-panel { border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-card); }
+-.affiliate-setup-panel { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-top: 20px; padding: 20px; }
+-.affiliate-setup-copy { max-width: 480px; }
+-.affiliate-setup-copy h2 { margin: 7px 0 5px; font-size: 16px; letter-spacing: -.02em; }
+-.affiliate-setup-copy p, .affiliate-section-heading p { margin: 0; color: var(--text-muted); font-size: 11px; line-height: 1.5; }
+-.affiliate-code-form { width: min(440px, 100%); }
+-.affiliate-code-form label { display: block; margin-bottom: 7px; color: var(--text-muted); font-size: 10px; font-weight: 700; }
+-.affiliate-code-input-row { display: flex; align-items: center; overflow: hidden; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-main); }
+-.affiliate-code-prefix { padding-left: 10px; color: var(--text-muted); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+-.affiliate-code-input-row input { min-width: 0; flex: 1; padding: 10px 7px; border: 0; outline: 0; background: transparent; color: var(--text-main); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+-.affiliate-code-input-row button, .affiliate-link-field button { display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; border: 0; border-radius: 5px; padding: 8px 10px; background: var(--primary); color: #fff; cursor: pointer; font-size: 10px; font-weight: 700; }
+-.affiliate-suggestion, .affiliate-form-error { display: block; margin-top: 6px; color: var(--text-muted); font-size: 10px; }
+-.affiliate-form-error { color: var(--error); }
+-.affiliate-code-locked { min-width: 270px; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-main); }
+-.affiliate-code-locked div { display: flex; align-items: center; gap: 7px; color: var(--text-muted); font-size: 10px; }
+-.affiliate-code-locked svg { color: var(--primary); }
+-.affiliate-code-locked strong { margin-left: auto; color: var(--text-main); font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; }
+-.affiliate-code-locked small { display: block; margin-top: 7px; color: var(--text-muted); font-size: 9px; }
+-.affiliate-link-panel { margin-top: 12px; padding: 18px; }
+-.affiliate-panel-label { display: flex; align-items: center; gap: 7px; color: var(--text-muted); font-size: 10px; font-weight: 700; letter-spacing: .04em; }
+-.affiliate-panel-label svg { color: var(--primary); }
+-.affiliate-link-field { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding: 9px 10px; border: 1px solid var(--border-color); border-radius: 5px; background: var(--bg-main); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+-.affiliate-link-field span { min-width: 0; overflow: hidden; color: var(--text-main); text-overflow: ellipsis; white-space: nowrap; }
+-.affiliate-panel-note, .affiliate-stat-panel > span { display: block; margin: 9px 0 0; color: var(--text-muted); font-size: 10px; }
+-.affiliate-metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 12px; }
+-.affiliate-stat-panel { min-height: 132px; padding: 16px; }
+-.affiliate-stat-panel strong { display: block; margin-top: 18px; color: var(--text-main); font-size: 26px; letter-spacing: -.04em; }
+-.affiliate-conversion-panel { position: relative; }
+-.affiliate-donut { display: grid; width: 58px; height: 58px; margin-top: 13px; place-items: center; border-radius: 50%; background: conic-gradient(var(--primary) var(--value), var(--border-color) 0); }
+-.affiliate-donut::after { content: ''; position: absolute; width: 42px; height: 42px; border-radius: 50%; background: var(--bg-card); }
+-.affiliate-donut b { z-index: 1; color: var(--text-main); font-size: 11px; }
+-.affiliate-analytics-grid { display: grid; grid-template-columns: 1.35fr 1fr; gap: 12px; margin-top: 12px; }
+-.affiliate-chart-panel, .affiliate-tier-panel { margin-top: 0; padding: 20px; }
+-.affiliate-section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+-.affiliate-section-heading h2 { margin: 0 0 5px; color: var(--text-main); font-size: 16px; letter-spacing: -.02em; }
+-.affiliate-section-heading > span { color: var(--text-muted); font-size: 10px; font-weight: 800; }
+-.affiliate-empty-chart { position: relative; height: 150px; margin-top: 16px; background: repeating-linear-gradient(to bottom, transparent 0, transparent 36px, color-mix(in srgb, var(--border-color) 55%, transparent) 37px); }
+-.affiliate-chart-line { position: absolute; inset: 8px 4px 30px; opacity: .35; background: linear-gradient(145deg, transparent 48%, var(--primary) 49%, var(--primary) 50%, transparent 51%) 0 100% / 22% 35% no-repeat, linear-gradient(25deg, transparent 48%, var(--primary) 49%, var(--primary) 50%, transparent 51%) 22% 65% / 24% 35% no-repeat, linear-gradient(155deg, transparent 48%, var(--primary) 49%, var(--primary) 50%, transparent 51%) 46% 30% / 25% 35% no-repeat, linear-gradient(20deg, transparent 48%, var(--primary) 49%, var(--primary) 50%, transparent 51%) 71% 58% / 29% 25% no-repeat; }
+-.affiliate-chart-labels { position: absolute; right: 0; bottom: 13px; left: 0; display: flex; justify-content: space-between; color: var(--text-muted); font-size: 9px; }
+-.affiliate-empty-chart em { position: absolute; right: 0; bottom: -1px; left: 0; color: var(--text-muted); font-size: 9px; font-style: normal; text-align: center; }
+-.affiliate-progress-track { height: 5px; margin: 22px 0 16px; overflow: hidden; border-radius: 99px; background: var(--border-color); }
+-.affiliate-progress-track div { height: 100%; border-radius: inherit; background: var(--primary); transition: width .35s ease; }
+-.affiliate-tier-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 13px 0; border-top: 1px solid var(--border-color); }
+-.affiliate-tier-row > div { display: flex; align-items: baseline; gap: 12px; }
+-.affiliate-tier-row b { color: var(--text-main); font-size: 19px; }
+-.affiliate-tier-row span, .affiliate-tier-row em { color: var(--text-muted); font-size: 10px; }
+-.affiliate-tier-row em { font-style: normal; font-weight: 700; }
+-.affiliate-tier-row.active em { color: var(--primary); }
+-.affiliate-legal-note { margin: 18px 0 0; color: var(--text-muted); font-size: 10px; line-height: 1.5; }
+-@media (max-width: 850px) { .affiliate-workspace-inner { width: min(100% - 32px, 1120px); } .affiliate-metrics-grid { grid-template-columns: 1fr 1fr; } .affiliate-analytics-grid { grid-template-columns: 1fr; } }
+-@media (max-width: 560px) { .affiliate-workspace-header, .affiliate-setup-panel { align-items: flex-start; flex-direction: column; } .affiliate-current-rate { text-align: left; } .affiliate-metrics-grid { grid-template-columns: 1fr; } .affiliate-code-form, .affiliate-code-locked { width: 100%; min-width: 0; } }
+-
+-
+-
+--- a/src/components/AffiliateDashboard.tsx
++++ b/src/components/AffiliateDashboard.tsx
+@@ -1,111 +0,0 @@
+-import React, { useMemo, useState } from 'react';
+-import { BarChart3, Check, Copy, Link2, LockKeyhole, MousePointerClick, Users, WalletCards } from 'lucide-react';
+-
+-interface AffiliateDashboardProps {
+-  currentUser?: { email?: string | null } | null;
+-  language: 'de' | 'en';
+-}
+-
+-const cleanSlug = (value: string) => value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 32);
+-
+-export const AffiliateDashboard: React.FC<AffiliateDashboardProps> = ({ currentUser, language }) => {
+-  const isDe = language === 'de';
+-  const suggestedSlug = useMemo(() => cleanSlug((currentUser?.email || '').split('@')[0]) || 'publisher', [currentUser?.email]);
+-  const storageKey = `booklab-affiliate-code:${currentUser?.email || 'publisher'}`;
+-  const [savedSlug, setSavedSlug] = useState<string | null>(() => {
+-    if (typeof window === 'undefined') return null;
+-    return window.localStorage.getItem(storageKey);
+-  });
+-  const [draftSlug, setDraftSlug] = useState(suggestedSlug);
+-  const [copied, setCopied] = useState(false);
+-  const [error, setError] = useState('');
+-  const confirmedBuyers = 0;
+-  const clicks = 0;
+-  const conversion = 0;
+-  const affiliateSlug = savedSlug || cleanSlug(draftSlug) || suggestedSlug;
+-  const referralLink = `${window.location.origin}/?ref=${affiliateSlug}`;
+-  const currentTier = confirmedBuyers >= 10 ? '50%' : '30%';
+-  const progress = Math.min(confirmedBuyers / 10, 1) * 100;
+-
+-  const saveCode = () => {
+-    const next = cleanSlug(draftSlug);
+-    if (next.length < 3) {
+-      setError(isDe ? 'Bitte mindestens 3 Zeichen verwenden.' : 'Use at least 3 characters.');
+-      return;
+-    }
+-    window.localStorage.setItem(storageKey, next);
+-    setSavedSlug(next);
+-    setError('');
+-  };
+-
+-  const handleCopy = async () => {
+-    try {
+-      await navigator.clipboard.writeText(referralLink);
+-      setCopied(true);
+-      window.setTimeout(() => setCopied(false), 1800);
+-    } catch {
+-      setCopied(false);
+-    }
+-  };
+-
+-  return (
+-    <main className="affiliate-workspace-page">
+-      <div className="affiliate-workspace-inner">
+-        <header className="affiliate-workspace-header">
+-          <div>
+-            <h1>Affiliate Center</h1>
+-          </div>
+-          <div className="affiliate-current-rate">
+-            <span>{isDe ? 'Deine Provision' : 'Your commission'}</span>
+-            <strong>{currentTier}</strong>
+-            <small>{isDe ? 'aktuelle Stufe' : 'current tier'}</small>
+-          </div>
+-        </header>
+-
+-        <section className="affiliate-setup-panel">
+-          <div className="affiliate-setup-copy">
+-            <span className="affiliate-panel-kicker">01 / {isDe ? 'EINRICHTUNG' : 'SETUP'}</span>
+-            <h2>{isDe ? 'Dein persönlicher Affiliate-Code' : 'Your personal affiliate code'}</h2>
+-            <p>{isDe ? 'Wähle den Namen, der in deinem Referral-Link angezeigt wird. Du kannst ihn nur einmal festlegen.' : 'Choose the name shown in your referral link. You can set it only once.'}</p>
+-          </div>
+-          {!savedSlug ? (
+-            <div className="affiliate-code-form">
+-              <label htmlFor="affiliate-code">{isDe ? 'Affiliate-Code' : 'Affiliate code'}</label>
+-              <div className="affiliate-code-input-row">
+-                <span className="affiliate-code-prefix">ref=</span>
+-                <input id="affiliate-code" value={draftSlug} onChange={(event) => setDraftSlug(cleanSlug(event.target.value))} placeholder={suggestedSlug} maxLength={32} />
+-                <button type="button" onClick={saveCode}>{isDe ? 'Code festlegen' : 'Set code'}</button>
+-              </div>
+-              <span className="affiliate-suggestion">{isDe ? `Vorgeschlagen: ${suggestedSlug}` : `Suggested: ${suggestedSlug}`}</span>
+-              {error && <span className="affiliate-form-error">{error}</span>}
+-            </div>
+-          ) : (
+-            <div className="affiliate-code-locked">
+-              <div><LockKeyhole size={14} /><span>{isDe ? 'Dein Code' : 'Your code'}</span><strong>{savedSlug}</strong></div>
+-              <small>{isDe ? 'Einmalig festgelegt' : 'Set once and locked'}</small>
+-            </div>
+-          )}
+-        </section>
+-
+-        <section className="affiliate-link-panel">
+-          <div className="affiliate-panel-label"><Link2 size={14} /> {isDe ? 'Dein Referral-Link' : 'Your referral link'}</div>
+-          <div className="affiliate-link-field"><span>{referralLink}</span><button type="button" onClick={handleCopy}>{copied ? <Check size={15} /> : <Copy size={15} />}{copied ? (isDe ? 'Kopiert' : 'Copied') : (isDe ? 'Kopieren' : 'Copy')}</button></div>
+-          <p className="affiliate-panel-note">{isDe ? 'Teile diesen Link in deinen Videos, Posts oder deiner Community.' : 'Share this link in your videos, posts, or community.'}</p>
+-        </section>
+-
+-        <section className="affiliate-metrics-grid">
+-          <div className="affiliate-stat-panel"><div className="affiliate-panel-label"><Users size={14} /> {isDe ? 'Bestätigte Käufer' : 'Confirmed buyers'}</div><strong>{confirmedBuyers}</strong><span>{isDe ? 'Noch keine Käufe' : 'No purchases yet'}</span></div>
+-          <div className="affiliate-stat-panel"><div className="affiliate-panel-label"><MousePointerClick size={14} /> {isDe ? 'Link-Klicks' : 'Link clicks'}</div><strong>{clicks}</strong><span>{isDe ? 'Letzte 30 Tage' : 'Last 30 days'}</span></div>
+-          <div className="affiliate-stat-panel"><div className="affiliate-panel-label"><WalletCards size={14} /> {isDe ? 'Offene Provision' : 'Pending commission'}</div><strong>$0.00</strong><span>{isDe ? 'Nach Rückerstattungsfrist' : 'After refund window'}</span></div>
+-          <div className="affiliate-stat-panel affiliate-conversion-panel"><div className="affiliate-panel-label"><BarChart3 size={14} /> {isDe ? 'Conversion Rate' : 'Conversion rate'}</div><div className="affiliate-donut" style={{ '--value': `${conversion}%` } as React.CSSProperties}><b>{conversion}%</b></div><span>{isDe ? 'Klicks zu Käufern' : 'Clicks to buyers'}</span></div>
+-        </section>
+-
+-        <section className="affiliate-analytics-grid">
+-          <div className="affiliate-chart-panel"><div className="affiliate-section-heading"><div><h2>{isDe ? 'Performance' : 'Performance'}</h2><p>{isDe ? 'Klicks und bestätigte Käufe der letzten 7 Tage.' : 'Clicks and confirmed purchases over the last 7 days.'}</p></div><span>7D</span></div><div className="affiliate-empty-chart"><div className="affiliate-chart-line" /><div className="affiliate-chart-labels"><span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span></div><em>{isDe ? 'Deine ersten Daten erscheinen hier.' : 'Your first data will appear here.'}</em></div></div>
+-          <div className="affiliate-tier-panel"><div className="affiliate-section-heading"><div><h2>{isDe ? 'Provisionen' : 'Commission tiers'}</h2><p>{isDe ? 'Dein Fortschritt zur nächsten Stufe.' : 'Your progress to the next tier.'}</p></div><span>{confirmedBuyers} / 10</span></div><div className="affiliate-progress-track"><div style={{ width: `${progress}%` }} /></div><div className="affiliate-tier-row active"><div><b>30%</b><span>{isDe ? 'Start-Provision' : 'Starting commission'}</span></div><em>{isDe ? 'Aktiv' : 'Active'}</em></div><div className="affiliate-tier-row"><div><b>50%</b><span>{isDe ? 'Ab 10 Käufern' : 'After 10 buyers'}</span></div><em>{confirmedBuyers >= 10 ? (isDe ? 'Freigeschaltet' : 'Unlocked') : (isDe ? 'Noch gesperrt' : 'Locked')}</em></div></div>
+-        </section>
+-        <p className="affiliate-legal-note">{isDe ? 'Auszahlungen erfolgen nach Ablauf der Rückerstattungsfrist. Bitte kennzeichne Affiliate-Links transparent.' : 'Payouts are released after the refund window. Please disclose affiliate links transparently.'}</p>
+-      </div>
+-    </main>
+-  );
+-};
