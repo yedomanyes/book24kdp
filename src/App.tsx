@@ -9352,8 +9352,10 @@ export default function App() {
           !isOwnerClient && activeModules.studio === 'maintenance' ? (
             <MaintenanceView name={isDe ? 'Buch Studio' : 'Book Studio'} theme={theme} onBack={() => setActiveTab('projects')} />
           ) : (
+            isBooksLoading ? (
               <LibraryProgressBarLoader theme={theme} themeMode={language} />
-            ) : !activeBook ? (
+            ) : (
+            !activeBook ? (
               <div style={{
                 display: 'flex',
                 flexDirection: 'column',
@@ -12727,6 +12729,7 @@ export default function App() {
           </div>
             )
           )
+        )
         )}
         </>
         )}
