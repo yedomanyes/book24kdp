@@ -3154,6 +3154,11 @@ export default function App() {
 
   // Automatically restore/resolve activeBookId when books load or change
   useEffect(() => {
+    const isBooksLoading = currentUser && booksLoadedForUidRef.current !== currentUser.uid;
+    if (isBooksLoading) {
+      return;
+    }
+
     if (books.length === 0) {
       setActiveBookId(null);
       return;
@@ -3175,7 +3180,7 @@ export default function App() {
       // Only fall back to first book if truly nothing is selected
       setActiveBookId(books[0].id);
     }
-  }, [books, activeAccountId]);
+  }, [books, activeAccountId, currentUser]);
 
   const activeBook = books.find(b => b.id === activeBookId) || null;
   const brainEnabled = hasBrainAccess(currentUser?.email) || currentUser?.plan === 'staff';
