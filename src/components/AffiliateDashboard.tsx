@@ -56,9 +56,12 @@ export const AffiliateDashboard: React.FC<AffiliateDashboardProps> = ({ currentU
             <h1>Affiliate Center</h1>
           </div>
           <div className="affiliate-current-rate">
-            <span>{isDe ? 'Deine Provision' : 'Your commission'}</span>
-            <strong>{currentTier}</strong>
-            <small>{isDe ? 'aktuelle Stufe' : 'current tier'}</small>
+            <div className="affiliate-rate-ring"><span>{currentTier}</span></div>
+            <div className="affiliate-rate-copy">
+              <span>{isDe ? 'Aktuelle Provision' : 'Current commission'}</span>
+              <strong>{isDe ? 'Starter-Stufe' : 'Starter tier'}</strong>
+              <small>{isDe ? '50% ab 10 Käufern' : '50% after 10 buyers'}</small>
+            </div>
           </div>
         </header>
 
@@ -101,7 +104,21 @@ export const AffiliateDashboard: React.FC<AffiliateDashboardProps> = ({ currentU
         </section>
 
         <section className="affiliate-analytics-grid">
-          <div className="affiliate-chart-panel"><div className="affiliate-section-heading"><div><h2>{isDe ? 'Performance' : 'Performance'}</h2><p>{isDe ? 'Klicks und bestätigte Käufe der letzten 7 Tage.' : 'Clicks and confirmed purchases over the last 7 days.'}</p></div><span>7D</span></div><div className="affiliate-empty-chart"><div className="affiliate-chart-line" /><div className="affiliate-chart-labels"><span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span></div><em>{isDe ? 'Deine ersten Daten erscheinen hier.' : 'Your first data will appear here.'}</em></div></div>
+          <div className="affiliate-chart-panel">
+            <div className="affiliate-section-heading">
+              <div><h2>{isDe ? 'Performance' : 'Performance'}</h2><p>{isDe ? 'Klicks und bestätigte Käufe der letzten 7 Tage.' : 'Clicks and confirmed purchases over the last 7 days.'}</p></div>
+              <span className="affiliate-chart-period">7 TAGE</span>
+            </div>
+            <div className="affiliate-chart-legend"><span><i className="affiliate-legend-clicks" />{isDe ? 'Klicks' : 'Clicks'}</span><span><i className="affiliate-legend-buyers" />{isDe ? 'Käufer' : 'Buyers'}</span></div>
+            <div className="affiliate-empty-chart">
+              <svg className="affiliate-chart-svg" viewBox="0 0 720 180" role="img" aria-label={isDe ? 'Affiliate Performance Chart' : 'Affiliate performance chart'}>
+                <line x1="16" y1="24" x2="704" y2="24" /><line x1="16" y1="68" x2="704" y2="68" /><line x1="16" y1="112" x2="704" y2="112" /><line x1="16" y1="156" x2="704" y2="156" />
+                <path className="affiliate-chart-baseline" d="M16 156 L704 156" />
+              </svg>
+              <div className="affiliate-chart-labels"><span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span></div>
+              <em>{isDe ? 'Deine ersten Daten erscheinen hier.' : 'Your first data will appear here.'}</em>
+            </div>
+          </div>
           <div className="affiliate-tier-panel"><div className="affiliate-section-heading"><div><h2>{isDe ? 'Provisionen' : 'Commission tiers'}</h2><p>{isDe ? 'Dein Fortschritt zur nächsten Stufe.' : 'Your progress to the next tier.'}</p></div><span>{confirmedBuyers} / 10</span></div><div className="affiliate-progress-track"><div style={{ width: `${progress}%` }} /></div><div className="affiliate-tier-row active"><div><b>30%</b><span>{isDe ? 'Start-Provision' : 'Starting commission'}</span></div><em>{isDe ? 'Aktiv' : 'Active'}</em></div><div className="affiliate-tier-row"><div><b>50%</b><span>{isDe ? 'Ab 10 Käufern' : 'After 10 buyers'}</span></div><em>{confirmedBuyers >= 10 ? (isDe ? 'Freigeschaltet' : 'Unlocked') : (isDe ? 'Noch gesperrt' : 'Locked')}</em></div></div>
         </section>
         <p className="affiliate-legal-note">{isDe ? 'Auszahlungen erfolgen nach Ablauf der Rückerstattungsfrist. Bitte kennzeichne Affiliate-Links transparent.' : 'Payouts are released after the refund window. Please disclose affiliate links transparently.'}</p>
