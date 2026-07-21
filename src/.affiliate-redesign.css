@@ -1,0 +1,114 @@
+/* Affiliate workspace — premium monochrome startup direction */
+.aff-page {
+  background: #090909;
+  color: #f4f4f0;
+}
+.aff-hero {
+  background: #090909;
+  border-bottom: 1px solid #222;
+}
+.aff-hero-glow { display: none; }
+.aff-hero-inner {
+  width: min(1180px, calc(100% - 56px));
+  padding: 34px 0 30px;
+}
+.aff-hero-badge {
+  padding: 0;
+  margin-bottom: 14px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #a8a8a0;
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.aff-hero-badge svg { display: none; }
+.aff-hero-title {
+  max-width: 680px;
+  margin-bottom: 10px;
+  font-size: clamp(32px, 4vw, 52px);
+  letter-spacing: -.055em;
+}
+.aff-hero-amount,
+.aff-commission-amount { color: #c8ff36; }
+.aff-hero-sub {
+  max-width: 620px;
+  margin-bottom: 22px;
+  color: #8e8e88;
+  font-size: 13px;
+}
+.aff-link-row { max-width: 760px; }
+.aff-link-field {
+  padding: 11px 13px;
+  border-color: #2c2c2a;
+  border-radius: 7px;
+  background: #111;
+  color: #d6d6cf;
+}
+.aff-link-icon { color: #777770; }
+.aff-copy-btn,
+.aff-code-save-btn {
+  background: #c8ff36;
+  color: #111;
+  border-radius: 7px;
+}
+.aff-copy-btn:hover,
+.aff-code-save-btn:hover { background: #dcff78; }
+.aff-body {
+  width: min(1180px, calc(100% - 56px));
+  padding: 20px 0 34px;
+}
+.aff-stats-row { gap: 10px; margin-bottom: 10px; }
+.aff-stat-card,
+.aff-card {
+  border-color: #242422;
+  border-radius: 9px;
+  background: #111;
+  box-shadow: none;
+}
+.aff-stat-card { padding: 16px 17px; }
+.aff-stat-icon { display: none; }
+.aff-stat-value { font-size: 23px; color: #f4f4f0; }
+.aff-stat-label { margin-top: 7px; color: #777770; }
+.aff-two-col { gap: 10px; margin-bottom: 10px; }
+.aff-card { padding: 18px; }
+.aff-card-head { margin-bottom: 15px; }
+.aff-card-head h2 { font-size: 14px; }
+.aff-card-head p { color: #777770; }
+.aff-commission-display {
+  padding: 16px;
+  margin-bottom: 13px;
+  border-color: #2a2a28;
+  border-radius: 7px;
+  background: #171715;
+}
+.aff-commission-amount { font-size: 42px; }
+.aff-detail-row { padding: 8px 0; border-color: #242422; }
+.aff-detail-row span { color: #777770; }
+.aff-detail-row strong { color: #e8e8e1; }
+.aff-code-input-wrap,
+.aff-code-locked-display {
+  border-color: #2a2a28;
+  border-radius: 7px;
+  background: #0b0b0b;
+}
+.aff-code-locked-inner svg { color: #c8ff36; }
+.aff-chart-card { margin-bottom: 0; }
+.aff-chart-svg line { stroke: #292927; }
+.aff-chart-empty-label,
+.aff-chart-days,
+.aff-chart-legend span { color: #777770; }
+.aff-dot--cyan,
+.aff-dot--green { background: #c8ff36; }
+.aff-legal { margin-top: 14px; color: #666660; }
+
+@media (max-width: 860px) {
+  .aff-hero-inner,
+  .aff-body { width: calc(100% - 32px); }
+}
+@media (max-width: 560px) {
+  .aff-hero-inner { padding: 26px 0 24px; }
+  .aff-body { padding-top: 14px; }
+  .aff-hero-title { font-size: 34px; }
+}
